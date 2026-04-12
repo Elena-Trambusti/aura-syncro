@@ -260,8 +260,7 @@ GET    /api/reports/food-cost
 
 **Elena Trambusti**
 - Email: [elenatrambusti2024@gmail.com](mailto:elenatrambusti2024@gmail.com)
-- LinkedIn: *[aggiungi il tuo profilo]*
-- GitHub: *[aggiungi il tuo username]*
+- LinkedIn: [linkedin.com/in/elena-trambusti-7b3431232](https://www.linkedin.com/in/elena-trambusti-7b3431232)
 
 ---
 
