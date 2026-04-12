@@ -26,6 +26,19 @@
 
 ---
 
+## 📸 Screenshot
+
+### Dashboard — KPI e grafici in tempo reale
+![Dashboard](./screenshots/dashboard.png)
+
+### AI Predittiva — Previsione domanda e Menu Matrix BCG
+![AI Predittiva](./screenshots/ai-predictive.png)
+
+### Gestione Tavoli — Mappa interattiva e POS
+![Gestione Tavoli](./screenshots/tables-pos.png)
+
+---
+
 ## 🏗️ Architettura
 
 ```
