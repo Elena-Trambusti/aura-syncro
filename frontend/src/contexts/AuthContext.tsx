@@ -1,0 +1,96 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { api } from '../lib/api'
+import { connectSocket, disconnectSocket } from '../lib/socket'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
+interface Restaurant {
+  id: string
+  name: string
+  slug: string
+}
+
+interface AuthContextType {
+  user: User | null
+  restaurant: Restaurant | null
+  token: string | null
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
+  logout: () => void
+}
+
+interface RegisterData {
+  restaurantName: string
+  name: string
+  email: string
+  password: string
+  phone?: string
+}
+
+const AuthContext = createContext<AuthContextType | null>(null)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'))
+
+  const setAuth = useCallback((data: { token: string; user: User; restaurant: Restaurant }) => {
+    localStorage.setItem('token', data.token)
+    setToken(data.token)
+    setUser(data.user)
+    setRestaurant(data.restaurant)
+    connectSocket(data.token)
+  }, [])
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token')
+    setToken(null)
+    setUser(null)
+    setRestaurant(null)
+    disconnectSocket()
+  }, [])
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token')
+    if (!storedToken) return
+    api.get('/auth/me')
+      .then(res => {
+        setUser(res.data.user)
+        setRestaurant(res.data.restaurant)
+        connectSocket(storedToken)
+      })
+      .catch(() => logout())
+      .finally(() => setIsLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    const res = await api.post('/auth/login', { email, password })
+    setAuth(res.data)
+  }
+
+  const register = async (data: RegisterData) => {
+    const res = await api.post('/auth/register', data)
+    setAuth(res.data)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, restaurant, token, isLoading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
+}

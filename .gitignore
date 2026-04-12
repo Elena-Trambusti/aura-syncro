@@ -1,0 +1,52 @@
+# ── Dipendenze ────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── File di ambiente (CONTENGONO SEGRETI - non caricare mai) ──
+.env
+.env.local
+.env.production
+.env.*.local
+frontend/.env
+
+# ── Database locale ────────────────────────────────────────
+backend/dev.db
+backend/dev.db-journal
+backend/*.db
+backend/*.db-journal
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/*.db
+**/*.db
+**/*.db-journal
+
+# ── Build e output ─────────────────────────────────────────
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# ── Prisma engine binaries ─────────────────────────────────
+backend/node_modules/.prisma/
+*.dll.node
+
+# ── Log ───────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Editor e OS ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Cache ─────────────────────────────────────────────────
+.cache/
+.turbo/
+.eslintcache
+*.tsbuildinfo

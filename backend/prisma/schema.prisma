@@ -1,0 +1,450 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ===== RISTORANTE =====
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  address     String?
+  phone       String?
+  email       String?
+  logo        String?
+  coverImage  String?
+  description String?
+  currency    String   @default("EUR")
+  timezone    String   @default("Europe/Rome")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users          User[]
+  tables         Table[]
+  menuCategories MenuCategory[]
+  menuItems      MenuItem[]
+  orders         Order[]
+  reservations   Reservation[]
+  customers      Customer[]
+  shifts         Shift[]
+  inventory      InventoryItem[]
+  settings       RestaurantSettings?
+  loyaltyTiers   LoyaltyTier[]
+  campaigns      Campaign[]
+  waitlist       WaitlistEntry[]
+}
+
+model RestaurantSettings {
+  id               String  @id @default(cuid())
+  restaurantId     String  @unique
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  openTime         String  @default("12:00")
+  closeTime        String  @default("23:00")
+  maxCoversPerSlot Int     @default(20)
+  reservationSlotMinutes Int @default(90)
+  taxRate          Float   @default(10.0)
+  serviceCharge    Float   @default(0.0)
+  autoConfirmReservations Boolean @default(true)
+  noShowDepositRequired   Boolean @default(false)
+  depositAmount    Float   @default(0.0)
+}
+
+// ===== UTENTI =====
+model User {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  email        String
+  password     String
+  role         UserRole @default(WAITER)
+  avatar       String?
+  phone        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders       Order[]
+  shifts       Shift[]
+
+  @@unique([restaurantId, email])
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  WAITER
+  KITCHEN
+  CASHIER
+}
+
+// ===== TAVOLI =====
+model Table {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  number       Int
+  name         String?
+  seats        Int        @default(4)
+  status       TableStatus @default(FREE)
+  posX         Float      @default(0)
+  posY         Float      @default(0)
+  shape        TableShape @default(SQUARE)
+  area         String?
+  qrCode       String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  orders       Order[]
+  reservations Reservation[]
+
+  @@unique([restaurantId, number])
+}
+
+enum TableStatus {
+  FREE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+enum TableShape {
+  SQUARE
+  ROUND
+  RECTANGLE
+}
+
+// ===== MENU =====
+model MenuCategory {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  description  String?
+  image        String?
+  sortOrder    Int        @default(0)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  items        MenuItem[]
+}
+
+model MenuItem {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  categoryId   String
+  category     MenuCategory @relation(fields: [categoryId], references: [id])
+  name         String
+  description  String?
+  price        Float
+  image        String?
+  allergens    String?
+  calories     Int?
+  preparationTime Int?
+  available    Boolean    @default(true)
+  featured     Boolean    @default(false)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  orderItems   OrderItem[]
+  inventoryLinks InventoryItemLink[]
+}
+
+// ===== ORDINI =====
+model Order {
+  id           String      @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  tableId      String?
+  table        Table?      @relation(fields: [tableId], references: [id])
+  waiterId     String?
+  waiter       User?       @relation(fields: [waiterId], references: [id])
+  customerId   String?
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  status       OrderStatus @default(PENDING)
+  type         OrderType   @default(DINE_IN)
+  notes        String?
+  subtotal     Float       @default(0)
+  tax          Float       @default(0)
+  serviceCharge Float      @default(0)
+  discount     Float       @default(0)
+  total        Float       @default(0)
+  paidAt              DateTime?
+  paymentMethod       PaymentMethod?
+  stripeSessionId     String?
+  stripePaymentIntent String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id])
+  menuItemId String
+  menuItem   MenuItem    @relation(fields: [menuItemId], references: [id])
+  quantity   Int         @default(1)
+  unitPrice  Float
+  notes      String?
+  status     ItemStatus  @default(PENDING)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  SERVED
+  PAID
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum ItemStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  VOUCHER
+  DIGITAL
+  STRIPE
+}
+
+// ===== PRENOTAZIONI =====
+model Reservation {
+  id           String            @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id])
+  tableId      String?
+  table        Table?            @relation(fields: [tableId], references: [id])
+  customerId   String?
+  customer     Customer?         @relation(fields: [customerId], references: [id])
+  guestName    String
+  guestPhone   String
+  guestEmail   String?
+  covers       Int               @default(2)
+  date         DateTime
+  duration     Int               @default(90)
+  status       ReservationStatus @default(CONFIRMED)
+  notes        String?
+  internalNotes String?
+  reminderSent Boolean          @default(false)
+  depositPaid             Boolean   @default(false)
+  depositStripeSessionId  String?
+  depositAmountPaid       Float?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ===== CLIENTI (CRM) =====
+model Customer {
+  id             String   @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  name           String
+  email          String?
+  phone          String?
+  birthdate      DateTime?
+  notes          String?
+  allergens      String?
+  loyaltyPoints  Int      @default(0)
+  totalVisits    Int      @default(0)
+  totalSpent     Float    @default(0)
+  lastVisit      DateTime?
+  loyaltyTierId  String?
+  loyaltyTier    LoyaltyTier? @relation(fields: [loyaltyTierId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders              Order[]
+  reservations        Reservation[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@unique([restaurantId, email])
+}
+
+// ===== PERSONALE - TURNI =====
+model Shift {
+  id           String      @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  date         DateTime
+  startTime    String
+  endTime      String
+  role         String?
+  notes        String?
+  status       ShiftStatus @default(SCHEDULED)
+  clockIn      DateTime?
+  clockOut     DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  ABSENT
+}
+
+// ===== FEDELTÀ =====
+model LoyaltyTier {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  minPoints    Int        @default(0)
+  color        String     @default("#94a3b8")
+  benefits     String?
+  discountPct  Float      @default(0)
+  cashbackPct  Float      @default(0)
+  pointsPerEuro Float     @default(1)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  customers    Customer[]
+}
+
+model LoyaltyTransaction {
+  id           String                  @id @default(cuid())
+  restaurantId String
+  customerId   String
+  customer     Customer                @relation(fields: [customerId], references: [id])
+  type         LoyaltyTransactionType
+  points       Int
+  description  String?
+  orderId      String?
+  createdAt    DateTime                @default(now())
+}
+
+enum LoyaltyTransactionType {
+  EARNED
+  REDEEMED
+  EXPIRED
+  BONUS
+  ADJUSTMENT
+}
+
+// ===== MARKETING =====
+model Campaign {
+  id             String         @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant     @relation(fields: [restaurantId], references: [id])
+  name           String
+  type           CampaignType
+  status         CampaignStatus @default(DRAFT)
+  subject        String?
+  message        String
+  targetFilter   String?
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  recipientCount Int            @default(0)
+  discountCode   String?
+  discountPct    Float?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+enum CampaignType {
+  EMAIL
+  SMS
+  BIRTHDAY
+  WIN_BACK
+  PROMOTION
+  NEWS
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  CANCELLED
+}
+
+// ===== LISTA D'ATTESA =====
+model WaitlistEntry {
+  id            String        @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  guestName     String
+  guestPhone    String
+  guestEmail    String?
+  covers        Int           @default(2)
+  requestedDate DateTime
+  notes         String?
+  status        WaitlistStatus @default(WAITING)
+  notifiedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum WaitlistStatus {
+  WAITING
+  NOTIFIED
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+}
+
+// ===== INVENTARIO =====
+model InventoryItem {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  unit         String
+  quantity     Float    @default(0)
+  minQuantity  Float    @default(0)
+  cost         Float    @default(0)
+  supplier     String?
+  category     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  menuLinks    InventoryItemLink[]
+}
+
+model InventoryItemLink {
+  id              String        @id @default(cuid())
+  menuItemId      String
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  quantity        Float         @default(1)
+
+  @@unique([menuItemId, inventoryItemId])
+}

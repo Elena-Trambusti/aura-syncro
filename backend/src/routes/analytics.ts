@@ -1,0 +1,161 @@
+import { Router, Response } from 'express'
+import { prisma } from '../lib/prisma'
+import { AuthRequest } from '../middleware/auth'
+
+export const analyticsRouter = Router()
+
+analyticsRouter.get('/dashboard', async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+  const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+
+  const [
+    todayOrders,
+    todayRevenue,
+    monthRevenue,
+    lastMonthRevenue,
+    totalCustomers,
+    todayReservations,
+    activeOrders,
+    lowStockItems,
+  ] = await Promise.all([
+    prisma.order.count({ where: { restaurantId, createdAt: { gte: today, lt: tomorrow }, status: { notIn: ['CANCELLED'] } } }),
+    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: today, lt: tomorrow } }, _sum: { total: true } }),
+    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: thisMonthStart } }, _sum: { total: true } }),
+    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: lastMonthStart, lte: lastMonthEnd } }, _sum: { total: true } }),
+    prisma.customer.count({ where: { restaurantId } }),
+    prisma.reservation.count({ where: { restaurantId, date: { gte: today, lt: tomorrow }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } } }),
+    prisma.order.count({ where: { restaurantId, status: { notIn: ['PAID', 'CANCELLED'] } } }),
+    prisma.inventoryItem.count({ where: { restaurantId, quantity: { lte: prisma.inventoryItem.fields.minQuantity } } }),
+  ])
+
+  const revenueGrowth = lastMonthRevenue._sum.total
+    ? (((monthRevenue._sum.total || 0) - lastMonthRevenue._sum.total) / lastMonthRevenue._sum.total) * 100
+    : 0
+
+  res.json({
+    today: {
+      orders: todayOrders,
+      revenue: todayRevenue._sum.total || 0,
+      reservations: todayReservations,
+      activeOrders,
+    },
+    month: {
+      revenue: monthRevenue._sum.total || 0,
+      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+    },
+    totals: { customers: totalCustomers, lowStockAlerts: lowStockItems },
+  })
+})
+
+analyticsRouter.get('/revenue', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { period = '7d' } = req.query
+  const restaurantId = req.restaurantId!
+
+  const days = period === '30d' ? 30 : period === '90d' ? 90 : 7
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+  startDate.setHours(0, 0, 0, 0)
+
+  const orders = await prisma.order.findMany({
+    where: {
+      restaurantId,
+      status: 'PAID',
+      createdAt: { gte: startDate },
+    },
+    select: { total: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  const groupedByDay: Record<string, { revenue: number; orders: number }> = {}
+  for (let i = 0; i < days; i++) {
+    const d = new Date(startDate)
+    d.setDate(d.getDate() + i)
+    const key = d.toISOString().split('T')[0]
+    groupedByDay[key] = { revenue: 0, orders: 0 }
+  }
+
+  orders.forEach((order: { createdAt: Date; total: number }) => {
+    const key = order.createdAt.toISOString().split('T')[0]
+    if (groupedByDay[key]) {
+      groupedByDay[key].revenue += order.total
+      groupedByDay[key].orders += 1
+    }
+  })
+
+  const data = Object.entries(groupedByDay).map(([date, values]) => ({
+    date,
+    revenue: Math.round(values.revenue * 100) / 100,
+    orders: values.orders,
+  }))
+
+  res.json(data)
+})
+
+analyticsRouter.get('/top-items', async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const items = await prisma.orderItem.groupBy({
+    by: ['menuItemId'],
+    where: { order: { restaurantId, status: 'PAID', createdAt: { gte: thirtyDaysAgo } } },
+    _sum: { quantity: true },
+    _count: { id: true },
+    orderBy: { _sum: { quantity: 'desc' } },
+    take: 10,
+  })
+
+  const menuItems = await prisma.menuItem.findMany({
+    where: { id: { in: items.map((i: { menuItemId: string }) => i.menuItemId) } },
+    select: { id: true, name: true, price: true, category: { select: { name: true } } },
+  })
+
+  const result = items.map((item: { menuItemId: string; _sum: { quantity: number | null } }) => {
+    const menuItem = menuItems.find((m: { id: string; name: string; price: number; category: { name: string } }) => m.id === item.menuItemId)
+    return {
+      menuItemId: item.menuItemId,
+      name: menuItem?.name || 'Sconosciuto',
+      category: menuItem?.category.name || '',
+      price: menuItem?.price || 0,
+      quantity: item._sum.quantity || 0,
+      revenue: (menuItem?.price || 0) * (item._sum.quantity || 0),
+    }
+  })
+
+  res.json(result)
+})
+
+analyticsRouter.get('/hourly', async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  const orders = await prisma.order.findMany({
+    where: { restaurantId, status: 'PAID', createdAt: { gte: sevenDaysAgo } },
+    select: { createdAt: true, total: true },
+  })
+
+  const byHour: Record<number, { revenue: number; orders: number }> = {}
+  for (let h = 0; h < 24; h++) byHour[h] = { revenue: 0, orders: 0 }
+
+  orders.forEach((order: { createdAt: Date; total: number }) => {
+    const hour = order.createdAt.getHours()
+    byHour[hour].revenue += order.total
+    byHour[hour].orders += 1
+  })
+
+  const data = Object.entries(byHour).map(([hour, values]) => ({
+    hour: `${String(hour).padStart(2, '0')}:00`,
+    revenue: Math.round(values.revenue * 100) / 100,
+    orders: values.orders,
+  }))
+
+  res.json(data)
+})
