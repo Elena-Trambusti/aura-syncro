@@ -2,9 +2,14 @@ import { io, Socket } from 'socket.io-client'
 
 let socket: Socket | null = null
 
+function getSocketUrl(): string | undefined {
+  const envUrl = import.meta.env.VITE_API_URL as string | undefined
+  return envUrl ? envUrl.replace(/\/$/, '') : undefined
+}
+
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io('/', {
+    socket = io(getSocketUrl() ?? '/', {
       auth: { token: localStorage.getItem('token') },
       autoConnect: false,
     })

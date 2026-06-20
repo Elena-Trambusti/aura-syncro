@@ -2,8 +2,16 @@ import axios from 'axios'
 
 const RESTAURANT_ID_KEY = 'restaurantId'
 
+function getApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL as string | undefined
+  if (envUrl) {
+    return `${envUrl.replace(/\/$/, '')}/api`
+  }
+  return '/api'
+}
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
 })
 

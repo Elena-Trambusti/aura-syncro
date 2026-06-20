@@ -66,7 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token')
-    if (!storedToken) return
+    if (!storedToken) {
+      setIsLoading(false)
+      return
+    }
     api.get('/auth/me')
       .then(res => {
         setUser(res.data.user)
