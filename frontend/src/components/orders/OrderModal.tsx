@@ -253,15 +253,38 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     </div>
   )
 
+  const showFloatingCheckout = tab === 'menu' && cartCount > 0
+  const scrollPadMobile = cartCount > 0 ? 'pb-24 lg:pb-4' : 'pb-4'
+
+  const floatingCheckoutBar = showFloatingCheckout ? (
+    <button
+      type="button"
+      onClick={() => setTab('order')}
+      className={cn(
+        'lg:hidden fixed bottom-0 left-0 w-full z-50',
+        'bg-amber-500 text-white shadow-lg rounded-t-2xl',
+        'flex items-center justify-between gap-3 px-4 py-4',
+        'pb-[max(1rem,env(safe-area-inset-bottom))]',
+        'active:bg-amber-600 transition-colors',
+      )}
+      aria-label={t('orderModal.goToOrder')}
+    >
+      <span className="text-sm font-semibold tabular-nums">
+        {t('orderModal.floatingSummary', { count: cartCount, total: formatCurrency(cartTotal) })}
+      </span>
+      <span className="text-sm font-bold shrink-0">{t('orderModal.goToOrder')}</span>
+    </button>
+  ) : null
+
   const cartPanel = showCart ? (
-    <>
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="p-3 border-b border-slate-200 shrink-0 bg-white">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-semibold text-slate-900">{t('orderModal.cartTitle', { count: cartCount })}</span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2', scrollPadMobile)}>
         {cart.map(item => (
           <div key={item.menuItemId} className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
@@ -280,7 +303,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </div>
         ))}
       </div>
-      <div className="shrink-0 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(15,23,42,0.06)]">
+      <div className="sticky bottom-0 z-50 shrink-0 border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(15,23,42,0.08)]">
         <div className="flex justify-between text-sm font-bold text-slate-900 mb-3">
           <span>{t('orderModal.total')}</span>
           <span>{formatCurrency(cartTotal)}</span>
@@ -289,11 +312,11 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           type="button"
           onClick={handleSendOrder}
           disabled={createOrder.isPending || addToOrder.isPending}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-60"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-60"
         >
           {t('orderModal.sendToKitchen')}
         </button>
-        {activeOrder && (
+        {activeOrder && cart.length === 0 && (
           <button
             type="button"
             onClick={() => setTab('order')}
@@ -303,12 +326,12 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </button>
         )}
       </div>
-    </>
+    </div>
   ) : null
 
   const checkoutPanel = showCheckout ? (
-    <div className="flex flex-1 min-h-0 flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+      <div className={cn('flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 pb-24 lg:pb-4')}>
         <div className="space-y-6 max-w-lg mx-auto">
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-500">{t('orderModal.orderRef', { ref: activeOrder!.id.slice(-6).toUpperCase() })}</span>
@@ -466,7 +489,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
               ))}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4">
+            <div className={cn('flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4', scrollPadMobile)}>
               <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 {(currentCategory?.items || []).filter(i => i.available).map(item => {
                   const inCart = cart.find(c => c.menuItemId === item.id)
@@ -520,6 +543,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             {orderEmptyPanel}
           </div>
         </div>
+        {floatingCheckoutBar}
       </div>
     </div>
   )

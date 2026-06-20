@@ -503,6 +503,8 @@
     "orderRef": "Order #{{ref}}",
     "sendToKitchen": "Send to kitchen",
     "goToPayment": "Go to payment →",
+    "goToOrder": "Go to order →",
+    "floatingSummary": "{{count}} items • {{total}}",
     "addMoreDishes": "+ Add more dishes",
     "noOpenOrder": "No open order",
     "openMenuToOrder": "Open the menu to order",

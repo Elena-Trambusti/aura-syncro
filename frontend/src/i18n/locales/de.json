@@ -488,6 +488,8 @@
     "orderRef": "Bestellung #{{ref}}",
     "sendToKitchen": "An Küche senden",
     "goToPayment": "Zur Zahlung →",
+    "goToOrder": "Zur Bestellung →",
+    "floatingSummary": "{{count}} Gerichte • {{total}}",
     "addMoreDishes": "+ Weitere Gerichte hinzufügen",
     "noOpenOrder": "Keine offene Bestellung",
     "openMenuToOrder": "Speisekarte öffnen zum Bestellen",

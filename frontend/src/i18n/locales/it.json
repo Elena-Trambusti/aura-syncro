@@ -505,6 +505,8 @@
     "orderRef": "Ordine #{{ref}}",
     "sendToKitchen": "Invia in cucina",
     "goToPayment": "Vai al pagamento →",
+    "goToOrder": "Vai all'ordine →",
+    "floatingSummary": "{{count}} piatti • {{total}}",
     "addMoreDishes": "+ Aggiungi altri piatti",
     "noOpenOrder": "Nessun ordine aperto",
     "openMenuToOrder": "Apri il menu per ordinare",
