@@ -61,6 +61,7 @@
     "reservations": "Reservations",
     "menu": "Menu",
     "customers": "CRM Customers",
+    "crm": "CRM Customers",
     "ai": "Predictive AI",
     "loyalty": "Loyalty",
     "marketing": "Marketing",
@@ -254,6 +255,48 @@
     "guests": "guests",
     "noReservations": "No reservations"
   },
+  "crm": {
+    "title": "Customer CRM",
+    "subtitle": "Recognize every guest at the table — tags, allergies and spending history",
+    "newCustomer": "New Customer",
+    "created": "Customer created successfully",
+    "saveError": "Error while saving",
+    "firstNameRequired": "First name is required",
+    "noCustomers": "No customers found",
+    "neverVisited": "Never",
+    "searchPlaceholder": "Search by name, email, phone or tag...",
+    "stats": {
+      "total": "Total Customers",
+      "avgSpent": "Average Spend",
+      "vip": "VIP Customers"
+    },
+    "table": {
+      "customer": "Customer",
+      "tags": "Tags",
+      "visits": "Visits",
+      "spent": "Total spent",
+      "lastVisit": "Last visit"
+    },
+    "form": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "tags": "Tags",
+      "tagsPlaceholder": "VIP, Celiac, Red Wine (comma separated)",
+      "notes": "Notes / Preferences"
+    },
+    "slideOver": {
+      "title": "Customer Profile",
+      "tags": "Tags & preferences",
+      "totalVisits": "Total visits",
+      "totalSpent": "Total spent",
+      "loyaltyPoints": "Loyalty points",
+      "lastVisit": "Last visit",
+      "allergens": "Allergies & intolerances",
+      "notes": "Waiter notes",
+      "spendingHistory": "Spending history",
+      "noOrders": "No paid orders recorded"
+    }
+  },
   "customers": {
     "title": "CRM Customers",
     "subtitle": "Customer and contact management",
@@ -294,12 +337,31 @@
     "pointsUpdated": "Points updated"
   },
   "marketing": {
-    "title": "Marketing & Campaigns",
-    "subtitle": "Email and promotions",
+    "title": "Marketing Automation",
+    "subtitle": "Smart automations to retain and re-engage customers",
     "newCampaign": "New Campaign",
     "campaignCreated": "Campaign created",
     "campaignSent": "Campaign sent!",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "automations": {
+      "sectionTitle": "Active automations",
+      "sectionSubtitle": "Toggle automation rules on or off. Messages will be sent via email/SMS in production.",
+      "templateLabel": "Message template",
+      "saved": "Automation updated",
+      "saveError": "Failed to save automation",
+      "birthday": {
+        "title": "Happy Birthday",
+        "description": "Send a message 3 days before the birthday offering a complimentary dessert."
+      },
+      "winBack": {
+        "title": "Win-back",
+        "description": "Reach guests who haven't booked in over 60 days with a personalized invite."
+      },
+      "vipThanks": {
+        "title": "VIP Thank You",
+        "description": "Send a thank-you message the day after a guest spends over €200."
+      }
+    }
   },
   "reports": {
     "title": "Reports & Accounting",

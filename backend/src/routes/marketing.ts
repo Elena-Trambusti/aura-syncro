@@ -4,8 +4,51 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { ensureMarketingAutomations } from '../lib/marketingAutomations'
+import { AutomationType } from '@prisma/client'
 
 export const marketingRouter = Router()
+
+// ── Automazioni marketing ─────────────────────────────────────────────────────
+
+marketingRouter.get('/automations', async (req: AuthRequest, res: Response): Promise<void> => {
+  const automations = await ensureMarketingAutomations(req.restaurantId!)
+  res.json(automations)
+})
+
+marketingRouter.put('/automations/:type', async (req: AuthRequest, res: Response): Promise<void> => {
+  const typeSchema = z.nativeEnum(AutomationType)
+  const typeResult = typeSchema.safeParse(req.params.type)
+  if (!typeResult.success) {
+    res.status(400).json({ error: 'Tipo automazione non valido' })
+    return
+  }
+
+  const schema = z.object({
+    isActive: z.boolean().optional(),
+    messageTemplate: z.string().min(1).optional(),
+  })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
+    return
+  }
+
+  await ensureMarketingAutomations(req.restaurantId!)
+  const updated = await prisma.marketingAutomation.updateMany({
+    where: { restaurantId: req.restaurantId!, type: typeResult.data },
+    data: result.data,
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Automazione non trovata')
+    return
+  }
+
+  const automation = await prisma.marketingAutomation.findFirst({
+    where: { restaurantId: req.restaurantId!, type: typeResult.data },
+  })
+  res.json(automation)
+})
 
 // ── Campagne ──────────────────────────────────────────────────────────────────
 

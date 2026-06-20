@@ -154,10 +154,30 @@ async function main() {
 
   // Clienti demo
   const customersData = [
-    { name: 'Giovanni Ricci', email: 'giovanni.ricci@email.it', phone: '+39 333 1234567', totalVisits: 12, totalSpent: 480, loyaltyPoints: 240 },
-    { name: 'Maria Lombardi', email: 'maria.lombardi@email.it', phone: '+39 347 7654321', totalVisits: 8, totalSpent: 320, loyaltyPoints: 160 },
-    { name: 'Francesco Marino', email: 'f.marino@email.it', phone: '+39 320 9876543', totalVisits: 3, totalSpent: 95, loyaltyPoints: 47 },
-    { name: 'Alessia Costa', email: 'a.costa@email.it', phone: '+39 388 4567890', totalVisits: 25, totalSpent: 1200, loyaltyPoints: 600 },
+    {
+      firstName: 'Giovanni', lastName: 'Ricci', name: 'Giovanni Ricci',
+      email: 'giovanni.ricci@email.it', phone: '+39 333 1234567',
+      totalVisits: 12, totalSpent: 480, loyaltyPoints: 240,
+      tags: ['VIP', 'Vino Rosso'],
+    },
+    {
+      firstName: 'Maria', lastName: 'Lombardi', name: 'Maria Lombardi',
+      email: 'maria.lombardi@email.it', phone: '+39 347 7654321',
+      totalVisits: 8, totalSpent: 320, loyaltyPoints: 160,
+      tags: ['Celiaco'],
+    },
+    {
+      firstName: 'Francesco', lastName: 'Marino', name: 'Francesco Marino',
+      email: 'f.marino@email.it', phone: '+39 320 9876543',
+      totalVisits: 3, totalSpent: 95, loyaltyPoints: 47,
+      tags: [],
+    },
+    {
+      firstName: 'Alessia', lastName: 'Costa', name: 'Alessia Costa',
+      email: 'a.costa@email.it', phone: '+39 388 4567890',
+      totalVisits: 25, totalSpent: 1200, loyaltyPoints: 600,
+      tags: ['VIP'],
+    },
   ]
 
   for (const c of customersData) {

@@ -49,7 +49,8 @@ model Restaurant {
   inventory      InventoryItem[]
   settings       RestaurantSettings?
   loyaltyTiers   LoyaltyTier[]
-  campaigns      Campaign[]
+  campaigns            Campaign[]
+  marketingAutomations MarketingAutomation[]
   waitlist       WaitlistEntry[]
 }
 
@@ -294,12 +295,15 @@ model Customer {
   id             String   @id @default(cuid())
   restaurantId   String
   restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  firstName      String   @default("")
+  lastName       String   @default("")
   name           String
   email          String?
   phone          String?
   birthdate      DateTime?
   notes          String?
   allergens      String?
+  tags           String[] @default([])
   loyaltyPoints  Int      @default(0)
   totalVisits    Int      @default(0)
   totalSpent     Float    @default(0)
@@ -415,6 +419,25 @@ enum CampaignStatus {
   SCHEDULED
   SENT
   CANCELLED
+}
+
+enum AutomationType {
+  BIRTHDAY
+  WIN_BACK
+  VIP_THANKS
+}
+
+model MarketingAutomation {
+  id              String         @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant     @relation(fields: [restaurantId], references: [id])
+  type            AutomationType
+  isActive        Boolean        @default(false)
+  messageTemplate String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([restaurantId, type])
 }
 
 // ===== LISTA D'ATTESA =====

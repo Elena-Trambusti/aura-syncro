@@ -61,6 +61,7 @@
     "reservations": "Reservierungen",
     "menu": "Speisekarte",
     "customers": "CRM-Kunden",
+    "crm": "CRM-Kunden",
     "ai": "Predictive KI",
     "loyalty": "Treueprogramm",
     "marketing": "Marketing",
@@ -239,6 +240,48 @@
     "guests": "Gäste",
     "noReservations": "Keine Reservierungen"
   },
+  "crm": {
+    "title": "Kunden-CRM",
+    "subtitle": "Erkennen Sie jeden Gast am Tisch — Tags, Allergien und Ausgabeverlauf",
+    "newCustomer": "Neuer Kunde",
+    "created": "Kunde erfolgreich erstellt",
+    "saveError": "Fehler beim Speichern",
+    "firstNameRequired": "Vorname ist erforderlich",
+    "noCustomers": "Keine Kunden gefunden",
+    "neverVisited": "Nie",
+    "searchPlaceholder": "Suche nach Name, E-Mail, Telefon oder Tag...",
+    "stats": {
+      "total": "Kunden Gesamt",
+      "avgSpent": "Durchschnittsausgabe",
+      "vip": "VIP-Kunden"
+    },
+    "table": {
+      "customer": "Kunde",
+      "tags": "Tags",
+      "visits": "Besuche",
+      "spent": "Gesamt ausgegeben",
+      "lastVisit": "Letzter Besuch"
+    },
+    "form": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "tags": "Tags",
+      "tagsPlaceholder": "VIP, Zöliakie, Rotwein (durch Komma getrennt)",
+      "notes": "Notizen / Präferenzen"
+    },
+    "slideOver": {
+      "title": "Kundenprofil",
+      "tags": "Tags & Präferenzen",
+      "totalVisits": "Besuche gesamt",
+      "totalSpent": "Gesamt ausgegeben",
+      "loyaltyPoints": "Treuepunkte",
+      "lastVisit": "Letzter Besuch",
+      "allergens": "Allergien & Unverträglichkeiten",
+      "notes": "Kellnernotizen",
+      "spendingHistory": "Ausgabeverlauf",
+      "noOrders": "Keine bezahlten Bestellungen erfasst"
+    }
+  },
   "customers": {
     "title": "CRM-Kunden",
     "subtitle": "Kunden- und Kontaktverwaltung",
@@ -279,12 +322,31 @@
     "pointsUpdated": "Punkte aktualisiert"
   },
   "marketing": {
-    "title": "Marketing & Kampagnen",
-    "subtitle": "E-Mail und Aktionen",
+    "title": "Marketing-Automatisierung",
+    "subtitle": "Intelligente Automatisierungen zur Kundenbindung und Reaktivierung",
     "newCampaign": "Neue Kampagne",
     "campaignCreated": "Kampagne erstellt",
     "campaignSent": "Kampagne gesendet!",
-    "deleted": "Gelöscht"
+    "deleted": "Gelöscht",
+    "automations": {
+      "sectionTitle": "Aktive Automatisierungen",
+      "sectionSubtitle": "Automatisierungsregeln ein- oder ausschalten. Nachrichten werden in Produktion per E-Mail/SMS versendet.",
+      "templateLabel": "Nachrichtenvorlage",
+      "saved": "Automatisierung aktualisiert",
+      "saveError": "Fehler beim Speichern der Automatisierung",
+      "birthday": {
+        "title": "Alles Gute zum Geburtstag",
+        "description": "Senden Sie 3 Tage vor dem Geburtstag eine Nachricht mit einem Gratis-Dessert."
+      },
+      "winBack": {
+        "title": "Kundenrückgewinnung (Win-back)",
+        "description": "Kontaktieren Sie Gäste, die seit über 60 Tagen nicht gebucht haben, mit einer persönlichen Einladung."
+      },
+      "vipThanks": {
+        "title": "VIP-Dankeschön",
+        "description": "Nachricht am Tag danach an Gäste, die an einem Abend über 200€ ausgegeben haben."
+      }
+    }
   },
   "reports": {
     "title": "Berichte & Buchhaltung",

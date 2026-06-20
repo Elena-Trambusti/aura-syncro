@@ -61,6 +61,7 @@
     "reservations": "Reservas",
     "menu": "Menú",
     "customers": "Clientes CRM",
+    "crm": "CRM Clientes",
     "ai": "IA Predictiva",
     "loyalty": "Fidelización",
     "marketing": "Marketing",
@@ -254,6 +255,48 @@
     "guests": "comensales",
     "noReservations": "Sin reservas"
   },
+  "crm": {
+    "title": "CRM Clientes",
+    "subtitle": "Reconoce a cada comensal en la mesa — etiquetas, alergias e historial de gasto",
+    "newCustomer": "Nuevo Cliente",
+    "created": "Cliente creado con éxito",
+    "saveError": "Error al guardar",
+    "firstNameRequired": "El nombre es obligatorio",
+    "noCustomers": "No se encontraron clientes",
+    "neverVisited": "Nunca",
+    "searchPlaceholder": "Buscar por nombre, email, teléfono o etiqueta...",
+    "stats": {
+      "total": "Clientes Totales",
+      "avgSpent": "Gasto Medio",
+      "vip": "Clientes VIP"
+    },
+    "table": {
+      "customer": "Cliente",
+      "tags": "Etiquetas",
+      "visits": "Visitas",
+      "spent": "Total gastado",
+      "lastVisit": "Última visita"
+    },
+    "form": {
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "tags": "Etiquetas",
+      "tagsPlaceholder": "VIP, Celíaco, Vino Tinto (separados por coma)",
+      "notes": "Notas / Preferencias"
+    },
+    "slideOver": {
+      "title": "Ficha del Cliente",
+      "tags": "Etiquetas y preferencias",
+      "totalVisits": "Visitas totales",
+      "totalSpent": "Total gastado",
+      "loyaltyPoints": "Puntos de fidelidad",
+      "lastVisit": "Última visita",
+      "allergens": "Alergias e intolerancias",
+      "notes": "Notas del camarero",
+      "spendingHistory": "Historial de gastos",
+      "noOrders": "No hay pedidos pagados registrados"
+    }
+  },
   "customers": {
     "title": "Clientes CRM",
     "subtitle": "Gestión de clientes y contactos",
@@ -294,12 +337,31 @@
     "pointsUpdated": "Puntos actualizados"
   },
   "marketing": {
-    "title": "Marketing y Campañas",
-    "subtitle": "Email y promociones",
+    "title": "Marketing Automático",
+    "subtitle": "Automatizaciones inteligentes para fidelizar y reactivar clientes",
     "newCampaign": "Nueva Campaña",
     "campaignCreated": "Campaña creada",
     "campaignSent": "¡Campaña enviada!",
-    "deleted": "Eliminada"
+    "deleted": "Eliminada",
+    "automations": {
+      "sectionTitle": "Automatizaciones activas",
+      "sectionSubtitle": "Activa o desactiva las reglas automáticas. Los mensajes se enviarán por email/SMS en producción.",
+      "templateLabel": "Plantilla del mensaje",
+      "saved": "Automatización actualizada",
+      "saveError": "Error al guardar la automatización",
+      "birthday": {
+        "title": "Feliz Cumpleaños",
+        "description": "Envía un mensaje 3 días antes del cumpleaños ofreciendo un postre de cortesía."
+      },
+      "winBack": {
+        "title": "Recuperación de Clientes (Win-back)",
+        "description": "Contacta a quienes no reservan desde hace más de 60 días con una invitación personalizada."
+      },
+      "vipThanks": {
+        "title": "Agradecimiento VIP",
+        "description": "Mensaje al día siguiente a quien haya gastado más de 200€ en una sola noche."
+      }
+    }
   },
   "reports": {
     "title": "Informes y Contabilidad",

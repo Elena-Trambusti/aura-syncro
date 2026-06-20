@@ -16,7 +16,7 @@ import TablesPage from './pages/TablesPage'
 import OrdersPage from './pages/OrdersPage'
 import MenuPage from './pages/MenuPage'
 import ReservationsPage from './pages/ReservationsPage'
-import CustomersPage from './pages/CustomersPage'
+import CrmPage from './pages/CrmPage'
 import StaffPage from './pages/StaffPage'
 import InventoryPage from './pages/InventoryPage'
 import AnalyticsPage from './pages/AnalyticsPage'
@@ -80,7 +80,8 @@ function AppRoutes() {
         <Route path="ordini" element={<OrdersPage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="prenotazioni" element={<ReservationsPage />} />
-        <Route path="clienti" element={<CustomersPage />} />
+        <Route path="crm" element={<CrmPage />} />
+        <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<StaffPage />} />
         <Route path="magazzino" element={<InventoryPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
