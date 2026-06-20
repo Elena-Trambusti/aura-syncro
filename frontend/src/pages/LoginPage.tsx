@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Sparkles, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { BRAND } from '../lib/brand'
+import { formatApiError } from '../lib/errors'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -19,8 +20,7 @@ export default function LoginPage() {
       await login(email, password)
       toast.success('Bentornato su Aura Syncro!')
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } }
-      toast.error(error.response?.data?.error || 'Credenziali non valide')
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }

@@ -36,21 +36,26 @@ if (process.env.NODE_ENV !== 'production') {
   dotenv.config()
 }
 
+import { isOriginAllowed } from './lib/cors'
+
 const app = express()
 const httpServer = createServer(app)
 
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    callback(null, isOriginAllowed(origin))
+  },
+  credentials: true,
+}
+
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    ...corsOptions,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    credentials: true,
   },
 })
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-}))
+app.use(cors(corsOptions))
 
 // Il webhook Stripe richiede il body grezzo (raw) prima di express.json()
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))

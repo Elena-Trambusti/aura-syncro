@@ -1,0 +1,18 @@
+/** Origini CORS consentite (FRONTEND_URL può elencarne più di una, separate da virgola). */
+export function getAllowedOrigins(): string[] {
+  const defaults = ['http://localhost:5173', 'https://aura-syncro.vercel.app']
+  const fromEnv = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean)
+  return [...new Set([...defaults, ...fromEnv])]
+}
+
+export function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true
+  const allowed = getAllowedOrigins()
+  if (allowed.includes(origin)) return true
+  // Preview deploy Vercel: https://aura-syncro-xxx.vercel.app
+  if (/^https:\/\/aura-syncro[a-z0-9-]*\.vercel\.app$/i.test(origin)) return true
+  return false
+}
