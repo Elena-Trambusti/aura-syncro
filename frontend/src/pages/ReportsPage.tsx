@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -71,6 +72,12 @@ export default function ReportsPage() {
           <p className="text-slate-500 text-sm mt-1">P&L, food cost e analisi margini</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/report/fiscal"
+            className="flex items-center gap-1.5 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-sm font-medium text-orange-700 hover:bg-orange-100 transition-colors"
+          >
+            📄 Report Fiscal ES
+          </Link>
           <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>

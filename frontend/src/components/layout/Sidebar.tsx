@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain,
+  ChefHat, Star, Megaphone,   FileText, CreditCard, Brain, Scale,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth } from '../../contexts/AuthContext'
@@ -18,7 +18,8 @@ const navItems = [
   { to: '/fedelta', icon: Star, label: 'Fedeltà' },
   { to: '/marketing', icon: Megaphone, label: 'Marketing' },
   { to: '/pagamenti', icon: CreditCard, label: 'Pagamenti' },
-  { to: '/report', icon: FileText, label: 'Report' },
+  { to: '/report', icon: FileText, label: 'Report', exact: true },
+  { to: '/report/fiscal', icon: Scale, label: 'Report Fiscal', exact: true },
   { to: '/personale', icon: UserCog, label: 'Personale' },
   { to: '/magazzino', icon: Package, label: 'Magazzino' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },

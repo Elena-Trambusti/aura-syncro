@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
-import { getSocket } from '../lib/socket'
+import { getSocket, connectSocket } from '../lib/socket'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -41,9 +41,15 @@ function useElapsedMinutes(createdAt: string) {
   return elapsed
 }
 
-function OrderCard({ order, onItemReady, onOrderReady }: {
+function nextItemStatus(status: string): string | null {
+  if (status === 'PENDING') return 'PREPARING'
+  if (status === 'PREPARING') return 'READY'
+  return null
+}
+
+function OrderCard({ order, onItemStatusChange, onOrderReady }: {
   order: Order
-  onItemReady: (orderId: string, itemId: string) => void
+  onItemStatusChange: (orderId: string, itemId: string, status: string) => void
   onOrderReady: (orderId: string) => void
 }) {
   const elapsed = useElapsedMinutes(order.createdAt)
@@ -86,9 +92,8 @@ function OrderCard({ order, onItemReady, onOrderReady }: {
           <div
             key={item.id}
             onClick={() => {
-              if (item.status === 'PENDING' || item.status === 'PREPARING') {
-                onItemReady(order.id, item.id)
-              }
+              const next = nextItemStatus(item.status)
+              if (next) onItemStatusChange(order.id, item.id, next)
             }}
             className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all ${
               item.status === 'READY' ? 'bg-emerald-900/40 opacity-70' :
@@ -162,11 +167,22 @@ export default function KitchenDisplayPage() {
     refetchInterval: 8000,
   })
 
+  const refreshKitchen = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
+  }, [queryClient])
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) connectSocket(token)
+  }, [])
+
   // WebSocket per aggiornamenti real-time
   useEffect(() => {
     const socket = getSocket()
-    const handler = (order: Order) => {
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
+    if (!socket.connected) socket.connect()
+
+    const onNewOrder = (order: Order) => {
+      refreshKitchen()
       if (order.status === 'PENDING' || order.status === 'CONFIRMED') {
         setNewOrderAlert(true)
         toast('🔔 Nuovo ordine!', {
@@ -176,23 +192,39 @@ export default function KitchenDisplayPage() {
         setTimeout(() => setNewOrderAlert(false), 3000)
       }
     }
-    socket.on('order:created', handler)
-    socket.on('order:updated', () => queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] }))
-    return () => { socket.off('order:created', handler); socket.off('order:updated') }
-  }, [queryClient])
+    const onOrderUpdated = () => refreshKitchen()
 
-  const itemReady = useMutation({
-    mutationFn: ({ orderId, itemId }: { orderId: string; itemId: string }) =>
-      api.patch(`/orders/${orderId}/items/${itemId}/status`, { status: 'READY' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] }),
+    socket.on('order:created', onNewOrder)
+    socket.on('order:updated', onOrderUpdated)
+    return () => {
+      socket.off('order:created', onNewOrder)
+      socket.off('order:updated', onOrderUpdated)
+    }
+  }, [refreshKitchen])
+
+  const updateItemStatus = useMutation({
+    mutationFn: ({ orderId, itemId, status }: { orderId: string; itemId: string; status: string }) =>
+      api.patch(`/orders/${orderId}/items/${itemId}/status`, { status }).then(r => r.data as Order),
+    onSuccess: (updatedOrder: Order) => {
+      queryClient.setQueryData<Order[]>(['kitchen', 'orders'], prev =>
+        prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
+      )
+      refreshKitchen()
+    },
+    onError: () => toast.error('Impossibile aggiornare il piatto'),
   })
 
   const orderReady = useMutation({
-    mutationFn: (orderId: string) => api.patch(`/orders/${orderId}/status`, { status: 'READY' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
+    mutationFn: (orderId: string) =>
+      api.patch(`/orders/${orderId}/status`, { status: 'READY' }).then(r => r.data as Order),
+    onSuccess: (updatedOrder: Order) => {
+      queryClient.setQueryData<Order[]>(['kitchen', 'orders'], prev =>
+        prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
+      )
+      refreshKitchen()
       toast.success('Ordine pronto per il servizio!')
     },
+    onError: () => toast.error('Impossibile segnare l\'ordine come pronto'),
   })
 
   const pending = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED')
@@ -261,7 +293,7 @@ export default function KitchenDisplayPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onItemReady={(oId, iId) => itemReady.mutate({ orderId: oId, itemId: iId })}
+                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
                 onOrderReady={id => orderReady.mutate(id)}
               />
             ))}
@@ -289,7 +321,7 @@ export default function KitchenDisplayPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onItemReady={(oId, iId) => itemReady.mutate({ orderId: oId, itemId: iId })}
+                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
                 onOrderReady={id => orderReady.mutate(id)}
               />
             ))}
@@ -317,7 +349,7 @@ export default function KitchenDisplayPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onItemReady={(oId, iId) => itemReady.mutate({ orderId: oId, itemId: iId })}
+                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
                 onOrderReady={id => orderReady.mutate(id)}
               />
             ))}
@@ -334,7 +366,7 @@ export default function KitchenDisplayPage() {
       {/* Footer con istruzioni */}
       <footer className="px-6 py-2 bg-slate-800 border-t border-slate-700 flex items-center justify-between">
         <p className="text-xs text-slate-500">
-          Clicca su un piatto per segnarlo pronto · Clicca "Segna Tutto Pronto" per completare l'ordine
+          Clicca su un piatto per avanzare lo stato (In attesa → In prep. → Pronto) · "Segna Tutto Pronto" completa l'ordine
         </p>
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-yellow-400 rounded-full" />In attesa</span>

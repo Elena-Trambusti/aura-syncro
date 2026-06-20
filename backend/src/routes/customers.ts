@@ -43,27 +43,45 @@ customersRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<voi
 })
 
 customersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+  const emptyToUndefined = (val: unknown) =>
+    val === '' || val === null || val === undefined ? undefined : val
+
   const schema = z.object({
-    name: z.string().min(2),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    birthdate: z.string().datetime().optional(),
-    notes: z.string().optional(),
-    allergens: z.string().optional(),
+    name: z.string().trim().min(2),
+    email: z.preprocess(emptyToUndefined, z.string().email().optional()),
+    phone: z.preprocess(emptyToUndefined, z.string().optional()),
+    birthdate: z.preprocess(emptyToUndefined, z.string().datetime().optional()),
+    notes: z.preprocess(emptyToUndefined, z.string().optional()),
+    allergens: z.preprocess(emptyToUndefined, z.string().optional()),
   })
   const result = schema.safeParse(req.body)
   if (!result.success) {
-    res.status(400).json({ error: 'Dati non validi' })
+    res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
     return
   }
-  const customer = await prisma.customer.create({
-    data: {
-      ...result.data,
-      restaurantId: req.restaurantId!,
-      ...(result.data.birthdate ? { birthdate: new Date(result.data.birthdate) } : {}),
-    },
-  })
-  res.status(201).json(customer)
+  try {
+    const customer = await prisma.customer.create({
+      data: {
+        name: result.data.name,
+        email: result.data.email,
+        phone: result.data.phone,
+        notes: result.data.notes,
+        allergens: result.data.allergens,
+        restaurantId: req.restaurantId!,
+        totalVisits: 0,
+        totalSpent: 0,
+        loyaltyPoints: 0,
+        ...(result.data.birthdate ? { birthdate: new Date(result.data.birthdate) } : {}),
+      },
+    })
+    res.status(201).json(customer)
+  } catch (err: unknown) {
+    if (typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002') {
+      res.status(409).json({ error: 'Esiste già un cliente con questa email' })
+      return
+    }
+    throw err
+  }
 })
 
 customersRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {

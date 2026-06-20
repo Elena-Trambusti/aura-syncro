@@ -1,19 +1,30 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { startOfLocalDay } from '../lib/dates'
 
 export const analyticsRouter = Router()
 
+/** PAID orders whose payment date (paidAt or createdAt fallback) falls in [start, end). */
+function paidInRange(start: Date, end: Date) {
+  return {
+    status: 'PAID' as const,
+    OR: [
+      { paidAt: { gte: start, lt: end } },
+      { paidAt: null, createdAt: { gte: start, lt: end } },
+    ],
+  }
+}
+
 analyticsRouter.get('/dashboard', async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = startOfLocalDay()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
   const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999)
 
   const [
     todayOrders,
@@ -26,9 +37,9 @@ analyticsRouter.get('/dashboard', async (req: AuthRequest, res: Response): Promi
     lowStockItems,
   ] = await Promise.all([
     prisma.order.count({ where: { restaurantId, createdAt: { gte: today, lt: tomorrow }, status: { notIn: ['CANCELLED'] } } }),
-    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: today, lt: tomorrow } }, _sum: { total: true } }),
-    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: thisMonthStart } }, _sum: { total: true } }),
-    prisma.order.aggregate({ where: { restaurantId, status: 'PAID', createdAt: { gte: lastMonthStart, lte: lastMonthEnd } }, _sum: { total: true } }),
+    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(today, tomorrow) }, _sum: { total: true } }),
+    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(thisMonthStart, tomorrow) }, _sum: { total: true } }),
+    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(lastMonthStart, new Date(lastMonthEnd.getTime() + 1)) }, _sum: { total: true } }),
     prisma.customer.count({ where: { restaurantId } }),
     prisma.reservation.count({ where: { restaurantId, date: { gte: today, lt: tomorrow }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } } }),
     prisma.order.count({ where: { restaurantId, status: { notIn: ['PAID', 'CANCELLED'] } } }),

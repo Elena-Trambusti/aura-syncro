@@ -5,7 +5,7 @@
  * Software proprietario e riservato. Vedere LICENSE per i dettagli.
  * CONFIDENZIALE — NON DISTRIBUIRE
  */
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -23,6 +23,7 @@ import SettingsPage from './pages/SettingsPage'
 import LoyaltyPage from './pages/LoyaltyPage'
 import MarketingPage from './pages/MarketingPage'
 import ReportsPage from './pages/ReportsPage'
+import ReportFiscal from './pages/ReportFiscal'
 import KitchenDisplayPage from './pages/KitchenDisplayPage'
 import PublicMenuPage from './pages/PublicMenuPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
@@ -81,7 +82,10 @@ function AppRoutes() {
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="fedelta" element={<LoyaltyPage />} />
         <Route path="marketing" element={<MarketingPage />} />
-        <Route path="report" element={<ReportsPage />} />
+        <Route path="report" element={<Outlet />}>
+          <Route index element={<ReportsPage />} />
+          <Route path="fiscal" element={<ReportFiscal />} />
+        </Route>
         <Route path="pagamenti" element={<PaymentsPage />} />
         <Route path="ai" element={<AIPage />} />
         <Route path="impostazioni" element={<SettingsPage />} />

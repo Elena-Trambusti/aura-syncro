@@ -2,10 +2,111 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest, authenticate } from '../middleware/auth'
 import { io } from '../index'
+import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
 
 export const paymentsRouter = Router()
+
+const posOrderInclude = {
+  table: true,
+  items: { include: { menuItem: true } },
+}
+
+/** Simula l'invio del pagamento a un terminale POS fisico (Stripe Terminal / SumUp). */
+async function simulatePosTerminal(amount: number): Promise<{
+  success: boolean
+  transactionId: string
+  terminalId: string
+  provider: string
+}> {
+  const delayMs = Number(process.env.POS_SIMULATE_DELAY_MS) || 1200
+  await new Promise(resolve => setTimeout(resolve, delayMs))
+
+  const transactionId = `pos_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  return {
+    success: true,
+    transactionId,
+    terminalId: process.env.POS_TERMINAL_ID || 'SIM-TPV-001',
+    provider: process.env.POS_PROVIDER || 'simulated',
+  }
+}
+
+// ── Checkout POS fisico (protetto) ────────────────────────────────────────────
+paymentsRouter.post('/pos-checkout', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({
+    orderId: z.string(),
+    tipAmount: z.number().min(0).optional().default(0),
+    paymentMethod: z.enum(['CARD', 'CASH']).default('CARD'),
+  })
+
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
+    return
+  }
+
+  const { orderId, tipAmount, paymentMethod } = result.data
+
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, restaurantId: req.restaurantId! },
+  })
+
+  if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  if (order.status === 'PAID') {
+    res.status(400).json({ error: 'Ordine già pagato' })
+    return
+  }
+
+  if (order.status === 'CANCELLED') {
+    res.status(400).json({ error: 'Ordine annullato' })
+    return
+  }
+
+  const split = computePaymentSplit(order, tipAmount)
+
+  const terminalResponse = await simulatePosTerminal(split.total)
+
+  if (!terminalResponse.success) {
+    res.status(502).json({ error: 'Terminale POS non disponibile. Riprova.' })
+    return
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'PAID',
+      paymentMethod,
+      paidAt: split.paidAt,
+      revenueAmount: split.revenueAmount,
+      tipAmount: split.tipAmount,
+      total: split.total,
+    },
+    include: posOrderInclude,
+  })
+
+  await releaseTableIfEmpty(order.tableId)
+
+  io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+
+  res.json({
+    success: true,
+    message: 'Pagamento POS completato',
+    order: updatedOrder,
+    pos: {
+      transactionId: terminalResponse.transactionId,
+      terminalId: terminalResponse.terminalId,
+      provider: terminalResponse.provider,
+      amountCharged: split.total,
+      revenueAmount: split.revenueAmount,
+      tipAmount: split.tipAmount,
+    },
+  })
+})
 
 // ── Checkout pubblico: crea ordine + sessione Stripe ─────────────────────────
 paymentsRouter.post('/checkout', async (req: Request, res: Response): Promise<void> => {
@@ -78,6 +179,8 @@ paymentsRouter.post('/checkout', async (req: Request, res: Response): Promise<vo
       subtotal,
       tax,
       total,
+      revenueAmount: total,
+      tipAmount: 0,
       type: orderData.type,
       notes: orderData.notes,
       status: 'PENDING',

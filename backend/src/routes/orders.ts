@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { io } from '../index'
+import { parseLocalDate } from '../lib/dates'
+import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
 
 export const ordersRouter = Router()
 
@@ -67,6 +69,8 @@ ordersRouter.post('/public', async (req: Request, res: Response): Promise<void> 
       subtotal,
       tax,
       total,
+      revenueAmount: total,
+      tipAmount: 0,
       type: orderData.type,
       notes: orderData.notes,
       status: 'PENDING',
@@ -113,16 +117,32 @@ const orderInclude = {
   },
 }
 
+const itemStatusSchema = z.enum(['PENDING', 'PREPARING', 'READY', 'SERVED', 'CANCELLED'])
+
+async function syncOrderStatusFromItems(orderId: string): Promise<void> {
+  const items = await prisma.orderItem.findMany({ where: { orderId } })
+  const active = items.filter(i => i.status !== 'CANCELLED')
+  if (active.length === 0) return
+
+  const allReady = active.every(i => ['READY', 'SERVED'].includes(i.status))
+  const anyInProgress = active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))
+
+  const status = allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
+  await prisma.order.update({ where: { id: orderId }, data: { status } })
+}
+
 ordersRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { status, date } = req.query
   const where: Record<string, unknown> = { restaurantId: req.restaurantId! }
 
   if (status) where.status = status
   if (date) {
-    const d = new Date(date as string)
-    const next = new Date(d)
-    next.setDate(next.getDate() + 1)
-    where.createdAt = { gte: d, lt: next }
+    const d = parseLocalDate(date as string)
+    if (d) {
+      const next = new Date(d)
+      next.setDate(next.getDate() + 1)
+      where.createdAt = { gte: d, lt: next }
+    }
   }
 
   const orders = await prisma.order.findMany({
@@ -199,6 +219,8 @@ ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
       subtotal,
       tax,
       total,
+      revenueAmount: total,
+      tipAmount: 0,
       ...orderData,
       items: {
         create: itemsWithPrice.map(item => ({
@@ -223,30 +245,81 @@ ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
   res.status(201).json(order)
 })
 
+ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = itemStatusSchema.safeParse(req.body.status)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Stato non valido' })
+    return
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id: req.params.orderId, restaurantId: req.restaurantId! },
+    include: { items: { select: { id: true } } },
+  })
+  if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+  if (!order.items.some(i => i.id === req.params.itemId)) {
+    res.status(404).json({ error: 'Piatto non trovato nell\'ordine' })
+    return
+  }
+
+  await prisma.orderItem.update({
+    where: { id: req.params.itemId },
+    data: { status: parsed.data },
+  })
+
+  await syncOrderStatusFromItems(req.params.orderId)
+
+  const updatedOrder = await prisma.order.findUnique({
+    where: { id: req.params.orderId },
+    include: orderInclude,
+  })
+
+  io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+  res.json(updatedOrder)
+})
+
 ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
+
+  const existingOrder = await prisma.order.findFirst({
+    where: { id: req.params.id, restaurantId: req.restaurantId! },
+  })
+  if (!existingOrder) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  const paymentData: Record<string, unknown> = {}
+  if (status === 'PAID') {
+    const split = computePaymentSplit(existingOrder, req.body.tipAmount)
+    paymentData.paidAt = split.paidAt
+    paymentData.paymentMethod = req.body.paymentMethod
+    paymentData.revenueAmount = split.revenueAmount
+    paymentData.tipAmount = split.tipAmount
+    paymentData.total = split.total
+  }
+
+  if (status === 'READY') {
+    await prisma.orderItem.updateMany({
+      where: { orderId: req.params.id, status: { in: ['PENDING', 'PREPARING'] } },
+      data: { status: 'READY' },
+    })
+  }
+
   const order = await prisma.order.update({
     where: { id: req.params.id },
     data: {
       status,
-      ...(status === 'PAID' ? { paidAt: new Date(), paymentMethod: req.body.paymentMethod } : {}),
+      ...paymentData,
     },
     include: orderInclude,
   })
 
   if (status === 'PAID' || status === 'CANCELLED') {
-    const activeOrders = await prisma.order.count({
-      where: {
-        tableId: order.tableId ?? undefined,
-        status: { notIn: ['PAID', 'CANCELLED'] },
-      },
-    })
-    if (order.tableId && activeOrders === 0) {
-      await prisma.table.update({
-        where: { id: order.tableId },
-        data: { status: 'CLEANING' },
-      })
-    }
+    await releaseTableIfEmpty(order.tableId)
   }
 
   io.to(req.restaurantId!).emit('order:updated', order)
@@ -288,9 +361,11 @@ ordersRouter.post('/:id/items', async (req: AuthRequest, res: Response): Promise
   })
   if (order) {
     const subtotal = order.items.reduce((s: number, i: { unitPrice: number; quantity: number }) => s + i.unitPrice * i.quantity, 0)
+    const tax = subtotal * 0.1
+    const total = subtotal + tax
     await prisma.order.update({
       where: { id: req.params.id },
-      data: { subtotal, tax: subtotal * 0.1, total: subtotal * 1.1 },
+      data: { subtotal, tax, total, revenueAmount: total },
     })
   }
 
@@ -300,17 +375,4 @@ ordersRouter.post('/:id/items', async (req: AuthRequest, res: Response): Promise
   })
   io.to(req.restaurantId!).emit('order:updated', updatedOrder)
   res.status(201).json(orderItem)
-})
-
-ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, res: Response): Promise<void> => {
-  const item = await prisma.orderItem.update({
-    where: { id: req.params.itemId },
-    data: { status: req.body.status },
-  })
-  const order = await prisma.order.findUnique({
-    where: { id: req.params.orderId },
-    include: orderInclude,
-  })
-  io.to(req.restaurantId!).emit('order:updated', order)
-  res.json(item)
 })

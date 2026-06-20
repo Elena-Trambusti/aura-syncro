@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
-import { Search, Users, Star, TrendingUp, Award } from 'lucide-react'
+import { Search, Users, Star, TrendingUp, Award, Plus } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface Customer {
   id: string; name: string; email?: string; phone?: string
@@ -10,14 +11,60 @@ interface Customer {
   lastVisit?: string; notes?: string; allergens?: string
 }
 
+interface NewCustomerForm {
+  name: string
+  email: string
+  phone: string
+  notes: string
+}
+
+const emptyForm = (): NewCustomerForm => ({ name: '', email: '', phone: '', notes: '' })
+
 export default function CustomersPage() {
+  const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [form, setForm] = useState<NewCustomerForm>(emptyForm)
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['customers', search],
     queryFn: () => api.get(`/customers${search ? `?search=${search}` : ''}`).then(r => r.data),
   })
+
+  const createCustomer = useMutation({
+    mutationFn: (data: NewCustomerForm) =>
+      api.post('/customers', {
+        name: data.name.trim(),
+        ...(data.email.trim() ? { email: data.email.trim() } : {}),
+        ...(data.phone.trim() ? { phone: data.phone.trim() } : {}),
+        ...(data.notes.trim() ? { notes: data.notes.trim() } : {}),
+      }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['customers'] })
+      setShowCreateModal(false)
+      setForm(emptyForm())
+      setSelectedCustomer(res.data)
+      toast.success('Cliente creato con successo')
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error || 'Errore durante il salvataggio')
+    },
+  })
+
+  const openCreateModal = () => {
+    setForm(emptyForm())
+    setShowCreateModal(true)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.name.trim()) {
+      toast.error('Il nome è obbligatorio')
+      return
+    }
+    createCustomer.mutate(form)
+  }
 
   const getSegment = (c: Customer) => {
     if (c.totalVisits >= 10) return { label: 'VIP', color: 'bg-purple-100 text-purple-700' }
@@ -25,6 +72,9 @@ export default function CustomersPage() {
     if (c.totalVisits >= 2) return { label: 'Abituale', color: 'bg-emerald-100 text-emerald-700' }
     return { label: 'Nuovo', color: 'bg-slate-100 text-slate-600' }
   }
+
+  const inputClass =
+    'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500'
 
   return (
     <div className="space-y-6">
@@ -55,15 +105,25 @@ export default function CustomersPage() {
         ))}
       </div>
 
-      {/* Barra ricerca */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
-          placeholder="Cerca per nome, email, telefono..."
-        />
+      {/* Ricerca + Nuovo cliente */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative max-w-md flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+            placeholder="Cerca per nome, email, telefono..."
+          />
+        </div>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          Nuovo Cliente
+        </button>
       </div>
 
       <div className="flex gap-4">
@@ -149,13 +209,90 @@ export default function CustomersPage() {
               )}
               {selectedCustomer.notes && (
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-xs text-blue-700 italic">"{selectedCustomer.notes}"</p>
+                  <p className="text-xs text-blue-700 italic">&quot;{selectedCustomer.notes}&quot;</p>
                 </div>
               )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Modale nuovo cliente */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => !createCustomer.isPending && setShowCreateModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-800">Nuovo Cliente</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Nome e Cognome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  className={inputClass}
+                  placeholder="es. Mario Rossi"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  className={inputClass}
+                  placeholder="mario@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Telefono</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                  className={inputClass}
+                  placeholder="+34 600 000 000"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Note / Preferenze</label>
+                <textarea
+                  value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                  rows={3}
+                  className={`${inputClass} resize-none`}
+                  placeholder="Intolleranze, tavolo preferito, occasioni speciali..."
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={createCustomer.isPending}
+                  className="flex-1 border border-slate-200 text-slate-600 py-2.5 rounded-xl text-sm font-medium disabled:opacity-60"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  disabled={createCustomer.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
+                >
+                  {createCustomer.isPending ? 'Salvataggio...' : 'Salva Cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

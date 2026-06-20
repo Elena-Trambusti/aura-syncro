@@ -1,8 +1,53 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import {
+  buildDateRange,
+  buildMonthRange,
+  effectivePaidAt,
+  legacyPaidOrdersWhere,
+  paidOrdersWhere,
+} from '../lib/dates'
+import { resolveOrderTotal, resolveRevenueAmount, resolveTipAmount } from '../lib/fiscalAmounts'
 
 export const reportsRouter = Router()
+
+const fiscalOrderSelect = {
+  id: true,
+  paidAt: true,
+  createdAt: true,
+  subtotal: true,
+  tax: true,
+  revenueAmount: true,
+  tipAmount: true,
+  total: true,
+} as const
+
+async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: Date) {
+  const [primary, legacy] = await Promise.all([
+    prisma.order.findMany({
+      where: paidOrdersWhere(restaurantId, start, end),
+      select: fiscalOrderSelect,
+      orderBy: { paidAt: 'asc' },
+    }),
+    prisma.order.findMany({
+      where: legacyPaidOrdersWhere(restaurantId, start, end),
+      select: fiscalOrderSelect,
+      orderBy: { createdAt: 'asc' },
+    }),
+  ])
+
+  const byId = new Map<string, (typeof primary)[number]>()
+  for (const order of [...primary, ...legacy]) {
+    byId.set(order.id, order)
+  }
+
+  return [...byId.values()].sort((a, b) => {
+    const da = effectivePaidAt(a.paidAt, a.createdAt).getTime()
+    const db = effectivePaidAt(b.paidAt, b.createdAt).getTime()
+    return da - db
+  })
+}
 
 // ── P&L Mensile ───────────────────────────────────────────────────────────────
 
@@ -12,12 +57,12 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
 
   const y = Number(year)
   const m = Number(month)
-  const startDate = new Date(y, m - 1, 1)
-  const endDate = new Date(y, m, 0, 23, 59, 59)
+  const { start: startDate, end: endDate } = buildMonthRange(y, m)
+  const orderWhere = paidOrdersWhere(restaurantId, startDate, endDate)
 
   // Ricavi da ordini pagati
   const revenueData = await prisma.order.aggregate({
-    where: { restaurantId, status: 'PAID', paidAt: { gte: startDate, lte: endDate } },
+    where: orderWhere,
     _sum: { total: true, subtotal: true, tax: true, discount: true },
     _count: true,
   })
@@ -25,7 +70,7 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
   // Food cost stimato da inventory links
   const orderItems = await prisma.orderItem.findMany({
     where: {
-      order: { restaurantId, status: 'PAID', paidAt: { gte: startDate, lte: endDate } },
+      order: orderWhere,
     },
     include: {
       menuItem: {
@@ -67,7 +112,7 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
 
   // Breakdown giornaliero
   const dailyOrders = await prisma.order.findMany({
-    where: { restaurantId, status: 'PAID', paidAt: { gte: startDate, lte: endDate } },
+    where: orderWhere,
     select: { total: true, paidAt: true, discount: true },
     orderBy: { paidAt: 'asc' },
   })
@@ -228,4 +273,78 @@ reportsRouter.get('/yearly', async (req: AuthRequest, res: Response): Promise<vo
   const bestMonth = months.reduce((best, m) => m.revenue > best.revenue ? m : best, months[0])
 
   res.json({ year: y, months, totalRevenue: Math.round(totalRevenue * 100) / 100, bestMonth })
+})
+
+// ── Report fiscal (propinas + facturación — normativa ES) ─────────────────────
+
+reportsRouter.get('/fiscal', async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const mode = (req.query.mode as string) || 'month'
+
+  const range = buildDateRange(req.query as Record<string, string | undefined>)
+  if (!range) {
+    res.status(400).json({ error: 'Filtro date non valido' })
+    return
+  }
+
+  const [restaurant, orders] = await Promise.all([
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      include: { settings: true },
+    }),
+    fetchPaidOrdersInPeriod(restaurantId, range.start, range.end),
+  ])
+
+  console.log('[fiscal] orders found:', orders.length, {
+    restaurantId,
+    start: range.start.toISOString(),
+    end: range.end.toISOString(),
+    query: req.query,
+  })
+
+  if (!restaurant) {
+    res.status(404).json({ error: 'Ristorante non trovato' })
+    return
+  }
+
+  const rows = orders.map(o => {
+    const revenueAmount = resolveRevenueAmount(o)
+    const tipAmount = resolveTipAmount(o.tipAmount)
+    const total = resolveOrderTotal(o)
+    return {
+      fecha: effectivePaidAt(o.paidAt, o.createdAt),
+      orderId: o.id,
+      baseImponible: Math.round(o.subtotal * 100) / 100,
+      igic: Math.round(o.tax * 100) / 100,
+      revenueAmount: Math.round(revenueAmount * 100) / 100,
+      tipAmount: Math.round(tipAmount * 100) / 100,
+      total: Math.round(total * 100) / 100,
+    }
+  })
+
+  const summary = rows.reduce(
+    (acc, r) => ({
+      totalFacturadoNeto: acc.totalFacturadoNeto + r.revenueAmount,
+      totalPropinas: acc.totalPropinas + r.tipAmount,
+      totalConciliacion: acc.totalConciliacion + r.total,
+    }),
+    { totalFacturadoNeto: 0, totalPropinas: 0, totalConciliacion: 0 },
+  )
+
+  res.json({
+    restaurant: {
+      name: restaurant.name,
+      address: restaurant.address,
+      email: restaurant.email,
+      taxId: restaurant.settings?.taxId || process.env.RESTAURANT_TAX_ID || null,
+    },
+    period: { mode, start: range.start.toISOString(), end: range.end.toISOString() },
+    rows,
+    summary: {
+      totalFacturadoNeto: Math.round(summary.totalFacturadoNeto * 100) / 100,
+      totalPropinas: Math.round(summary.totalPropinas * 100) / 100,
+      totalConciliacion: Math.round(summary.totalConciliacion * 100) / 100,
+      transactionCount: rows.length,
+    },
+  })
 })

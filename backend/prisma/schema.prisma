@@ -51,6 +51,7 @@ model RestaurantSettings {
   autoConfirmReservations Boolean @default(true)
   noShowDepositRequired   Boolean @default(false)
   depositAmount    Float   @default(0.0)
+  taxId            String?
 }
 
 // ===== UTENTI =====
@@ -176,6 +177,8 @@ model Order {
   serviceCharge Float      @default(0)
   discount     Float       @default(0)
   total        Float       @default(0)
+  revenueAmount Float
+  tipAmount     Float      @default(0)
   paidAt              DateTime?
   paymentMethod       PaymentMethod?
   stripeSessionId     String?

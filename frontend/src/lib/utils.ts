@@ -24,6 +24,14 @@ export function formatDateTime(date: string | Date): string {
   }).format(new Date(date))
 }
 
+/** YYYY-MM-DD in local timezone (never use toISOString() for date inputs). */
+export function toLocalDateInput(date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
