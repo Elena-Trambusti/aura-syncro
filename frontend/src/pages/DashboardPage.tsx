@@ -32,7 +32,7 @@ function StatCard({
   trendLabel?: (value: number) => string
 }) {
   return (
-    <div className="rounded-2xl p-4 sm:p-6 border border-stone-800 bg-stone-900/60 backdrop-blur-sm">
+    <div className="rounded-2xl p-4 sm:p-6 border border-stone-800 bg-stone-900/60 relative z-0">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-stone-400">{title}</p>

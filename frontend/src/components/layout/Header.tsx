@@ -17,7 +17,7 @@ export default function Header() {
     : ''
 
   return (
-    <header className="h-14 sm:h-16 border-b border-stone-800/80 flex items-center justify-between px-3 sm:px-6 shrink-0 bg-[#1f1d1a]/90 backdrop-blur-md gap-2">
+    <header className="relative z-50 h-14 sm:h-16 border-b border-stone-800/80 flex items-center justify-between px-3 sm:px-6 shrink-0 bg-[#1f1d1a]/90 backdrop-blur-md gap-2">
       <div className="flex items-center gap-2 min-w-0">
         <button
           type="button"
