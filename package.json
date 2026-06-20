@@ -6,7 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "npm ci --prefix backend && npm run build --prefix backend",
+    "build": "npm ci --include=dev --prefix backend && npm run build --prefix backend",
     "start": "npm run start --prefix backend",
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./avvia-app.ps1",
     "dev:backend": "npm run dev --prefix backend",

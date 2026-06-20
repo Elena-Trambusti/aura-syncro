@@ -26,8 +26,12 @@ services:
       success_threshold: 1
       failure_threshold: 3
     envs:
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+        scope: BUILD_TIME
       - key: NODE_ENV
         value: production
+        scope: RUN_TIME
       - key: DATABASE_URL
         scope: RUN_TIME
         type: SECRET
