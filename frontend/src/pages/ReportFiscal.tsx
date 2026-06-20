@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -230,12 +230,13 @@ export default function ReportFiscal() {
           </div>
 
           {/* iOS-style pill switch */}
-          <div className="relative inline-flex rounded-full glass-chip p-1">
+          <div className="relative w-full sm:w-auto inline-flex rounded-full glass-chip p-1">
             <div
               className="absolute top-1 bottom-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 shadow-md shadow-orange-500/25 transition-all duration-300 ease-out"
               style={{
-                width: `calc(${100 / FILTER_OPTIONS.length}% - 4px)`,
-                left: `calc(${modeIndex * (100 / FILTER_OPTIONS.length)}% + 2px)`,
+                left: 0,
+                width: `calc(100% / ${FILTER_OPTIONS.length})`,
+                transform: `translateX(${modeIndex * 100}%)`,
               }}
             />
             {FILTER_OPTIONS.map(opt => (
@@ -244,7 +245,7 @@ export default function ReportFiscal() {
                 type="button"
                 onClick={() => setMode(opt.key)}
                 className={cn(
-                  'relative z-10 min-w-[7rem] rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-300',
+                  'relative z-10 flex-1 min-w-0 rounded-full px-3 py-2.5 text-sm font-semibold transition-colors duration-300',
                   mode === opt.key ? 'text-white' : 'text-stone-300 hover:text-stone-100',
                 )}
               >
@@ -253,12 +254,13 @@ export default function ReportFiscal() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             {mode === 'day' && (
               <input type="date" value={dayDate} onChange={e => setDayDate(e.target.value)} className={inputClass} />
             )}
+
             {mode === 'month' && (
-              <>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full">
                 <select value={month} onChange={e => setMonth(+e.target.value)} className={inputClass}>
                   {MONTHS.map((m, i) => (
                     <option key={i + 1} value={i + 1}>{m}</option>
@@ -269,19 +271,20 @@ export default function ReportFiscal() {
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
-              </>
+              </div>
             )}
+
             {mode === 'range' && (
-              <>
-                <label className="flex items-center gap-2 text-sm text-stone-400">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full">
+                <label className="flex items-center gap-2 text-sm text-stone-400 w-full sm:w-auto">
                   Desde
                   <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} className={inputClass} />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-stone-400">
+                <label className="flex items-center gap-2 text-sm text-stone-400 w-full sm:w-auto">
                   Hasta
                   <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} className={inputClass} />
                 </label>
-              </>
+              </div>
             )}
           </div>
 

@@ -32,7 +32,7 @@ function StatCard({
   trendLabel?: (value: number) => string
 }) {
   return (
-    <div className="glass-card p-4 sm:p-6 relative z-0">
+    <div className="glass-card glass-gold-glow p-4 sm:p-6 relative z-0">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-stone-400">{title}</p>
@@ -45,8 +45,8 @@ function StatCard({
             </div>
           )}
         </div>
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: bgColor }}>
-          <Icon className="w-6 h-6 text-white" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 bg-white/[0.06] backdrop-blur-md shadow-lg shadow-black/30">
+          <Icon className="w-6 h-6" style={{ color: bgColor }} />
         </div>
       </div>
     </div>

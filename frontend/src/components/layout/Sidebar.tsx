@@ -49,7 +49,7 @@ export default function Sidebar() {
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden',
+          'fixed inset-0 z-40 bg-black/75 backdrop-blur-md transition-opacity lg:hidden',
           sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={closeSidebar}
