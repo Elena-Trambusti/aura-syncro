@@ -1,21 +1,27 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { TABLE_STATUS_LABELS, TABLE_STATUS_COLORS, formatCurrency } from '../lib/utils'
-import { Users, RefreshCw } from 'lucide-react'
+import { TABLE_STATUS_LABELS, formatCurrency } from '../lib/utils'
+import { RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import OrderModal from '../components/orders/OrderModal'
+import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
+import { cn } from '../lib/utils'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
 interface Order { id: string; status: string; total: number; subtotal: number; tax: number; items: OrderItem[]; createdAt: string }
-interface Table {
-  id: string; number: number; name?: string; seats: number
-  status: 'FREE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING'
-  posX: number; posY: number; shape: string; area?: string
+interface Table extends FloorTable {
   orders: Order[]
 }
+
+const STAT_ACCENTS = [
+  { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'glass-stat-accent-emerald' },
+  { key: 'occupied' as const, status: 'OCCUPIED' as TableStatus, accent: 'glass-stat-accent-red' },
+  { key: 'reserved' as const, status: 'RESERVED' as TableStatus, accent: 'glass-stat-accent-amber' },
+  { key: 'cleaning' as const, status: 'CLEANING' as TableStatus, accent: 'glass-stat-accent-blue' },
+]
 
 export default function TablesPage() {
   const { t } = useTranslation()
@@ -48,14 +54,22 @@ export default function TablesPage() {
     cleaning: tables.filter(tbl => tbl.status === 'CLEANING').length,
   }
 
+  const statLabels: Record<typeof STAT_ACCENTS[number]['key'], string> = {
+    free: t('tables.free'),
+    occupied: t('tables.occupied'),
+    reserved: t('tables.reserved'),
+    cleaning: t('tables.cleaning'),
+  }
+
   const getActiveOrder = (table: Table) => table.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
 
-  const statLabels = [
-    { key: 'free', label: t('tables.free'), count: stats.free, color: 'bg-emerald-950/40 text-emerald-700 border-emerald-200' },
-    { key: 'occupied', label: t('tables.occupied'), count: stats.occupied, color: 'bg-red-950/40 text-red-700 border-red-200' },
-    { key: 'reserved', label: t('tables.reserved'), count: stats.reserved, color: 'bg-amber-50 text-amber-700 border-amber-200' },
-    { key: 'cleaning', label: t('tables.cleaning'), count: stats.cleaning, color: 'bg-blue-950/40 text-blue-700 border-blue-200' },
-  ]
+  const handleTableClick = (table: FloorTable) => {
+    const full = tables.find(tbl => tbl.id === table.id)
+    if (full) {
+      setSelectedTable(full)
+      setShowOrderModal(true)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -74,89 +88,83 @@ export default function TablesPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {statLabels.map(s => (
-          <div key={s.key} className={`rounded-xl p-3 border ${s.color} text-center`}>
-            <p className="text-2xl font-bold">{s.count}</p>
-            <p className="text-xs font-medium">{s.label}</p>
+        {STAT_ACCENTS.map(({ key, status, accent }) => (
+          <div key={key} className={cn('glass-stat p-4 pl-5', accent)}>
+            <p className="text-2xl font-bold text-stone-100 tabular-nums">{stats[key]}</p>
+            <p className="text-xs font-medium text-stone-400 uppercase tracking-wider mt-0.5">{statLabels[key]}</p>
+            <span className={cn('inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full font-medium', TABLE_STATUS_BADGE[status])}>
+              {TABLE_STATUS_LABELS[status]}
+            </span>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {areas.map(area => (
-          <button
-            key={area}
-            onClick={() => setFilterArea(area)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterArea === area ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'}`}
-          >
-            {area}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {areas.map(area => (
+            <button
+              key={area}
+              type="button"
+              onClick={() => setFilterArea(area)}
+              className={cn(
+                'px-4 py-1.5 rounded-lg text-sm font-medium transition-all',
+                filterArea === area
+                  ? 'bg-amber-600/90 text-stone-950 shadow-md shadow-amber-900/30'
+                  : 'glass-chip text-stone-300 hover:bg-white/[0.06]',
+              )}
+            >
+              {area}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {STAT_ACCENTS.map(({ status }) => (
+            <div key={status} className="flex items-center gap-1.5 text-xs text-stone-500">
+              <span className={cn('w-2 h-2 rounded-full', TABLE_LEGEND_DOT[status])} />
+              {TABLE_STATUS_LABELS[status]}
+            </div>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <div className="glass-floor flex justify-center items-center py-20">
+          <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass-card p-12 text-center text-stone-500 text-sm">
+          {t('common.noResults')}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filtered.map(table => {
-            const activeOrder = getActiveOrder(table)
-            return (
-              <div
-                key={table.id}
-                onClick={() => { setSelectedTable(table); setShowOrderModal(true) }}
-                className="glass-card glass-card-hover p-4 border-2 cursor-pointer transition-all group"
-                style={{
-                  borderColor: table.status === 'FREE' ? '#10b981' :
-                    table.status === 'OCCUPIED' ? '#ef4444' :
-                    table.status === 'RESERVED' ? '#f59e0b' : '#3b82f6',
-                }}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-lg font-bold text-stone-100">T{table.number}</p>
-                    {table.name && <p className="text-xs text-stone-500">{table.name}</p>}
-                  </div>
-                  <div className={`w-3 h-3 rounded-full ${TABLE_STATUS_COLORS[table.status]}`} />
-                </div>
+        <TableFloorPlan
+          tables={filtered}
+          statusLabel={status => TABLE_STATUS_LABELS[status]}
+          seatsLabel={n => `${n} ${t('common.seats')}`}
+          onTableClick={handleTableClick}
+          activeOrderTotal={id => {
+            const table = tables.find(tbl => tbl.id === id)
+            const order = table ? getActiveOrder(table) : null
+            return order ? formatCurrency(order.total) : null
+          }}
+        />
+      )}
 
-                <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
-                  <Users className="w-3 h-3" />
-                  <span>{table.seats} {t('common.seats')}</span>
-                </div>
-
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                  ${table.status === 'FREE' ? 'bg-emerald-950/50 text-emerald-400' :
-                    table.status === 'OCCUPIED' ? 'bg-red-100 text-red-700' :
-                    table.status === 'RESERVED' ? 'bg-amber-100 text-amber-700' :
-                    'bg-blue-100 text-blue-700'}`}
-                >
-                  {TABLE_STATUS_LABELS[table.status]}
-                </span>
-
-                {activeOrder && (
-                  <div className="mt-3 pt-3 border-t border-stone-800/50">
-                    <p className="text-xs text-stone-400">{activeOrder.items.length} {t('common.dishes')}</p>
-                    <p className="text-sm font-bold text-stone-100">{formatCurrency(activeOrder.total)}</p>
-                  </div>
-                )}
-
-                {table.status === 'CLEANING' && (
-                  <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      updateStatus.mutate({ id: table.id, status: 'FREE' })
-                      toast.success(t('tables.tableReady', { number: table.number }))
-                    }}
-                    className="mt-3 w-full text-xs bg-stone-800/50 hover:bg-emerald-100 hover:text-emerald-700 text-stone-300 py-1.5 rounded-lg transition-colors font-medium"
-                  >
-                    {t('tables.markFree')}
-                  </button>
-                )}
-              </div>
-            )
-          })}
+      {filtered.some(tbl => tbl.status === 'CLEANING') && (
+        <div className="glass-card p-4 flex flex-wrap gap-2">
+          {filtered.filter(tbl => tbl.status === 'CLEANING').map(table => (
+            <button
+              key={table.id}
+              type="button"
+              onClick={() => {
+                updateStatus.mutate({ id: table.id, status: 'FREE' })
+                toast.success(t('tables.tableReady', { number: table.number }))
+              }}
+              className="glass-chip px-3 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-500/30 transition-colors"
+            >
+              T{table.number} — {t('tables.markFree')}
+            </button>
+          ))}
         </div>
       )}
 
