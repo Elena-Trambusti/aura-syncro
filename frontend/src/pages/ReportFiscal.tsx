@@ -1,9 +1,11 @@
-import { useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, cn, toLocalDateInput } from '../lib/utils'
 import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
+import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
+import { getIntlLocale } from '../i18n'
 import {
   FileDown, CalendarRange, Loader2, Receipt, Coins, Wallet,
   Sparkles, AlertCircle, Hash,
@@ -16,47 +18,6 @@ interface FiscalApiResponse extends FiscalReportData {
   period: { mode: string; start: string; end: string }
 }
 
-const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]
-
-const FILTER_OPTIONS: { key: FilterMode; label: string }[] = [
-  { key: 'day', label: 'Por Día' },
-  { key: 'month', label: 'Por Mes' },
-  { key: 'range', label: 'Rango' },
-]
-
-const SUMMARY_CARDS = [
-  {
-    key: 'facturado',
-    label: 'Total Facturado Neto',
-    sub: 'Sujeto a impuestos (IGIC)',
-    icon: Receipt,
-    gradient: 'from-blue-500/20 to-indigo-500/10',
-    iconColor: 'text-blue-600',
-    ring: 'ring-blue-500/20',
-  },
-  {
-    key: 'propinas',
-    label: 'Total Propinas Personal',
-    sub: 'Exento de IGIC · Canarias',
-    icon: Coins,
-    gradient: 'from-amber-500/20 to-orange-500/10',
-    iconColor: 'text-amber-600',
-    ring: 'ring-amber-500/20',
-  },
-  {
-    key: 'conciliacion',
-    label: 'Conciliación Bancaria POS',
-    sub: 'Total cobrado en TPV',
-    icon: Wallet,
-    gradient: 'from-emerald-500/20 to-teal-500/10',
-    iconColor: 'text-emerald-600',
-    ring: 'ring-emerald-500/20',
-  },
-] as const
-
 const glassPanel = 'glass-card'
 
 const inputClass = cn(
@@ -66,7 +27,7 @@ const inputClass = cn(
 )
 
 export default function ReportFiscal() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const now = new Date()
   const [mode, setMode] = useState<FilterMode>('month')
   const [dayDate, setDayDate] = useState(() => toLocalDateInput())
@@ -75,6 +36,68 @@ export default function ReportFiscal() {
   const [rangeFrom, setRangeFrom] = useState(() => toLocalDateInput())
   const [rangeTo, setRangeTo] = useState(() => toLocalDateInput())
   const [isExporting, setIsExporting] = useState(false)
+
+  const intlLocale = getIntlLocale()
+
+  const months = useMemo(
+    () => t('reportFiscal.months', { returnObjects: true }) as string[],
+    [t, i18n.language],
+  )
+
+  const filterOptions = useMemo(
+    (): { key: FilterMode; label: string }[] => [
+      { key: 'day', label: t('reportFiscal.filterDay') },
+      { key: 'month', label: t('reportFiscal.filterMonth') },
+      { key: 'range', label: t('reportFiscal.filterRange') },
+    ],
+    [t, i18n.language],
+  )
+
+  const summaryCards = useMemo(
+    () => [
+      {
+        key: 'facturado',
+        label: t('reportFiscal.cards.netRevenue.label'),
+        sub: t('reportFiscal.cards.netRevenue.sub'),
+        icon: Receipt,
+        gradient: 'from-blue-500/20 to-indigo-500/10',
+        iconColor: 'text-blue-600',
+        ring: 'ring-blue-500/20',
+      },
+      {
+        key: 'propinas',
+        label: t('reportFiscal.cards.tips.label'),
+        sub: t('reportFiscal.cards.tips.sub'),
+        icon: Coins,
+        gradient: 'from-amber-500/20 to-orange-500/10',
+        iconColor: 'text-amber-600',
+        ring: 'ring-amber-500/20',
+      },
+      {
+        key: 'conciliacion',
+        label: t('reportFiscal.cards.reconciliation.label'),
+        sub: t('reportFiscal.cards.reconciliation.sub'),
+        icon: Wallet,
+        gradient: 'from-emerald-500/20 to-teal-500/10',
+        iconColor: 'text-emerald-600',
+        ring: 'ring-emerald-500/20',
+      },
+    ],
+    [t, i18n.language],
+  )
+
+  const tableHeaders = useMemo(
+    () => [
+      t('reportFiscal.table.date'),
+      t('reportFiscal.table.orderId'),
+      t('reportFiscal.table.taxableBase'),
+      t('reportFiscal.table.tax'),
+      t('reportFiscal.table.restaurantTotal'),
+      t('reportFiscal.table.tip'),
+      t('reportFiscal.table.collectedTotal'),
+    ],
+    [t, i18n.language],
+  )
 
   const queryParams = () => {
     if (mode === 'day') return `mode=day&date=${dayDate}`
@@ -88,7 +111,7 @@ export default function ReportFiscal() {
   })
 
   const fmtDate = (d: string | Date) =>
-    new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(d))
+    new Intl.DateTimeFormat(intlLocale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(d))
 
   const hasExportData = Boolean(data && !isLoading && data.rows.length > 0)
 
@@ -108,13 +131,16 @@ export default function ReportFiscal() {
     setIsExporting(true)
     try {
       await new Promise(resolve => setTimeout(resolve, 350))
-    generateFiscalPdf({
-      ...data,
-      rows: data.rows.map(r => ({
-        ...r,
-        fecha: r.fecha ? (typeof r.fecha === 'string' ? r.fecha : new Date(r.fecha).toISOString()) : null,
-      })),
-    })
+      generateFiscalPdf(
+        {
+          ...data,
+          rows: data.rows.map(r => ({
+            ...r,
+            fecha: r.fecha ? (typeof r.fecha === 'string' ? r.fecha : new Date(r.fecha).toISOString()) : null,
+          })),
+        },
+        buildFiscalPdfLabels(t),
+      )
       toast.success(t('reportFiscal.pdfGenerated'), {
         icon: '📄',
         style: { borderRadius: '12px' },
@@ -130,11 +156,15 @@ export default function ReportFiscal() {
     }
   }
 
-  const modeIndex = FILTER_OPTIONS.findIndex(o => o.key === mode)
+  const modeIndex = filterOptions.findIndex(o => o.key === mode)
+
+  const periodMeta = data
+    ? fmtDate(data.period.start) +
+      (data.period.start !== data.period.end ? ` — ${fmtDate(data.period.end)}` : '')
+    : ''
 
   return (
     <div className="relative min-h-full -m-6 p-6">
-      {/* Background mesh */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-orange-400/20 blur-3xl" />
         <div className="absolute top-1/2 -left-24 h-80 w-80 rounded-full bg-amber-300/15 blur-3xl" />
@@ -142,20 +172,19 @@ export default function ReportFiscal() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-8">
-        {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-amber-400/80">
               <Sparkles className="h-4 w-4" />
-              Report → Fiscal · Normativa Canarias
+              {t('reportFiscal.breadcrumb', { regime: t('reportFiscal.regimeLabel') })}
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
               <span className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-400 bg-clip-text text-transparent">
-                Libro de Registro Fiscal
+                {t('reportFiscal.title')}
               </span>
             </h1>
             <p className="max-w-xl text-sm text-slate-500/90">
-              Exportación legal de propinas y facturación · Split IGIC / Propina voluntaria
+              {t('reportFiscal.subtitle', { taxName: t('reportFiscal.table.tax') })}
             </p>
           </div>
 
@@ -177,20 +206,19 @@ export default function ReportFiscal() {
             {isExporting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Generando documento...</span>
+                <span>{t('reportFiscal.exporting')}</span>
               </>
             ) : (
               <>
                 <FileDown className="h-5 w-5" />
-                <span>Exportar PDF para Inspección</span>
+                <span>{t('reportFiscal.exportPdf')}</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Summary widgets */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {SUMMARY_CARDS.map((card, i) => {
+          {summaryCards.map((card, i) => {
             const Icon = card.icon
             return (
               <div
@@ -222,24 +250,22 @@ export default function ReportFiscal() {
           })}
         </div>
 
-        {/* Filters */}
         <div className={cn(glassPanel, 'p-6 space-y-5')}>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             <CalendarRange className="h-4 w-4 text-amber-400" />
-            Filtro de periodo
+            {t('reportFiscal.filterPeriod')}
           </div>
 
-          {/* iOS-style pill switch */}
           <div className="relative w-full sm:w-auto inline-flex rounded-full glass-chip p-1">
             <div
               className="absolute top-1 bottom-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 shadow-md shadow-orange-500/25 transition-all duration-300 ease-out"
               style={{
                 left: 0,
-                width: `calc(100% / ${FILTER_OPTIONS.length})`,
+                width: `calc(100% / ${filterOptions.length})`,
                 transform: `translateX(${modeIndex * 100}%)`,
               }}
             />
-            {FILTER_OPTIONS.map(opt => (
+            {filterOptions.map(opt => (
               <button
                 key={opt.key}
                 type="button"
@@ -262,7 +288,7 @@ export default function ReportFiscal() {
             {mode === 'month' && (
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full">
                 <select value={month} onChange={e => setMonth(+e.target.value)} className={inputClass}>
-                  {MONTHS.map((m, i) => (
+                  {months.map((m, i) => (
                     <option key={i + 1} value={i + 1}>{m}</option>
                   ))}
                 </select>
@@ -277,11 +303,11 @@ export default function ReportFiscal() {
             {mode === 'range' && (
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full">
                 <label className="flex items-center gap-2 text-sm text-slate-500 w-full sm:w-auto">
-                  Desde
+                  {t('reportFiscal.from')}
                   <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} className={inputClass} />
                 </label>
                 <label className="flex items-center gap-2 text-sm text-slate-500 w-full sm:w-auto">
-                  Hasta
+                  {t('reportFiscal.to')}
                   <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} className={inputClass} />
                 </label>
               </div>
@@ -290,26 +316,24 @@ export default function ReportFiscal() {
 
           {data && (
             <p className="text-xs text-stone-500">
-              {data.summary.transactionCount} transacciones · {fmtDate(data.period.start)}
-              {data.period.start !== data.period.end && ` — ${fmtDate(data.period.end)}`}
-              {data.restaurant.taxId && ` · NIF/CIF: ${data.restaurant.taxId}`}
+              {t('reportFiscal.transactionsMeta', { count: data.summary.transactionCount, period: periodMeta })}
+              {data.restaurant.taxId && t('reportFiscal.taxIdMeta', { taxId: data.restaurant.taxId })}
             </p>
           )}
         </div>
 
-        {/* Table */}
         <div className={cn(glassPanel, 'overflow-hidden p-4 sm:p-6')}>
           {(isLoading || isFetching) && (
             <div className="flex flex-col items-center justify-center gap-3 py-20 text-stone-500">
               <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-              <p className="text-sm font-medium">Cargando datos fiscales...</p>
+              <p className="text-sm font-medium">{t('reportFiscal.loading')}</p>
             </div>
           )}
 
           {isError && !isLoading && (
             <div className="flex flex-col items-center gap-3 py-16 text-red-500">
               <AlertCircle className="h-10 w-10 opacity-60" />
-              <p className="text-sm">Error al cargar los datos fiscales</p>
+              <p className="text-sm">{t('reportFiscal.loadError')}</p>
             </div>
           )}
 
@@ -318,15 +342,15 @@ export default function ReportFiscal() {
               {data.rows.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-16 text-stone-500">
                   <AlertCircle className="h-10 w-10 opacity-40" />
-                  <p className="text-sm font-medium">No hay transacciones pagadas en este periodo</p>
-                  <p className="text-xs">Seleccione otro rango de fechas o registre pagos con propina</p>
+                  <p className="text-sm font-medium">{t('reportFiscal.emptyTitle')}</p>
+                  <p className="text-xs">{t('reportFiscal.emptyHint')}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px] border-separate border-spacing-y-3 text-sm">
                     <thead>
                       <tr>
-                        {['Fecha', 'ID Comanda', 'Base Imponible', 'IGIC', 'Total Restaurante', 'Propina', 'Total Cobrado'].map(h => (
+                        {tableHeaders.map(h => (
                           <th
                             key={h}
                             className="px-4 pb-1 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500"

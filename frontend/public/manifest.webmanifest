@@ -1,0 +1,17 @@
+{
+  "name": "Aura Syncro",
+  "short_name": "Aura Syncro",
+  "description": "Gestionale ristoranti SaaS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#C9A227",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

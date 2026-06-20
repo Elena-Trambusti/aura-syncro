@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { BRAND_LOGO_GRADIENT } from '../../lib/brand'
 
@@ -23,7 +23,7 @@ export default function BrandLogo({ size = 'md', className }: BrandLogoProps) {
       style={{ background: BRAND_LOGO_GRADIENT }}
       aria-hidden
     >
-      <Sparkles className={cn(s.icon, 'text-slate-900')} />
+      <Zap className={cn(s.icon, 'text-slate-900 fill-slate-900')} />
     </div>
   )
 }

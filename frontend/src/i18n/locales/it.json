@@ -291,8 +291,61 @@
     "subtitle": "Analisi finanziaria e food cost"
   },
   "reportFiscal": {
-    "title": "Report Fiscal",
-    "subtitle": "Report fiscale e documentazione",
+    "title": "Libro Registro Fiscale",
+    "regimeLabel": "Report Fiscale Italia",
+    "breadcrumb": "Report → Fiscal · {{regime}}",
+    "subtitle": "Exportazione legale di mance e fatturazione · Split {{taxName}} / Mancia volontaria",
+    "exportPdf": "Esporta PDF per ispezione",
+    "exporting": "Generazione documento...",
+    "filterPeriod": "Filtro periodo",
+    "filterDay": "Per giorno",
+    "filterMonth": "Per mese",
+    "filterRange": "Intervallo",
+    "from": "Da",
+    "to": "A",
+    "months": ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"],
+    "transactionsMeta": "{{count}} transazioni · {{period}}",
+    "taxIdMeta": " · P.IVA: {{taxId}}",
+    "loading": "Caricamento dati fiscali...",
+    "loadError": "Errore nel caricamento dei dati fiscali",
+    "emptyTitle": "Nessuna transazione pagata in questo periodo",
+    "emptyHint": "Seleziona un altro intervallo di date o registra pagamenti con mancia",
+    "cards": {
+      "netRevenue": {
+        "label": "Totale Fatturato Netto",
+        "sub": "Soggetto a imposta (IVA)"
+      },
+      "tips": {
+        "label": "Totale Mance Personale",
+        "sub": "Esente da IVA · Italia"
+      },
+      "reconciliation": {
+        "label": "Conciliazione Bancaria POS",
+        "sub": "Totale incassato al POS"
+      }
+    },
+    "table": {
+      "date": "Data",
+      "orderId": "ID Comanda",
+      "taxableBase": "Imponibile",
+      "tax": "IVA",
+      "restaurantTotal": "Totale Ristorante",
+      "tip": "Mancia",
+      "collectedTotal": "Totale Incassato"
+    },
+    "pdf": {
+      "title": "Libro Registro Mance e Fatturazione — {{restaurant}}",
+      "taxId": "P.IVA",
+      "taxIdPending": "Da configurare",
+      "address": "Sede",
+      "period": "Periodo",
+      "generated": "Generato",
+      "summaryNet": "Totale Fatturato Netto (Soggetto a IVA)",
+      "summaryTips": "Totale Mance Personale (Esente da IVA)",
+      "summaryReconciliation": "Totale Conciliazione Bancaria POS",
+      "footer": "Documento generato automaticamente · {{count}} transazioni · Mance esenti da IVA (normativa italiana).",
+      "filenamePrefix": "libro-registro"
+    },
     "noData": "Nessun dato per il periodo selezionato",
     "pdfGenerated": "PDF generato correttamente",
     "pdfError": "Errore nella generazione del PDF. Riprova."

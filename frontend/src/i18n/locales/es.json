@@ -291,8 +291,61 @@
     "subtitle": "Análisis financiero y food cost"
   },
   "reportFiscal": {
-    "title": "Informe Fiscal",
-    "subtitle": "Informe fiscal y documentación",
+    "title": "Libro de Registro Fiscal",
+    "regimeLabel": "Normativa Canarias",
+    "breadcrumb": "Informe → Fiscal · {{regime}}",
+    "subtitle": "Exportación legal de propinas y facturación · Split {{taxName}} / Propina voluntaria",
+    "exportPdf": "Exportar PDF para Inspección",
+    "exporting": "Generando documento...",
+    "filterPeriod": "Filtro de periodo",
+    "filterDay": "Por Día",
+    "filterMonth": "Por Mes",
+    "filterRange": "Rango",
+    "from": "Desde",
+    "to": "Hasta",
+    "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "transactionsMeta": "{{count}} transacciones · {{period}}",
+    "taxIdMeta": " · NIF/CIF: {{taxId}}",
+    "loading": "Cargando datos fiscales...",
+    "loadError": "Error al cargar los datos fiscales",
+    "emptyTitle": "No hay transacciones pagadas en este periodo",
+    "emptyHint": "Seleccione otro rango de fechas o registre pagos con propina",
+    "cards": {
+      "netRevenue": {
+        "label": "Total Facturado Neto",
+        "sub": "Sujeto a impuestos (IGIC)"
+      },
+      "tips": {
+        "label": "Total Propinas Personal",
+        "sub": "Exento de IGIC · Canarias"
+      },
+      "reconciliation": {
+        "label": "Conciliación Bancaria POS",
+        "sub": "Total cobrado en TPV"
+      }
+    },
+    "table": {
+      "date": "Fecha",
+      "orderId": "ID Comanda",
+      "taxableBase": "Base Imponible",
+      "tax": "IGIC",
+      "restaurantTotal": "Total Restaurante",
+      "tip": "Propina",
+      "collectedTotal": "Total Cobrado"
+    },
+    "pdf": {
+      "title": "Libro de Registro de Propinas y Facturación — {{restaurant}}",
+      "taxId": "NIF/CIF",
+      "taxIdPending": "Pendiente de configuración",
+      "address": "Domicilio",
+      "period": "Periodo",
+      "generated": "Generado",
+      "summaryNet": "Total Facturado Neto (Sujeto a Impuestos)",
+      "summaryTips": "Total Propinas Personal (Exento de IGIC)",
+      "summaryReconciliation": "Total Conciliación Bancaria POS",
+      "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IGIC (normativa Canarias).",
+      "filenamePrefix": "libro-registro"
+    },
     "noData": "No hay datos para el período seleccionado",
     "pdfGenerated": "PDF generado correctamente",
     "pdfError": "Error al generar el PDF. Inténtelo de nuevo."

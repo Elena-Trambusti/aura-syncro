@@ -291,8 +291,61 @@
     "subtitle": "Analyse financière et food cost"
   },
   "reportFiscal": {
-    "title": "Rapport Fiscal",
-    "subtitle": "Rapport fiscal et documentation",
+    "title": "Registre Fiscal",
+    "regimeLabel": "Rapport Fiscal Italie",
+    "breadcrumb": "Rapports → Fiscal · {{regime}}",
+    "subtitle": "Export légal des pourboires et facturation · Split {{taxName}} / Pourboire volontaire",
+    "exportPdf": "Exporter PDF pour inspection",
+    "exporting": "Génération du document...",
+    "filterPeriod": "Filtre de période",
+    "filterDay": "Par jour",
+    "filterMonth": "Par mois",
+    "filterRange": "Plage",
+    "from": "De",
+    "to": "À",
+    "months": ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
+    "transactionsMeta": "{{count}} transactions · {{period}}",
+    "taxIdMeta": " · N° TVA : {{taxId}}",
+    "loading": "Chargement des données fiscales...",
+    "loadError": "Erreur lors du chargement des données fiscales",
+    "emptyTitle": "Aucune transaction payée sur cette période",
+    "emptyHint": "Sélectionnez une autre plage de dates ou enregistrez des paiements avec pourboire",
+    "cards": {
+      "netRevenue": {
+        "label": "Total Facturé Net",
+        "sub": "Soumis à l'impôt (TVA)"
+      },
+      "tips": {
+        "label": "Total Pourboires Personnel",
+        "sub": "Exempt de TVA · Italie"
+      },
+      "reconciliation": {
+        "label": "Rapprochement Bancaire POS",
+        "sub": "Total encaissé au POS"
+      }
+    },
+    "table": {
+      "date": "Date",
+      "orderId": "ID Commande",
+      "taxableBase": "Base imposable",
+      "tax": "TVA",
+      "restaurantTotal": "Total Restaurant",
+      "tip": "Pourboire",
+      "collectedTotal": "Total Encaissé"
+    },
+    "pdf": {
+      "title": "Registre Pourboires et Facturation — {{restaurant}}",
+      "taxId": "N° TVA",
+      "taxIdPending": "À configurer",
+      "address": "Adresse",
+      "period": "Période",
+      "generated": "Généré",
+      "summaryNet": "Total Facturé Net (Soumis à TVA)",
+      "summaryTips": "Total Pourboires Personnel (Exempt de TVA)",
+      "summaryReconciliation": "Total Rapprochement Bancaire POS",
+      "footer": "Document généré automatiquement · {{count}} transactions · Pourboires exempts de TVA (réglementation italienne).",
+      "filenamePrefix": "registre-fiscal"
+    },
     "noData": "Aucune donnée pour la période sélectionnée",
     "pdfGenerated": "PDF généré avec succès",
     "pdfError": "Erreur lors de la génération du PDF. Veuillez réessayer."

@@ -291,8 +291,61 @@
     "subtitle": "Finanzanalyse und Food Cost"
   },
   "reportFiscal": {
-    "title": "Steuerbericht",
-    "subtitle": "Steuerbericht und Dokumentation",
+    "title": "Steuerregister",
+    "regimeLabel": "Italienischer Steuerbericht",
+    "breadcrumb": "Berichte → Fiscal · {{regime}}",
+    "subtitle": "Rechtlicher Export von Trinkgeldern und Abrechnung · Split {{taxName}} / Freiwilliges Trinkgeld",
+    "exportPdf": "PDF für Prüfung exportieren",
+    "exporting": "Dokument wird erstellt...",
+    "filterPeriod": "Zeitraumfilter",
+    "filterDay": "Nach Tag",
+    "filterMonth": "Nach Monat",
+    "filterRange": "Zeitraum",
+    "from": "Von",
+    "to": "Bis",
+    "months": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+    "transactionsMeta": "{{count}} Transaktionen · {{period}}",
+    "taxIdMeta": " · USt-IdNr.: {{taxId}}",
+    "loading": "Steuerdaten werden geladen...",
+    "loadError": "Fehler beim Laden der Steuerdaten",
+    "emptyTitle": "Keine bezahlten Transaktionen in diesem Zeitraum",
+    "emptyHint": "Wählen Sie einen anderen Zeitraum oder erfassen Sie Zahlungen mit Trinkgeld",
+    "cards": {
+      "netRevenue": {
+        "label": "Netto-Rechnungsbetrag",
+        "sub": "Steuerpflichtig (MwSt.)"
+      },
+      "tips": {
+        "label": "Trinkgelder Personal gesamt",
+        "sub": "MwSt.-befreit · Italien"
+      },
+      "reconciliation": {
+        "label": "POS-Bankabstimmung",
+        "sub": "Am POS eingezogener Gesamtbetrag"
+      }
+    },
+    "table": {
+      "date": "Datum",
+      "orderId": "Bestell-ID",
+      "taxableBase": "Bemessungsgrundlage",
+      "tax": "MwSt.",
+      "restaurantTotal": "Restaurant-Gesamt",
+      "tip": "Trinkgeld",
+      "collectedTotal": "Eingezogener Gesamtbetrag"
+    },
+    "pdf": {
+      "title": "Trinkgeld- & Abrechnungsregister — {{restaurant}}",
+      "taxId": "USt-IdNr.",
+      "taxIdPending": "Noch nicht konfiguriert",
+      "address": "Adresse",
+      "period": "Zeitraum",
+      "generated": "Erstellt",
+      "summaryNet": "Netto-Rechnungsbetrag (MwSt.-pflichtig)",
+      "summaryTips": "Trinkgelder Personal gesamt (MwSt.-befreit)",
+      "summaryReconciliation": "POS-Bankabstimmung gesamt",
+      "footer": "Automatisch erstelltes Dokument · {{count}} Transaktionen · Trinkgelder MwSt.-befreit (italienische Regelung).",
+      "filenamePrefix": "steuerregister"
+    },
     "noData": "Keine Daten für den ausgewählten Zeitraum",
     "pdfGenerated": "PDF erfolgreich erstellt",
     "pdfError": "Fehler beim Erstellen des PDF. Bitte erneut versuchen."

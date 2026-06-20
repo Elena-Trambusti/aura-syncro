@@ -291,8 +291,61 @@
     "subtitle": "Financial analysis and food cost"
   },
   "reportFiscal": {
-    "title": "Fiscal Report",
-    "subtitle": "Fiscal report and documentation",
+    "title": "Fiscal Register Book",
+    "regimeLabel": "Italy Fiscal Report",
+    "breadcrumb": "Reports → Fiscal · {{regime}}",
+    "subtitle": "Legal export of tips and billing · Split {{taxName}} / Voluntary tip",
+    "exportPdf": "Export PDF for inspection",
+    "exporting": "Generating document...",
+    "filterPeriod": "Period filter",
+    "filterDay": "By day",
+    "filterMonth": "By month",
+    "filterRange": "Range",
+    "from": "From",
+    "to": "To",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "transactionsMeta": "{{count}} transactions · {{period}}",
+    "taxIdMeta": " · VAT ID: {{taxId}}",
+    "loading": "Loading fiscal data...",
+    "loadError": "Error loading fiscal data",
+    "emptyTitle": "No paid transactions in this period",
+    "emptyHint": "Select another date range or register payments with tips",
+    "cards": {
+      "netRevenue": {
+        "label": "Net Billed Total",
+        "sub": "Subject to tax (VAT)"
+      },
+      "tips": {
+        "label": "Total Staff Tips",
+        "sub": "VAT exempt · Italy"
+      },
+      "reconciliation": {
+        "label": "POS Bank Reconciliation",
+        "sub": "Total collected at POS"
+      }
+    },
+    "table": {
+      "date": "Date",
+      "orderId": "Order ID",
+      "taxableBase": "Taxable base",
+      "tax": "VAT",
+      "restaurantTotal": "Restaurant total",
+      "tip": "Tip",
+      "collectedTotal": "Total collected"
+    },
+    "pdf": {
+      "title": "Tips & Billing Register — {{restaurant}}",
+      "taxId": "VAT ID",
+      "taxIdPending": "Pending configuration",
+      "address": "Address",
+      "period": "Period",
+      "generated": "Generated",
+      "summaryNet": "Net Billed Total (Subject to VAT)",
+      "summaryTips": "Total Staff Tips (VAT exempt)",
+      "summaryReconciliation": "POS Bank Reconciliation Total",
+      "footer": "Automatically generated document · {{count}} transactions · Tips exempt from VAT (Italian regulations).",
+      "filenamePrefix": "fiscal-register"
+    },
     "noData": "No data for the selected period",
     "pdfGenerated": "PDF generated successfully",
     "pdfError": "Error generating PDF. Please try again."
