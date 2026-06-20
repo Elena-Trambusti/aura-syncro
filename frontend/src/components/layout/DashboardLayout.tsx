@@ -38,13 +38,13 @@ export default function DashboardLayout() {
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar }}>
-      <div className="flex h-[100dvh] overflow-hidden bg-[#181614]">
+      <div className="flex h-[100dvh] overflow-hidden bg-[#f3e4c1]">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-br from-[#181614] via-[#1c1a17] to-[#1a1816] relative">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-br from-[#f8edd2] via-[#f3e4c1] to-[#edd3a0] relative">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-amber-400/15 blur-3xl" />
-            <div className="absolute top-1/3 -left-40 h-[420px] w-[420px] rounded-full bg-yellow-300/10 blur-3xl" />
-            <div className="absolute bottom-0 right-1/3 h-[360px] w-[360px] rounded-full bg-orange-400/10 blur-3xl" />
+            <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-amber-500/25 blur-3xl" />
+            <div className="absolute top-1/3 -left-40 h-[420px] w-[420px] rounded-full bg-yellow-400/20 blur-3xl" />
+            <div className="absolute bottom-0 right-1/3 h-[360px] w-[360px] rounded-full bg-orange-500/16 blur-3xl" />
           </div>
           <Header />
           <main className="relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">

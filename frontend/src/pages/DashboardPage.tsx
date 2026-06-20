@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+﻿import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, formatLongDate, getIntlLocale } from '../lib/utils'
@@ -35,11 +35,11 @@ function StatCard({
     <div className="glass-card glass-gold-glow p-4 sm:p-6 relative z-0">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-stone-400">{title}</p>
-          <p className="text-2xl font-bold text-stone-100 mt-1">{value}</p>
-          {subtitle && <p className="text-xs text-stone-500 mt-1">{subtitle}</p>}
+          <p className="text-sm font-medium text-stone-300/90 tracking-wide">{title}</p>
+          <p className="text-2xl font-bold text-stone-50 mt-1">{value}</p>
+          {subtitle && <p className="text-xs text-stone-300/60 mt-1">{subtitle}</p>}
           {trend !== undefined && trendLabel && (
-            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {trendLabel(Math.abs(trend))}
             </div>
@@ -85,7 +85,7 @@ export default function DashboardPage() {
           <h1 className="aura-page-title">
             {t('dashboard.title', { name: restaurant?.name || t('common.restaurant') })}
           </h1>
-          <p className="text-stone-500 text-sm mt-1">{formatLongDate()}</p>
+          <p className="text-stone-300/75 text-sm mt-1">{formatLongDate()}</p>
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 glass-card p-6">
-          <h3 className="text-base font-semibold text-stone-100 mb-4">{t('dashboard.revenueChart')}</h3>
+          <h3 className="text-base font-semibold text-stone-100 mb-4 tracking-wide">{t('dashboard.revenueChart')}</h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueData || []}>
               <defs>
@@ -149,24 +149,30 @@ export default function DashboardPage() {
                   <stop offset="95%" stopColor={theme.color} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#292524" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#44403c" strokeOpacity={0.45} />
               <XAxis
                 dataKey="date"
                 tickFormatter={d => new Date(d).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })}
-                tick={{ fontSize: 12, fill: '#94a3b8' }}
+                tick={{ fontSize: 12, fill: '#cbd5e1' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 tickFormatter={v => `€${v}`}
-                tick={{ fontSize: 12, fill: '#94a3b8' }}
+                tick={{ fontSize: 12, fill: '#cbd5e1' }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
                 formatter={(v) => [formatCurrency(Number(v) || 0), t('dashboard.revenueLabel')]}
                 labelFormatter={d => new Date(d).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit' })}
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+                  background: 'rgba(24,22,20,0.92)',
+                  color: '#f5f5f4',
+                }}
               />
               <Area type="monotone" dataKey="revenue" stroke={theme.color} strokeWidth={2.5} fill="url(#revenueGradient)" />
             </AreaChart>
@@ -174,14 +180,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="glass-card p-6">
-          <h3 className="text-base font-semibold text-stone-100 mb-4">{t('dashboard.topDishes')}</h3>
+          <h3 className="text-base font-semibold text-stone-100 mb-4 tracking-wide">{t('dashboard.topDishes')}</h3>
           <div className="space-y-3">
             {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (
               <div key={item.menuItemId} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-stone-500 w-4">{idx + 1}</span>
+                <span className="text-xs font-bold text-stone-300/60 w-4">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-stone-300 truncate">{item.name}</p>
-                  <div className="w-full bg-stone-800 rounded-full h-1.5 mt-1">
+                  <p className="text-sm font-medium text-stone-100 truncate">{item.name}</p>
+                  <div className="w-full bg-stone-700/60 rounded-full h-1.5 mt-1">
                     <div
                       className="h-1.5 rounded-full"
                       style={{
@@ -191,11 +197,11 @@ export default function DashboardPage() {
                     />
                   </div>
                 </div>
-                <span className="text-xs font-semibold text-stone-400">{item.quantity} {t('common.pieces')}</span>
+                <span className="text-xs font-semibold text-stone-300/80">{item.quantity} {t('common.pieces')}</span>
               </div>
             ))}
             {(!topItems || topItems.length === 0) && (
-              <p className="text-sm text-stone-500 text-center py-4">{t('common.noData')}</p>
+              <p className="text-sm text-stone-300/70 text-center py-4">{t('common.noData')}</p>
             )}
           </div>
         </div>

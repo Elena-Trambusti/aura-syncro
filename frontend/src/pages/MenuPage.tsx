@@ -93,7 +93,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
           </div>
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:glass-table-head">{t('common.cancel')}</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 glass-chip rounded-xl text-sm font-medium text-stone-300 hover:bg-white/[0.06]">{t('common.cancel')}</button>
           <button onClick={() => onSave(form)} className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-semibold">{t('common.save')}</button>
         </div>
       </div>
@@ -136,30 +136,31 @@ export default function MenuPage() {
   const filteredItems = selectedCat ? allItems.filter(i => i.category.id === selectedCat) : allItems
 
   return (
-    <div className="space-y-6">
-      <div className="aura-page-header">
-        <div className="min-w-0">
-          <h1 className="aura-page-title">{t('menu.title')}</h1>
-          <p className="aura-page-subtitle">{t('menu.subtitle', { count: allItems.length, categories: categories.length })}</p>
-        </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-full sm:w-auto shrink-0">
-          <Plus className="w-4 h-4" />
-          {t('menu.newDish')}
-        </button>
-      </div>
-
-      <div className="aura-filter-row">
-        <button onClick={() => setSelectedCat(null)}
-          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${!selectedCat ? 'bg-amber-600 text-stone-950 font-semibold' : 'bg-stone-800/50 text-stone-300 border border-stone-700/40 hover:bg-stone-800 hover:text-stone-100'}`}>
-          {t('common.all')} ({allItems.length})
-        </button>
-        {categories.map(cat => (
-          <button key={cat.id} onClick={() => setSelectedCat(cat.id)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedCat === cat.id ? 'bg-amber-600 text-stone-950 font-semibold' : 'bg-stone-800/50 text-stone-300 border border-stone-700/40 hover:bg-stone-800 hover:text-stone-100'}`}>
-            {cat.name} ({cat.items.length})
+    <div className="space-y-5">
+      <div className="glass-card p-4 sm:p-5 space-y-4">
+        <div className="aura-page-header">
+          <div className="min-w-0">
+            <h1 className="aura-page-title">{t('menu.title')}</h1>
+            <p className="aura-page-subtitle">{t('menu.subtitle', { count: allItems.length, categories: categories.length })}</p>
+          </div>
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-full sm:w-auto shrink-0 shadow-lg shadow-amber-900/30">
+            <Plus className="w-4 h-4" />
+            {t('menu.newDish')}
           </button>
-        ))}
+        </div>
+        <div className="aura-filter-row">
+          <button onClick={() => setSelectedCat(null)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${!selectedCat ? 'bg-amber-500 text-stone-950 font-semibold shadow-md shadow-amber-900/25' : 'glass-chip text-stone-300 hover:bg-white/[0.06] hover:text-stone-100'}`}>
+            {t('common.all')} ({allItems.length})
+          </button>
+          {categories.map(cat => (
+            <button key={cat.id} onClick={() => setSelectedCat(cat.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedCat === cat.id ? 'bg-amber-500 text-stone-950 font-semibold shadow-md shadow-amber-900/25' : 'glass-chip text-stone-300 hover:bg-white/[0.06] hover:text-stone-100'}`}>
+              {cat.name} ({cat.items.length})
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="aura-card overflow-hidden">
@@ -167,50 +168,50 @@ export default function MenuPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/10 glass-table-head">
-              <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-5 py-3">{t('menu.dish')}</th>
-              <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('menu.category')}</th>
-              <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('menu.price')}</th>
-              <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('menu.prep')}</th>
-              <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('common.status')}</th>
+              <th className="text-left text-[11px] font-semibold text-stone-300 uppercase tracking-wide px-5 py-3.5 w-[38%]">{t('menu.dish')}</th>
+              <th className="text-left text-[11px] font-semibold text-stone-300 uppercase tracking-wide px-4 py-3.5">{t('menu.category')}</th>
+              <th className="text-left text-[11px] font-semibold text-stone-300 uppercase tracking-wide px-4 py-3.5">{t('menu.price')}</th>
+              <th className="text-left text-[11px] font-semibold text-stone-300 uppercase tracking-wide px-4 py-3.5">{t('menu.prep')}</th>
+              <th className="text-left text-[11px] font-semibold text-stone-300 uppercase tracking-wide px-4 py-3.5">{t('common.status')}</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-800/40">
+          <tbody className="divide-y divide-white/8">
             {filteredItems.map(item => (
-              <tr key={item.id} className="hover:glass-table-head transition-colors">
-                <td className="px-5 py-3.5">
+              <tr key={item.id} className="hover:bg-white/[0.04] transition-colors">
+                <td className="px-5 py-4 align-top">
                   <div>
-                    <p className="text-sm font-semibold text-stone-100 flex items-center gap-2">
+                    <p className="text-[15px] font-semibold text-stone-100 flex items-center gap-2 leading-tight">
                       {item.name}
-                      {item.featured && <span className="text-xs bg-amber-950/50 text-amber-400 px-1.5 py-0.5 rounded-full">{t('menu.topBadge')}</span>}
+                      {item.featured && <span className="text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">{t('menu.topBadge')}</span>}
                     </p>
-                    {item.description && <p className="text-xs text-stone-500 mt-0.5 truncate max-w-xs">{item.description}</p>}
-                    {item.allergens && <p className="text-xs text-red-400 mt-0.5">⚠ {item.allergens}</p>}
+                    {item.description && <p className="text-xs text-stone-300/70 mt-1 leading-relaxed">{item.description}</p>}
+                    {item.allergens && <p className="text-xs text-rose-300 mt-1">⚠ {item.allergens}</p>}
                   </div>
                 </td>
-                <td className="px-4 py-3.5">
-                  <span className="text-xs bg-stone-800/50 text-stone-300 px-2 py-1 rounded-lg">{item.category.name}</span>
+                <td className="px-4 py-4 align-top">
+                  <span className="text-xs glass-chip text-stone-200 px-2.5 py-1 rounded-lg inline-block">{item.category.name}</span>
                 </td>
-                <td className="px-4 py-3.5">
-                  <span className="text-sm font-bold text-amber-400">{formatCurrency(item.price)}</span>
+                <td className="px-4 py-4 align-top">
+                  <span className="text-[15px] font-bold text-amber-300">{formatCurrency(item.price)}</span>
                 </td>
-                <td className="px-4 py-3.5 text-sm text-stone-400">
+                <td className="px-4 py-4 align-top text-sm text-stone-300/80">
                   {item.preparationTime ? `${item.preparationTime} ${t('common.minutes')}` : '-'}
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-4 align-top">
                   <button onClick={() => toggleAvail.mutate({ id: item.id, available: !item.available })}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium ${item.available ? 'bg-emerald-950/50 text-emerald-400' : 'bg-stone-800/50 text-stone-400'}`}>
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium border ${item.available ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-stone-800/50 text-stone-300 border-stone-600/40'}`}>
                     {item.available ? `● ${t('menu.available')}` : `○ ${t('menu.notAvailable')}`}
                   </button>
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-4 align-top">
                   <div className="flex items-center gap-1">
                     <button onClick={() => { setEditingItem({ ...item, categoryId: item.category.id }); }}
-                      className="p-1.5 hover:bg-stone-800/50 rounded-lg text-stone-500 hover:text-stone-200 transition-colors">
+                      className="p-1.5 glass-chip rounded-lg text-stone-400 hover:text-stone-100 transition-colors">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => { if (confirm(t('menu.confirmDelete'))) deleteItem.mutate(item.id) }}
-                      className="p-1.5 hover:bg-red-950/30 rounded-lg text-stone-500 hover:text-red-500 transition-colors">
+                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-300/80 hover:bg-rose-500/20 hover:text-rose-200 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
