@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatCurrency, cn, toLocalDateInput } from '../lib/utils'
@@ -58,14 +58,14 @@ const SUMMARY_CARDS = [
 
 const glassPanel = cn(
   'rounded-2xl border border-gray-200/50',
-  'bg-white/60 backdrop-blur-lg',
+  'bg-stone-900/55/60 backdrop-blur-lg',
   'shadow-2xl shadow-gray-200/20',
 )
 
 const inputClass = cn(
-  'rounded-xl border border-gray-200/60 bg-white/70 backdrop-blur-sm',
-  'px-3 py-2.5 text-sm text-slate-700',
-  'focus:outline-none focus:ring-2 focus:ring-orange-400/60 focus:border-orange-300',
+  'rounded-xl border border-gray-200/60 bg-stone-900/55/70 backdrop-blur-sm',
+  'px-3 py-2.5 text-sm text-stone-200',
+  'focus:outline-none focus:ring-2 focus:ring-orange-400/60 focus:border-amber-700/40',
   'transition-all duration-200',
 )
 
@@ -148,7 +148,7 @@ export default function ReportFiscal() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-orange-600/80">
+            <div className="flex items-center gap-2 text-sm font-medium text-amber-400/80">
               <Sparkles className="h-4 w-4" />
               Report → Fiscal · Normativa Canarias
             </div>
@@ -157,7 +157,7 @@ export default function ReportFiscal() {
                 Libro de Registro Fiscal
               </span>
             </h1>
-            <p className="max-w-xl text-sm text-slate-500/90">
+            <p className="max-w-xl text-sm text-stone-400/90">
               Exportación legal de propinas y facturación · Split IGIC / Propina voluntaria
             </p>
           </div>
@@ -176,7 +176,7 @@ export default function ReportFiscal() {
               !isExporting && hasExportData ? 'animate-[pulse_3s_ease-in-out_infinite]' : '',
             )}
           >
-            <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
+            <span className="absolute inset-0 bg-stone-900/55/10 opacity-0 transition-opacity group-hover:opacity-100" />
             {isExporting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -208,15 +208,15 @@ export default function ReportFiscal() {
                 <div className={cn('absolute inset-0 bg-gradient-to-br opacity-60', card.gradient)} />
                 <div className="relative flex items-start justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">
                       {card.label}
                     </p>
-                    <p className="mt-2 text-3xl font-black tracking-tight text-slate-800">
+                    <p className="mt-2 text-3xl font-black tracking-tight text-stone-100">
                       {isLoading ? '—' : formatCurrency(summaryValues[i])}
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">{card.sub}</p>
+                    <p className="mt-1 text-xs text-stone-500">{card.sub}</p>
                   </div>
-                  <div className={cn('rounded-xl bg-white/60 p-3 shadow-sm backdrop-blur-sm', card.iconColor)}>
+                  <div className={cn('rounded-xl bg-stone-900/55/60 p-3 shadow-sm backdrop-blur-sm', card.iconColor)}>
                     <Icon className="h-6 w-6" />
                   </div>
                 </div>
@@ -227,8 +227,8 @@ export default function ReportFiscal() {
 
         {/* Filters */}
         <div className={cn(glassPanel, 'p-6 space-y-5')}>
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <CalendarRange className="h-4 w-4 text-orange-500" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-stone-200">
+            <CalendarRange className="h-4 w-4 text-amber-400" />
             Filtro de periodo
           </div>
 
@@ -248,7 +248,7 @@ export default function ReportFiscal() {
                 onClick={() => setMode(opt.key)}
                 className={cn(
                   'relative z-10 min-w-[7rem] rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-300',
-                  mode === opt.key ? 'text-white' : 'text-slate-600 hover:text-slate-800',
+                  mode === opt.key ? 'text-white' : 'text-stone-300 hover:text-stone-100',
                 )}
               >
                 {opt.label}
@@ -276,11 +276,11 @@ export default function ReportFiscal() {
             )}
             {mode === 'range' && (
               <>
-                <label className="flex items-center gap-2 text-sm text-slate-500">
+                <label className="flex items-center gap-2 text-sm text-stone-400">
                   Desde
                   <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} className={inputClass} />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-slate-500">
+                <label className="flex items-center gap-2 text-sm text-stone-400">
                   Hasta
                   <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} className={inputClass} />
                 </label>
@@ -289,7 +289,7 @@ export default function ReportFiscal() {
           </div>
 
           {data && (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-500">
               {data.summary.transactionCount} transacciones · {fmtDate(data.period.start)}
               {data.period.start !== data.period.end && ` — ${fmtDate(data.period.end)}`}
               {data.restaurant.taxId && ` · NIF/CIF: ${data.restaurant.taxId}`}
@@ -300,7 +300,7 @@ export default function ReportFiscal() {
         {/* Table */}
         <div className={cn(glassPanel, 'overflow-hidden p-4 sm:p-6')}>
           {(isLoading || isFetching) && (
-            <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400">
+            <div className="flex flex-col items-center justify-center gap-3 py-20 text-stone-500">
               <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
               <p className="text-sm font-medium">Cargando datos fiscales...</p>
             </div>
@@ -316,7 +316,7 @@ export default function ReportFiscal() {
           {!isLoading && !isError && data && (
             <>
               {data.rows.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+                <div className="flex flex-col items-center gap-3 py-16 text-stone-500">
                   <AlertCircle className="h-10 w-10 opacity-40" />
                   <p className="text-sm font-medium">No hay transacciones pagadas en este periodo</p>
                   <p className="text-xs">Seleccione otro rango de fechas o registre pagos con propina</p>
@@ -329,7 +329,7 @@ export default function ReportFiscal() {
                         {['Fecha', 'ID Comanda', 'Base Imponible', 'IGIC', 'Total Restaurante', 'Propina', 'Total Cobrado'].map(h => (
                           <th
                             key={h}
-                            className="px-4 pb-1 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400"
+                            className="px-4 pb-1 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500"
                           >
                             {h}
                           </th>
@@ -349,23 +349,23 @@ export default function ReportFiscal() {
                             <div
                               className={cn(
                                 'grid grid-cols-7 items-center rounded-xl border border-gray-200/40',
-                                'bg-white/50 px-4 py-3.5 backdrop-blur-sm',
+                                'bg-stone-900/55/50 px-4 py-3.5 backdrop-blur-sm',
                                 'shadow-sm transition-all duration-200',
-                                'group-hover:border-orange-200/60 group-hover:bg-white/80 group-hover:shadow-lg group-hover:shadow-orange-100/30',
+                                'group-hover:border-orange-200/60 group-hover:bg-stone-900/55/80 group-hover:shadow-lg group-hover:shadow-orange-100/30',
                               )}
                             >
-                              <span className="whitespace-nowrap text-slate-600">
+                              <span className="whitespace-nowrap text-stone-300">
                                 {row.fecha ? fmtDate(row.fecha) : '—'}
                               </span>
-                              <span className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700">
+                              <span className="flex items-center gap-1.5 font-mono text-xs font-semibold text-stone-200">
                                 <Hash className="h-3 w-3 text-orange-400" />
                                 {row.orderId.slice(-6).toUpperCase()}
                               </span>
-                              <span className="text-slate-600">{formatCurrency(row.baseImponible)}</span>
-                              <span className="text-slate-500">{formatCurrency(row.igic)}</span>
-                              <span className="font-semibold text-slate-800">{formatCurrency(row.revenueAmount)}</span>
+                              <span className="text-stone-300">{formatCurrency(row.baseImponible)}</span>
+                              <span className="text-stone-400">{formatCurrency(row.igic)}</span>
+                              <span className="font-semibold text-stone-100">{formatCurrency(row.revenueAmount)}</span>
                               <span className="font-medium text-amber-600">{formatCurrency(row.tipAmount)}</span>
-                              <span className="font-bold text-orange-600">{formatCurrency(row.total)}</span>
+                              <span className="font-bold text-amber-400">{formatCurrency(row.total)}</span>
                             </div>
                           </td>
                         </tr>

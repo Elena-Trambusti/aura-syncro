@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { getSocket, connectSocket } from '../lib/socket'
@@ -64,7 +64,7 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
     } bg-slate-800`}>
       {/* Header */}
       <div className={`px-4 py-3 flex items-center justify-between ${
-        isUrgent ? 'bg-red-600' : order.status === 'PREPARING' ? 'bg-orange-500' : 'bg-slate-700'
+        isUrgent ? 'bg-red-600' : order.status === 'PREPARING' ? 'bg-amber-600' : 'bg-slate-700'
       }`}>
         <div className="flex items-center gap-3">
           <span className="text-xl font-black text-white">
@@ -112,10 +112,10 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
               {item.notes && <p className="text-xs text-yellow-400 mt-0.5">⚠ {item.notes}</p>}
             </div>
             {item.menuItem.preparationTime && (
-              <span className="text-xs text-slate-400">{item.menuItem.preparationTime}m</span>
+              <span className="text-xs text-stone-500">{item.menuItem.preparationTime}m</span>
             )}
             {(item.status === 'PENDING' || item.status === 'PREPARING') && (
-              <CheckCircle2 className="w-4 h-4 text-slate-400 hover:text-emerald-400 transition-colors" />
+              <CheckCircle2 className="w-4 h-4 text-stone-500 hover:text-emerald-400 transition-colors" />
             )}
           </div>
         ))}
@@ -136,12 +136,12 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
         ) : (
           <button
             onClick={() => onOrderReady(order.id)}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
+            className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
           >
             Segna Tutto Pronto
           </button>
         )}
-        <p className="text-center text-xs text-slate-500 mt-1">
+        <p className="text-center text-xs text-stone-400 mt-1">
           {pendingItems.length} di {order.items.length} da preparare
         </p>
       </div>
@@ -236,12 +236,12 @@ export default function KitchenDisplayPage() {
       {/* Header KDS */}
       <header className={`px-6 py-3 flex items-center justify-between border-b border-slate-700 transition-colors ${newOrderAlert ? 'bg-orange-600' : 'bg-slate-800'}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center">
             <ChefHat className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-black text-white">CUCINA</h1>
-            <p className="text-xs text-slate-400">Kitchen Display System</p>
+            <p className="text-xs text-stone-500">Kitchen Display System</p>
           </div>
         </div>
 
@@ -255,7 +255,7 @@ export default function KitchenDisplayPage() {
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className={`text-2xl font-black ${s.color}`}>{s.count}</p>
-                <p className="text-xs text-slate-400">{s.label}</p>
+                <p className="text-xs text-stone-500">{s.label}</p>
               </div>
             ))}
           </div>
@@ -264,12 +264,12 @@ export default function KitchenDisplayPage() {
             <p className="text-2xl font-mono font-bold text-white">
               {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-500">
               {time.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}
             </p>
           </div>
 
-          <a href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors border border-slate-600 px-3 py-1.5 rounded-lg">
+          <a href="/" className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-white transition-colors border border-slate-600 px-3 py-1.5 rounded-lg">
             <ExternalLink className="w-3.5 h-3.5" />
             Dashboard
           </a>
@@ -298,7 +298,7 @@ export default function KitchenDisplayPage() {
               />
             ))}
             {pending.length === 0 && (
-              <div className="flex flex-col items-center py-12 text-slate-600">
+              <div className="flex flex-col items-center py-12 text-stone-300">
                 <ChefHat className="w-10 h-10 mb-2 opacity-40" />
                 <p className="text-sm">Nessun ordine in attesa</p>
               </div>
@@ -308,7 +308,7 @@ export default function KitchenDisplayPage() {
 
         {/* Colonna IN PREPARAZIONE */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-4 py-2.5 bg-orange-500/10 border-b border-slate-700">
+          <div className="px-4 py-2.5 bg-amber-600/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <Flame className="w-3.5 h-3.5 text-orange-400" />
               <span className="text-sm font-bold text-orange-400 uppercase tracking-wider">
@@ -326,7 +326,7 @@ export default function KitchenDisplayPage() {
               />
             ))}
             {preparing.length === 0 && (
-              <div className="flex flex-col items-center py-12 text-slate-600">
+              <div className="flex flex-col items-center py-12 text-stone-300">
                 <Flame className="w-10 h-10 mb-2 opacity-40" />
                 <p className="text-sm">Nessun ordine in preparazione</p>
               </div>
@@ -336,7 +336,7 @@ export default function KitchenDisplayPage() {
 
         {/* Colonna PRONTI */}
         <div className="flex flex-col overflow-hidden">
-          <div className="px-4 py-2.5 bg-emerald-500/10 border-b border-slate-700">
+          <div className="px-4 py-2.5 bg-emerald-950/400/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
@@ -354,7 +354,7 @@ export default function KitchenDisplayPage() {
               />
             ))}
             {ready.length === 0 && (
-              <div className="flex flex-col items-center py-12 text-slate-600">
+              <div className="flex flex-col items-center py-12 text-stone-300">
                 <CheckCircle2 className="w-10 h-10 mb-2 opacity-40" />
                 <p className="text-sm">Nessun ordine pronto</p>
               </div>
@@ -365,10 +365,10 @@ export default function KitchenDisplayPage() {
 
       {/* Footer con istruzioni */}
       <footer className="px-6 py-2 bg-slate-800 border-t border-slate-700 flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-400">
           Clicca su un piatto per avanzare lo stato (In attesa → In prep. → Pronto) · "Segna Tutto Pronto" completa l'ordine
         </p>
-        <div className="flex items-center gap-4 text-xs text-slate-500">
+        <div className="flex items-center gap-4 text-xs text-stone-400">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-yellow-400 rounded-full" />In attesa</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-orange-400 rounded-full" />In prep.</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-400 rounded-full" />Pronto</span>

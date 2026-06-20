@@ -37,7 +37,7 @@ export default function Sidebar() {
   const theme = getTenantTheme(restaurant?.colorTheme)
 
   return (
-    <aside className="w-64 flex flex-col shrink-0 border-r border-stone-800" style={{ backgroundColor: BRAND.darkSurface }}>
+    <aside className="w-64 flex flex-col shrink-0 border-r border-stone-800/70 bg-[#1f1d1a]">
       {/* Logo Aura Syncro + tenant */}
       <div className="p-6 border-b border-stone-800">
         <div className="flex items-center gap-3 mb-4">

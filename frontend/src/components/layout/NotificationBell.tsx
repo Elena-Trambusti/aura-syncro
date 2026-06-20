@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { Bell, X, ShoppingBag, CalendarDays, AlertTriangle, ChefHat } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
 import { formatDateTime } from '../../lib/utils'
@@ -14,10 +14,10 @@ interface Notification {
 }
 
 const TYPE_CONFIG = {
-  new_order: { icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-50' },
-  reservation: { icon: CalendarDays, color: 'text-blue-500', bg: 'bg-blue-50' },
-  low_stock: { icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50' },
-  order_ready: { icon: ChefHat, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  new_order: { icon: ShoppingBag, color: 'text-amber-400', bg: 'bg-amber-950/30' },
+  reservation: { icon: CalendarDays, color: 'text-blue-500', bg: 'bg-blue-950/40' },
+  low_stock: { icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-950/40' },
+  order_ready: { icon: ChefHat, color: 'text-emerald-500', bg: 'bg-emerald-950/40' },
 }
 
 export default function NotificationBell() {
@@ -93,35 +93,35 @@ export default function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={() => { setOpen(!open); if (!open) markAllRead() }}
-        className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors"
+        className="relative p-2 rounded-lg hover:bg-stone-800/50 transition-colors"
       >
-        <Bell className="w-5 h-5 text-slate-500" />
+        <Bell className="w-5 h-5 text-stone-400" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-amber-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800">Notifiche</h3>
+        <div className="absolute right-0 top-full mt-2 w-80 bg-stone-900/55 border border-stone-700/50 rounded-2xl shadow-xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800/50">
+            <h3 className="font-semibold text-stone-100">Notifiche</h3>
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
-                <button onClick={clearAll} className="text-xs text-slate-400 hover:text-red-500 transition-colors">
+                <button onClick={clearAll} className="text-xs text-stone-500 hover:text-red-500 transition-colors">
                   Cancella tutto
                 </button>
               )}
               <button onClick={() => setOpen(false)}>
-                <X className="w-4 h-4 text-slate-400" />
+                <X className="w-4 h-4 text-stone-500" />
               </button>
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+          <div className="max-h-80 overflow-y-auto divide-y divide-stone-800/40">
             {notifications.length === 0 ? (
-              <div className="py-8 text-center text-slate-400">
+              <div className="py-8 text-center text-stone-500">
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">Nessuna notifica</p>
               </div>
@@ -134,19 +134,19 @@ export default function NotificationBell() {
                     key={notif.id}
                     onClick={() => markRead(notif.id)}
                     className={cn(
-                      'flex items-start gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors',
-                      !notif.read && 'bg-orange-50/40'
+                      'flex items-start gap-3 px-4 py-3 hover:bg-stone-900/30 cursor-pointer transition-colors',
+                      !notif.read && 'bg-amber-950/30/40'
                     )}
                   >
                     <div className={`w-8 h-8 ${config.bg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
                       <Icon className={`w-4 h-4 ${config.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-700 leading-snug">{notif.message}</p>
-                      <p className="text-xs text-slate-400 mt-1">{formatDateTime(notif.timestamp)}</p>
+                      <p className="text-sm text-stone-200 leading-snug">{notif.message}</p>
+                      <p className="text-xs text-stone-500 mt-1">{formatDateTime(notif.timestamp)}</p>
                     </div>
                     {!notif.read && (
-                      <div className="w-2 h-2 bg-orange-500 rounded-full shrink-0 mt-1.5" />
+                      <div className="w-2 h-2 bg-amber-600 rounded-full shrink-0 mt-1.5" />
                     )}
                   </div>
                 )

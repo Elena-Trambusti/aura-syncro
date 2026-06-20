@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+﻿import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
@@ -177,7 +177,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (
               <div key={item.menuItemId} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-400 w-4">{idx + 1}</span>
+                <span className="text-xs font-bold text-stone-500 w-4">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-stone-300 truncate">{item.name}</p>
                   <div className="w-full bg-stone-800 rounded-full h-1.5 mt-1">
@@ -194,7 +194,7 @@ export default function DashboardPage() {
               </div>
             ))}
             {(!topItems || topItems.length === 0) && (
-              <p className="text-sm text-slate-400 text-center py-4">Nessun dato disponibile</p>
+              <p className="text-sm text-stone-500 text-center py-4">Nessun dato disponibile</p>
             )}
           </div>
         </div>

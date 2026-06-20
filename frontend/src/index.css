@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* Aura Syncro — oro/ambra su dark */
   --color-primary-50: #fefce8;
   --color-primary-100: #fef9c3;
   --color-primary-200: #fde68a;
@@ -13,9 +12,10 @@
   --color-primary-800: #854d0e;
   --color-primary-900: #713f12;
 
-  --color-aura-dark: #0c0a09;
-  --color-aura-surface: #1c1917;
-  --color-aura-border: #292524;
+  --color-aura-dark: #181614;
+  --color-aura-surface: #1f1d1a;
+  --color-aura-elevated: #262320;
+  --color-aura-border: #3d3832;
   --color-aura-gold: #c9a227;
 
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -27,24 +27,49 @@
   * {
     box-sizing: border-box;
   }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--color-aura-dark);
     color: #e7e5e4;
     -webkit-font-smoothing: antialiased;
   }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     background: #44403c;
     border-radius: 3px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: #78716c;
+  }
+
+  /* Select / option leggibili su sfondo scuro */
+  select option {
+    background: #262320;
+    color: #e7e5e4;
+  }
+}
+
+@layer components {
+  .aura-card {
+    @apply rounded-2xl border border-stone-700/45 bg-stone-900/50 backdrop-blur-sm shadow-lg shadow-black/10;
+  }
+
+  .aura-page-title {
+    @apply text-2xl font-bold text-stone-100 tracking-tight;
+  }
+
+  .aura-page-subtitle {
+    @apply text-sm text-stone-400 mt-1;
   }
 }

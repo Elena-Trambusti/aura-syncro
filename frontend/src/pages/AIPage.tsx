@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
@@ -50,7 +50,7 @@ function TabButton({ active, onClick, icon: Icon, label }: {
     <button
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-        active ? 'bg-violet-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+        active ? 'bg-violet-600 text-white shadow-md' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -61,10 +61,10 @@ function TabButton({ active, onClick, icon: Icon, label }: {
 
 function AlertCard({ alert }: { alert: Alert }) {
   const styles = {
-    danger: { bg: 'bg-red-50 border-red-200', icon: AlertTriangle, iconColor: 'text-red-500', titleColor: 'text-red-800' },
+    danger: { bg: 'bg-red-950/40 border-red-200', icon: AlertTriangle, iconColor: 'text-red-500', titleColor: 'text-red-800' },
     warning: { bg: 'bg-amber-50 border-amber-200', icon: AlertTriangle, iconColor: 'text-amber-500', titleColor: 'text-amber-800' },
-    success: { bg: 'bg-emerald-50 border-emerald-200', icon: CheckCircle2, iconColor: 'text-emerald-500', titleColor: 'text-emerald-800' },
-    info: { bg: 'bg-blue-50 border-blue-200', icon: Info, iconColor: 'text-blue-500', titleColor: 'text-blue-800' },
+    success: { bg: 'bg-emerald-950/40 border-emerald-200', icon: CheckCircle2, iconColor: 'text-emerald-500', titleColor: 'text-emerald-800' },
+    info: { bg: 'bg-blue-950/40 border-blue-200', icon: Info, iconColor: 'text-blue-500', titleColor: 'text-blue-800' },
   }
   const s = styles[alert.type]
   const Icon = s.icon
@@ -78,12 +78,12 @@ function AlertCard({ alert }: { alert: Alert }) {
             <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
               alert.type === 'danger' ? 'bg-red-100 text-red-700' :
               alert.type === 'warning' ? 'bg-amber-100 text-amber-700' :
-              alert.type === 'success' ? 'bg-emerald-100 text-emerald-700' :
+              alert.type === 'success' ? 'bg-emerald-950/50 text-emerald-400' :
               'bg-blue-100 text-blue-700'
             }`}>{alert.value}</span>
           )}
         </div>
-        <p className="text-xs text-slate-600 mt-1">{alert.description}</p>
+        <p className="text-xs text-stone-300 mt-1">{alert.description}</p>
         {alert.action && (
           <p className="text-xs font-semibold text-violet-600 mt-2 flex items-center gap-1">
             <ChevronRight className="w-3 h-3" /> {alert.action}
@@ -107,8 +107,8 @@ function ForecastSection() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-4">Ricavi previsti — prossimi 7 giorni</h3>
+      <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+        <h3 className="text-sm font-bold text-stone-200 mb-4">Ricavi previsti — prossimi 7 giorni</h3>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={forecast} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
             <defs>
@@ -131,15 +131,15 @@ function ForecastSection() {
 
       <div className="grid grid-cols-1 gap-3">
         {forecast.map(day => (
-          <div key={day.date} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center gap-4">
+          <div key={day.date} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm flex items-center gap-4">
             <div className="w-14 text-center shrink-0">
-              <p className="text-xs font-bold text-slate-500">{day.dayLabel.slice(0, 3).toUpperCase()}</p>
-              <p className="text-sm font-black text-slate-800">{new Date(day.date).getDate()}</p>
+              <p className="text-xs font-bold text-stone-400">{day.dayLabel.slice(0, 3).toUpperCase()}</p>
+              <p className="text-sm font-black text-stone-100">{new Date(day.date).getDate()}</p>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-base font-black text-slate-800">{formatCurrency(day.predictedRevenue)}</span>
-                <span className="text-xs text-slate-400">~{day.predictedCovers} coperti</span>
+                <span className="text-base font-black text-stone-100">{formatCurrency(day.predictedRevenue)}</span>
+                <span className="text-xs text-stone-500">~{day.predictedCovers} coperti</span>
                 {day.trend !== 0 && (
                   <span className={`flex items-center gap-0.5 text-xs font-semibold ${day.trend > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                     {day.trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -147,18 +147,18 @@ function ForecastSection() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 truncate">{day.suggestion}</p>
+              <p className="text-xs text-stone-400 truncate">{day.suggestion}</p>
             </div>
             <div className="shrink-0 text-right">
               <div className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                day.confidence >= 70 ? 'bg-emerald-100 text-emerald-700' :
+                day.confidence >= 70 ? 'bg-emerald-950/50 text-emerald-400' :
                 day.confidence >= 50 ? 'bg-amber-100 text-amber-700' :
-                'bg-slate-100 text-slate-500'
+                'bg-stone-800/50 text-stone-400'
               }`}>
                 {day.confidence}% conf.
               </div>
               {day.historicalSamples > 0 && (
-                <p className="text-xs text-slate-400 mt-1">{day.historicalSamples} campioni</p>
+                <p className="text-xs text-stone-500 mt-1">{day.historicalSamples} campioni</p>
               )}
             </div>
           </div>
@@ -180,16 +180,16 @@ function ReorderSection() {
   const { suggestions, summary } = data
 
   const urgencyConfig = {
-    critical: { bg: 'bg-red-50 border-red-200', badge: 'bg-red-100 text-red-700', dot: 'bg-red-500', label: 'Critico' },
+    critical: { bg: 'bg-red-950/40 border-red-200', badge: 'bg-red-100 text-red-700', dot: 'bg-red-950/400', label: 'Critico' },
     warning: { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400', label: 'Attenzione' },
-    ok: { bg: 'bg-white border-slate-100', badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', label: 'OK' },
-    idle: { bg: 'bg-slate-50 border-slate-100', badge: 'bg-slate-100 text-slate-500', dot: 'bg-slate-300', label: 'Inattivo' },
+    ok: { bg: 'bg-stone-900/55 border-stone-800/50', badge: 'bg-emerald-950/50 text-emerald-400', dot: 'bg-emerald-950/400', label: 'OK' },
+    idle: { bg: 'bg-stone-900/30 border-stone-800/50', badge: 'bg-stone-800/50 text-stone-400', dot: 'bg-slate-300', label: 'Inattivo' },
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+        <div className="bg-red-950/40 border border-red-200 rounded-2xl p-4 text-center">
           <p className="text-2xl font-black text-red-700">{summary.critical}</p>
           <p className="text-xs text-red-600 font-medium mt-1">Critici</p>
         </div>
@@ -197,9 +197,9 @@ function ReorderSection() {
           <p className="text-2xl font-black text-amber-700">{summary.warning}</p>
           <p className="text-xs text-amber-600 font-medium mt-1">Da riordinare</p>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
-          <p className="text-lg font-black text-slate-800">{formatCurrency(summary.totalCost)}</p>
-          <p className="text-xs text-slate-500 font-medium mt-1">Costo riordino</p>
+        <div className="bg-stone-900/55 border border-stone-800/50 rounded-2xl p-4 text-center shadow-sm">
+          <p className="text-lg font-black text-stone-100">{formatCurrency(summary.totalCost)}</p>
+          <p className="text-xs text-stone-400 font-medium mt-1">Costo riordino</p>
         </div>
       </div>
 
@@ -211,14 +211,14 @@ function ReorderSection() {
               <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-bold text-slate-800">{item.name}</p>
+                  <p className="text-sm font-bold text-stone-100">{item.name}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cfg.badge}`}>{cfg.label}</span>
                 </div>
-                <p className="text-xs text-slate-500">{item.reason}</p>
-                {item.supplier && <p className="text-xs text-slate-400 mt-0.5">Fornitore: {item.supplier}</p>}
+                <p className="text-xs text-stone-400">{item.reason}</p>
+                {item.supplier && <p className="text-xs text-stone-500 mt-0.5">Fornitore: {item.supplier}</p>}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-black text-slate-800">
+                <p className="text-sm font-black text-stone-100">
                   {item.currentQty} {item.unit}
                 </p>
                 {item.suggestedOrderQty > 0 && (
@@ -227,14 +227,14 @@ function ReorderSection() {
                   </p>
                 )}
                 {item.daysLeft !== null && (
-                  <p className="text-xs text-slate-400">{item.daysLeft}g rimanenti</p>
+                  <p className="text-xs text-stone-500">{item.daysLeft}g rimanenti</p>
                 )}
               </div>
             </div>
           )
         })}
         {suggestions.filter(s => s.urgency !== 'idle').length === 0 && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+          <div className="bg-emerald-950/40 border border-emerald-200 rounded-2xl p-6 text-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
             <p className="text-sm font-bold text-emerald-700">Scorte nella norma</p>
             <p className="text-xs text-emerald-600 mt-1">Nessun riordino urgente rilevato</p>
@@ -265,7 +265,7 @@ function MenuMatrixSection() {
     { key: 'star', label: '⭐ Star', desc: 'Alto volume + alto margine', count: summary.stars, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     { key: 'plowhorse', label: '🐴 Trainante', desc: 'Alto volume + basso margine', count: summary.plowhorses, color: 'bg-blue-100 text-blue-800 border-blue-200' },
     { key: 'puzzle', label: '🔮 Potenziale', desc: 'Basso volume + alto margine', count: summary.puzzles, color: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { key: 'dog', label: '🐕 Da rivedere', desc: 'Basso volume + basso margine', count: summary.dogs, color: 'bg-slate-100 text-slate-600 border-slate-200' },
+    { key: 'dog', label: '🐕 Da rivedere', desc: 'Basso volume + basso margine', count: summary.dogs, color: 'bg-stone-800/50 text-stone-300 border-stone-700/50' },
   ]
 
   const scatterData = matrix.map(item => ({
@@ -282,9 +282,9 @@ function MenuMatrixSection() {
   return (
     <div className="space-y-5">
       {/* Scatter plot */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-700 mb-1">Mappa posizionamento piatti (30 giorni)</h3>
-        <p className="text-xs text-slate-400 mb-4">X = volumi venduti · Y = prezzo unitario · Dimensione = fatturato</p>
+      <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+        <h3 className="text-sm font-bold text-stone-200 mb-1">Mappa posizionamento piatti (30 giorni)</h3>
+        <p className="text-xs text-stone-500 mb-4">X = volumi venduti · Y = prezzo unitario · Dimensione = fatturato</p>
         <ResponsiveContainer width="100%" height={220}>
           <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -297,9 +297,9 @@ function MenuMatrixSection() {
                 if (!payload?.length) return null
                 const d = payload[0].payload
                 return (
-                  <div className="bg-white rounded-xl shadow-lg p-3 border border-slate-100 text-xs">
-                    <p className="font-bold text-slate-800 mb-1">{d.name}</p>
-                    <p className="text-slate-500">{d.x} vendite · €{d.y}</p>
+                  <div className="bg-stone-900/55 rounded-xl shadow-lg p-3 border border-stone-800/50 text-xs">
+                    <p className="font-bold text-stone-100 mb-1">{d.name}</p>
+                    <p className="text-stone-400">{d.x} vendite · €{d.y}</p>
                   </div>
                 )
               }}
@@ -333,9 +333,9 @@ function MenuMatrixSection() {
       </div>
 
       {/* Lista piatti */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-          <p className="text-sm font-bold text-slate-700">
+      <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-stone-800/50 flex items-center justify-between">
+          <p className="text-sm font-bold text-stone-200">
             {activeQuadrant ? `${quadrants.find(q => q.key === activeQuadrant)?.label} — ` : 'Tutti i piatti — '}
             {filtered.length} risultati
           </p>
@@ -343,18 +343,18 @@ function MenuMatrixSection() {
             <button onClick={() => setActiveQuadrant(null)} className="text-xs text-violet-600 font-semibold">Mostra tutti</button>
           )}
         </div>
-        <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
+        <div className="divide-y divide-stone-800/40 max-h-80 overflow-y-auto">
           {filtered.map(item => (
-            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
+            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-900/30 transition-colors">
               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">{item.name}</p>
-                <p className="text-xs text-slate-400">{item.category}</p>
+                <p className="text-sm font-semibold text-stone-100">{item.name}</p>
+                <p className="text-xs text-stone-500">{item.category}</p>
                 <p className="text-xs text-violet-600 mt-0.5">{item.action}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-black text-slate-800">{formatCurrency(item.revenue30d)}</p>
-                <p className="text-xs text-slate-400">{item.qty30d} vendite</p>
+                <p className="text-sm font-black text-stone-100">{formatCurrency(item.revenue30d)}</p>
+                <p className="text-xs text-stone-500">{item.qty30d} vendite</p>
               </div>
             </div>
           ))}
@@ -376,11 +376,11 @@ function AlertsSection() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-500">
         Analisi aggiornata il {new Date(data.generatedAt).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
       </p>
       {data.alerts.length === 0 ? (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center">
+        <div className="bg-emerald-950/40 border border-emerald-200 rounded-2xl p-8 text-center">
           <Sparkles className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
           <p className="text-sm font-bold text-emerald-700">Tutto sotto controllo</p>
           <p className="text-xs text-emerald-600 mt-1">Nessuna anomalia rilevata al momento</p>
@@ -396,9 +396,9 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100 animate-pulse">
+        <div key={i} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 animate-pulse">
           <div className="h-4 bg-slate-200 rounded w-1/3 mb-3" />
-          <div className="h-3 bg-slate-100 rounded w-2/3" />
+          <div className="h-3 bg-stone-800/50 rounded w-2/3" />
         </div>
       ))}
     </div>
@@ -433,9 +433,9 @@ export default function AIPage() {
             <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center">
               <Brain className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">AI Predittiva</h1>
+            <h1 className="text-2xl font-bold text-stone-100">AI Predittiva</h1>
           </div>
-          <p className="text-slate-500 text-sm">Insights intelligenti basati sui tuoi dati storici</p>
+          <p className="text-stone-400 text-sm">Insights intelligenti basati sui tuoi dati storici</p>
         </div>
         <div className="flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1.5">
           <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
@@ -457,15 +457,15 @@ export default function AIPage() {
               <p className="text-xs opacity-60 mt-1">Basato su {summary.tomorrow.samples} {summary.tomorrow.dayLabel} storici</p>
             )}
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <BarChart2 className="w-4 h-4 text-slate-400" />
-              <p className="text-xs font-medium text-slate-500">Modello</p>
+              <BarChart2 className="w-4 h-4 text-stone-500" />
+              <p className="text-xs font-medium text-stone-400">Modello</p>
             </div>
-            <p className="text-sm font-bold text-slate-800">Media mobile</p>
-            <p className="text-xs text-slate-400 mt-1">per giorno settimana</p>
+            <p className="text-sm font-bold text-stone-100">Media mobile</p>
+            <p className="text-xs text-stone-500 mt-1">per giorno settimana</p>
           </div>
-          <div className={`rounded-2xl p-4 border shadow-sm ${summary.criticalStock > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+          <div className={`rounded-2xl p-4 border shadow-sm ${summary.criticalStock > 0 ? 'bg-red-950/40 border-red-200' : 'bg-emerald-950/40 border-emerald-200'}`}>
             <div className="flex items-center gap-2 mb-2">
               <ShoppingCart className={`w-4 h-4 ${summary.criticalStock > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
               <p className={`text-xs font-medium ${summary.criticalStock > 0 ? 'text-red-600' : 'text-emerald-600'}`}>Scorte critiche</p>
