@@ -1,8 +1,9 @@
 {
-  "name": "ristorante-super-app",
+  "name": "aura-syncro",
   "private": true,
-  "description": "Super App Ristorante — monorepo frontend + backend",
+  "description": "Aura Syncro — monorepo frontend + backend",
   "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./avvia-app.ps1",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "db:push": "npm run db:push --prefix backend",

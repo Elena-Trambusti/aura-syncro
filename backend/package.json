@@ -1,7 +1,7 @@
 {
-  "name": "ristorante-backend",
+  "name": "aura-syncro-backend",
   "version": "1.0.0",
-  "description": "Backend API per Super App Ristorante",
+  "description": "Backend API per Aura Syncro",
   "main": "dist/index.js",
   "engines": {
     "node": ">=20"

@@ -186,7 +186,7 @@ export default function KitchenDisplayPage() {
       if (order.status === 'PENDING' || order.status === 'CONFIRMED') {
         setNewOrderAlert(true)
         toast('🔔 Nuovo ordine!', {
-          style: { background: '#f97316', color: '#fff', fontWeight: 'bold' },
+          style: { background: '#c9a227', color: '#fff', fontWeight: 'bold' },
           duration: 4000,
         })
         setTimeout(() => setNewOrderAlert(false), 3000)

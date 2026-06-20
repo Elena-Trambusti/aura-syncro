@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { getTenantTheme } from '../lib/tenantTheme'
+import { BRAND } from '../lib/brand'
 import {
   TrendingUp, TrendingDown, ShoppingBag, CalendarCheck,
   Users, AlertTriangle, ClipboardList,
@@ -29,12 +30,12 @@ function StatCard({
   trend?: number
 }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl p-6 border border-stone-800 bg-stone-900/60 backdrop-blur-sm">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-          {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+          <p className="text-sm font-medium text-stone-400">{title}</p>
+          <p className="text-2xl font-bold text-stone-100 mt-1">{value}</p>
+          {subtitle && <p className="text-xs text-stone-500 mt-1">{subtitle}</p>}
           {trend !== undefined && (
             <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
               {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -71,13 +72,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Dashboard — {restaurant?.name || 'Ristorante'}
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          {new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
+            {BRAND.name}
+          </p>
+          <h1 className="text-2xl font-bold text-stone-100">
+            Dashboard — {restaurant?.name || 'Ristorante'}
+          </h1>
+          <p className="text-stone-500 text-sm mt-1">
+            {new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
+          </p>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -132,8 +138,8 @@ export default function DashboardPage() {
 
       {/* Grafici */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">Andamento Fatturato — Ultimi 7 giorni</h3>
+        <div className="xl:col-span-2 rounded-2xl p-6 border border-stone-800 bg-stone-900/60">
+          <h3 className="text-base font-semibold text-stone-100 mb-4">Andamento Fatturato — Ultimi 7 giorni</h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueData || []}>
               <defs>
@@ -142,7 +148,7 @@ export default function DashboardPage() {
                   <stop offset="95%" stopColor={theme.color} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#292524" />
               <XAxis
                 dataKey="date"
                 tickFormatter={d => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
@@ -166,15 +172,15 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">Top Piatti — Ultimi 30 giorni</h3>
+        <div className="rounded-2xl p-6 border border-stone-800 bg-stone-900/60">
+          <h3 className="text-base font-semibold text-stone-100 mb-4">Top Piatti — Ultimi 30 giorni</h3>
           <div className="space-y-3">
             {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (
               <div key={item.menuItemId} className="flex items-center gap-3">
                 <span className="text-xs font-bold text-slate-400 w-4">{idx + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-700 truncate">{item.name}</p>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1">
+                  <p className="text-sm font-medium text-stone-300 truncate">{item.name}</p>
+                  <div className="w-full bg-stone-800 rounded-full h-1.5 mt-1">
                     <div
                       className="h-1.5 rounded-full"
                       style={{
@@ -184,7 +190,7 @@ export default function DashboardPage() {
                     />
                   </div>
                 </div>
-                <span className="text-xs font-semibold text-slate-600">{item.quantity} pz</span>
+                  <span className="text-xs font-semibold text-stone-400">{item.quantity} pz</span>
               </div>
             ))}
             {(!topItems || topItems.length === 0) && (

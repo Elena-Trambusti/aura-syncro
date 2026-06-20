@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null)
     setUser(null)
     setRestaurant(null)
-    applyTenantCssVars('#f97316')
+    applyTenantCssVars('#c9a227')
     disconnectSocket()
   }, [])
 
@@ -111,5 +111,5 @@ export function useAuth() {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTenantTheme() {
   const { restaurant } = useAuth()
-  return restaurant?.colorTheme ?? '#f97316'
+  return restaurant?.colorTheme ?? '#c9a227'
 }

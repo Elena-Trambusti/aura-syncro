@@ -38,7 +38,7 @@ export function restaurantPayload(restaurant: {
     id: restaurant.id,
     name: restaurant.name,
     slug: restaurant.slug,
-    colorTheme: restaurant.colorTheme ?? '#f97316',
+    colorTheme: restaurant.colorTheme || '#c9a227',
     logoUrl: restaurant.logoUrl ?? restaurant.logo ?? null,
   }
 }

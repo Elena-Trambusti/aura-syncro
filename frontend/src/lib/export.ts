@@ -81,7 +81,7 @@ export function printReceipt(order: {
   <div class="separator"></div>
   <div class="center">
     <p>Grazie per la visita!</p>
-    <p style="font-size:10px;margin-top:4px;">Powered by Super App Ristorante</p>
+    <p style="font-size:10px;margin-top:4px;">Powered by Aura Syncro</p>
   </div>
 </body>
 </html>`

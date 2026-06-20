@@ -1,4 +1,4 @@
-# 🍽️ Restaurant of the Future
+# ✨ Aura Syncro
 
 > **Full-stack SaaS gestionale per ristoranti** — POS, cucina real-time, CRM, magazzino, marketing e AI predittiva in un'unica piattaforma.
 
@@ -12,7 +12,7 @@
 
 ## ✨ Panoramica
 
-**Restaurant of the Future** risolve i 7 problemi critici che ogni ristoratore affronta quotidianamente:
+**Aura Syncro** risolve i 7 problemi critici che ogni ristoratore affronta quotidianamente:
 
 | Problema | Soluzione |
 |---|---|
@@ -42,7 +42,7 @@
 ## 🏗️ Architettura
 
 ```
-restaurant-of-the-future/
+aura-syncro/
 ├── backend/                 # API Node.js + Express + TypeScript
 │   ├── prisma/
 │   │   └── schema.prisma    # Schema DB (15+ modelli)
@@ -171,8 +171,8 @@ Tutti gli algoritmi girano sui dati storici del ristorante, in locale:
 
 ```bash
 # 1. Clona il repository
-git clone https://github.com/TUO-USERNAME/restaurant-of-the-future.git
-cd restaurant-of-the-future
+git clone https://github.com/Elena-Trambusti/aura-syncro.git
+cd aura-syncro
 
 # 2. Backend
 cd backend

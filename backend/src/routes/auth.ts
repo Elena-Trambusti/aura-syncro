@@ -44,7 +44,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
     data: {
       name: restaurantName,
       slug,
-      colorTheme: '#f97316',
+      colorTheme: '#c9a227',
       settings: { create: {} },
       users: {
         create: {

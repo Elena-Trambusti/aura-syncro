@@ -34,7 +34,7 @@ export default function AnalyticsPage() {
   const totalOrders = (revenue || []).reduce((s: number, d: { orders: number }) => s + d.orders, 0)
   const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
-  const COLORS = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4']
+  const COLORS = ['#c9a227', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4']
 
   const pieData = (topItems || []).slice(0, 6).map((item: { name: string; quantity: number; revenue: number }) => ({
     name: item.name.length > 20 ? item.name.slice(0, 20) + '...' : item.name,
@@ -102,8 +102,8 @@ export default function AnalyticsPage() {
           <AreaChart data={revenue || []}>
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                <stop offset="5%" stopColor="#c9a227" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#c9a227" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
               labelFormatter={d => new Date(d).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'long' })}
               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
             />
-            <Area type="monotone" dataKey="revenue" stroke="#f97316" strokeWidth={2.5} fill="url(#revenueGrad)" />
+            <Area type="monotone" dataKey="revenue" stroke="#c9a227" strokeWidth={2.5} fill="url(#revenueGrad)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={2} />
               <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-              <Bar dataKey="orders" fill="#f97316" radius={[4, 4, 0, 0]} name="Ordini" />
+              <Bar dataKey="orders" fill="#c9a227" radius={[4, 4, 0, 0]} name="Ordini" />
             </BarChart>
           </ResponsiveContainer>
         </div>

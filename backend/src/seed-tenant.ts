@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 
 const DEFAULT_SLUG = 'la-bella-italia'
 const DEFAULT_NAME = 'La Bella Italia'
-const DEFAULT_COLOR = '#f97316'
+const DEFAULT_COLOR = '#c9a227'
 
 async function assignOrphans(model: string, update: () => Promise<{ count: number }>) {
   const result = await update()

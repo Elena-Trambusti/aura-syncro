@@ -10,11 +10,11 @@ async function main() {
 
   const restaurant = await prisma.restaurant.upsert({
     where: { slug: 'ristorante-demo' },
-    update: {},
+    update: { colorTheme: '#c9a227' },
     create: {
       name: 'Ristorante La Bella Italia',
       slug: 'ristorante-demo',
-      colorTheme: '#f97316',
+      colorTheme: '#c9a227',
       address: 'Via Roma 1, Milano',
       phone: '+39 02 1234567',
       email: 'info@labellaitalai.it',

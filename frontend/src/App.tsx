@@ -1,5 +1,5 @@
 /**
- * Restaurant of the Future — Software Gestionale per Ristoranti
+ * Aura Syncro — Software Gestionale per Ristoranti
  * Copyright (c) 2026 Elena Trambusti. Tutti i diritti riservati.
  * Contatto: elenatrambusti2024@gmail.com
  * Software proprietario e riservato. Vedere LICENSE per i dettagli.
@@ -35,10 +35,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-500 font-medium">Caricamento...</p>
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-stone-400 font-medium">Caricamento Aura Syncro...</p>
         </div>
       </div>
     )

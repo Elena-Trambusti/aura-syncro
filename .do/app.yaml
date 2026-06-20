@@ -2,13 +2,13 @@
 # Import: Dashboard → Apps → Create → "Import from App Spec" → incolla questo file
 # Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
 
-name: restaurant-super-app
+name: aura-syncro
 region: fra
 
 services:
   - name: api
     github:
-      repo: Elena-Trambusti/Restaurant-of-the-Future
+      repo: Elena-Trambusti/aura-syncro
       branch: main
       deploy_on_push: true
     source_dir: /backend
@@ -54,7 +54,7 @@ services:
 #   - name: prisma-db-push
 #     kind: PRE_DEPLOY
 #     github:
-#       repo: Elena-Trambusti/Restaurant-of-the-Future
+#       repo: Elena-Trambusti/aura-syncro
 #       branch: main
 #     source_dir: /backend
 #     run_command: npx prisma db push

@@ -10,7 +10,18 @@ export interface TenantTheme {
   lightText: string
 }
 
+const AURA_GOLD = '#c9a227'
+
 const PRESETS: Record<string, TenantTheme> = {
+  [AURA_GOLD]: {
+    color: AURA_GOLD,
+    colorHover: '#b8921f',
+    gradientFrom: '#c9a227',
+    gradientTo: '#f59e0b',
+    lightBg: '#fef9c3',
+    lightBorder: '#fde68a',
+    lightText: '#92710a',
+  },
   '#f97316': {
     color: '#f97316',
     colorHover: '#ea580c',
@@ -58,7 +69,7 @@ const PRESETS: Record<string, TenantTheme> = {
   },
 }
 
-const DEFAULT_THEME = PRESETS['#f97316']
+const DEFAULT_THEME = PRESETS[AURA_GOLD]
 
 export function getTenantTheme(colorTheme?: string | null): TenantTheme {
   if (!colorTheme) return DEFAULT_THEME

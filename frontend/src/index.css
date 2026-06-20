@@ -1,16 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #fff7ed;
-  --color-primary-100: #ffedd5;
-  --color-primary-200: #fed7aa;
-  --color-primary-300: #fdba74;
-  --color-primary-400: #fb923c;
-  --color-primary-500: #f97316;
-  --color-primary-600: #ea580c;
-  --color-primary-700: #c2410c;
-  --color-primary-800: #9a3412;
-  --color-primary-900: #7c2d12;
+  /* Aura Syncro — oro/ambra su dark */
+  --color-primary-50: #fefce8;
+  --color-primary-100: #fef9c3;
+  --color-primary-200: #fde68a;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #c9a227;
+  --color-primary-600: #b8921f;
+  --color-primary-700: #92710a;
+  --color-primary-800: #854d0e;
+  --color-primary-900: #713f12;
+
+  --color-aura-dark: #0c0a09;
+  --color-aura-surface: #1c1917;
+  --color-aura-border: #292524;
+  --color-aura-gold: #c9a227;
 
   --font-sans: 'Inter', system-ui, sans-serif;
   --radius-xl: 1rem;
@@ -23,8 +29,8 @@
   }
   body {
     font-family: var(--font-sans);
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--color-aura-dark);
+    color: #e7e5e4;
     -webkit-font-smoothing: antialiased;
   }
   ::-webkit-scrollbar {
@@ -35,10 +41,10 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #44403c;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #78716c;
   }
 }

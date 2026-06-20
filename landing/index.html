@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Restaurant of the Future &mdash; La Super App per il tuo Ristorante</title>
-  <meta name="description" content="Gestisci ordini, tavoli, menu, cucina, personale, magazzino e clienti in un'unica app. Con AI predittiva integrata." />
+  <title>Aura Syncro &mdash; La piattaforma elegante per il tuo ristorante</title>
+  <meta name="description" content="Aura Syncro: gestisci ordini, tavoli, menu, cucina, personale, magazzino e clienti in un'unica app. Con AI predittiva integrata." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --orange: #f97316; --orange-dark: #ea580c; --orange-light: #fff7ed;
-      --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
+      --orange: #c9a227; --orange-dark: #b8921f; --orange-light: #1c1917;
+      --slate-900: #0c0a09; --slate-800: #1c1917; --slate-700: #292524;
       --slate-600: #475569; --slate-400: #94a3b8; --slate-100: #f1f5f9;
       --slate-50: #f8fafc; --white: #ffffff; --violet: #7c3aed;
       --emerald: #10b981; --radius: 16px;
     }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--white); color: var(--slate-800); line-height: 1.6; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--slate-900); color: #e7e5e4; line-height: 1.6; }
     .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
     .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
-    .badge-orange { background: var(--orange-light); color: var(--orange-dark); border: 1px solid #fed7aa; }
+    .badge-orange { background: rgba(201,162,39,.12); color: var(--orange); border: 1px solid rgba(201,162,39,.35); }
     .badge-violet { background: #f5f3ff; color: var(--violet); border: 1px solid #ddd6fe; }
     .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; transition: all .2s; }
-    .btn-primary { background: var(--orange); color: white; box-shadow: 0 4px 20px rgba(249,115,22,.35); }
+    .btn-primary { background: var(--orange); color: #0c0a09; box-shadow: 0 4px 20px rgba(201,162,39,.35); }
     .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); }
     .btn-outline { background: transparent; color: var(--slate-700); border: 2px solid #e2e8f0; }
     .btn-outline:hover { background: var(--slate-50); border-color: var(--slate-400); }
@@ -35,11 +35,11 @@
     .mx-auto { margin-left: auto; margin-right: auto; }
 
     /* NAV */
-    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(12,10,9,.92); backdrop-filter: blur(12px); border-bottom: 1px solid #292524; }
     .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; max-width: 1120px; margin: 0 auto; }
     .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .nav-logo-icon { width: 38px; height: 38px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .nav-logo-text { font-size: 18px; font-weight: 900; color: var(--slate-900); }
+    .nav-logo-text { font-size: 18px; font-weight: 900; color: #fafaf9; }
     .nav-logo-text span { color: var(--orange); }
     .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
     .nav-links a { font-size: 14px; font-weight: 600; color: var(--slate-600); text-decoration: none; transition: color .2s; }
@@ -48,13 +48,13 @@
     @media (max-width: 768px) { .nav-links, .nav-cta .btn-outline { display: none; } }
 
     /* HERO */
-    .hero { background: linear-gradient(160deg, #fff7ed 0%, #fff 40%, #f5f3ff 100%); padding: 80px 0 60px; overflow: hidden; position: relative; }
-    .hero::before { content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(249,115,22,.08) 0%, transparent 70%); pointer-events: none; }
+    .hero { background: linear-gradient(160deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%); padding: 80px 0 60px; overflow: hidden; position: relative; }
+    .hero::before { content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(201,162,39,.12) 0%, transparent 70%); pointer-events: none; }
     .hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
     @media (max-width: 900px) { .hero-inner { grid-template-columns: 1fr; } }
-    .hero-title { font-size: clamp(34px, 5vw, 56px); font-weight: 900; color: var(--slate-900); line-height: 1.1; }
+    .hero-title { font-size: clamp(34px, 5vw, 56px); font-weight: 900; color: #fafaf9; line-height: 1.1; }
     .hero-title .highlight { color: var(--orange); }
-    .hero-desc { font-size: 18px; color: var(--slate-600); margin: 20px 0 36px; line-height: 1.7; }
+    .hero-desc { font-size: 18px; color: #a8a29e; margin: 20px 0 36px; line-height: 1.7; }
     .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
     .hero-stats { display: flex; gap: 32px; margin-top: 44px; padding-top: 36px; border-top: 1px solid #e2e8f0; flex-wrap: wrap; }
     .hero-stat-num { font-size: 28px; font-weight: 900; color: var(--slate-900); }
@@ -203,8 +203,8 @@
 <nav>
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <div class="nav-logo-icon">&#127859;</div>
-      <span class="nav-logo-text">Restaurant <span>of the Future</span></span>
+      <div class="nav-logo-icon">&#10022;</div>
+      <span class="nav-logo-text">Aura <span>Syncro</span></span>
     </a>
     <ul class="nav-links">
       <li><a href="#features">Funzionalit&agrave;</a></li>
@@ -228,8 +228,8 @@
           <span class="badge badge-orange">&#128640; Nuovo &middot; 2026</span>
         </div>
         <h1 class="hero-title">
-          La <span class="highlight">Super App</span><br/>
-          che ogni ristorante<br/>stava aspettando
+          <span class="highlight">Aura Syncro</span><br/>
+          sincronizza ogni istante<br/>del tuo ristorante
         </h1>
         <p class="hero-desc">
           POS, cucina, prenotazioni, inventario, CRM, marketing e AI predittiva &mdash;
@@ -265,7 +265,7 @@
             <div class="mockup-dot" style="background:#ff5f57;"></div>
             <div class="mockup-dot" style="background:#febc2e;"></div>
             <div class="mockup-dot" style="background:#28c840;"></div>
-            <span style="margin-left:8px;color:#475569;font-size:11px;font-family:monospace;">restaurantofthefuture.it/dashboard</span>
+            <span style="margin-left:8px;color:#475569;font-size:11px;font-family:monospace;">aurasyncro.it/dashboard</span>
           </div>
           <div class="mockup-body">
             <div style="color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Dashboard Oggi</div>
@@ -346,7 +346,7 @@
       <div>
         <span class="badge badge-violet">&#129302; Intelligenza Artificiale</span>
         <h2 class="ai-title">La tua app<br/>pensa per te</h2>
-        <p class="ai-desc">Restaurant of the Future analizza i tuoi dati storici e ti dice cosa fare: quando ordinare, cosa promuovere, chi rischia di non tornare. Nessuna API esterna &mdash; tutto gira sui tuoi dati, in privato.</p>
+        <p class="ai-desc">Aura Syncro analizza i tuoi dati storici e ti dice cosa fare: quando ordinare, cosa promuovere, chi rischia di non tornare. Nessuna API esterna &mdash; tutto gira sui tuoi dati, in privato.</p>
         <div class="ai-features">
           <div class="ai-feat"><div class="ai-feat-icon">&#128200;</div><div class="ai-feat-text"><strong>Previsione domanda</strong><span>Ricavi e coperti previsti per i prossimi 7 giorni, con livello di confidenza</span></div></div>
           <div class="ai-feat"><div class="ai-feat-icon">&#128717;</div><div class="ai-feat-text"><strong>Riordino intelligente</strong><span>Calcola la velocit&agrave; di consumo e suggerisce quantit&agrave; e momento ottimale per il riordino</span></div></div>
@@ -482,8 +482,8 @@
     <h2 class="cta-title">Pronto a trasformare<br/>il tuo <span class="highlight">ristorante</span>?</h2>
     <p class="cta-desc">Contattaci per una demo personalizzata, gratuita e senza impegno.</p>
     <div class="cta-buttons">
-      <a href="mailto:elenatrambusti2024@gmail.com?subject=Richiesta demo Restaurant of the Future&body=Ciao Elena, vorrei una demo dell'app. Il mio ristorante si chiama: " class="btn btn-primary" style="font-size:16px;padding:16px 36px;">&#128140; Scrivi una email &rarr;</a>
-      <a href="https://wa.me/?text=Ciao%20Elena%2C%20ho%20visto%20Restaurant%20of%20the%20Future%20e%20vorrei%20una%20demo!" class="btn btn-white" style="font-size:16px;padding:16px 36px;" target="_blank">&#128242; WhatsApp</a>
+      <a href="mailto:elenatrambusti2024@gmail.com?subject=Richiesta demo Aura Syncro&body=Ciao Elena, vorrei una demo dell'app. Il mio ristorante si chiama: " class="btn btn-primary" style="font-size:16px;padding:16px 36px;">&#128140; Scrivi una email &rarr;</a>
+      <a href="https://wa.me/?text=Ciao%20Elena%2C%20ho%20visto%20Aura%20Syncro%20e%20vorrei%20una%20demo!" class="btn btn-white" style="font-size:16px;padding:16px 36px;" target="_blank">&#128242; WhatsApp</a>
     </div>
     <p class="cta-guarantee">&#10003; Nessun vincolo contrattuale &middot; &#10003; Supporto in italiano &middot; &#10003; I tuoi dati rimangono tuoi</p>
   </div>
@@ -493,7 +493,7 @@
 <footer>
   <div class="container">
     <div class="footer-inner">
-      <div class="footer-logo">Restaurant <span>of the Future</span></div>
+      <div class="footer-logo">Aura <span>Syncro</span></div>
       <p class="footer-copy">&copy; 2026 Elena Trambusti &mdash; Tutti i diritti riservati. Software proprietario &mdash; vietata la riproduzione non autorizzata.</p>
       <div class="footer-links">
         <a href="mailto:elenatrambusti2024@gmail.com">Contatti</a>

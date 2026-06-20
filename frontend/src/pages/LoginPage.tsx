@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChefHat, Eye, EyeOff } from 'lucide-react'
+import { Sparkles, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { BRAND } from '../lib/brand'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -16,7 +17,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
-      toast.success('Bentornato!')
+      toast.success('Bentornato su Aura Syncro!')
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } }
       toast.error(error.response?.data?.error || 'Credenziali non valide')
@@ -26,45 +27,57 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: `linear-gradient(135deg, ${BRAND.dark} 0%, #1c1917 50%, #292524 100%)` }}
+    >
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: BRAND.gold }} />
+        <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: BRAND.amber }} />
+      </div>
+
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
-            <ChefHat className="w-9 h-9 text-white" />
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})`, boxShadow: `0 8px 32px ${BRAND.gold}40` }}
+          >
+            <Sparkles className="w-9 h-9 text-stone-950" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Super App</h1>
-          <p className="text-slate-400 mt-1">Gestione Ristorante Professionale</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">{BRAND.name}</h1>
+          <p className="text-stone-400 mt-2 text-sm">{BRAND.tagline}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold text-slate-800 mb-6">Accedi al pannello</h2>
+        <div className="rounded-2xl p-8 shadow-2xl border border-stone-800 bg-stone-900/80 backdrop-blur-xl">
+          <h2 className="text-xl font-bold text-stone-100 mb-6">Accedi al pannello</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                className="w-full px-4 py-2.5 border border-stone-700 rounded-xl bg-stone-950 text-stone-100 focus:outline-none focus:ring-2 focus:border-transparent placeholder:text-stone-600"
+                style={{ ['--tw-ring-color' as string]: BRAND.gold }}
                 placeholder="il-tuo@email.it"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800 pr-12"
+                  className="w-full px-4 py-2.5 border border-stone-700 rounded-xl bg-stone-950 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/60 pr-12 placeholder:text-stone-600"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -73,20 +86,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="w-full font-semibold py-3 rounded-xl transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed mt-2 text-stone-950 hover:opacity-90"
+              style={{ background: `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})` }}
             >
               {loading ? 'Accesso in corso...' : 'Accedi'}
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-orange-50 rounded-xl border border-orange-100">
-            <p className="text-xs text-orange-700 font-medium mb-1">Credenziali demo:</p>
-            <p className="text-xs text-orange-600">📧 admin@demo.it | 🔑 admin123</p>
+          <div className="mt-6 p-4 rounded-xl border border-amber-900/40 bg-amber-950/30">
+            <p className="text-xs font-medium mb-1" style={{ color: BRAND.amber }}>Credenziali demo:</p>
+            <p className="text-xs text-stone-400">📧 admin@demo.it | 🔑 admin123</p>
           </div>
 
-          <p className="text-center text-sm text-slate-500 mt-4">
+          <p className="text-center text-sm text-stone-500 mt-4">
             Nuovo ristorante?{' '}
-            <Link to="/register" className="text-orange-600 font-medium hover:underline">
+            <Link to="/register" className="font-medium hover:underline" style={{ color: BRAND.gold }}>
               Registrati
             </Link>
           </p>

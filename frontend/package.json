@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "aura-syncro-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Frontend Aura Syncro — gestionale ristoranti SaaS",
   "type": "module",
   "scripts": {
     "dev": "vite",

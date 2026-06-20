@@ -13,7 +13,7 @@ model Restaurant {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
-  colorTheme  String   @default("#f97316")
+  colorTheme  String   @default("#c9a227")
   logoUrl     String?
   address     String?
   phone       String?

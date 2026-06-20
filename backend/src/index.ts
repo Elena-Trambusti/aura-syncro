@@ -1,5 +1,5 @@
 /**
- * Restaurant of the Future — Software Gestionale per Ristoranti
+ * Aura Syncro — Software Gestionale per Ristoranti
  * Copyright (c) 2026 Elena Trambusti. Tutti i diritti riservati.
  * Contatto: elenatrambusti2024@gmail.com
  * Software proprietario e riservato. Vedere LICENSE per i dettagli.
