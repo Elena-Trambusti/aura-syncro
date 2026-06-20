@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { Save, QrCode, ExternalLink, MonitorCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import toast from 'react-hot-toast'
 
@@ -98,7 +99,6 @@ export default function SettingsPage() {
   })
 
   const menuUrl = `${window.location.origin}/menu/${restaurant?.slug}`
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(menuUrl)}`
   const kitchenUrl = `${window.location.origin}/cucina`
 
   return (
@@ -211,27 +211,24 @@ export default function SettingsPage() {
       <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-slate-900 mb-2">{t('settings.qrMenu')}</h2>
         <p className="text-sm text-slate-500 mb-4">{t('settings.qrMenuDesc')}</p>
-        <div className="flex items-start gap-6">
-          <div className="bg-stone-900/55 p-3 border-2 border-stone-800/50 rounded-xl">
-            <img src={qrUrl} alt="QR Menu" className="w-32 h-32" />
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-slate-500 mb-1">{t('settings.publicMenuLink')}</p>
+            <code className="text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 block break-all">{menuUrl}</code>
           </div>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">{t('settings.publicMenuLink')}</p>
-              <code className="text-xs bg-stone-800/50 px-3 py-1.5 rounded-lg text-slate-500 block break-all">{menuUrl}</code>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => window.open(menuUrl, '_blank')}
-                className="flex items-center gap-2 px-4 py-2 bg-stone-800/50 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">
-                <ExternalLink className="w-4 h-4" />
-                {t('settings.openMenu')}
-              </button>
-              <button onClick={() => { navigator.clipboard.writeText(menuUrl); toast.success(t('common.linkCopied')) }}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-950/40 hover:bg-orange-200 text-amber-400 rounded-xl text-sm font-medium transition-colors">
-                <QrCode className="w-4 h-4" />
-                {t('common.copyLink')}
-              </button>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/dashboard/qr-builder"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              <QrCode className="w-4 h-4" />
+              {t('nav.qrMenu')}
+            </Link>
+            <button onClick={() => window.open(menuUrl, '_blank')}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium transition-colors">
+              <ExternalLink className="w-4 h-4" />
+              {t('settings.openMenu')}
+            </button>
           </div>
         </div>
       </div>

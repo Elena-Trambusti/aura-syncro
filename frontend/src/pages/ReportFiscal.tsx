@@ -7,7 +7,7 @@ import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
 import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
 import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
-import { useFiscalRegime } from '../contexts/AuthContext'
+import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
 import {
   FileDown, CalendarRange, Loader2, Receipt, Coins, Wallet,
@@ -33,7 +33,9 @@ const inputClass = cn(
 
 export default function ReportFiscal() {
   const { t, i18n } = useTranslation()
-  const authRegime = useFiscalRegime()
+  const { restaurant } = useAuth()
+  const fiscalRegime = useFiscalRegime()
+  const tenantQueryKey = useTenantQueryKey()
   const now = new Date()
   const [mode, setMode] = useState<FilterMode>('month')
   const [dayDate, setDayDate] = useState(() => toLocalDateInput())
@@ -46,12 +48,15 @@ export default function ReportFiscal() {
   const intlLocale = getIntlLocale()
 
   const { data, isLoading, isFetching, isError } = useQuery<FiscalApiResponse>({
-    queryKey: ['reports', 'fiscal', mode, dayDate, year, month, rangeFrom, rangeTo],
+    queryKey: ['reports', 'fiscal', tenantQueryKey, mode, dayDate, year, month, rangeFrom, rangeTo],
     queryFn: () => api.get(`/reports/fiscal?${queryParams(mode, dayDate, year, month, rangeFrom, rangeTo)}`).then(r => r.data),
+    enabled: !!restaurant?.id,
   })
 
-  const taxRegion: TaxRegion = data?.fiscalRegime?.taxRegion ?? authRegime.taxRegion
-  const taxName = data?.fiscalRegime?.taxName ?? authRegime.taxName
+  /** Regime fiscale SOLO dal tenant DB — mai da cache API né da i18n.language */
+  const taxRegion: TaxRegion = fiscalRegime.taxRegion
+  const taxName = fiscalRegime.taxName
+  const countryCode = fiscalRegime.countryCode
 
   const months = useMemo(
     () => t('reportFiscal.months', { returnObjects: true }) as string[],
@@ -97,7 +102,7 @@ export default function ReportFiscal() {
         ring: 'ring-emerald-500/20',
       },
     ],
-    [t, taxRegion],
+    [t, taxRegion, countryCode, tenantQueryKey],
   )
 
   const tableHeaders = useMemo(
@@ -110,7 +115,7 @@ export default function ReportFiscal() {
       tRegime(t, taxRegion, 'table.tip'),
       tRegime(t, taxRegion, 'table.collectedTotal'),
     ],
-    [t, taxRegion],
+    [t, taxRegion, countryCode, tenantQueryKey],
   )
 
   const fmtDate = (d: string | Date) =>
@@ -196,10 +201,13 @@ export default function ReportFiscal() {
       (data.period.start !== data.period.end ? ` — ${fmtDate(data.period.end)}` : '')
     : ''
 
-  const regimeLabel = tRegime(t, taxRegion, 'regimeLabel')
+  const regimeLabel = useMemo(
+    () => tRegime(t, taxRegion, 'regimeLabel'),
+    [t, taxRegion, tenantQueryKey],
+  )
 
   return (
-    <div className="relative min-h-full -m-6 p-6">
+    <div key={tenantQueryKey} className="relative min-h-full -m-6 p-6">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-orange-400/20 blur-3xl" />
         <div className="absolute top-1/2 -left-24 h-80 w-80 rounded-full bg-amber-300/15 blur-3xl" />

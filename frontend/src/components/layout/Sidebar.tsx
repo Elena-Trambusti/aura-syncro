@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth } from '../../contexts/AuthContext'
@@ -18,11 +18,13 @@ const navItems = [
   { to: '/ordini', icon: ClipboardList, labelKey: 'nav.orders' },
   { to: '/prenotazioni', icon: CalendarDays, labelKey: 'nav.reservations' },
   { to: '/menu', icon: BookOpen, labelKey: 'nav.menu' },
+  { to: '/dashboard/qr-builder', icon: QrCode, labelKey: 'nav.qrMenu' },
   { to: '/crm', icon: Users, labelKey: 'nav.crm' },
   { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai' },
   { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty' },
   { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing' },
   { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments' },
+  { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing' },
   { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true },
   { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true },
   { to: '/personale', icon: UserCog, labelKey: 'nav.staff' },

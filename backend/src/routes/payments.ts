@@ -4,14 +4,19 @@ import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, authenticate } from '../middleware/auth'
 import { io } from '../index'
-import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
+import {
+  computeSplitBreakdown,
+  finalizeOrderPayment,
+  releaseTableIfEmpty,
+} from '../lib/orderPayment'
+import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { computeTaxForRestaurant } from '../lib/orderTax'
 
 export const paymentsRouter = Router()
 
 const posOrderInclude = {
   table: true,
-  items: { include: { menuItem: true } },
+  items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' as const } },
 }
 
 /** Simula l'invio del pagamento a un terminale POS fisico (Stripe Terminal / SumUp). */
@@ -21,7 +26,7 @@ async function simulatePosTerminal(amount: number): Promise<{
   terminalId: string
   provider: string
 }> {
-  const delayMs = Number(process.env.POS_SIMULATE_DELAY_MS) || 1200
+  const delayMs = Number(process.env.POS_SIMULATE_DELAY_MS) || 800
   await new Promise(resolve => setTimeout(resolve, delayMs))
 
   const transactionId = `pos_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
@@ -33,7 +38,154 @@ async function simulatePosTerminal(amount: number): Promise<{
   }
 }
 
-// ── Checkout POS fisico (protetto) ────────────────────────────────────────────
+const splitSchema = z.object({
+  mode: z.enum(['equal', 'by_items']),
+  guestCount: z.number().int().min(2).max(20),
+  assignments: z.array(z.object({
+    itemId: z.string(),
+    guestIndex: z.number().int().min(0),
+  })).optional(),
+}).optional()
+
+const finalizeSchema = z.object({
+  orderId: z.string(),
+  tipAmount: z.number().min(0).optional().default(0),
+  /** CARD | CASH per incasso; SPLIT usa splitSettlement */
+  paymentMethod: z.enum(['CARD', 'CASH', 'SPLIT']).default('CARD'),
+  /** Quando paymentMethod=SPLIT, metodo di registro fiscale effettivo */
+  splitSettlement: z.enum(['CARD', 'CASH']).optional(),
+  split: splitSchema,
+  simulateEmail: z.string().email().optional(),
+})
+
+async function loadOrderForCheckout(orderId: string, restaurantId: string) {
+  return prisma.order.findFirst({
+    where: { id: orderId, restaurantId },
+    include: {
+      table: true,
+      items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
+    },
+  })
+}
+
+// ── Anteprima checkout (riepilogo pre-pagamento) ─────────────────────────────
+paymentsRouter.get('/checkout/:orderId', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  const order = await loadOrderForCheckout(req.params.orderId, req.restaurantId!)
+  if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: req.restaurantId! },
+    include: { settings: true },
+  })
+
+  const fiscal = buildFiscalConfig(restaurant?.settings)
+
+  res.json({
+    order,
+    fiscalRegime: fiscalConfigPayload(fiscal, restaurant?.settings?.taxId),
+    restaurant: {
+      name: restaurant?.name,
+      taxId: restaurant?.settings?.taxId ?? null,
+    },
+  })
+})
+
+// ── Finalizza pagamento e chiusura conto ─────────────────────────────────────
+paymentsRouter.post('/finalize', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = finalizeSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
+    return
+  }
+
+  const { orderId, tipAmount, paymentMethod, splitSettlement, split, simulateEmail } = parsed.data
+
+  const order = await loadOrderForCheckout(orderId, req.restaurantId!)
+  if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  const settlementMethod = paymentMethod === 'SPLIT'
+    ? (splitSettlement ?? 'CARD')
+    : paymentMethod
+
+  let splitBreakdown
+  if (paymentMethod === 'SPLIT' && split) {
+    const totalWithTip = order.total + Math.max(0, tipAmount)
+    splitBreakdown = computeSplitBreakdown(
+      order.items.filter(i => i.status !== 'CANCELLED'),
+      totalWithTip,
+      split,
+    )
+  }
+
+  try {
+    const terminalResponse = await simulatePosTerminal(order.total + tipAmount)
+
+    const result = await finalizeOrderPayment(
+      {
+        orderId,
+        restaurantId: req.restaurantId!,
+        tipAmount,
+        paymentMethod: settlementMethod,
+      },
+      { splitBreakdown },
+    )
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: posOrderInclude,
+    })
+
+    await releaseTableIfEmpty(order.tableId)
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: req.restaurantId! },
+      include: { settings: true },
+    })
+    const fiscal = buildFiscalConfig(restaurant?.settings)
+
+    io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+
+    res.json({
+      success: true,
+      message: 'Pagamento finalizzato',
+      transactionId: result.transactionId,
+      order: updatedOrder,
+      fiscal: {
+        regime: fiscalConfigPayload(fiscal, restaurant?.settings?.taxId),
+        row: result.fiscalRow,
+      },
+      splitBreakdown: result.splitBreakdown,
+      pos: terminalResponse,
+      receipt: {
+        simulatedEmailSent: Boolean(simulateEmail),
+        emailTo: simulateEmail ?? null,
+      },
+    })
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'ORDER_NOT_FOUND') {
+      res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
+    if (code === 'ORDER_ALREADY_PAID') {
+      res.status(400).json({ error: 'Ordine già pagato' })
+      return
+    }
+    if (code === 'ORDER_CANCELLED') {
+      res.status(400).json({ error: 'Ordine annullato' })
+      return
+    }
+    throw err
+  }
+})
+
+// ── Checkout POS fisico (compat — delega a finalize) ─────────────────────────
 paymentsRouter.post('/pos-checkout', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     orderId: z.string(),
@@ -49,64 +201,50 @@ paymentsRouter.post('/pos-checkout', authenticate, async (req: AuthRequest, res:
 
   const { orderId, tipAmount, paymentMethod } = result.data
 
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, restaurantId: req.restaurantId! },
-  })
-
-  if (!order) {
-    res.status(404).json({ error: 'Ordine non trovato' })
-    return
-  }
-
-  if (order.status === 'PAID') {
-    res.status(400).json({ error: 'Ordine già pagato' })
-    return
-  }
-
-  if (order.status === 'CANCELLED') {
-    res.status(400).json({ error: 'Ordine annullato' })
-    return
-  }
-
-  const split = computePaymentSplit(order, tipAmount)
-
-  const terminalResponse = await simulatePosTerminal(split.total)
-
-  if (!terminalResponse.success) {
-    res.status(502).json({ error: 'Terminale POS non disponibile. Riprova.' })
-    return
-  }
-
-  const updatedOrder = await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: 'PAID',
+  try {
+    const terminalResponse = await simulatePosTerminal(0)
+    const finalized = await finalizeOrderPayment({
+      orderId,
+      restaurantId: req.restaurantId!,
+      tipAmount,
       paymentMethod,
-      paidAt: split.paidAt,
-      revenueAmount: split.revenueAmount,
-      tipAmount: split.tipAmount,
-      total: split.total,
-    },
-    include: posOrderInclude,
-  })
+    })
 
-  await releaseTableIfEmpty(order.tableId)
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: posOrderInclude,
+    })
 
-  io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+    await releaseTableIfEmpty(updatedOrder?.tableId)
 
-  res.json({
-    success: true,
-    message: 'Pagamento POS completato',
-    order: updatedOrder,
-    pos: {
-      transactionId: terminalResponse.transactionId,
-      terminalId: terminalResponse.terminalId,
-      provider: terminalResponse.provider,
-      amountCharged: split.total,
-      revenueAmount: split.revenueAmount,
-      tipAmount: split.tipAmount,
-    },
-  })
+    io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+
+    res.json({
+      success: true,
+      message: 'Pagamento POS completato',
+      order: updatedOrder,
+      pos: {
+        transactionId: finalized.transactionId,
+        terminalId: terminalResponse.terminalId,
+        provider: terminalResponse.provider,
+        amountCharged: finalized.total,
+        revenueAmount: finalized.revenueAmount,
+        tipAmount: finalized.tipAmount,
+      },
+      fiscal: { row: finalized.fiscalRow },
+    })
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'ORDER_ALREADY_PAID') {
+      res.status(400).json({ error: 'Ordine già pagato' })
+      return
+    }
+    if (code === 'ORDER_NOT_FOUND') {
+      res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
+    throw err
+  }
 })
 
 // ── Checkout pubblico: crea ordine + sessione Stripe ─────────────────────────
@@ -204,7 +342,6 @@ paymentsRouter.post('/checkout', async (req: Request, res: Response): Promise<vo
 
   // Crea la sessione Stripe Checkout
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
     mode: 'payment',
     customer_email: customerEmail,
     metadata: {
@@ -359,7 +496,6 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
     mode: 'payment',
     customer_email: reservation.guestEmail || undefined,
     metadata: {

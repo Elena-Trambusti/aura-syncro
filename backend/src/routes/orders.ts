@@ -306,6 +306,14 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     paymentData.revenueAmount = split.revenueAmount
     paymentData.tipAmount = split.tipAmount
     paymentData.total = split.total
+
+    await prisma.orderItem.updateMany({
+      where: {
+        orderId: req.params.id,
+        status: { notIn: ['CANCELLED', 'SERVED'] },
+      },
+      data: { status: 'SERVED' },
+    })
   }
 
   if (status === 'READY') {

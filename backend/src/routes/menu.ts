@@ -194,6 +194,6 @@ menuRouter.get('/public/:slug', async (req, res: Response): Promise<void> => {
       colorTheme: restaurant.colorTheme,
       fiscal: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
     },
-    categories: restaurant.menuCategories,
+    categories: restaurant.menuCategories.filter(cat => cat.items.length > 0),
   })
 })

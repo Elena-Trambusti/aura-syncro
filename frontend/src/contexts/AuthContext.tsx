@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import i18n from '../i18n'
 import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
 import { applyTenantCssVars } from '../lib/tenantTheme'
+import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
+import { tenantIdentity, tenantIdentityKey } from '../lib/tenantSync'
 import type { CountryCode, FiscalRegime, TaxRegion } from '../lib/fiscalRegime'
 import { DEFAULT_FISCAL_REGIME, resolveFiscalRegime } from '../lib/fiscalRegime'
 
@@ -31,6 +33,8 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>
   logout: () => void
   refreshRestaurant: () => Promise<void>
+  /** Aggiorna l'intero tenant attivo (id + regime fiscale) e invalida cache */
+  switchActiveRestaurant: (restaurant: Restaurant) => void
 }
 
 export interface RegisterData {
@@ -59,7 +63,8 @@ function normalizeRestaurant(raw: Record<string, unknown>): Restaurant {
   }
 }
 
-function applyRestaurantLocale(defaultLocale?: string) {
+/** Solo al primo accesso: imposta lingua UI dal defaultLocale del tenant se l'utente non ha scelto */
+function applyRestaurantLocaleOnFirstVisit(defaultLocale?: string) {
   if (!defaultLocale) return
   const saved = localStorage.getItem(LANG_KEY)
   if (!saved) {
@@ -68,23 +73,43 @@ function applyRestaurantLocale(defaultLocale?: string) {
   }
 }
 
+function applyActiveRestaurant(
+  normalized: Restaurant,
+  options?: { invalidateCache?: boolean; previousKey?: string | null },
+) {
+  setTenantHeader(normalized.id)
+  applyTenantCssVars(normalized.colorTheme)
+
+  const nextKey = tenantIdentityKey(tenantIdentity(normalized))
+  if (options?.invalidateCache !== false && options?.previousKey && options.previousKey !== nextKey) {
+    invalidateTenantQueries(normalized.id, normalized.taxRegion)
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
   const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'))
+  const tenantKeyRef = useRef<string | null>(null)
+
+  const commitRestaurant = useCallback((normalized: Restaurant, invalidateCache = true) => {
+    const previousKey = tenantKeyRef.current
+    setRestaurant(normalized)
+    applyActiveRestaurant(normalized, { invalidateCache, previousKey })
+    tenantKeyRef.current = tenantIdentityKey(tenantIdentity(normalized))
+  }, [])
 
   const setAuth = useCallback((data: { token: string; user: User; restaurant: Record<string, unknown> }) => {
     const normalized = normalizeRestaurant(data.restaurant)
     localStorage.setItem('token', data.token)
-    setTenantHeader(normalized.id)
+    queryClient.clear()
     setToken(data.token)
     setUser(data.user)
-    setRestaurant(normalized)
-    applyTenantCssVars(normalized.colorTheme)
-    applyRestaurantLocale(normalized.defaultLocale)
+    commitRestaurant(normalized, true)
+    applyRestaurantLocaleOnFirstVisit(normalized.defaultLocale)
     connectSocket(data.token)
-  }, [])
+  }, [commitRestaurant])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
@@ -92,15 +117,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null)
     setUser(null)
     setRestaurant(null)
+    tenantKeyRef.current = null
+    queryClient.clear()
     applyTenantCssVars('#c9a227')
     disconnectSocket()
   }, [])
 
   const refreshRestaurant = useCallback(async () => {
     const res = await api.get('/auth/me')
+    const normalized = normalizeRestaurant(res.data.restaurant)
     setUser(res.data.user)
-    setRestaurant(normalizeRestaurant(res.data.restaurant))
-  }, [])
+    commitRestaurant(normalized, true)
+  }, [commitRestaurant])
+
+  const switchActiveRestaurant = useCallback((next: Restaurant) => {
+    const normalized = normalizeRestaurant(next as unknown as Record<string, unknown>)
+    commitRestaurant(normalized, true)
+  }, [commitRestaurant])
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token')
@@ -112,9 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(res => {
         setUser(res.data.user)
         const normalized = normalizeRestaurant(res.data.restaurant)
-        setRestaurant(normalized)
-        setTenantHeader(normalized.id)
-        applyTenantCssVars(normalized.colorTheme)
+        commitRestaurant(normalized, false)
         connectSocket(storedToken)
       })
       .catch(() => logout())
@@ -137,7 +168,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, restaurant, token, isLoading, login, register, logout, refreshRestaurant }}>
+    <AuthContext.Provider value={{
+      user,
+      restaurant,
+      token,
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshRestaurant,
+      switchActiveRestaurant,
+    }}>
       {children}
     </AuthContext.Provider>
   )
@@ -156,8 +197,28 @@ export function useTenantTheme() {
   return restaurant?.colorTheme ?? '#c9a227'
 }
 
+/**
+ * Regime fiscale dal tenant attivo (DB) — MAI dalla lingua UI (i18n).
+ * Usare per calcoli, label legali (tRegime) e regole di business.
+ */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useFiscalRegime(): FiscalRegime {
   const { restaurant } = useAuth()
-  return restaurant ?? DEFAULT_FISCAL_REGIME
+  if (!restaurant) return DEFAULT_FISCAL_REGIME
+  return {
+    countryCode: restaurant.countryCode,
+    taxRegion: restaurant.taxRegion,
+    taxRate: restaurant.taxRate,
+    taxName: restaurant.taxName,
+    defaultLocale: restaurant.defaultLocale,
+    timezone: restaurant.timezone,
+    taxId: restaurant.taxId,
+  }
+}
+
+/** Chiave tenant per queryKey React Query — invalida cache al cambio ristorante/regime */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useTenantQueryKey(): string {
+  const { restaurant } = useAuth()
+  return tenantIdentityKey(tenantIdentity(restaurant))
 }

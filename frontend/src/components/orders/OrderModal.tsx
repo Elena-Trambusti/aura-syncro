@@ -2,11 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
-import { useFiscalRegime } from '../../contexts/AuthContext'
-import { tRegime } from '../../lib/fiscalRegime'
-import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -38,14 +37,12 @@ function useIsDesktop() {
 
 export default function OrderModal({ tableId, onClose }: { tableId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { t } = useTranslation()
-  const fiscal = useFiscalRegime()
   const isDesktop = useIsDesktop()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [tab, setTab] = useState<'menu' | 'order'>('menu')
-  const [wantsTip, setWantsTip] = useState(false)
-  const [tipAmount, setTipAmount] = useState('')
   const [cartPulse, setCartPulse] = useState(false)
 
   const { data: tables = [] } = useQuery<Table[]>({
@@ -91,22 +88,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     },
   })
 
-  const payOrder = useMutation({
-    mutationFn: ({ orderId, paymentMethod, tipAmount: tip }: {
-      orderId: string
-      paymentMethod: 'CASH' | 'CARD'
-      tipAmount: number
-    }) => api.post('/payments/pos-checkout', { orderId, paymentMethod, tipAmount: tip }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
-      queryClient.invalidateQueries({ queryKey: ['reports', 'fiscal'] })
-      toast.success(t('orderModal.paymentRegistered'))
-    },
-    onError: () => toast.error(t('orderModal.paymentError')),
-  })
-
   const markFree = useMutation({
     mutationFn: () => api.patch(`/tables/${tableId}/status`, { status: 'FREE' }),
     onSuccess: () => {
@@ -139,21 +120,10 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
   const orderBadgeCount = cartCount > 0 ? cartCount : (activeOrder?.items.length ?? 0)
 
-  const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount) || 0) : 0
-  const posTotal = activeOrder ? activeOrder.total + parsedTip : 0
-
-  const handleTipToggle = (enabled: boolean) => {
-    setWantsTip(enabled)
-    if (!enabled) setTipAmount('')
-  }
-
-  const handlePayment = (paymentMethod: 'CASH' | 'CARD') => {
+  const goToCheckout = () => {
     if (!activeOrder) return
-    payOrder.mutate({
-      orderId: activeOrder.id,
-      paymentMethod,
-      tipAmount: parsedTip,
-    })
+    onClose()
+    navigate(`/checkout/${activeOrder.id}`)
   }
 
   const handleSendOrder = () => {
@@ -412,64 +382,14 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             {t('orderModal.orderTotal')}: {formatCurrency(activeOrder!.total)}
           </p>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-slate-500">{t('orderModal.addTipQuestion')}</span>
-              <div className="flex shrink-0 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleTipToggle(false)}
-                  className={cn(
-                    'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
-                    !wantsTip ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
-                  )}
-                >
-                  {t('orderModal.tipNo')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTipToggle(true)}
-                  className={cn(
-                    'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
-                    wantsTip ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
-                  )}
-                >
-                  {t('orderModal.tipYes')}
-                </button>
-              </div>
-            </div>
-
-            {wantsTip && (
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={tipAmount}
-                onChange={e => setTipAmount(e.target.value)}
-                placeholder={t('orderModal.tipPlaceholder')}
-                className="saas-input w-full py-3 text-center text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-              />
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => handlePayment('CASH')}
-              disabled={payOrder.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {t('orderModal.payCash', { amount: formatCurrency(posTotal) })}
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePayment('CARD')}
-              disabled={payOrder.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
-            >
-              {t('orderModal.payCard', { amount: formatCurrency(posTotal) })}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={goToCheckout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-4 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
+          >
+            <Receipt className="h-5 w-5" />
+            {t('orderModal.goToPayment')}
+          </button>
 
           <button
             type="button"
@@ -478,10 +398,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           >
             {t('orderModal.addMoreDishes')}
           </button>
-
-          <p className="pt-2 text-center text-xs text-slate-500">
-            {tRegime(t, fiscal.taxRegion, 'tipExemptNote')}
-          </p>
         </div>
       </div>
     </>

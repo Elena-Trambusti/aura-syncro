@@ -31,6 +31,9 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import PaymentCancelPage from './pages/PaymentCancelPage'
 import PaymentsPage from './pages/PaymentsPage'
 import AIPredictivePage from './pages/AIPredictivePage'
+import CheckoutPage from './pages/CheckoutPage'
+import BillingPage from './pages/BillingPage'
+import QRBuilderPage from './pages/QRBuilderPage'
 
 function AuthLoadingScreen() {
   const { t } = useTranslation()
@@ -77,6 +80,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="tavoli" element={<TablesPage />} />
+        <Route path="checkout/:orderId" element={<CheckoutPage />} />
         <Route path="ordini" element={<OrdersPage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="prenotazioni" element={<ReservationsPage />} />
@@ -93,6 +97,8 @@ function AppRoutes() {
         </Route>
         <Route path="pagamenti" element={<PaymentsPage />} />
         <Route path="dashboard/ai-predictive" element={<AIPredictivePage />} />
+        <Route path="dashboard/qr-builder" element={<QRBuilderPage />} />
+        <Route path="dashboard/billing" element={<BillingPage />} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
         <Route path="impostazioni" element={<SettingsPage />} />
       </Route>

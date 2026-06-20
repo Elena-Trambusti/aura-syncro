@@ -25,6 +25,7 @@ import { marketingRouter } from './routes/marketing'
 import { reportsRouter } from './routes/reports'
 import { waitlistRouter } from './routes/waitlist'
 import { paymentsRouter } from './routes/payments'
+import { checkoutRouter } from './routes/checkout'
 import { aiRouter } from './routes/ai'
 import { authenticate } from './middleware/auth'
 import { errorHandler } from './middleware/errorHandler'
@@ -82,6 +83,7 @@ app.use('/api/reports', authenticate, reportsRouter)
 app.use('/api/waitlist', authenticate, waitlistRouter)
 // Pagamenti: checkout e webhook sono pubblici, /overview è protetta
 app.use('/api/payments', paymentsRouter)
+app.use('/api/checkout', authenticate, checkoutRouter)
 app.use('/api/ai', authenticate, aiRouter)
 
 app.get('/api/health', (_req, res) => {
