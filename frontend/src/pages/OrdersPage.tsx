@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -103,7 +103,7 @@ export default function OrdersPage() {
               ])
             )
           }}
-          className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:glass-table-head transition-colors w-full sm:w-auto shrink-0"
         >
           <Download className="w-4 h-4" />
           {t('orders.exportCsv')}
@@ -115,7 +115,7 @@ export default function OrdersPage() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === f.key ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === f.key ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'}`}
           >
             {f.label}
             {f.count !== undefined && (
@@ -134,7 +134,7 @@ export default function OrdersPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {orders.map(order => (
-            <div key={order.id} className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm hover:shadow-md transition-shadow">
+            <div key={order.id} className="glass-card p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2">

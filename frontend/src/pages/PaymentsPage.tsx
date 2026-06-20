@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
@@ -81,7 +81,7 @@ export default function PaymentsPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+        <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-stone-400">Incasso mese</p>
             <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
@@ -92,7 +92,7 @@ export default function PaymentsPage() {
           <p className="text-xs text-stone-500 mt-1">{data.mese.count} transazioni</p>
         </div>
 
-        <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+        <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-stone-400">Scontrino medio</p>
             <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -103,7 +103,7 @@ export default function PaymentsPage() {
           <p className="text-xs text-stone-500 mt-1">per ordine Stripe</p>
         </div>
 
-        <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+        <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-stone-400">Totale storico</p>
             <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -116,7 +116,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Grafico */}
-      <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-5">
         <h2 className="text-sm font-bold text-stone-200 mb-4">Incassi mensili {new Date().getFullYear()}</h2>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={data.mensile} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
@@ -139,7 +139,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Ultimi pagamenti */}
-      <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-800/50">
           <h2 className="text-sm font-bold text-stone-200">Ultimi pagamenti</h2>
         </div>
@@ -152,7 +152,7 @@ export default function PaymentsPage() {
         ) : (
           <div className="divide-y divide-stone-800/40">
             {data.recentPayments.map(order => (
-              <div key={order.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-stone-900/30 transition-colors">
+              <div key={order.id} className="flex items-center gap-4 px-5 py-3.5 hover:glass-table-head transition-colors">
                 <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />
                 </div>

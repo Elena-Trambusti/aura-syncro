@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -66,7 +66,7 @@ export default function TablesPage() {
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['tables'] })}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
+          className="flex items-center justify-center gap-2 px-4 py-2 glass-chip rounded-xl text-sm font-medium text-stone-300 hover:bg-white/[0.06] transition-colors w-full sm:w-auto shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
           {t('common.refresh')}
@@ -87,7 +87,7 @@ export default function TablesPage() {
           <button
             key={area}
             onClick={() => setFilterArea(area)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterArea === area ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'}`}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterArea === area ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'}`}
           >
             {area}
           </button>
@@ -106,7 +106,7 @@ export default function TablesPage() {
               <div
                 key={table.id}
                 onClick={() => { setSelectedTable(table); setShowOrderModal(true) }}
-                className="bg-stone-900/55 rounded-2xl p-4 border-2 cursor-pointer hover:shadow-md transition-all group"
+                className="glass-card glass-card-hover p-4 border-2 cursor-pointer transition-all group"
                 style={{
                   borderColor: table.status === 'FREE' ? '#10b981' :
                     table.status === 'OCCUPIED' ? '#ef4444' :

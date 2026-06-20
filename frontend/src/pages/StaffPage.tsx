@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -78,7 +78,7 @@ export default function StaffPage() {
       <div className="flex gap-2">
         {[{ key: 'staff', label: 'Squadra', icon: UserCog }, { key: 'shifts', label: 'Turni Settimanali', icon: Calendar }].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as 'staff' | 'shifts')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === t.key ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300'}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === t.key ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300'}`}>
             <t.icon className="w-4 h-4" />
             {t.label}
           </button>
@@ -88,7 +88,7 @@ export default function StaffPage() {
       {tab === 'staff' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {staff.map(member => (
-            <div key={member.id} className={`bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm ${!member.active ? 'opacity-60' : ''}`}>
+            <div key={member.id} className={`glass-card p-5 ${!member.active ? 'opacity-60' : ''}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-amber-950/40 rounded-full flex items-center justify-center">
                   <span className="text-sm font-bold text-amber-400">{getInitials(member.name)}</span>
@@ -118,11 +118,11 @@ export default function StaffPage() {
       )}
 
       {tab === 'shifts' && (
-        <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 overflow-hidden shadow-sm">
+        <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-stone-800/50 bg-stone-900/30">
+                <tr className="border-b border-stone-800/50 glass-table-head">
                   <th className="text-left text-xs font-semibold text-stone-400 uppercase px-5 py-3 w-36">Dipendente</th>
                   {daysOfWeek.map(d => (
                     <th key={d.toISOString()} className="text-center text-xs font-semibold text-stone-400 uppercase px-2 py-3">
@@ -137,7 +137,7 @@ export default function StaffPage() {
               </thead>
               <tbody className="divide-y divide-stone-800/40">
                 {staff.filter(s => s.active && s.role !== 'OWNER').map(member => (
-                  <tr key={member.id} className="hover:bg-stone-900/30">
+                  <tr key={member.id} className="hover:glass-table-head">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 bg-amber-950/40 rounded-full flex items-center justify-center">
@@ -181,8 +181,8 @@ export default function StaffPage() {
 
       {/* Form nuovo membro */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-stone-900/55 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="glass-overlay flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+          <div className="glass-modal p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-stone-100 mb-5">Aggiungi Membro del Team</h3>
             <div className="space-y-4">
               {[

@@ -58,7 +58,7 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col border-r border-stone-800/70 bg-[#1f1d1a]',
+          'fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col glass-panel border-r border-white/10',
           'transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
@@ -87,7 +87,7 @@ export default function Sidebar() {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center gap-2 px-2 py-2 rounded-lg bg-stone-900/60 border border-stone-800">
+          <div className="flex items-center gap-2 px-2 py-2 rounded-lg glass-card">
             {restaurant?.logoUrl ? (
               <img src={restaurant.logoUrl} alt={restaurant.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
             ) : (

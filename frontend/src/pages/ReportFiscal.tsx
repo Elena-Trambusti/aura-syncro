@@ -57,15 +57,10 @@ const SUMMARY_CARDS = [
   },
 ] as const
 
-const glassPanel = cn(
-  'rounded-2xl border border-gray-200/50',
-  'bg-stone-900/55/60 backdrop-blur-lg',
-  'shadow-2xl shadow-gray-200/20',
-)
+const glassPanel = 'glass-card'
 
 const inputClass = cn(
-  'rounded-xl border border-gray-200/60 bg-stone-900/55/70 backdrop-blur-sm',
-  'px-3 py-2.5 text-sm text-stone-200',
+  'glass-input rounded-xl px-3 py-2.5 text-sm text-stone-200',
   'focus:outline-none focus:ring-2 focus:ring-orange-400/60 focus:border-amber-700/40',
   'transition-all duration-200',
 )
@@ -178,7 +173,7 @@ export default function ReportFiscal() {
               !isExporting && hasExportData ? 'animate-[pulse_3s_ease-in-out_infinite]' : '',
             )}
           >
-            <span className="absolute inset-0 bg-stone-900/55/10 opacity-0 transition-opacity group-hover:opacity-100" />
+            <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             {isExporting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -218,7 +213,7 @@ export default function ReportFiscal() {
                     </p>
                     <p className="mt-1 text-xs text-stone-500">{card.sub}</p>
                   </div>
-                  <div className={cn('rounded-xl bg-stone-900/55/60 p-3 shadow-sm backdrop-blur-sm', card.iconColor)}>
+                  <div className={cn('rounded-xl glass-card p-3 shadow-sm', card.iconColor)}>
                     <Icon className="h-6 w-6" />
                   </div>
                 </div>
@@ -235,7 +230,7 @@ export default function ReportFiscal() {
           </div>
 
           {/* iOS-style pill switch */}
-          <div className="relative inline-flex rounded-full border border-gray-200/50 bg-gray-100/60 p-1 backdrop-blur-md">
+          <div className="relative inline-flex rounded-full glass-chip p-1">
             <div
               className="absolute top-1 bottom-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 shadow-md shadow-orange-500/25 transition-all duration-300 ease-out"
               style={{
@@ -351,9 +346,8 @@ export default function ReportFiscal() {
                             <div
                               className={cn(
                                 'grid grid-cols-7 items-center rounded-xl border border-gray-200/40',
-                                'bg-stone-900/55/50 px-4 py-3.5 backdrop-blur-sm',
-                                'shadow-sm transition-all duration-200',
-                                'group-hover:border-orange-200/60 group-hover:bg-stone-900/55/80 group-hover:shadow-lg group-hover:shadow-orange-100/30',
+                                'glass-card px-4 py-3.5 shadow-sm transition-all duration-200',
+                                'group-hover:border-orange-200/60 group-hover:bg-white/[0.08] group-hover:shadow-lg group-hover:shadow-orange-100/30',
                               )}
                             >
                               <span className="whitespace-nowrap text-stone-300">

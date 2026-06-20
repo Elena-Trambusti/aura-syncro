@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -88,12 +88,12 @@ export default function CustomersPage() {
       {/* Statistiche */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Totale', value: customers.length, icon: Users, color: 'bg-stone-900/300' },
+          { label: 'Totale', value: customers.length, icon: Users, color: 'glass-table-head0' },
           { label: 'VIP (10+ visite)', value: customers.filter(c => c.totalVisits >= 10).length, icon: Award, color: 'bg-purple-500' },
           { label: 'Fedeli (5+ visite)', value: customers.filter(c => c.totalVisits >= 5).length, icon: Star, color: 'bg-blue-950/400' },
           { label: 'Spesa media', value: formatCurrency(customers.reduce((s, c) => s + c.totalSpent, 0) / Math.max(1, customers.length)), icon: TrendingUp, color: 'bg-emerald-950/400' },
         ].map(s => (
-          <div key={s.label} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm">
+          <div key={s.label} className="glass-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-stone-400">{s.label}</p>
@@ -130,10 +130,10 @@ export default function CustomersPage() {
 
       <div className="flex gap-4">
         {/* Lista clienti */}
-        <div className="flex-1 bg-stone-900/55 rounded-2xl border border-stone-800/50 overflow-hidden shadow-sm">
+        <div className="flex-1 glass-card overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-stone-800/50 bg-stone-900/30">
+              <tr className="border-b border-stone-800/50 glass-table-head">
                 <th className="text-left text-xs font-semibold text-stone-400 uppercase px-5 py-3">Cliente</th>
                 <th className="text-left text-xs font-semibold text-stone-400 uppercase px-4 py-3">Segmento</th>
                 <th className="text-left text-xs font-semibold text-stone-400 uppercase px-4 py-3">Visite</th>
@@ -183,7 +183,7 @@ export default function CustomersPage() {
 
         {/* Dettaglio cliente */}
         {selectedCustomer && (
-          <div className="w-72 bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm p-5">
+          <div className="w-72 glass-card p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-stone-100">{selectedCustomer.name}</h3>
@@ -222,11 +222,11 @@ export default function CustomersPage() {
       {/* Modale nuovo cliente */}
       {showCreateModal && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="glass-overlay flex items-center justify-center p-4"
           onClick={() => !createCustomer.isPending && setShowCreateModal(false)}
         >
           <div
-            className="bg-stone-900/55 rounded-2xl w-full max-w-md p-6 space-y-4"
+            className="glass-modal w-full max-w-md p-6 space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-stone-100">Nuovo Cliente</h3>

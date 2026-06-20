@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -106,7 +106,7 @@ export default function MarketingPage() {
           { label: 'Bozze', value: stats?.draft || 0, color: 'text-stone-400' },
           { label: 'Destinatari totali', value: (stats?.totalRecipients || 0).toLocaleString('it-IT'), color: 'text-amber-400' },
         ].map(s => (
-          <div key={s.label} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm text-center">
+          <div key={s.label} className="glass-card p-4 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-stone-400 mt-1">{s.label}</p>
           </div>
@@ -117,7 +117,7 @@ export default function MarketingPage() {
       <div className="flex gap-2">
         {(['campagne', 'compleanni'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'}`}>
             {tab === 'campagne' ? '📢 Campagne' : '🎂 Compleanni'}
           </button>
         ))}
@@ -126,7 +126,7 @@ export default function MarketingPage() {
       {activeTab === 'campagne' && (
         <div className="space-y-3">
           {campaigns.length === 0 ? (
-            <div className="bg-stone-900/55 rounded-2xl p-10 text-center border border-stone-800/50">
+            <div className="glass-card p-10 text-center">
               <Megaphone className="w-12 h-12 text-stone-300 mx-auto mb-3" />
               <p className="text-stone-400 font-medium">Nessuna campagna ancora</p>
               <button onClick={() => setShowModal(true)} className="mt-3 text-amber-400 text-sm font-medium hover:underline">Crea la prima campagna →</button>
@@ -134,7 +134,7 @@ export default function MarketingPage() {
           ) : campaigns.map(c => {
             const typeInfo = CAMPAIGN_TYPES.find(t => t.value === c.type)
             return (
-              <div key={c.id} className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+              <div key={c.id} className="glass-card p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1">
                     <div className="w-10 h-10 bg-amber-950/30 rounded-xl flex items-center justify-center shrink-0">
@@ -179,7 +179,7 @@ export default function MarketingPage() {
           <div>
             <h3 className="text-sm font-semibold text-stone-200 mb-3">🎂 Compleanni Oggi ({birthdays?.today.length || 0})</h3>
             {(birthdays?.today.length || 0) === 0 ? (
-              <div className="bg-stone-900/55 rounded-xl p-6 text-center border border-stone-800/50 text-stone-500 text-sm">Nessun compleanno oggi</div>
+              <div className="glass-card p-6 text-center text-stone-500 text-sm">Nessun compleanno oggi</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {birthdays?.today.map(c => (
@@ -200,7 +200,7 @@ export default function MarketingPage() {
           {/* Prossimi 7 giorni */}
           <div>
             <h3 className="text-sm font-semibold text-stone-200 mb-3">📅 Prossimi 7 giorni ({birthdays?.upcoming.length || 0})</h3>
-            <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm divide-y divide-stone-800/40">
+            <div className="glass-card divide-y divide-white/5">
               {(birthdays?.upcoming.length || 0) === 0 ? (
                 <p className="text-sm text-stone-500 text-center p-6">Nessun compleanno in arrivo</p>
               ) : birthdays?.upcoming.map(c => (
@@ -221,7 +221,7 @@ export default function MarketingPage() {
 
       {/* Modal Nuova Campagna */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+        <div className="glass-overlay flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-stone-900/55 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-stone-100">Nuova Campagna</h3>
 
@@ -236,7 +236,7 @@ export default function MarketingPage() {
                 <div className="grid grid-cols-3 gap-2">
                   {CAMPAIGN_TYPES.map(t => (
                     <button key={t.value} onClick={() => setForm(p => ({ ...p, type: t.value }))}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${form.type === t.value ? 'bg-amber-950/30 border-amber-700/40 text-amber-400' : 'border-stone-700/50 text-stone-300 hover:bg-stone-900/30'}`}>
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${form.type === t.value ? 'bg-amber-950/30 border-amber-700/40 text-amber-400' : 'border-stone-700/50 text-stone-300 hover:glass-table-head'}`}>
                       <t.icon className="w-3.5 h-3.5" /> {t.label}
                     </button>
                   ))}

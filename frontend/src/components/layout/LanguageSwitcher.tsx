@@ -114,7 +114,7 @@ export default function LanguageSwitcher({ prominent = false }: LanguageSwitcher
                 minWidth: menuPos.minWidth,
                 zIndex: MENU_Z,
               }}
-              className="py-1 rounded-xl border border-stone-600 bg-[#1f1d1a] shadow-2xl shadow-black/60 ring-1 ring-stone-700/50"
+              className="py-1 glass-dropdown"
             >
               {LANGUAGES.map(lang => {
                 const selected = lang.code === current.code
@@ -152,8 +152,8 @@ export default function LanguageSwitcher({ prominent = false }: LanguageSwitcher
           'relative flex items-center gap-1.5 font-medium border rounded-lg transition-colors',
           open && 'z-[100000]',
           prominent
-            ? 'px-3 py-2 text-sm text-stone-200 border-stone-600/70 bg-stone-900/80 hover:bg-stone-800/90 hover:border-amber-700/50 shadow-lg backdrop-blur-sm'
-            : 'px-2.5 py-1.5 text-xs text-stone-300 border-stone-700/60 hover:bg-stone-800/50 hover:text-stone-100',
+            ? 'px-3 py-2 text-sm text-stone-200 glass-chip hover:bg-white/[0.08] hover:border-amber-700/50 shadow-lg'
+            : 'px-2.5 py-1.5 text-xs text-stone-300 glass-chip hover:bg-white/[0.06] hover:text-stone-100',
         )}
         aria-label={t('common.selectLanguage')}
         aria-expanded={open}

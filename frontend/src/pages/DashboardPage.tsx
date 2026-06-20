@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, formatLongDate, getIntlLocale } from '../lib/utils'
@@ -32,7 +32,7 @@ function StatCard({
   trendLabel?: (value: number) => string
 }) {
   return (
-    <div className="rounded-2xl p-4 sm:p-6 border border-stone-800 bg-stone-900/60 relative z-0">
+    <div className="glass-card p-4 sm:p-6 relative z-0">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-stone-400">{title}</p>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 rounded-2xl p-6 border border-stone-800 bg-stone-900/60">
+        <div className="xl:col-span-2 glass-card p-6">
           <h3 className="text-base font-semibold text-stone-100 mb-4">{t('dashboard.revenueChart')}</h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueData || []}>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-2xl p-6 border border-stone-800 bg-stone-900/60">
+        <div className="glass-card p-6">
           <h3 className="text-base font-semibold text-stone-100 mb-4">{t('dashboard.topDishes')}</h3>
           <div className="space-y-3">
             {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (

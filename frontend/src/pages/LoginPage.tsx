@@ -55,7 +55,7 @@ export default function LoginPage() {
           <p className="text-stone-400 mt-2 text-sm">{t('brand.tagline')}</p>
         </div>
 
-        <div className="rounded-2xl p-8 shadow-2xl border border-stone-800 bg-stone-900/80 backdrop-blur-xl">
+        <div className="glass-modal p-8">
           <h2 className="text-xl font-bold text-stone-100 mb-6">{t('auth.loginTitle')}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

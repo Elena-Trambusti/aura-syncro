@@ -35,50 +35,50 @@ function ItemForm({ item, categories, onSave, onCancel }: {
   })
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-stone-900/80 border border-stone-700/50 rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="glass-overlay flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="glass-modal p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-stone-100 mb-5">{item?.id ? t('menu.editDish') : t('menu.newDish')}</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-200 mb-1">{t('menu.category')} *</label>
             <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-              className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35">
+              className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35">
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-200 mb-1">{t('common.name')} *</label>
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
+              className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
               placeholder={t('menu.namePlaceholder')} />
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-200 mb-1">{t('common.description')}</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
+              className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
               rows={2} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">{t('menu.price')} *</label>
               <input type="number" step="0.5" value={form.price} onChange={e => setForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">{t('menu.prepTime')}</label>
               <input type="number" value={form.preparationTime} onChange={e => setForm(f => ({ ...f, preparationTime: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">{t('menu.calories')}</label>
               <input type="number" value={form.calories} onChange={e => setForm(f => ({ ...f, calories: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-200 mb-1">{t('menu.allergens')}</label>
             <input value={form.allergens} onChange={e => setForm(f => ({ ...f, allergens: e.target.value }))}
-              className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
+              className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
               placeholder={t('menu.allergensPlaceholder')} />
           </div>
           <div className="flex gap-4">
@@ -93,7 +93,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
           </div>
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30">{t('common.cancel')}</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:glass-table-head">{t('common.cancel')}</button>
           <button onClick={() => onSave(form)} className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-semibold">{t('common.save')}</button>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function MenuPage() {
         <div className="aura-table-wrap">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-stone-800/60 bg-stone-900/40">
+            <tr className="border-b border-white/10 glass-table-head">
               <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-5 py-3">{t('menu.dish')}</th>
               <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('menu.category')}</th>
               <th className="text-left text-xs font-semibold text-stone-400 uppercase tracking-wide px-4 py-3">{t('menu.price')}</th>
@@ -177,7 +177,7 @@ export default function MenuPage() {
           </thead>
           <tbody className="divide-y divide-stone-800/40">
             {filteredItems.map(item => (
-              <tr key={item.id} className="hover:bg-stone-900/30 transition-colors">
+              <tr key={item.id} className="hover:glass-table-head transition-colors">
                 <td className="px-5 py-3.5">
                   <div>
                     <p className="text-sm font-semibold text-stone-100 flex items-center gap-2">

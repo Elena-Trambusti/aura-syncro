@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -81,10 +81,10 @@ export default function ReportsPage() {
           >
             📄 Report Fiscal ES
           </Link>
-          <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="border border-stone-700/50 rounded-xl px-3 py-2 text-sm bg-stone-900/55">
+          <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <select value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} className="border border-stone-700/50 rounded-xl px-3 py-2 text-sm bg-stone-900/55">
+          <select value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
             {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
           </select>
         </div>
@@ -98,7 +98,7 @@ export default function ReportsPage() {
           { key: 'annuale', label: '📈 Trend Annuale', icon: BarChart2 },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === t.key ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === t.key ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'}`}>
             {t.label}
           </button>
         ))}
@@ -115,7 +115,7 @@ export default function ReportsPage() {
               { label: 'Utile Lordo', value: formatCurrency(s?.grossProfit || 0), icon: TrendingUp, color: (s?.grossProfit || 0) >= 0 ? 'bg-blue-950/400' : 'bg-red-950/400', sub: 'Ricavi - Food Cost' },
               { label: 'Utile Netto', value: formatCurrency(s?.netProfit || 0), icon: TrendingUp, color: (s?.netProfit || 0) >= 0 ? 'bg-purple-500' : 'bg-red-950/400', sub: `Costo personale: ${formatCurrency(s?.laborCost || 0)}` },
             ].map(c => (
-              <div key={c.label} className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+              <div key={c.label} className="glass-card p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-medium text-stone-400">{c.label}</p>
@@ -132,7 +132,7 @@ export default function ReportsPage() {
 
           {/* Breakdown costi */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+            <div className="glass-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-stone-100">Dettaglio {MONTHS[selectedMonth]} {selectedYear}</h3>
                 <button onClick={exportPL} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-400 font-medium">
@@ -160,7 +160,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Grafico giornaliero */}
-            <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+            <div className="glass-card p-6">
               <h3 className="text-base font-semibold text-stone-100 mb-4">Andamento giornaliero</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={plData?.dailyBreakdown || []} barSize={8}>
@@ -181,7 +181,7 @@ export default function ReportsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Categorie */}
-            <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+            <div className="glass-card p-6">
               <h3 className="text-base font-semibold text-stone-100 mb-4">Fatturato per Categoria</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <RechartsPie>
@@ -195,7 +195,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Tabella food cost */}
-            <div className="xl:col-span-2 bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm overflow-hidden">
+            <div className="xl:col-span-2 glass-card overflow-hidden">
               <div className="flex items-center justify-between p-5 border-b border-stone-800/50">
                 <h3 className="text-base font-semibold text-stone-100">Margini per Piatto</h3>
                 <button onClick={exportFoodCost} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-400 font-medium">
@@ -204,7 +204,7 @@ export default function ReportsPage() {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-stone-900/30">
+                  <thead className="glass-table-head">
                     <tr>
                       {['Piatto', 'Prezzo', 'Food Cost', 'Margine', 'Margine %', 'Venduto'].map(h => (
                         <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
@@ -213,7 +213,7 @@ export default function ReportsPage() {
                   </thead>
                   <tbody className="divide-y divide-stone-800/40">
                     {foodCost.slice(0, 15).map(item => (
-                      <tr key={item.id} className="hover:bg-stone-900/30 transition-colors">
+                      <tr key={item.id} className="hover:glass-table-head transition-colors">
                         <td className="px-4 py-3">
                           <p className="font-medium text-stone-100 truncate max-w-[150px]">{item.name}</p>
                           <p className="text-xs text-stone-500">{item.category}</p>
@@ -247,22 +247,22 @@ export default function ReportsPage() {
       {activeTab === 'annuale' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm text-center">
+            <div className="glass-card p-5 text-center">
               <p className="text-sm text-stone-400">Fatturato {selectedYear}</p>
               <p className="text-2xl font-bold text-stone-100 mt-1">{formatCurrency(yearly?.totalRevenue || 0)}</p>
             </div>
-            <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm text-center">
+            <div className="glass-card p-5 text-center">
               <p className="text-sm text-stone-400">Mese Migliore</p>
               <p className="text-xl font-bold text-amber-400 mt-1">{yearly?.bestMonth?.monthName || '—'}</p>
               <p className="text-sm text-stone-500">{formatCurrency(yearly?.bestMonth?.revenue || 0)}</p>
             </div>
-            <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm text-center">
+            <div className="glass-card p-5 text-center">
               <p className="text-sm text-stone-400">Media Mensile</p>
               <p className="text-2xl font-bold text-stone-100 mt-1">{formatCurrency((yearly?.totalRevenue || 0) / 12)}</p>
             </div>
           </div>
 
-          <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+          <div className="glass-card p-6">
             <h3 className="text-base font-semibold text-stone-100 mb-4">Fatturato Mensile {selectedYear}</h3>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={yearly?.months || []}>
@@ -275,9 +275,9 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm overflow-hidden">
+          <div className="glass-card overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-stone-900/30">
+              <thead className="glass-table-head">
                 <tr>
                   {['Mese', 'Fatturato', 'Ordini', 'Media/Ordine'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-400 uppercase tracking-wide">{h}</th>
@@ -286,7 +286,7 @@ export default function ReportsPage() {
               </thead>
               <tbody className="divide-y divide-stone-800/40">
                 {(yearly?.months || []).map(m => (
-                  <tr key={m.month} className="hover:bg-stone-900/30 transition-colors">
+                  <tr key={m.month} className="hover:glass-table-head transition-colors">
                     <td className="px-4 py-3 font-medium text-stone-100">{m.monthName}</td>
                     <td className="px-4 py-3 font-semibold text-emerald-600">{formatCurrency(m.revenue)}</td>
                     <td className="px-4 py-3 text-stone-300">{m.orders}</td>

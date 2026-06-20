@@ -1,4 +1,4 @@
-﻿
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
@@ -124,8 +124,8 @@ export default function OrderModal({ table, onClose }: { table: Table; onClose: 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-stone-900/55 rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="glass-overlay flex items-center justify-center p-4" onClick={onClose}>
+      <div className="glass-modal w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-stone-800/50">
           <div>
@@ -160,7 +160,7 @@ export default function OrderModal({ table, onClose }: { table: Table; onClose: 
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`w-full text-left px-3 py-2.5 text-sm font-medium transition-colors ${(selectedCategory || categories[0]?.id) === cat.id ? 'bg-amber-950/30 text-amber-400 border-r-2 border-orange-500' : 'text-stone-300 hover:bg-stone-900/30'}`}
+                    className={`w-full text-left px-3 py-2.5 text-sm font-medium transition-colors ${(selectedCategory || categories[0]?.id) === cat.id ? 'bg-amber-950/30 text-amber-400 border-r-2 border-orange-500' : 'text-stone-300 hover:glass-table-head'}`}
                   >
                     {cat.name}
                   </button>

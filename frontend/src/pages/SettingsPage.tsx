@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -47,14 +47,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Lingua */}
-      <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-stone-100 mb-1">{t('common.language')}</h2>
         <p className="text-sm text-stone-400 mb-4">{t('common.languageDescription')}</p>
         <LanguageSwitcher />
       </div>
 
       {/* Info ristorante */}
-      <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-stone-100 mb-4">{t('settings.restaurantInfo')}</h2>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -94,7 +94,7 @@ export default function SettingsPage() {
       </div>
 
       {/* QR Code Menu */}
-      <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-stone-100 mb-2">{t('settings.qrMenu')}</h2>
         <p className="text-sm text-stone-400 mb-4">{t('settings.qrMenuDesc')}</p>
         <div className="flex items-start gap-6">
@@ -123,7 +123,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Kitchen Display */}
-      <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-stone-100 mb-2">{t('settings.kds')}</h2>
         <p className="text-sm text-stone-400 mb-4">{t('settings.kdsDesc')}</p>
         <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Info account */}
-      <div className="bg-stone-900/55 rounded-2xl p-6 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-6">
         <h2 className="text-base font-semibold text-stone-100 mb-3">{t('settings.accountInfo')}</h2>
         <div className="space-y-2">
           {[

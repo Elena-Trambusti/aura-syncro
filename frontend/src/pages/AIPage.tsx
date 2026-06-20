@@ -51,7 +51,7 @@ function TabButton({ active, onClick, icon: Icon, label }: {
     <button
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-        active ? 'bg-violet-600 text-white shadow-md' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300 hover:bg-stone-900/30'
+        active ? 'bg-violet-600 text-white shadow-md' : 'glass-chip text-stone-300 hover:bg-white/[0.06]'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -108,7 +108,7 @@ function ForecastSection() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-5">
         <h3 className="text-sm font-bold text-stone-200 mb-4">Ricavi previsti — prossimi 7 giorni</h3>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={forecast} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
@@ -132,7 +132,7 @@ function ForecastSection() {
 
       <div className="grid grid-cols-1 gap-3">
         {forecast.map(day => (
-          <div key={day.date} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm flex items-center gap-4">
+          <div key={day.date} className="glass-card p-4 flex items-center gap-4">
             <div className="w-14 text-center shrink-0">
               <p className="text-xs font-bold text-stone-400">{day.dayLabel.slice(0, 3).toUpperCase()}</p>
               <p className="text-sm font-black text-stone-100">{new Date(day.date).getDate()}</p>
@@ -183,8 +183,8 @@ function ReorderSection() {
   const urgencyConfig = {
     critical: { bg: 'bg-red-950/40 border-red-200', badge: 'bg-red-100 text-red-700', dot: 'bg-red-950/400', label: 'Critico' },
     warning: { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400', label: 'Attenzione' },
-    ok: { bg: 'bg-stone-900/55 border-stone-800/50', badge: 'bg-emerald-950/50 text-emerald-400', dot: 'bg-emerald-950/400', label: 'OK' },
-    idle: { bg: 'bg-stone-900/30 border-stone-800/50', badge: 'bg-stone-800/50 text-stone-400', dot: 'bg-slate-300', label: 'Inattivo' },
+    ok: { bg: 'glass-card border-white/10', badge: 'bg-emerald-950/50 text-emerald-400', dot: 'bg-emerald-950/400', label: 'OK' },
+    idle: { bg: 'glass-table-head border-stone-800/50', badge: 'bg-stone-800/50 text-stone-400', dot: 'bg-slate-300', label: 'Inattivo' },
   }
 
   return (
@@ -198,7 +198,7 @@ function ReorderSection() {
           <p className="text-2xl font-black text-amber-700">{summary.warning}</p>
           <p className="text-xs text-amber-600 font-medium mt-1">Da riordinare</p>
         </div>
-        <div className="bg-stone-900/55 border border-stone-800/50 rounded-2xl p-4 text-center shadow-sm">
+        <div className="glass-card p-4 text-center">
           <p className="text-lg font-black text-stone-100">{formatCurrency(summary.totalCost)}</p>
           <p className="text-xs text-stone-400 font-medium mt-1">Costo riordino</p>
         </div>
@@ -283,7 +283,7 @@ function MenuMatrixSection() {
   return (
     <div className="space-y-5">
       {/* Scatter plot */}
-      <div className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm">
+      <div className="glass-card p-5">
         <h3 className="text-sm font-bold text-stone-200 mb-1">Mappa posizionamento piatti (30 giorni)</h3>
         <p className="text-xs text-stone-500 mb-4">X = volumi venduti · Y = prezzo unitario · Dimensione = fatturato</p>
         <ResponsiveContainer width="100%" height={220}>
@@ -298,7 +298,7 @@ function MenuMatrixSection() {
                 if (!payload?.length) return null
                 const d = payload[0].payload
                 return (
-                  <div className="bg-stone-900/55 rounded-xl shadow-lg p-3 border border-stone-800/50 text-xs">
+                  <div className="glass-card p-3 text-xs shadow-lg">
                     <p className="font-bold text-stone-100 mb-1">{d.name}</p>
                     <p className="text-stone-400">{d.x} vendite · €{d.y}</p>
                   </div>
@@ -334,7 +334,7 @@ function MenuMatrixSection() {
       </div>
 
       {/* Lista piatti */}
-      <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 shadow-sm overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="px-4 py-3 border-b border-stone-800/50 flex items-center justify-between">
           <p className="text-sm font-bold text-stone-200">
             {activeQuadrant ? `${quadrants.find(q => q.key === activeQuadrant)?.label} — ` : 'Tutti i piatti — '}
@@ -346,7 +346,7 @@ function MenuMatrixSection() {
         </div>
         <div className="divide-y divide-stone-800/40 max-h-80 overflow-y-auto">
           {filtered.map(item => (
-            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-900/30 transition-colors">
+            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-stone-100">{item.name}</p>
@@ -397,7 +397,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 animate-pulse">
+        <div key={i} className="glass-card p-4 animate-pulse">
           <div className="h-4 bg-slate-200 rounded w-1/3 mb-3" />
           <div className="h-3 bg-stone-800/50 rounded w-2/3" />
         </div>
@@ -460,7 +460,7 @@ export default function AIPage() {
               <p className="text-xs opacity-60 mt-1">Basato su {summary.tomorrow.samples} {summary.tomorrow.dayLabel} storici</p>
             )}
           </div>
-          <div className="bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm">
+          <div className="glass-card p-4">
             <div className="flex items-center gap-2 mb-2">
               <BarChart2 className="w-4 h-4 text-stone-500" />
               <p className="text-xs font-medium text-stone-400">Modello</p>

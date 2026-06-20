@@ -24,42 +24,42 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-stone-900/55 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <div className="glass-overlay flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="glass-modal p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-stone-100 mb-5">Nuova Prenotazione</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-stone-200 mb-1">Nome ospite *</label>
               <input value={form.guestName} onChange={e => update('guestName', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
                 placeholder="Mario Rossi" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">Telefono *</label>
               <input value={form.guestPhone} onChange={e => update('guestPhone', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
                 placeholder="+39 333..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">Coperti *</label>
               <input type="number" min={1} max={20} value={form.covers} onChange={e => update('covers', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-stone-200 mb-1">Data e ora *</label>
               <input type="datetime-local" value={form.date} onChange={e => update('date', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">Email</label>
               <input type="email" value={form.guestEmail} onChange={e => update('guestEmail', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">Durata (min)</label>
               <select value={form.duration} onChange={e => update('duration', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35">
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35">
                 <option value={60}>1 ora</option>
                 <option value={90}>1.5 ore</option>
                 <option value={120}>2 ore</option>
@@ -69,7 +69,7 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
             <div className="col-span-2">
               <label className="block text-sm font-medium text-stone-200 mb-1">Note</label>
               <textarea value={form.notes} onChange={e => update('notes', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
+                className="w-full px-3 py-2 glass-input rounded-xl text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
                 rows={2} placeholder="Allergie, occasioni speciali..." />
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function ReservationsPage() {
       {/* Selettore data */}
       <div className="flex items-center gap-3">
         <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-          className="px-4 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 bg-stone-900/55 text-stone-200" />
+          className="glass-input rounded-xl px-4 py-2 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 text-stone-200" />
         <div className="flex gap-2">
           {[-1, 0, 1].map(offset => {
             const d = new Date(); d.setDate(d.getDate() + offset)
@@ -148,7 +148,7 @@ export default function ReservationsPage() {
             const labels = ['Ieri', 'Oggi', 'Domani']
             return (
               <button key={offset} onClick={() => setSelectedDate(dateStr)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedDate === dateStr ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300'}`}>
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedDate === dateStr ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300'}`}>
                 {labels[offset + 1]}
               </button>
             )
@@ -159,7 +159,7 @@ export default function ReservationsPage() {
       {/* Lista prenotazioni */}
       <div className="space-y-3">
         {reservations.map(res => (
-          <div key={res.id} className={`bg-stone-900/55 rounded-2xl p-4 border border-stone-800/50 shadow-sm flex items-center gap-4 ${['CANCELLED', 'NO_SHOW'].includes(res.status) ? 'opacity-60' : ''}`}>
+          <div key={res.id} className={`glass-card p-4 flex items-center gap-4 ${['CANCELLED', 'NO_SHOW'].includes(res.status) ? 'opacity-60' : ''}`}>
             <div className="w-14 h-14 rounded-xl bg-amber-950/30 flex flex-col items-center justify-center shrink-0">
               <span className="text-lg font-bold text-amber-400">{formatTime(res.date)}</span>
             </div>

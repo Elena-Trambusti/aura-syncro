@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -22,8 +22,8 @@ function ItemForm({ item, onSave, onCancel }: {
     cost: item?.cost || 0, supplier: item?.supplier || '', category: item?.category || '',
   })
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-stone-900/55 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <div className="glass-overlay flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="glass-modal p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-stone-100 mb-5">{item?.id ? 'Modifica' : 'Nuovo'} Prodotto</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -149,16 +149,16 @@ export default function InventoryPage() {
       <div className="flex gap-2 flex-wrap">
         {categories.map(cat => (
           <button key={cat} onClick={() => setFilterCategory(cat)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCategory === cat ? 'bg-amber-600 text-white' : 'bg-stone-900/55 border border-stone-700/50 text-stone-300'}`}>
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCategory === cat ? 'bg-amber-600 text-white' : 'glass-chip text-stone-300'}`}>
             {cat}
           </button>
         ))}
       </div>
 
-      <div className="bg-stone-900/55 rounded-2xl border border-stone-800/50 overflow-hidden shadow-sm">
+      <div className="glass-card overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-stone-800/50 bg-stone-900/30">
+            <tr className="border-b border-stone-800/50 glass-table-head">
               <th className="text-left text-xs font-semibold text-stone-400 uppercase px-5 py-3">Prodotto</th>
               <th className="text-left text-xs font-semibold text-stone-400 uppercase px-4 py-3">Categoria</th>
               <th className="text-left text-xs font-semibold text-stone-400 uppercase px-4 py-3">Quantità</th>
@@ -173,7 +173,7 @@ export default function InventoryPage() {
             {filtered.map(item => {
               const isLow = item.quantity <= item.minQuantity
               return (
-                <tr key={item.id} className={`hover:bg-stone-900/30 transition-colors ${isLow ? 'bg-red-950/40/50' : ''}`}>
+                <tr key={item.id} className={`hover:glass-table-head transition-colors ${isLow ? 'bg-red-950/40/50' : ''}`}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       {isLow && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}

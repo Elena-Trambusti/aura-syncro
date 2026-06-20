@@ -58,7 +58,7 @@ export default function RegisterPage() {
           <p className="text-stone-400 mt-2 text-sm">{t('auth.registerSubtitle')}</p>
         </div>
 
-        <div className="rounded-2xl p-8 shadow-2xl border border-stone-800 bg-stone-900/80 backdrop-blur-xl">
+        <div className="glass-modal p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('auth.restaurantName')}</label>
