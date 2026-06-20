@@ -481,6 +481,7 @@
     "seats": "{{count}} couverts",
     "tabMenu": "Menu",
     "tabOrder": "Commande",
+    "backToMenu": "Retour au menu",
     "cartTitle": "Panier ({{count}})",
     "total": "Total",
     "orderTotal": "Total commande",

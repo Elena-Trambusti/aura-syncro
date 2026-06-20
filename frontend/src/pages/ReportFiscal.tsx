@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { formatCurrency, cn, toLocalDateInput } from '../lib/utils'
 import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
 import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
+import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
 import { useFiscalRegime } from '../contexts/AuthContext'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
@@ -19,6 +20,7 @@ type FilterMode = 'day' | 'month' | 'range'
 interface FiscalApiResponse extends FiscalReportData {
   period: { mode: string; start: string; end: string }
   fiscalRegime?: FiscalRegime
+  summary: FiscalReportData['summary'] & { electronicTipsTotal?: number; tipTaxStatus?: string }
 }
 
 const glassPanel = 'glass-card'
@@ -120,6 +122,36 @@ export default function ReportFiscal() {
     ? [data.summary.totalFacturadoNeto, data.summary.totalPropinas, data.summary.totalConciliacion]
     : [0, 0, 0]
 
+  const handleExportCSV = () => {
+    if (!data?.rows?.length) {
+      toast.error(t('reportFiscal.noData'))
+      return
+    }
+    const labels = buildFiscalPdfLabels(t, taxRegion)
+    const headers = [...labels.headers]
+    if (taxRegion === 'IT_MAIN') headers.push(tRegime(t, taxRegion, 'table.paymentMethod', { defaultValue: 'Metodo' }))
+    downloadCSV(
+      `${labels.filenamePrefix}-${data.period.start.slice(0, 10)}.csv`,
+      headers,
+      data.rows.map(r => {
+        const base = [
+          r.fecha ? fmtDate(r.fecha) : '—',
+          r.orderId.slice(-6).toUpperCase(),
+          r.baseImponible,
+          r.tax,
+          r.revenueAmount,
+          r.tipAmount,
+          r.total,
+        ]
+        if (taxRegion === 'IT_MAIN') {
+          base.push((r as { paymentMethod?: string }).paymentMethod ?? '')
+        }
+        return base
+      }),
+    )
+    toast.success(t('reportFiscal.csvGenerated', { defaultValue: 'CSV esportato' }))
+  }
+
   const handleExportPDF = async () => {
     if (!data?.rows?.length) {
       toast.error(t('reportFiscal.noData'), {
@@ -191,33 +223,44 @@ export default function ReportFiscal() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportPDF}
-            disabled={isExporting || isLoading || !hasExportData}
-            className={cn(
-              'group relative flex items-center gap-3 overflow-hidden rounded-2xl px-6 py-4',
-              'bg-gradient-to-r from-orange-500 to-amber-500 font-semibold text-white',
-              'shadow-lg shadow-orange-500/30 transition-all duration-300',
-              'hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40',
-              'hover:ring-4 hover:ring-orange-500/30',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:ring-0',
-              !isExporting && hasExportData ? 'animate-[pulse_3s_ease-in-out_infinite]' : '',
-            )}
-          >
-            <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
-            {isExporting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>{t('reportFiscal.exporting')}</span>
-              </>
-            ) : (
-              <>
-                <FileDown className="h-5 w-5" />
-                <span>{t('reportFiscal.exportPdf')}</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={isLoading || !hasExportData}
+              className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <FileDown className="h-4 w-4" />
+              {t('reportFiscal.exportCsv', { defaultValue: 'Esporta CSV' })}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPDF}
+              disabled={isExporting || isLoading || !hasExportData}
+              className={cn(
+                'group relative flex items-center gap-3 overflow-hidden rounded-2xl px-6 py-4',
+                'bg-gradient-to-r from-orange-500 to-amber-500 font-semibold text-white',
+                'shadow-lg shadow-orange-500/30 transition-all duration-300',
+                'hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40',
+                'hover:ring-4 hover:ring-orange-500/30',
+                'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:ring-0',
+                !isExporting && hasExportData ? 'animate-[pulse_3s_ease-in-out_infinite]' : '',
+              )}
+            >
+              <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>{t('reportFiscal.exporting')}</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-5 w-5" />
+                  <span>{t('reportFiscal.exportPdf')}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">

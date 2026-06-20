@@ -496,6 +496,7 @@
     "seats": "{{count}} seats",
     "tabMenu": "Menu",
     "tabOrder": "Order",
+    "backToMenu": "Back to Menu",
     "cartTitle": "Cart ({{count}})",
     "total": "Total",
     "orderTotal": "Order total",

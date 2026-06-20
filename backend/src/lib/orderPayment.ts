@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { computePaymentSplit } from './tipFiscal'
 
 export interface FinalizePaymentInput {
   orderId: string
@@ -14,18 +15,7 @@ export interface FinalizePaymentResult {
   paidAt: Date
 }
 
-export function computePaymentSplit(existing: {
-  revenueAmount: number | null
-  total: number
-  subtotal: number
-  tax: number
-}, tipAmountInput?: number): FinalizePaymentResult {
-  const foodTotal = existing.revenueAmount ?? existing.total ?? (existing.subtotal + existing.tax)
-  const revenueAmount = Math.round(foodTotal * 100) / 100
-  const tipAmount = Math.round(Math.max(0, Number(tipAmountInput) || 0) * 100) / 100
-  const total = Math.round((revenueAmount + tipAmount) * 100) / 100
-  return { revenueAmount, tipAmount, total, paidAt: new Date() }
-}
+export { computePaymentSplit }
 
 export async function releaseTableIfEmpty(tableId: string | null | undefined): Promise<void> {
   if (!tableId) return

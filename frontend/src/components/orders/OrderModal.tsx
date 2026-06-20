@@ -1,12 +1,12 @@
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../lib/api'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
 import { useFiscalRegime } from '../../contexts/AuthContext'
 import { tRegime } from '../../lib/fiscalRegime'
-import { X, Plus, Minus, ShoppingCart, Sparkles } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -27,6 +27,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const [tab, setTab] = useState<'menu' | 'order'>('menu')
   const [wantsTip, setWantsTip] = useState(false)
   const [tipAmount, setTipAmount] = useState('')
+  const [cartPulse, setCartPulse] = useState(false)
 
   const { data: tables = [] } = useQuery<Table[]>({
     queryKey: ['tables'],
@@ -36,10 +37,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
 
   const table = tables.find(tbl => tbl.id === tableId)
   const activeOrder = table?.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
-
-  useEffect(() => {
-    if (activeOrder) setTab('order')
-  }, [activeOrder?.id])
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['menu', 'categories'],
@@ -103,12 +100,12 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const addToCart = (item: MenuItem) => {
     setCart(prev => {
       const existing = prev.find(c => c.menuItemId === item.id)
-      const next = existing
+      return existing
         ? prev.map(c => c.menuItemId === item.id ? { ...c, quantity: c.quantity + 1 } : c)
         : [...prev, { menuItemId: item.id, name: item.name, price: item.price, quantity: 1 }]
-      if (prev.length === 0) setTab('order')
-      return next
     })
+    setCartPulse(true)
+    window.setTimeout(() => setCartPulse(false), 700)
   }
 
   const removeFromCart = (menuItemId: string) => {
@@ -121,6 +118,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
+  const orderBadgeCount = cartCount > 0 ? cartCount : (activeOrder?.items.length ?? 0)
 
   const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount) || 0) : 0
   const posTotal = activeOrder ? activeOrder.total + parsedTip : 0
@@ -200,40 +198,70 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
 
   const showCheckout = tab === 'order' && activeOrder && cart.length === 0
   const showCart = cart.length > 0 && !showCheckout
-  const showRightPanel = showCart || showCheckout || tab === 'order'
 
-  const tabButtons = (
-    <div className="flex gap-1">
-      {(['menu', 'order'] as const).map(tabKey => (
-        <button
-          key={tabKey}
-          type="button"
-          onClick={() => setTab(tabKey)}
-          className={cn(
-            'px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-colors',
-            tab === tabKey ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-          )}
-        >
-          {tabKey === 'menu' ? t('orderModal.tabMenu') : t('orderModal.tabOrder')}
-          {tabKey === 'order' && (cartCount > 0 || activeOrder) && (
-            <span className="ml-1.5 bg-white/20 text-white text-xs px-1.5 rounded-full">
-              {cartCount > 0 ? cartCount : activeOrder?.items.length}
-            </span>
-          )}
-        </button>
-      ))}
+  const tabButtons = (compact = false) => (
+    <div className={cn('flex gap-1', compact ? 'flex-1' : '')}>
+      {(['menu', 'order'] as const).map(tabKey => {
+        const isActive = tab === tabKey
+        const showBadge = tabKey === 'order' && orderBadgeCount > 0
+        return (
+          <button
+            key={tabKey}
+            type="button"
+            onClick={() => setTab(tabKey)}
+            className={cn(
+              'relative flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              isActive ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+            )}
+          >
+            {tabKey === 'menu' ? t('orderModal.tabMenu') : t('orderModal.tabOrder')}
+            {showBadge && (
+              <span
+                className={cn(
+                  'ml-1.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs font-bold',
+                  isActive ? 'bg-white/25 text-white' : 'bg-amber-500 text-white',
+                  cartPulse && cartCount > 0 && 'animate-pulse ring-2 ring-amber-300 ring-offset-1',
+                )}
+              >
+                {orderBadgeCount}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const mobileStickyTabBar = (
+    <div className="lg:hidden sticky top-0 z-40 shrink-0 bg-white border-b border-slate-200 shadow-sm">
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        {tab === 'order' ? (
+          <button
+            type="button"
+            onClick={() => setTab('menu')}
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            aria-label={t('orderModal.backToMenu')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden xs:inline">{t('orderModal.backToMenu')}</span>
+          </button>
+        ) : (
+          <span className="w-8 shrink-0" aria-hidden />
+        )}
+        {tabButtons(true)}
+      </div>
     </div>
   )
 
   const cartPanel = showCart ? (
     <>
-      <div className="p-3 border-b border-slate-200 shrink-0">
+      <div className="p-3 border-b border-slate-200 shrink-0 bg-white">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-semibold text-slate-900">{t('orderModal.cartTitle', { count: cartCount })}</span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2">
         {cart.map(item => (
           <div key={item.menuItemId} className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
@@ -252,7 +280,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </div>
         ))}
       </div>
-      <div className="p-3 border-t border-slate-200 shrink-0">
+      <div className="shrink-0 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(15,23,42,0.06)]">
         <div className="flex justify-between text-sm font-bold text-slate-900 mb-3">
           <span>{t('orderModal.total')}</span>
           <span>{formatCurrency(cartTotal)}</span>
@@ -261,7 +289,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           type="button"
           onClick={handleSendOrder}
           disabled={createOrder.isPending || addToOrder.isPending}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-60"
         >
           {t('orderModal.sendToKitchen')}
         </button>
@@ -279,8 +307,9 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   ) : null
 
   const checkoutPanel = showCheckout ? (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
-      <div className="space-y-6 max-w-lg mx-auto">
+    <div className="flex flex-1 min-h-0 flex-col">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4">
+        <div className="space-y-6 max-w-lg mx-auto">
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-500">{t('orderModal.orderRef', { ref: activeOrder!.id.slice(-6).toUpperCase() })}</span>
           <span className="text-xs px-3 py-1 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200">
@@ -375,6 +404,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
         <p className="text-xs text-slate-500 text-center pt-2">
           {tRegime(t, fiscal.taxRegion, 'tipExemptNote')}
         </p>
+        </div>
       </div>
     </div>
   ) : null
@@ -395,27 +425,30 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
         className="saas-modal w-full sm:max-w-4xl h-[100dvh] sm:h-[85vh] flex flex-col overflow-hidden rounded-none sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0 gap-3">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0 gap-3 bg-white z-50">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-900">{t('orderModal.title', { number: table.number })}</h2>
             <p className="text-sm text-slate-500">{t('orderModal.seats', { count: table.seats })}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {tabButtons}
+            <div className="hidden lg:flex">{tabButtons()}</div>
             <button type="button" onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" aria-label={t('common.close')}>
               <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
         </div>
 
+        {mobileStickyTabBar}
+
         <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
           <div
             className={cn(
-              'flex flex-1 min-h-0 min-w-0',
+              'flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden',
               tab === 'menu' ? 'flex' : 'hidden lg:flex',
             )}
           >
-            <div className="w-28 sm:w-36 shrink-0 border-r border-slate-200 overflow-y-auto py-2 bg-slate-50">
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div className="w-28 sm:w-36 shrink-0 border-r border-slate-200 overflow-y-auto overscroll-contain py-2 bg-slate-50">
               {categories.map(cat => (
                 <button
                   key={cat.id}
@@ -433,7 +466,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
               ))}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4">
               <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 {(currentCategory?.items || []).filter(i => i.available).map(item => {
                   const inCart = cart.find(c => c.menuItemId === item.id)
@@ -471,14 +504,15 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
                 })}
               </div>
             </div>
+            </div>
           </div>
 
           <div
             className={cn(
               'flex flex-col min-h-0 overflow-hidden bg-white',
               'w-full lg:w-80 lg:shrink-0',
-              'border-t border-slate-200 lg:border-t-0 lg:border-l',
-              showRightPanel ? 'flex flex-1 lg:flex-none' : 'hidden lg:flex lg:flex-none',
+              'lg:border-l lg:border-slate-200',
+              tab === 'order' ? 'flex flex-1' : 'hidden lg:flex lg:flex-none',
             )}
           >
             {cartPanel}

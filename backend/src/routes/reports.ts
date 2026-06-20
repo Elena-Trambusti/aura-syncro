@@ -8,8 +8,8 @@ import {
   legacyPaidOrdersWhere,
   paidOrdersWhere,
 } from '../lib/dates'
-import { resolveOrderTotal, resolveRevenueAmount, resolveTipAmount } from '../lib/fiscalAmounts'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
+import { buildFiscalSummary, buildFiscalTransactionRow } from '../lib/tipFiscal'
 
 export const reportsRouter = Router()
 
@@ -22,6 +22,7 @@ const fiscalOrderSelect = {
   revenueAmount: true,
   tipAmount: true,
   total: true,
+  paymentMethod: true,
 } as const
 
 async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: Date) {
@@ -64,7 +65,7 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
   // Ricavi da ordini pagati
   const revenueData = await prisma.order.aggregate({
     where: orderWhere,
-    _sum: { total: true, subtotal: true, tax: true, discount: true },
+    _sum: { revenueAmount: true, tipAmount: true, total: true, subtotal: true, tax: true, discount: true },
     _count: true,
   })
 
@@ -105,7 +106,9 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
     laborCost += Math.max(0, hours) * HOURLY_RATE
   }
 
-  const revenue = revenueData._sum.total || 0
+  const revenue = revenueData._sum.revenueAmount || revenueData._sum.subtotal! + (revenueData._sum.tax || 0) || 0
+  const tips = revenueData._sum.tipAmount || 0
+  const collected = revenueData._sum.total || 0
   const grossProfit = revenue - estimatedFoodCost
   const netProfit = grossProfit - laborCost
   const foodCostPct = revenue > 0 ? (estimatedFoodCost / revenue) * 100 : 0
@@ -114,16 +117,19 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
   // Breakdown giornaliero
   const dailyOrders = await prisma.order.findMany({
     where: orderWhere,
-    select: { total: true, paidAt: true, discount: true },
+    select: { revenueAmount: true, tipAmount: true, total: true, paidAt: true, discount: true, subtotal: true, tax: true },
     orderBy: { paidAt: 'asc' },
   })
 
-  const dailyMap: Record<string, { revenue: number; orders: number; discount: number }> = {}
+  const dailyMap: Record<string, { revenue: number; tips: number; collected: number; orders: number; discount: number }> = {}
   for (const o of dailyOrders) {
     if (!o.paidAt) continue
     const key = o.paidAt.toISOString().split('T')[0]
-    if (!dailyMap[key]) dailyMap[key] = { revenue: 0, orders: 0, discount: 0 }
-    dailyMap[key].revenue += o.total
+    if (!dailyMap[key]) dailyMap[key] = { revenue: 0, tips: 0, collected: 0, orders: 0, discount: 0 }
+    const food = o.revenueAmount ?? (o.subtotal + o.tax)
+    dailyMap[key].revenue += food
+    dailyMap[key].tips += o.tipAmount ?? 0
+    dailyMap[key].collected += o.total
     dailyMap[key].orders += 1
     dailyMap[key].discount += o.discount
   }
@@ -134,6 +140,8 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
     period: { year: y, month: m, startDate, endDate },
     summary: {
       revenue: Math.round(revenue * 100) / 100,
+      tips: Math.round(tips * 100) / 100,
+      collected: Math.round(collected * 100) / 100,
       subtotal: Math.round((revenueData._sum.subtotal || 0) * 100) / 100,
       tax: Math.round((revenueData._sum.tax || 0) * 100) / 100,
       totalDiscount: Math.round((revenueData._sum.discount || 0) * 100) / 100,
@@ -258,14 +266,18 @@ reportsRouter.get('/yearly', async (req: AuthRequest, res: Response): Promise<vo
 
     const agg = await prisma.order.aggregate({
       where: { restaurantId, status: 'PAID', paidAt: { gte: start, lte: end } },
-      _sum: { total: true },
+      _sum: { revenueAmount: true, tipAmount: true, total: true, subtotal: true, tax: true },
       _count: true,
     })
+
+    const foodRevenue = agg._sum.revenueAmount ?? ((agg._sum.subtotal || 0) + (agg._sum.tax || 0))
 
     months.push({
       month: m,
       monthName: new Date(y, m - 1).toLocaleString('it-IT', { month: 'short' }),
-      revenue: Math.round((agg._sum.total || 0) * 100) / 100,
+      revenue: Math.round(foodRevenue * 100) / 100,
+      tips: Math.round((agg._sum.tipAmount || 0) * 100) / 100,
+      collected: Math.round((agg._sum.total || 0) * 100) / 100,
       orders: agg._count,
     })
   }
@@ -304,28 +316,20 @@ reportsRouter.get('/fiscal', async (req: AuthRequest, res: Response): Promise<vo
   const fiscal = buildFiscalConfig(restaurant.settings)
 
   const rows = orders.map(o => {
-    const revenueAmount = resolveRevenueAmount(o)
-    const tipAmount = resolveTipAmount(o.tipAmount)
-    const total = resolveOrderTotal(o)
+    const row = buildFiscalTransactionRow(o, effectivePaidAt(o.paidAt, o.createdAt))
     return {
-      fecha: effectivePaidAt(o.paidAt, o.createdAt),
-      orderId: o.id,
-      baseImponible: Math.round(o.subtotal * 100) / 100,
-      tax: Math.round(o.tax * 100) / 100,
-      revenueAmount: Math.round(revenueAmount * 100) / 100,
-      tipAmount: Math.round(tipAmount * 100) / 100,
-      total: Math.round(total * 100) / 100,
+      fecha: row.fecha,
+      orderId: row.orderId,
+      baseImponible: row.baseImponible,
+      tax: row.tax,
+      revenueAmount: row.revenueAmount,
+      tipAmount: row.tipAmount,
+      total: row.total,
+      paymentMethod: row.paymentMethod,
     }
   })
 
-  const summary = rows.reduce(
-    (acc, r) => ({
-      totalFacturadoNeto: acc.totalFacturadoNeto + r.revenueAmount,
-      totalPropinas: acc.totalPropinas + r.tipAmount,
-      totalConciliacion: acc.totalConciliacion + r.total,
-    }),
-    { totalFacturadoNeto: 0, totalPropinas: 0, totalConciliacion: 0 },
-  )
+  const summary = buildFiscalSummary(rows, fiscal.taxRegion)
 
   res.json({
     fiscalRegime: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
@@ -338,10 +342,14 @@ reportsRouter.get('/fiscal', async (req: AuthRequest, res: Response): Promise<vo
     period: { mode, start: range.start.toISOString(), end: range.end.toISOString() },
     rows,
     summary: {
-      totalFacturadoNeto: Math.round(summary.totalFacturadoNeto * 100) / 100,
-      totalPropinas: Math.round(summary.totalPropinas * 100) / 100,
-      totalConciliacion: Math.round(summary.totalConciliacion * 100) / 100,
-      transactionCount: rows.length,
+      totalFacturadoNeto: summary.totalFacturadoNeto,
+      totalPropinas: summary.totalPropinas,
+      totalConciliacion: summary.totalConciliacion,
+      transactionCount: summary.transactionCount,
+      tipTaxStatus: summary.tipTaxStatus,
+      ...(summary.electronicTipsTotal != null
+        ? { electronicTipsTotal: summary.electronicTipsTotal }
+        : {}),
     },
   })
 })

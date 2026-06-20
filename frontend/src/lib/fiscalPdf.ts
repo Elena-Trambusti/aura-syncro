@@ -21,6 +21,8 @@ export interface FiscalReportData {
     totalPropinas: number
     totalConciliacion: number
     transactionCount: number
+    electronicTipsTotal?: number
+    tipTaxStatus?: string
   }
 }
 
@@ -107,6 +109,9 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
     body: [
       [labels.summaryNet, fmtEur(summary.totalFacturadoNeto, locale)],
       [labels.summaryTips, fmtEur(summary.totalPropinas, locale)],
+      ...(summary.electronicTipsTotal != null && labels.summaryElectronicTips
+        ? [[labels.summaryElectronicTips, fmtEur(summary.electronicTipsTotal, locale)]]
+        : []),
       [labels.summaryReconciliation, fmtEur(summary.totalConciliacion, locale)],
     ],
     styles: { fontSize: 10, cellPadding: 3.5 },

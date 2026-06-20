@@ -481,6 +481,7 @@
     "seats": "{{count}} Plätze",
     "tabMenu": "Speisekarte",
     "tabOrder": "Bestellung",
+    "backToMenu": "Zurück zur Speisekarte",
     "cartTitle": "Warenkorb ({{count}})",
     "total": "Gesamt",
     "orderTotal": "Bestellsumme",

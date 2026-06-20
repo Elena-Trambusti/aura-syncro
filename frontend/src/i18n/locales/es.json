@@ -496,6 +496,7 @@
     "seats": "{{count}} plazas",
     "tabMenu": "Menú",
     "tabOrder": "Pedido",
+    "backToMenu": "Volver al Menú",
     "cartTitle": "Carrito ({{count}})",
     "total": "Total",
     "orderTotal": "Total comanda",

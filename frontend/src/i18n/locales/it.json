@@ -399,19 +399,21 @@
         "taxLine": "{{taxName}} ({{rate}}%)",
         "cards": {
           "netRevenue": { "label": "Totale Fatturato Netto", "sub": "Soggetto a imposta (IVA)" },
-          "tips": { "label": "Totale Mance Personale", "sub": "Esente da IVA · Italia" },
+          "tips": { "label": "Mance Elettroniche Tracciate", "sub": "Esenti da IVA · Registro per imposta sostitutiva 5%" },
           "reconciliation": { "label": "Conciliazione Bancaria POS", "sub": "Totale incassato al POS" }
         },
         "table": {
           "date": "Data", "orderId": "ID Comanda", "taxableBase": "Imponibile", "tax": "IVA",
-          "restaurantTotal": "Totale Ristorante", "tip": "Mancia", "collectedTotal": "Totale Incassato"
+          "restaurantTotal": "Totale Ristorante", "tip": "Mancia", "collectedTotal": "Totale Incassato",
+          "paymentMethod": "Metodo POS"
         },
         "pdf": {
           "title": "Libro Registro Mance e Fatturazione — {{restaurant}}",
           "taxId": "P.IVA", "taxIdPending": "Da configurare", "address": "Sede",
           "period": "Periodo", "generated": "Generato",
           "summaryNet": "Totale Fatturato Netto (Soggetto a IVA)",
-          "summaryTips": "Totale Mance Personale (Esente da IVA)",
+          "summaryTips": "Totale Mance Elettroniche Tracciate (Esente da IVA)",
+          "summaryElectronicTips": "Registro Mance POS/App (imposta sostitutiva 5%)",
           "summaryReconciliation": "Totale Conciliazione Bancaria POS",
           "footer": "Documento generato automaticamente · {{count}} transazioni · Mance esenti da IVA (normativa italiana).",
           "filenamePrefix": "libro-registro"
@@ -496,6 +498,7 @@
     "seats": "{{count}} posti",
     "tabMenu": "Menu",
     "tabOrder": "Ordine",
+    "backToMenu": "Torna al Menu",
     "cartTitle": "Carrello ({{count}})",
     "total": "Totale",
     "orderTotal": "Totale comanda",

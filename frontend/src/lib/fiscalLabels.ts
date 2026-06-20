@@ -13,6 +13,7 @@ export interface FiscalPdfLabels {
   headers: string[]
   summaryNet: string
   summaryTips: string
+  summaryElectronicTips?: string
   summaryReconciliation: string
   footer: (count: number) => string
   filenamePrefix: string
@@ -39,6 +40,7 @@ export function buildFiscalPdfLabels(t: TFunction, taxRegion: TaxRegion): Fiscal
     ],
     summaryNet: t(`${prefix}.pdf.summaryNet`),
     summaryTips: t(`${prefix}.pdf.summaryTips`),
+    summaryElectronicTips: t(`${prefix}.pdf.summaryElectronicTips`, { defaultValue: '' }) || undefined,
     summaryReconciliation: t(`${prefix}.pdf.summaryReconciliation`),
     footer: (count: number) => t(`${prefix}.pdf.footer`, { count }),
     filenamePrefix: t(`${prefix}.pdf.filenamePrefix`),
