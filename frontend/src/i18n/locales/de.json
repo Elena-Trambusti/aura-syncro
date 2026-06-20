@@ -616,6 +616,11 @@
     "checkoutUrlMissing": "Checkout-URL von Stripe nicht erhalten",
     "secureNote": "Sichere Zahlung über Stripe Checkout"
   },
+  "paywall": {
+    "title": "Premium-Funktion",
+    "description": "Schalten Sie das Fiskalregister, die Predictive AI und mehr mit Aura Syncro Premium frei.",
+    "cta": "Premium-Plan entdecken"
+  },
   "publicMenu": {
     "title": "Speisekarte",
     "loading": "Speisekarte wird geladen...",

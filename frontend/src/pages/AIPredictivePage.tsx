@@ -9,6 +9,8 @@ import {
 } from 'recharts'
 import { cn } from '../lib/utils'
 import { usePredictiveAI, type PredictiveAlert, type AlertSeverity } from '../hooks/usePredictiveAI'
+import { useSubscription } from '../contexts/AuthContext'
+import PremiumPaywall from '../components/PremiumPaywall'
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 
@@ -106,6 +108,12 @@ function AlertsSkeleton() {
 }
 
 export default function AIPredictivePage() {
+  const { hasActiveSubscription } = useSubscription()
+  if (!hasActiveSubscription) return <PremiumPaywall />
+  return <AIPredictivePageContent />
+}
+
+function AIPredictivePageContent() {
   const { t, i18n } = useTranslation()
   const { forecast, alerts, factorsUsed, engineVersion, generatedAt, isLoading, refetch } = usePredictiveAI()
 

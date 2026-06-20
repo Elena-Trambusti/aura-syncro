@@ -22,6 +22,8 @@ export interface Restaurant extends FiscalRegime {
   colorTheme: string
   logoUrl?: string | null
   timezone?: string
+  /** Mock freemium — true solo con abbonamento Stripe attivo */
+  hasActiveSubscription: boolean
 }
 
 interface AuthContextType {
@@ -59,6 +61,7 @@ function normalizeRestaurant(raw: Record<string, unknown>): Restaurant {
     colorTheme: String(raw.colorTheme || '#c9a227'),
     logoUrl: (raw.logoUrl as string | null | undefined) ?? null,
     timezone: raw.timezone ? String(raw.timezone) : fiscal.timezone,
+    hasActiveSubscription: raw.hasActiveSubscription === true,
     ...fiscal,
   }
 }
@@ -213,6 +216,15 @@ export function useFiscalRegime(): FiscalRegime {
     defaultLocale: restaurant.defaultLocale,
     timezone: restaurant.timezone,
     taxId: restaurant.taxId,
+  }
+}
+
+/** Stato abbonamento SaaS del tenant (mock: false finché Stripe webhook non attiva Premium) */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSubscription() {
+  const { restaurant } = useAuth()
+  return {
+    hasActiveSubscription: restaurant?.hasActiveSubscription ?? false,
   }
 }
 

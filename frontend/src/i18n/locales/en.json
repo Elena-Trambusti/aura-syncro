@@ -631,6 +631,11 @@
     "checkoutUrlMissing": "Checkout URL not received from Stripe",
     "secureNote": "Secure payment powered by Stripe Checkout"
   },
+  "paywall": {
+    "title": "Premium Feature",
+    "description": "Unlock the Fiscal Register, Predictive AI and more with Aura Syncro Premium.",
+    "cta": "Discover Premium plan"
+  },
   "publicMenu": {
     "title": "Menu",
     "loading": "Loading menu...",

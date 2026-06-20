@@ -46,6 +46,10 @@ type RestaurantWithSettings = {
 /** Standard restaurant payload for auth responses. */
 export function restaurantPayload(restaurant: RestaurantWithSettings) {
   const fiscal = buildFiscalConfig(restaurant.settings)
+  const devPremiumUnlock =
+    process.env.NODE_ENV !== 'production'
+    && process.env.PREMIUM_DEV_UNLOCK === 'true'
+
   return {
     id: restaurant.id,
     name: restaurant.name,
@@ -54,5 +58,7 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     logoUrl: restaurant.logoUrl ?? restaurant.logo ?? null,
     ...fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
     timezone: restaurant.timezone ?? fiscal.timezone,
+    /** Mock freemium — true in dev se PREMIUM_DEV_UNLOCK=true, altrimenti da Stripe (futuro) */
+    hasActiveSubscription: devPremiumUnlock,
   }
 }

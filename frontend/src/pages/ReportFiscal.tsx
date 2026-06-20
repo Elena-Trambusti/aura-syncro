@@ -7,7 +7,8 @@ import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
 import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
 import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
-import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { useAuth, useFiscalRegime, useSubscription, useTenantQueryKey } from '../contexts/AuthContext'
+import PremiumPaywall from '../components/PremiumPaywall'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
 import {
   FileDown, CalendarRange, Loader2, Receipt, Coins, Wallet,
@@ -32,6 +33,12 @@ const inputClass = cn(
 )
 
 export default function ReportFiscal() {
+  const { hasActiveSubscription } = useSubscription()
+  if (!hasActiveSubscription) return <PremiumPaywall />
+  return <ReportFiscalContent />
+}
+
+function ReportFiscalContent() {
   const { t, i18n } = useTranslation()
   const { restaurant } = useAuth()
   const fiscalRegime = useFiscalRegime()

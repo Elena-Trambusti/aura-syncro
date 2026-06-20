@@ -633,6 +633,11 @@
     "checkoutUrlMissing": "URL di checkout non ricevuto da Stripe",
     "secureNote": "Pagamento sicuro gestito da Stripe Checkout"
   },
+  "paywall": {
+    "title": "Funzionalità Premium",
+    "description": "Per sbloccare il Libro Registro Fiscale, l'AI Predittiva e molto altro, passa ad Aura Syncro Premium.",
+    "cta": "Scopri il piano Premium"
+  },
   "publicMenu": {
     "title": "Menu",
     "loading": "Caricamento menu...",

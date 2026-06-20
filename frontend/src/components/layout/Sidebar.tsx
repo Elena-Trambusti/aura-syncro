@@ -3,10 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Lock,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth, useSubscription } from '../../contexts/AuthContext'
 import { getTenantTheme } from '../../lib/tenantTheme'
 import { BRAND } from '../../lib/brand'
 import BrandLogo from '../brand/BrandLogo'
@@ -19,14 +19,14 @@ const navItems = [
   { to: '/prenotazioni', icon: CalendarDays, labelKey: 'nav.reservations' },
   { to: '/menu', icon: BookOpen, labelKey: 'nav.menu' },
   { to: '/dashboard/qr-builder', icon: QrCode, labelKey: 'nav.qrMenu' },
-  { to: '/crm', icon: Users, labelKey: 'nav.crm' },
-  { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai' },
+  { to: '/crm', icon: Users, labelKey: 'nav.crm', premium: true },
+  { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai', premium: true },
   { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty' },
-  { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing' },
+  { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing', premium: true },
   { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments' },
   { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing' },
   { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true },
-  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true },
+  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, premium: true },
   { to: '/personale', icon: UserCog, labelKey: 'nav.staff' },
   { to: '/magazzino', icon: Package, labelKey: 'nav.inventory' },
   { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
@@ -41,6 +41,7 @@ export default function Sidebar() {
   const { t } = useTranslation()
   const location = useLocation()
   const { restaurant } = useAuth()
+  const { hasActiveSubscription } = useSubscription()
   const theme = getTenantTheme(restaurant?.colorTheme)
   const { sidebarOpen, closeSidebar } = useDashboardLayout()
 
@@ -101,6 +102,8 @@ export default function Sidebar() {
           <ul className="space-y-1">
             {navItems.map(item => {
               const Icon = item.icon
+              const isPremiumLocked = item.premium && !hasActiveSubscription
+              const NavIcon = isPremiumLocked ? Lock : Icon
               const isActive = item.exact
                 ? location.pathname === item.to
                 : location.pathname.startsWith(item.to)
@@ -114,9 +117,10 @@ export default function Sidebar() {
                       isActive
                         ? 'text-white font-semibold bg-slate-800'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+                      isPremiumLocked && !isActive && 'text-slate-400',
                     )}
                   >
-                    <Icon className="w-5 h-5 shrink-0" />
+                    <NavIcon className={cn('w-5 h-5 shrink-0', isPremiumLocked && 'text-amber-400/90')} />
                     {t(item.labelKey)}
                   </NavLink>
                 </li>
