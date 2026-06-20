@@ -30,7 +30,11 @@ import { authenticate } from './middleware/auth'
 import { errorHandler } from './middleware/errorHandler'
 import { setupSocketHandlers } from './socket/handlers'
 
-dotenv.config()
+// In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
+// in locale carichiamo backend/.env tramite dotenv.
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config()
+}
 
 const app = express()
 const httpServer = createServer(app)
