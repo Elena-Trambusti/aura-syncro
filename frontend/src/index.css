@@ -33,6 +33,7 @@
     background-color: var(--color-aura-dark);
     color: #e7e5e4;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   ::-webkit-scrollbar {
@@ -66,10 +67,26 @@
   }
 
   .aura-page-title {
-    @apply text-2xl font-bold text-stone-100 tracking-tight;
+    @apply text-xl sm:text-2xl font-bold text-stone-100 tracking-tight;
   }
 
   .aura-page-subtitle {
     @apply text-sm text-stone-400 mt-1;
+  }
+
+  .aura-page-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .aura-table-wrap {
+    @apply overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0;
+  }
+
+  .aura-table-wrap table {
+    @apply min-w-[640px] w-full;
+  }
+
+  .aura-filter-row {
+    @apply flex gap-2 flex-wrap;
   }
 }

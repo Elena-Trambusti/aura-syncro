@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-[100dvh] flex items-center justify-center p-4 sm:p-6"
       style={{ background: `linear-gradient(135deg, ${BRAND.dark} 0%, #1c1917 50%, #292524 100%)` }}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

@@ -22,4 +22,7 @@ export const ui = {
     'bg-stone-800/50 text-stone-400 border border-stone-700/40 hover:bg-stone-800 hover:text-stone-200',
   badgeSuccess: 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40',
   badgeMuted: 'bg-stone-800/60 text-stone-400 border border-stone-700/40',
+  pageHeader: 'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+  tableWrap: 'overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0',
+  filterRow: 'flex gap-2 flex-wrap',
 } as const

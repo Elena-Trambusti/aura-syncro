@@ -48,14 +48,14 @@ export default function TablesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="aura-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Tavoli & POS</h1>
-          <p className="text-stone-400 text-sm mt-1">Gestione tavoli e presa comande</p>
+          <h1 className="aura-page-title">Tavoli & POS</h1>
+          <p className="aura-page-subtitle">Gestione tavoli e presa comande</p>
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['tables'] })}
-          className="flex items-center gap-2 px-4 py-2 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
           Aggiorna
@@ -63,7 +63,7 @@ export default function TablesPage() {
       </div>
 
       {/* Statistiche */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Liberi', count: stats.free, color: 'bg-emerald-950/40 text-emerald-700 border-emerald-200' },
           { label: 'Occupati', count: stats.occupied, color: 'bg-red-950/40 text-red-700 border-red-200' },

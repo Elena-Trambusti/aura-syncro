@@ -57,7 +57,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
               className="w-full px-3 py-2 border border-stone-700/60 rounded-xl bg-stone-950/70 text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
               rows={2} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-stone-200 mb-1">Prezzo (€) *</label>
               <input type="number" step="0.5" value={form.price} onChange={e => setForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
@@ -135,20 +135,20 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-100">Gestione Menu</h1>
-          <p className="text-stone-400 text-sm mt-1">{allItems.length} piatti in {categories.length} categorie</p>
+      <div className="aura-page-header">
+        <div className="min-w-0">
+          <h1 className="aura-page-title">Gestione Menu</h1>
+          <p className="aura-page-subtitle">{allItems.length} piatti in {categories.length} categorie</p>
         </div>
         <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+          className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-full sm:w-auto shrink-0">
           <Plus className="w-4 h-4" />
           Nuovo Piatto
         </button>
       </div>
 
       {/* Filtri categoria */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="aura-filter-row">
         <button onClick={() => setSelectedCat(null)}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${!selectedCat ? 'bg-amber-600 text-stone-950 font-semibold' : 'bg-stone-800/50 text-stone-300 border border-stone-700/40 hover:bg-stone-800 hover:text-stone-100'}`}>
           Tutti ({allItems.length})
@@ -162,7 +162,8 @@ export default function MenuPage() {
       </div>
 
       {/* Tabella piatti */}
-      <div className="bg-stone-900/55 rounded-2xl border border-stone-700/45 overflow-hidden shadow-lg shadow-black/10">
+      <div className="aura-card overflow-hidden">
+        <div className="aura-table-wrap">
         <table className="w-full">
           <thead>
             <tr className="border-b border-stone-800/60 bg-stone-900/40">
@@ -218,6 +219,7 @@ export default function MenuPage() {
             ))}
           </tbody>
         </table>
+        </div>
         {filteredItems.length === 0 && (
           <div className="flex flex-col items-center py-12 text-stone-500">
             <BookOpen className="w-10 h-10 mb-2 opacity-30" />

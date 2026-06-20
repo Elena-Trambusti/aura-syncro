@@ -30,7 +30,7 @@ function StatCard({
   trend?: number
 }) {
   return (
-    <div className="rounded-2xl p-6 border border-stone-800 bg-stone-900/60 backdrop-blur-sm">
+    <div className="rounded-2xl p-4 sm:p-6 border border-stone-800 bg-stone-900/60 backdrop-blur-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-stone-400">{title}</p>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
             {BRAND.name}
           </p>
-          <h1 className="text-2xl font-bold text-stone-100">
+          <h1 className="aura-page-title">
             Dashboard — {restaurant?.name || 'Ristorante'}
           </h1>
           <p className="text-stone-500 text-sm mt-1">

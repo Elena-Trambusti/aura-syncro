@@ -72,13 +72,11 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-100">Ordini</h1>
-        <p className="text-stone-400 text-sm mt-1">Gestione e stato degli ordini</p>
-      </div>
-
-      {/* Export */}
-      <div className="flex justify-end">
+      <div className="aura-page-header">
+        <div>
+          <h1 className="aura-page-title">Ordini</h1>
+          <p className="aura-page-subtitle">Gestione e stato degli ordini</p>
+        </div>
         <button
           onClick={() => {
             downloadCSV(
@@ -94,7 +92,7 @@ export default function OrdersPage() {
               ])
             )
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors"
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
         >
           <Download className="w-4 h-4" />
           Esporta CSV
@@ -102,7 +100,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filtri */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="aura-filter-row">
         {filters.map(f => (
           <button
             key={f.key}
