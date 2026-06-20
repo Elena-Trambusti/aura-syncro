@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatTime, RESERVATION_STATUS_LABELS } from '../lib/utils'
 import { Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, Clock } from 'lucide-react'
@@ -86,6 +87,7 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
 }
 
 export default function ReservationsPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -101,7 +103,7 @@ export default function ReservationsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] })
       setShowForm(false)
-      toast.success('Prenotazione confermata!')
+      toast.success(t('reservations.confirmed'))
     },
   })
 
@@ -125,13 +127,13 @@ export default function ReservationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Prenotazioni</h1>
-          <p className="text-stone-400 text-sm mt-1">{reservations.length} prenotazioni · {totalCovers} coperti previsti</p>
+          <h1 className="aura-page-title">{t('reservations.title')}</h1>
+          <p className="aura-page-subtitle">{t('reservations.subtitle', { count: reservations.length, covers: totalCovers })}</p>
         </div>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">
           <Plus className="w-4 h-4" />
-          Nuova Prenotazione
+          {t('reservations.newReservation')}
         </button>
       </div>
 

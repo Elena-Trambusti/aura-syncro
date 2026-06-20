@@ -1,6 +1,7 @@
 ﻿
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { downloadCSV } from '../lib/export'
@@ -13,6 +14,7 @@ import {
 type Period = '7d' | '30d' | '90d'
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   const [period, setPeriod] = useState<Period>('30d')
 
   const { data: revenue } = useQuery({
@@ -50,8 +52,8 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Analytics</h1>
-          <p className="text-stone-400 text-sm mt-1">Analisi delle performance del ristorante</p>
+          <h1 className="aura-page-title">{t('analytics.title')}</h1>
+          <p className="aura-page-subtitle">{t('analytics.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {(['7d', '30d', '90d'] as Period[]).map(p => (

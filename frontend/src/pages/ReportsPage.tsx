@@ -1,6 +1,7 @@
 ﻿import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { TrendingUp, TrendingDown, FileText, PieChart, BarChart2, Download } from 'lucide-react'
@@ -21,6 +22,7 @@ const MONTHS = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set
 const PIE_COLORS = ['#c9a227', '#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ef4444']
 
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const now = new Date()
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1)
@@ -68,7 +70,8 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Report & Contabilità</h1>
+          <h1 className="aura-page-title">{t('reports.title')}</h1>
+          <p className="aura-page-subtitle">{t('reports.subtitle')}</p>
           <p className="text-stone-400 text-sm mt-1">P&L, food cost e analisi margini</p>
         </div>
         <div className="flex items-center gap-2">

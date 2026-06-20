@@ -1,13 +1,20 @@
 import { LogOut, MonitorCheck, ExternalLink, Menu } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
-import { getInitials, ROLE_LABELS } from '../../lib/utils'
+import { getInitials } from '../../lib/utils'
 import { BRAND } from '../../lib/brand'
 import NotificationBell from './NotificationBell'
+import LanguageSwitcher from './LanguageSwitcher'
 import { useDashboardLayout } from './DashboardLayout'
 
 export default function Header() {
+  const { t } = useTranslation()
   const { user, logout } = useAuth()
   const { toggleSidebar } = useDashboardLayout()
+
+  const roleLabel = user
+    ? t(`status.role.${user.role}`, { defaultValue: user.role })
+    : ''
 
   return (
     <header className="h-14 sm:h-16 border-b border-stone-800/80 flex items-center justify-between px-3 sm:px-6 shrink-0 bg-[#1f1d1a]/90 backdrop-blur-md gap-2">
@@ -16,7 +23,7 @@ export default function Header() {
           type="button"
           onClick={toggleSidebar}
           className="lg:hidden p-2 -ml-1 rounded-lg text-stone-300 hover:bg-stone-800/60 hover:text-stone-100 transition-colors shrink-0"
-          aria-label="Apri menu"
+          aria-label={t('common.openMenu')}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -29,12 +36,14 @@ export default function Header() {
           target="_blank"
           rel="noopener noreferrer"
           className="hidden sm:flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-stone-400 border border-stone-700/60 rounded-lg hover:bg-stone-800/50 hover:text-amber-400/90 hover:border-amber-800/40 transition-colors"
-          title="Apri schermo cucina"
+          title={t('nav.openKitchenDisplay')}
         >
           <MonitorCheck className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Cucina</span>
+          <span className="hidden sm:inline">{t('nav.kitchenDisplay')}</span>
           <ExternalLink className="w-3 h-3 opacity-60 hidden sm:block" />
         </a>
+
+        <LanguageSwitcher />
 
         <NotificationBell />
 
@@ -49,12 +58,13 @@ export default function Header() {
           </div>
           <div className="hidden md:block">
             <p className="text-sm font-medium text-stone-100 leading-none">{user?.name}</p>
-            <p className="text-xs text-stone-500 mt-0.5">{user ? ROLE_LABELS[user.role] || user.role : ''}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{roleLabel}</p>
           </div>
           <button
             onClick={logout}
             className="p-2 rounded-lg hover:bg-red-950/40 hover:text-red-400 text-stone-500 transition-colors"
-            title="Logout"
+            title={t('common.logout')}
+            aria-label={t('common.logout')}
           >
             <LogOut className="w-4 h-4" />
           </button>

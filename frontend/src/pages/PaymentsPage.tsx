@@ -1,4 +1,5 @@
 ﻿import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { CreditCard, TrendingUp, ShoppingBag, AlertCircle, ExternalLink, CheckCircle2 } from 'lucide-react'
@@ -25,6 +26,7 @@ interface OverviewData {
 }
 
 export default function PaymentsPage() {
+  const { t } = useTranslation()
   const { data, isLoading } = useQuery<OverviewData>({
     queryKey: ['payments', 'overview'],
     queryFn: () => api.get('/payments/overview').then(r => r.data),
@@ -44,7 +46,8 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Pagamenti Digitali</h1>
+          <h1 className="aura-page-title">{t('payments.title')}</h1>
+          <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
           <p className="text-stone-400 text-sm mt-1">Incassi via Stripe dal menu QR</p>
         </div>
         <a

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { getSocket, connectSocket } from '../lib/socket'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink } from 'lucide-react'
@@ -150,6 +151,7 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
 }
 
 export default function KitchenDisplayPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [time, setTime] = useState(new Date())
   const [newOrderAlert, setNewOrderAlert] = useState(false)
@@ -211,7 +213,7 @@ export default function KitchenDisplayPage() {
       )
       refreshKitchen()
     },
-    onError: () => toast.error('Impossibile aggiornare il piatto'),
+    onError: () => toast.error(t('kitchen.dishUpdateError')),
   })
 
   const orderReady = useMutation({
@@ -222,9 +224,9 @@ export default function KitchenDisplayPage() {
         prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
       )
       refreshKitchen()
-      toast.success('Ordine pronto per il servizio!')
+      toast.success(t('kitchen.orderReady'))
     },
-    onError: () => toast.error('Impossibile segnare l\'ordine come pronto'),
+    onError: () => toast.error(t('kitchen.orderReadyError')),
   })
 
   const pending = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED')

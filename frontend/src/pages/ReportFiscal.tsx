@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, cn, toLocalDateInput } from '../lib/utils'
 import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
@@ -70,6 +71,7 @@ const inputClass = cn(
 )
 
 export default function ReportFiscal() {
+  const { t } = useTranslation()
   const now = new Date()
   const [mode, setMode] = useState<FilterMode>('month')
   const [dayDate, setDayDate] = useState(() => toLocalDateInput())
@@ -101,7 +103,7 @@ export default function ReportFiscal() {
 
   const handleExportPDF = async () => {
     if (!data?.rows?.length) {
-      toast.error('No hay datos para el período seleccionado', {
+      toast.error(t('reportFiscal.noData'), {
         icon: '⚠️',
         style: { borderRadius: '12px', background: '#1e293b', color: '#fff' },
       })
@@ -118,13 +120,13 @@ export default function ReportFiscal() {
         fecha: r.fecha ? (typeof r.fecha === 'string' ? r.fecha : new Date(r.fecha).toISOString()) : null,
       })),
     })
-      toast.success('PDF generado correctamente', {
+      toast.success(t('reportFiscal.pdfGenerated'), {
         icon: '📄',
         style: { borderRadius: '12px' },
       })
     } catch (error) {
       console.error('PDF export error:', error)
-      toast.error('Error al generar el PDF. Inténtelo de nuevo.', {
+      toast.error(t('reportFiscal.pdfError'), {
         icon: '❌',
         style: { borderRadius: '12px' },
       })

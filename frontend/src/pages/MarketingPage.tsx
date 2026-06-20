@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { Megaphone, Plus, Send, Trash2, Calendar, Users, Gift, RefreshCw, PartyPopper, Mail } from 'lucide-react'
 import { formatDate } from '../lib/utils'
@@ -34,6 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
 const defaultForm = { name: '', type: 'EMAIL', subject: '', message: '', targetFilter: '{}', discountCode: '', discountPct: 0, scheduledAt: '' }
 
 export default function MarketingPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(defaultForm)
@@ -61,20 +63,20 @@ export default function MarketingPage() {
       discountPct: data.discountPct || undefined,
       scheduledAt: data.scheduledAt || undefined,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['marketing'] }); setShowModal(false); setForm(defaultForm); toast.success('Campagna creata') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['marketing'] }); setShowModal(false); setForm(defaultForm); toast.success(t('marketing.campaignCreated')) },
   })
 
   const sendCampaign = useMutation({
     mutationFn: (id: string) => api.post(`/marketing/${id}/send`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marketing'] })
-      toast.success('Campagna inviata!')
+      toast.success(t('marketing.campaignSent'))
     },
   })
 
   const deleteCampaign = useMutation({
     mutationFn: (id: string) => api.delete(`/marketing/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['marketing'] }); toast.success('Eliminata') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['marketing'] }); toast.success(t('marketing.deleted')) },
   })
 
   const previewRecipients = async () => {
@@ -87,7 +89,8 @@ export default function MarketingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Marketing & Campagne</h1>
+          <h1 className="aura-page-title">{t('marketing.title')}</h1>
+          <p className="aura-page-subtitle">{t('marketing.subtitle')}</p>
           <p className="text-stone-400 text-sm mt-1">Raggiungi i tuoi clienti con messaggi mirati</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">

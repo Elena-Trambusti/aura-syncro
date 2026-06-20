@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, TABLE_STATUS_COLORS, formatCurrency } from '../lib/utils'
 import { Users, RefreshCw } from 'lucide-react'
@@ -17,10 +18,12 @@ interface Table {
 }
 
 export default function TablesPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
-  const [filterArea, setFilterArea] = useState('Tutti')
+  const allAreasKey = t('common.allAreas')
+  const [filterArea, setFilterArea] = useState(allAreasKey)
 
   const { data: tables = [], isLoading } = useQuery<Table[]>({
     queryKey: ['tables'],
@@ -34,50 +37,51 @@ export default function TablesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
   })
 
-  const areas = ['Tutti', ...Array.from(new Set(tables.map(t => t.area || 'Sala').filter(Boolean)))]
-  const filtered = filterArea === 'Tutti' ? tables : tables.filter(t => (t.area || 'Sala') === filterArea)
+  const defaultArea = t('common.area')
+  const areas = [allAreasKey, ...Array.from(new Set(tables.map(tbl => tbl.area || defaultArea).filter(Boolean)))]
+  const filtered = filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)
 
   const stats = {
-    free: tables.filter(t => t.status === 'FREE').length,
-    occupied: tables.filter(t => t.status === 'OCCUPIED').length,
-    reserved: tables.filter(t => t.status === 'RESERVED').length,
-    cleaning: tables.filter(t => t.status === 'CLEANING').length,
+    free: tables.filter(tbl => tbl.status === 'FREE').length,
+    occupied: tables.filter(tbl => tbl.status === 'OCCUPIED').length,
+    reserved: tables.filter(tbl => tbl.status === 'RESERVED').length,
+    cleaning: tables.filter(tbl => tbl.status === 'CLEANING').length,
   }
 
   const getActiveOrder = (table: Table) => table.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
+
+  const statLabels = [
+    { key: 'free', label: t('tables.free'), count: stats.free, color: 'bg-emerald-950/40 text-emerald-700 border-emerald-200' },
+    { key: 'occupied', label: t('tables.occupied'), count: stats.occupied, color: 'bg-red-950/40 text-red-700 border-red-200' },
+    { key: 'reserved', label: t('tables.reserved'), count: stats.reserved, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { key: 'cleaning', label: t('tables.cleaning'), count: stats.cleaning, color: 'bg-blue-950/40 text-blue-700 border-blue-200' },
+  ]
 
   return (
     <div className="space-y-6">
       <div className="aura-page-header">
         <div>
-          <h1 className="aura-page-title">Tavoli & POS</h1>
-          <p className="aura-page-subtitle">Gestione tavoli e presa comande</p>
+          <h1 className="aura-page-title">{t('tables.title')}</h1>
+          <p className="aura-page-subtitle">{t('tables.subtitle')}</p>
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['tables'] })}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
-          Aggiorna
+          {t('common.refresh')}
         </button>
       </div>
 
-      {/* Statistiche */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Liberi', count: stats.free, color: 'bg-emerald-950/40 text-emerald-700 border-emerald-200' },
-          { label: 'Occupati', count: stats.occupied, color: 'bg-red-950/40 text-red-700 border-red-200' },
-          { label: 'Prenotati', count: stats.reserved, color: 'bg-amber-50 text-amber-700 border-amber-200' },
-          { label: 'Pulizia', count: stats.cleaning, color: 'bg-blue-950/40 text-blue-700 border-blue-200' },
-        ].map(s => (
-          <div key={s.label} className={`rounded-xl p-3 border ${s.color} text-center`}>
+        {statLabels.map(s => (
+          <div key={s.key} className={`rounded-xl p-3 border ${s.color} text-center`}>
             <p className="text-2xl font-bold">{s.count}</p>
             <p className="text-xs font-medium">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Filtro area */}
       <div className="flex gap-2 flex-wrap">
         {areas.map(area => (
           <button
@@ -90,7 +94,6 @@ export default function TablesPage() {
         ))}
       </div>
 
-      {/* Griglia Tavoli */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
@@ -120,7 +123,7 @@ export default function TablesPage() {
 
                 <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
                   <Users className="w-3 h-3" />
-                  <span>{table.seats} posti</span>
+                  <span>{table.seats} {t('common.seats')}</span>
                 </div>
 
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium
@@ -134,17 +137,21 @@ export default function TablesPage() {
 
                 {activeOrder && (
                   <div className="mt-3 pt-3 border-t border-stone-800/50">
-                    <p className="text-xs text-stone-400">{activeOrder.items.length} pietanze</p>
+                    <p className="text-xs text-stone-400">{activeOrder.items.length} {t('common.dishes')}</p>
                     <p className="text-sm font-bold text-stone-100">{formatCurrency(activeOrder.total)}</p>
                   </div>
                 )}
 
                 {table.status === 'CLEANING' && (
                   <button
-                    onClick={e => { e.stopPropagation(); updateStatus.mutate({ id: table.id, status: 'FREE' }); toast.success(`Tavolo ${table.number} pronto`) }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      updateStatus.mutate({ id: table.id, status: 'FREE' })
+                      toast.success(t('tables.tableReady', { number: table.number }))
+                    }}
                     className="mt-3 w-full text-xs bg-stone-800/50 hover:bg-emerald-100 hover:text-emerald-700 text-stone-300 py-1.5 rounded-lg transition-colors font-medium"
                   >
-                    Segna Libero
+                    {t('tables.markFree')}
                   </button>
                 )}
               </div>

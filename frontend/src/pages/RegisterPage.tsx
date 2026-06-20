@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { BRAND } from '../lib/brand'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const { register } = useAuth()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
@@ -21,10 +23,10 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(form)
-      toast.success('Benvenuto su Aura Syncro!')
+      toast.success(t('auth.welcome'))
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } }
-      toast.error(error.response?.data?.error || 'Errore durante la registrazione')
+      toast.error(error.response?.data?.error || t('auth.registerError'))
     } finally {
       setLoading(false)
     }
@@ -48,30 +50,30 @@ export default function RegisterPage() {
             <Sparkles className="w-9 h-9 text-stone-950" />
           </div>
           <h1 className="text-3xl font-bold text-white">{BRAND.name}</h1>
-          <p className="text-stone-400 mt-2 text-sm">Crea il tuo ristorante in 2 minuti</p>
+          <p className="text-stone-400 mt-2 text-sm">{t('auth.registerSubtitle')}</p>
         </div>
 
         <div className="rounded-2xl p-8 shadow-2xl border border-stone-800 bg-stone-900/80 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Nome Ristorante *</label>
-              <input type="text" value={form.restaurantName} onChange={e => update('restaurantName', e.target.value)} className={inputClass} placeholder="La Bella Italia" required />
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('auth.restaurantName')}</label>
+              <input type="text" value={form.restaurantName} onChange={e => update('restaurantName', e.target.value)} className={inputClass} placeholder={t('auth.restaurantNamePlaceholder')} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Il tuo nome *</label>
-              <input type="text" value={form.name} onChange={e => update('name', e.target.value)} className={inputClass} placeholder="Mario Rossi" required />
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('auth.yourName')}</label>
+              <input type="text" value={form.name} onChange={e => update('name', e.target.value)} className={inputClass} placeholder={t('auth.yourNamePlaceholder')} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Email *</label>
-              <input type="email" value={form.email} onChange={e => update('email', e.target.value)} className={inputClass} placeholder="mario@ristorante.it" required />
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('common.email')}</label>
+              <input type="email" value={form.email} onChange={e => update('email', e.target.value)} className={inputClass} placeholder={t('auth.emailPlaceholderRegister')} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Telefono</label>
-              <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} className={inputClass} placeholder="+39 02 1234567" />
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('common.phone')}</label>
+              <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} className={inputClass} placeholder={t('auth.phonePlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Password *</label>
-              <input type="password" value={form.password} onChange={e => update('password', e.target.value)} className={inputClass} placeholder="Minimo 6 caratteri" minLength={6} required />
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">{t('common.password')}</label>
+              <input type="password" value={form.password} onChange={e => update('password', e.target.value)} className={inputClass} placeholder={t('auth.passwordMinLength')} minLength={6} required />
             </div>
             <button
               type="submit"
@@ -79,14 +81,14 @@ export default function RegisterPage() {
               className="w-full font-semibold py-3 rounded-xl transition-all shadow-md disabled:opacity-60 mt-2 text-stone-950"
               style={{ background: `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})` }}
             >
-              {loading ? 'Registrazione...' : 'Crea il mio ristorante'}
+              {loading ? t('auth.registering') : t('auth.createRestaurant')}
             </button>
           </form>
 
           <p className="text-center text-sm text-stone-500 mt-4">
-            Hai già un account?{' '}
+            {t('auth.hasAccount')}{' '}
             <Link to="/login" className="font-medium hover:underline" style={{ color: BRAND.gold }}>
-              Accedi
+              {t('auth.login')}
             </Link>
           </p>
         </div>

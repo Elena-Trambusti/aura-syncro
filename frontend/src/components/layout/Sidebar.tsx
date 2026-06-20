@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Sparkles, LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
   ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X,
@@ -11,29 +12,30 @@ import { BRAND } from '../../lib/brand'
 import { useDashboardLayout } from './DashboardLayout'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-  { to: '/tavoli', icon: UtensilsCrossed, label: 'Tavoli & POS' },
-  { to: '/ordini', icon: ClipboardList, label: 'Ordini' },
-  { to: '/prenotazioni', icon: CalendarDays, label: 'Prenotazioni' },
-  { to: '/menu', icon: BookOpen, label: 'Menu' },
-  { to: '/clienti', icon: Users, label: 'Clienti CRM' },
-  { to: '/ai', icon: Brain, label: 'AI Predittiva' },
-  { to: '/fedelta', icon: Star, label: 'Fedeltà' },
-  { to: '/marketing', icon: Megaphone, label: 'Marketing' },
-  { to: '/pagamenti', icon: CreditCard, label: 'Pagamenti' },
-  { to: '/report', icon: FileText, label: 'Report', exact: true },
-  { to: '/report/fiscal', icon: Scale, label: 'Report Fiscal', exact: true },
-  { to: '/personale', icon: UserCog, label: 'Personale' },
-  { to: '/magazzino', icon: Package, label: 'Magazzino' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/impostazioni', icon: Settings, label: 'Impostazioni' },
+  { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', exact: true },
+  { to: '/tavoli', icon: UtensilsCrossed, labelKey: 'nav.tables' },
+  { to: '/ordini', icon: ClipboardList, labelKey: 'nav.orders' },
+  { to: '/prenotazioni', icon: CalendarDays, labelKey: 'nav.reservations' },
+  { to: '/menu', icon: BookOpen, labelKey: 'nav.menu' },
+  { to: '/clienti', icon: Users, labelKey: 'nav.customers' },
+  { to: '/ai', icon: Brain, labelKey: 'nav.ai' },
+  { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty' },
+  { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing' },
+  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments' },
+  { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true },
+  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true },
+  { to: '/personale', icon: UserCog, labelKey: 'nav.staff' },
+  { to: '/magazzino', icon: Package, labelKey: 'nav.inventory' },
+  { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
+  { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings' },
 ]
 
 const externalLinks = [
-  { href: '/cucina', icon: ChefHat, label: 'Schermo Cucina' },
+  { href: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay' },
 ]
 
 export default function Sidebar() {
+  const { t } = useTranslation()
   const location = useLocation()
   const { restaurant } = useAuth()
   const theme = getTenantTheme(restaurant?.colorTheme)
@@ -60,7 +62,7 @@ export default function Sidebar() {
           'transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
-        aria-label="Menu principale"
+        aria-label={t('common.mainMenu')}
       >
         <div className="p-4 sm:p-6 border-b border-stone-800">
           <div className="flex items-start justify-between gap-2 mb-4">
@@ -73,14 +75,14 @@ export default function Sidebar() {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-sm text-stone-100 tracking-wide">{BRAND.name}</p>
-                <p className="text-[10px] text-stone-500 uppercase tracking-widest">SaaS Platform</p>
+                <p className="text-[10px] text-stone-500 uppercase tracking-widest">{t('brand.saasPlatform')}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={closeSidebar}
               className="lg:hidden p-2 rounded-lg text-stone-400 hover:bg-stone-800/60 hover:text-stone-200"
-              aria-label="Chiudi menu"
+              aria-label={t('common.closeMenu')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -93,7 +95,7 @@ export default function Sidebar() {
                 <UtensilsCrossed className="w-4 h-4 text-stone-950" />
               </div>
             )}
-            <p className="text-xs font-medium text-stone-300 truncate">{restaurant?.name || 'Ristorante'}</p>
+            <p className="text-xs font-medium text-stone-300 truncate">{restaurant?.name || t('common.restaurant')}</p>
           </div>
         </div>
 
@@ -118,7 +120,7 @@ export default function Sidebar() {
                     style={isActive ? { backgroundColor: theme.color } : undefined}
                   >
                     <Icon className="w-5 h-5 shrink-0" />
-                    {item.label}
+                    {t(item.labelKey)}
                   </NavLink>
                 </li>
               )
@@ -138,7 +140,7 @@ export default function Sidebar() {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-500 hover:bg-stone-800/60 hover:text-stone-200 transition-all"
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                {link.label}
+                {t(link.labelKey)}
                 <span className="ml-auto text-xs opacity-50">↗</span>
               </a>
             )

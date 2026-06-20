@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { Star, Plus, Edit2, Trash2, Gift, TrendingUp, Users, Award, ChevronRight } from 'lucide-react'
@@ -24,6 +25,7 @@ interface Overview {
 const TIER_COLORS = ['#94a3b8', '#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2']
 
 export default function LoyaltyPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [showTierModal, setShowTierModal] = useState(false)
   const [editTier, setEditTier] = useState<LoyaltyTier | null>(null)
@@ -56,7 +58,7 @@ export default function LoyaltyPage() {
 
   const deleteTier = useMutation({
     mutationFn: (id: string) => api.delete(`/loyalty/tiers/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['loyalty'] }); toast.success('Livello eliminato') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['loyalty'] }); toast.success(t('loyalty.tierDeleted')) },
   })
 
   const adjustMutation = useMutation({
@@ -69,7 +71,7 @@ export default function LoyaltyPage() {
       qc.invalidateQueries({ queryKey: ['loyalty'] })
       qc.invalidateQueries({ queryKey: ['customers'] })
       setShowAdjustModal(false); setSelectedCustomer(null); setAdjustPoints(0); setAdjustNote('')
-      toast.success('Punti aggiornati')
+      toast.success(t('loyalty.pointsUpdated'))
     },
   })
 
@@ -93,7 +95,8 @@ export default function LoyaltyPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Programma Fedeltà</h1>
+          <h1 className="aura-page-title">{t('loyalty.title')}</h1>
+          <p className="aura-page-subtitle">{t('loyalty.subtitle')}</p>
           <p className="text-stone-400 text-sm mt-1">Livelli VIP, punti e premi per i tuoi clienti</p>
         </div>
         <button onClick={() => openTierModal()} className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">

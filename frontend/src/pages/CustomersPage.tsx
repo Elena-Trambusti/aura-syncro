@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { Search, Users, Star, TrendingUp, Award, Plus } from 'lucide-react'
@@ -21,6 +22,7 @@ interface NewCustomerForm {
 const emptyForm = (): NewCustomerForm => ({ name: '', email: '', phone: '', notes: '' })
 
 export default function CustomersPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
@@ -45,7 +47,7 @@ export default function CustomersPage() {
       setShowCreateModal(false)
       setForm(emptyForm())
       setSelectedCustomer(res.data)
-      toast.success('Cliente creato con successo')
+      toast.success(t('customers.created'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
       toast.error(err.response?.data?.error || 'Errore durante il salvataggio')
@@ -60,7 +62,7 @@ export default function CustomersPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) {
-      toast.error('Il nome è obbligatorio')
+      toast.error(t('customers.nameRequired'))
       return
     }
     createCustomer.mutate(form)
@@ -79,8 +81,8 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-stone-100">Clienti CRM</h1>
-        <p className="text-stone-400 text-sm mt-1">{customers.length} clienti nel database</p>
+        <h1 className="aura-page-title">{t('customers.title')}</h1>
+        <p className="aura-page-subtitle">{t('customers.subtitle')}</p>
       </div>
 
       {/* Statistiche */}

@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { ROLE_LABELS, getInitials } from '../lib/utils'
 import { Plus, Calendar, UserCog } from 'lucide-react'
@@ -21,6 +22,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default function StaffPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'staff' | 'shifts'>('staff')
   const [showForm, setShowForm] = useState(false)
@@ -42,7 +44,7 @@ export default function StaffPage() {
       queryClient.invalidateQueries({ queryKey: ['staff'] })
       setShowForm(false)
       setNewStaff({ name: '', email: '', password: '', role: 'WAITER', phone: '' })
-      toast.success('Membro del team aggiunto!')
+      toast.success(t('staff.memberAdded'))
     },
   })
 
@@ -61,8 +63,8 @@ export default function StaffPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Personale</h1>
-          <p className="text-stone-400 text-sm mt-1">{staff.filter(s => s.active).length} membri attivi</p>
+          <h1 className="aura-page-title">{t('staff.title')}</h1>
+          <p className="aura-page-subtitle">{t('staff.subtitle')}</p>
         </div>
         {tab === 'staff' && (
           <button onClick={() => setShowForm(true)}

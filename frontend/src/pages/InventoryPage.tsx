@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { Plus, AlertTriangle, Package, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency } from '../lib/utils'
@@ -77,6 +78,7 @@ function ItemForm({ item, onSave, onCancel }: {
 }
 
 export default function InventoryPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -94,15 +96,15 @@ export default function InventoryPage() {
 
   const create = useMutation({
     mutationFn: (d: Record<string, unknown>) => api.post('/inventory', d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setShowForm(false); toast.success('Prodotto aggiunto!') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setShowForm(false); toast.success(t('inventory.added')) },
   })
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/inventory/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setEditingItem(null); toast.success('Prodotto aggiornato!') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setEditingItem(null); toast.success(t('inventory.updated')) },
   })
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/inventory/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); toast.success('Prodotto eliminato') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); toast.success(t('inventory.deleted')) },
   })
   const adjustQty = useMutation({
     mutationFn: ({ id, delta }: { id: string; delta: number }) => api.patch(`/inventory/${id}/quantity`, { delta, operation: 'add' }),
@@ -115,7 +117,8 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-100">Magazzino</h1>
+          <h1 className="aura-page-title">{t('inventory.title')}</h1>
+          <p className="aura-page-subtitle">{t('inventory.subtitle')}</p>
           <p className="text-stone-400 text-sm mt-1">{items.length} prodotti · Valore: {formatCurrency(totalValue)}</p>
         </div>
         <button onClick={() => setShowForm(true)}

@@ -6,6 +6,7 @@
  * CONFIDENZIALE — NON DISTRIBUIRE
  */
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -32,11 +33,12 @@ import PaymentsPage from './pages/PaymentsPage'
 import AIPage from './pages/AIPage'
 
 function AuthLoadingScreen() {
+  const { t } = useTranslation()
   return (
     <div className="min-h-screen flex items-center justify-center bg-stone-950">
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-stone-400 font-medium">Caricamento Aura Syncro...</p>
+        <p className="text-stone-400 font-medium">{t('common.loading')}</p>
       </div>
     </div>
   )

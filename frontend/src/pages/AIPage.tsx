@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import {
@@ -407,6 +408,7 @@ function LoadingSkeleton() {
 
 // ── Pagina principale ─────────────────────────────────────────────────────────
 export default function AIPage() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<'alerts' | 'forecast' | 'reorder' | 'matrix'>('alerts')
 
   const { data: summary } = useQuery<{
@@ -433,7 +435,8 @@ export default function AIPage() {
             <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center">
               <Brain className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-stone-100">AI Predittiva</h1>
+            <h1 className="aura-page-title">{t('ai.title')}</h1>
+            <p className="aura-page-subtitle">{t('ai.subtitle')}</p>
           </div>
           <p className="text-stone-400 text-sm">Insights intelligenti basati sui tuoi dati storici</p>
         </div>

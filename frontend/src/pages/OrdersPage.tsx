@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime } from '../lib/utils'
 import { printReceipt, downloadCSV } from '../lib/export'
@@ -39,6 +40,7 @@ const STATUS_FLOW: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { restaurant } = useAuth()
   const [filter, setFilter] = useState<string>('active')
@@ -59,32 +61,41 @@ export default function OrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['tables'] })
-      toast.success('Stato aggiornato')
+      toast.success(t('orders.statusUpdated'))
     },
   })
 
   const filters = [
-    { key: 'active', label: 'Attivi', count: filter === 'active' ? orders.length : undefined },
-    { key: 'today', label: 'Oggi' },
-    { key: 'PREPARING', label: 'In cucina' },
-    { key: 'READY', label: 'Pronti' },
+    { key: 'active', label: t('orders.filterActive'), count: filter === 'active' ? orders.length : undefined },
+    { key: 'today', label: t('orders.filterToday') },
+    { key: 'PREPARING', label: t('orders.filterKitchen') },
+    { key: 'READY', label: t('orders.filterReady') },
+  ]
+
+  const csvHeaders = [
+    t('orders.csvHeaders.id'),
+    t('orders.csvHeaders.table'),
+    t('orders.csvHeaders.type'),
+    t('orders.csvHeaders.status'),
+    t('orders.csvHeaders.total'),
+    t('orders.csvHeaders.date'),
   ]
 
   return (
     <div className="space-y-6">
       <div className="aura-page-header">
         <div>
-          <h1 className="aura-page-title">Ordini</h1>
-          <p className="aura-page-subtitle">Gestione e stato degli ordini</p>
+          <h1 className="aura-page-title">{t('orders.title')}</h1>
+          <p className="aura-page-subtitle">{t('orders.subtitle')}</p>
         </div>
         <button
           onClick={() => {
             downloadCSV(
               `ordini-${new Date().toISOString().split('T')[0]}.csv`,
-              ['ID', 'Tavolo', 'Tipo', 'Stato', 'Totale', 'Data'],
+              csvHeaders,
               orders.map((o: Order) => [
                 o.id.slice(-6).toUpperCase(),
-                o.table?.number || 'Asporto',
+                o.table?.number ? `${t('common.table')} ${o.table.number}` : t('common.takeaway'),
                 o.type,
                 ORDER_STATUS_LABELS[o.status] || o.status,
                 o.total.toFixed(2),
@@ -95,11 +106,10 @@ export default function OrdersPage() {
           className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-stone-300 hover:bg-stone-900/30 transition-colors w-full sm:w-auto shrink-0"
         >
           <Download className="w-4 h-4" />
-          Esporta CSV
+          {t('orders.exportCsv')}
         </button>
       </div>
 
-      {/* Filtri */}
       <div className="aura-filter-row">
         {filters.map(f => (
           <button
@@ -125,12 +135,11 @@ export default function OrdersPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {orders.map(order => (
             <div key={order.id} className="bg-stone-900/55 rounded-2xl p-5 border border-stone-800/50 shadow-sm hover:shadow-md transition-shadow">
-              {/* Header ordine */}
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-stone-100">
-                      {order.table ? `Tavolo ${order.table.number}` : 'Asporto'}
+                      {order.table ? `${t('common.table')} ${order.table.number}` : t('common.takeaway')}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
                       {ORDER_STATUS_LABELS[order.status]}
@@ -145,7 +154,6 @@ export default function OrdersPage() {
                 <span className="text-lg font-bold text-stone-100">{formatCurrency(order.total)}</span>
               </div>
 
-              {/* Piatti */}
               <div className="space-y-1 mb-4">
                 {order.items.map(item => (
                   <div key={item.id} className="flex items-center gap-2 text-sm">
@@ -158,7 +166,6 @@ export default function OrdersPage() {
                 ))}
               </div>
 
-              {/* Azioni */}
               <div className="flex gap-2">
                 {STATUS_FLOW[order.status] && (
                   <button
@@ -173,7 +180,7 @@ export default function OrdersPage() {
                   <button
                     onClick={() => updateStatus.mutate({ id: order.id, status: 'CANCELLED' })}
                     className="p-2 hover:bg-red-950/30 rounded-lg text-stone-500 hover:text-red-500 transition-colors"
-                    title="Annulla"
+                    title={t('orders.cancel')}
                   >
                     <XCircle className="w-4 h-4" />
                   </button>
@@ -182,12 +189,12 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
                       <CheckCircle2 className="w-4 h-4" />
-                      Pagato
+                      {t('common.paid')}
                     </div>
                     <button
-                      onClick={() => printReceipt(order, restaurant?.name || 'Ristorante')}
+                      onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'))}
                       className="p-1.5 hover:bg-stone-800/50 rounded-lg text-stone-500 hover:text-stone-200 transition-colors"
-                      title="Stampa scontrino"
+                      title={t('common.printReceipt')}
                     >
                       <Printer className="w-4 h-4" />
                     </button>
@@ -199,7 +206,7 @@ export default function OrdersPage() {
           {orders.length === 0 && (
             <div className="col-span-full flex flex-col items-center py-16 text-stone-500">
               <ChefHat className="w-12 h-12 mb-3 opacity-30" />
-              <p className="font-medium">Nessun ordine trovato</p>
+              <p className="font-medium">{t('orders.noOrders')}</p>
             </div>
           )}
         </div>
