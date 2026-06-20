@@ -11,7 +11,7 @@ services:
       repo: Elena-Trambusti/aura-syncro
       branch: main
       deploy_on_push: true
-    source_dir: /backend
+    source_dir: backend
     environment_slug: node-js
     instance_count: 1
     instance_size_slug: basic-xxs
