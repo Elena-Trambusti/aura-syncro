@@ -1,10 +1,9 @@
 ﻿import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, formatCurrency } from '../lib/utils'
 import { RefreshCw } from 'lucide-react'
-import toast from 'react-hot-toast'
 import OrderModal from '../components/orders/OrderModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import { cn } from '../lib/utils'
@@ -26,7 +25,7 @@ const STAT_ACCENTS = [
 export default function TablesPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
@@ -35,12 +34,6 @@ export default function TablesPage() {
     queryKey: ['tables'],
     queryFn: () => api.get('/tables').then(r => r.data),
     refetchInterval: 15_000,
-  })
-
-  const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      api.patch(`/tables/${id}/status`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
   })
 
   const defaultArea = t('common.area')
@@ -64,11 +57,8 @@ export default function TablesPage() {
   const getActiveOrder = (table: Table) => table.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
 
   const handleTableClick = (table: FloorTable) => {
-    const full = tables.find(tbl => tbl.id === table.id)
-    if (full) {
-      setSelectedTable(full)
-      setShowOrderModal(true)
-    }
+    setSelectedTableId(table.id)
+    setShowOrderModal(true)
   }
 
   return (
@@ -151,27 +141,30 @@ export default function TablesPage() {
       )}
 
       {filtered.some(tbl => tbl.status === 'CLEANING') && (
-        <div className="saas-card p-4 flex flex-wrap gap-2">
-          {filtered.filter(tbl => tbl.status === 'CLEANING').map(table => (
-            <button
-              key={table.id}
-              type="button"
-              onClick={() => {
-                updateStatus.mutate({ id: table.id, status: 'FREE' })
-                toast.success(t('tables.tableReady', { number: table.number }))
-              }}
-              className="saas-chip px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
-            >
-              T{table.number} — {t('tables.markFree')}
-            </button>
-          ))}
+        <div className="saas-card p-4">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">{t('tables.needsCleaning')}</p>
+          <div className="flex flex-wrap gap-2">
+            {filtered.filter(tbl => tbl.status === 'CLEANING').map(table => (
+              <button
+                key={table.id}
+                type="button"
+                onClick={() => {
+                  setSelectedTableId(table.id)
+                  setShowOrderModal(true)
+                }}
+                className="saas-chip px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
+              >
+                T{table.number} — {t('tables.markFree')}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {showOrderModal && selectedTable && (
+      {showOrderModal && selectedTableId && (
         <OrderModal
-          table={selectedTable}
-          onClose={() => { setShowOrderModal(false); setSelectedTable(null) }}
+          tableId={selectedTableId}
+          onClose={() => { setShowOrderModal(false); setSelectedTableId(null) }}
         />
       )}
     </div>

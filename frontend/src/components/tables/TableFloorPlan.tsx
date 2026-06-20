@@ -152,6 +152,16 @@ function TableTile({
     >
       <span className="text-sm font-bold leading-none">T{table.number}</span>
       <span className="text-[10px] opacity-80 leading-none">{table.seats}p</span>
+      {table.status !== 'FREE' && (
+        <span className={cn(
+          'text-[9px] font-semibold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full',
+          table.status === 'CLEANING' && 'bg-blue-600/90 text-white',
+          table.status === 'OCCUPIED' && 'bg-amber-600/90 text-white',
+          table.status === 'RESERVED' && 'bg-amber-500/90 text-white',
+        )}>
+          {statusLabel(table.status as TableStatus)}
+        </span>
+      )}
       {orderTotal && (
         <span className="text-[10px] font-semibold leading-none mt-0.5">{orderTotal}</span>
       )}
