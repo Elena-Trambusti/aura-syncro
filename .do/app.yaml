@@ -1,0 +1,67 @@
+# App Spec — DigitalOcean App Platform
+# Import: Dashboard → Apps → Create → "Import from App Spec" → incolla questo file
+# Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+
+name: restaurant-super-app
+region: fra
+
+services:
+  - name: api
+    github:
+      repo: Elena-Trambusti/Restaurant-of-the-Future
+      branch: main
+      deploy_on_push: true
+    source_dir: /backend
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    build_command: npm ci && npm run build
+    run_command: npm start
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 20
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: DIRECT_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: FRONTEND_URL
+        value: https://YOUR-FRONTEND-URL.ondigitalocean.app
+      - key: STRIPE_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: STRIPE_PUBLISHABLE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: STRIPE_WEBHOOK_SECRET
+        scope: RUN_TIME
+        type: SECRET
+
+# Opzionale: job pre-deploy per allineare lo schema Prisma su Supabase (senza cartella migrations)
+# jobs:
+#   - name: prisma-db-push
+#     kind: PRE_DEPLOY
+#     github:
+#       repo: Elena-Trambusti/Restaurant-of-the-Future
+#       branch: main
+#     source_dir: /backend
+#     run_command: npx prisma db push
+#     envs:
+#       - key: DATABASE_URL
+#         scope: RUN_TIME
+#         type: SECRET
+#       - key: DIRECT_URL
+#         scope: RUN_TIME
+#         type: SECRET

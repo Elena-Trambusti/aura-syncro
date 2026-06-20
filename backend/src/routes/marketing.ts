@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+
 export const marketingRouter = Router()
 
 // ── Campagne ──────────────────────────────────────────────────────────────────
@@ -41,15 +43,35 @@ marketingRouter.post('/', async (req: AuthRequest, res: Response): Promise<void>
 })
 
 marketingRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const campaign = await prisma.campaign.update({
-    where: { id: req.params.id },
-    data: req.body,
+  const schema = z.object({
+    name: z.string().min(1).optional(),
+    type: z.enum(['EMAIL', 'SMS', 'BIRTHDAY', 'WIN_BACK', 'PROMOTION', 'NEWS']).optional(),
+    subject: z.string().optional().nullable(),
+    message: z.string().min(1).optional(),
+    targetFilter: z.string().optional().nullable(),
+    scheduledAt: z.string().datetime().optional().nullable(),
+    discountCode: z.string().optional().nullable(),
+    discountPct: z.number().min(0).max(100).optional().nullable(),
+    status: z.enum(['DRAFT', 'SCHEDULED', 'SENT', 'CANCELLED']).optional(),
   })
+  const result = schema.safeParse(req.body)
+  if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }
+
+  const updated = await prisma.campaign.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data: {
+      ...result.data,
+      ...(result.data.scheduledAt ? { scheduledAt: new Date(result.data.scheduledAt) } : {}),
+    },
+  })
+  if (updated.count === 0) { tenantNotFound(res, 'Campagna non trovata'); return }
+  const campaign = await prisma.campaign.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(campaign)
 })
 
 marketingRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.campaign.delete({ where: { id: req.params.id } })
+  const deleted = await prisma.campaign.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) { tenantNotFound(res, 'Campagna non trovata'); return }
   res.status(204).send()
 })
 
@@ -66,27 +88,30 @@ marketingRouter.post('/preview', async (req: AuthRequest, res: Response): Promis
 // ── Invio campagna ─────────────────────────────────────────────────────────────
 
 marketingRouter.post('/:id/send', async (req: AuthRequest, res: Response): Promise<void> => {
-  const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id } })
-  if (!campaign) { res.status(404).json({ error: 'Campagna non trovata' }); return }
+  const campaign = await prisma.campaign.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!campaign) { tenantNotFound(res, 'Campagna non trovata'); return }
   if (campaign.status === 'SENT') { res.status(400).json({ error: 'Campagna già inviata' }); return }
 
-  const recipients = await getTargetCustomers(req.restaurantId!, campaign.targetFilter || null)
+  const recipients = await getTargetCustomers(tenantId(req), campaign.targetFilter || null)
 
-  // In produzione qui ci sarebbe l'integrazione con SendGrid/Twilio
-  // Per ora simuliamo l'invio e aggiorniamo lo stato
-  const updated = await prisma.campaign.update({
-    where: { id: req.params.id },
+  const updated = await prisma.campaign.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: {
       status: 'SENT',
       sentAt: new Date(),
       recipientCount: recipients.length,
     },
   })
+  if (updated.count === 0) { tenantNotFound(res, 'Campagna non trovata'); return }
+
+  const refreshed = await prisma.campaign.findFirst({ where: scopedWhere(req, req.params.id) })
 
   res.json({
     success: true,
     recipientCount: recipients.length,
-    campaign: updated,
+    campaign: refreshed,
     note: 'In produzione verrà inviato tramite provider email/SMS',
   })
 })

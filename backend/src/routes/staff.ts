@@ -3,12 +3,13 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const staffRouter = Router()
 
 staffRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const staff = await prisma.user.findMany({
-    where: { restaurantId: req.restaurantId! },
+    where: tenantWhere(req),
     select: {
       id: true, name: true, email: true, role: true,
       phone: true, active: true, createdAt: true,
@@ -37,7 +38,7 @@ staffRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => 
     data: {
       ...result.data,
       password: hashedPassword,
-      restaurantId: req.restaurantId!,
+      restaurantId: tenantId(req),
     },
     select: { id: true, name: true, email: true, role: true, phone: true, active: true },
   })
@@ -45,19 +46,39 @@ staffRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => 
 })
 
 staffRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { password, ...data } = req.body
-  const updateData: Record<string, unknown> = { ...data }
-  if (password) updateData.password = await bcrypt.hash(password, 12)
+  const schema = z.object({
+    name: z.string().min(2).optional(),
+    email: z.string().email().optional(),
+    password: z.string().min(6).optional(),
+    role: z.enum(['MANAGER', 'WAITER', 'KITCHEN', 'CASHIER', 'OWNER']).optional(),
+    phone: z.string().optional().nullable(),
+    active: z.boolean().optional(),
+  })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
 
-  const user = await prisma.user.update({
-    where: { id: req.params.id },
+  const updateData: Record<string, unknown> = { ...result.data }
+  if (result.data.password) updateData.password = await bcrypt.hash(result.data.password, 12)
+
+  const updated = await prisma.user.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: updateData,
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Utente non trovato')
+    return
+  }
+
+  const user = await prisma.user.findFirst({
+    where: scopedWhere(req, req.params.id),
     select: { id: true, name: true, email: true, role: true, phone: true, active: true },
   })
   res.json(user)
 })
 
-// Turni
 staffRouter.get('/shifts', async (req: AuthRequest, res: Response): Promise<void> => {
   const { week } = req.query
   const startDate = week ? new Date(week as string) : (() => {
@@ -68,7 +89,7 @@ staffRouter.get('/shifts', async (req: AuthRequest, res: Response): Promise<void
 
   const shifts = await prisma.shift.findMany({
     where: {
-      restaurantId: req.restaurantId!,
+      restaurantId: tenantId(req),
       date: { gte: startDate, lt: endDate },
     },
     include: { user: { select: { id: true, name: true, role: true } } },
@@ -92,11 +113,19 @@ staffRouter.post('/shifts', async (req: AuthRequest, res: Response): Promise<voi
     return
   }
 
+  const user = await prisma.user.findFirst({
+    where: { id: result.data.userId, restaurantId: tenantId(req) },
+  })
+  if (!user) {
+    tenantNotFound(res, 'Utente non trovato')
+    return
+  }
+
   const shift = await prisma.shift.create({
     data: {
       ...result.data,
       date: new Date(result.data.date),
-      restaurantId: req.restaurantId!,
+      restaurantId: tenantId(req),
     },
     include: { user: { select: { id: true, name: true, role: true } } },
   })
@@ -109,11 +138,23 @@ staffRouter.patch('/shifts/:id/clock', async (req: AuthRequest, res: Response): 
     ? { clockIn: new Date(), status: 'ACTIVE' as const }
     : { clockOut: new Date(), status: 'COMPLETED' as const }
 
-  const shift = await prisma.shift.update({ where: { id: req.params.id }, data })
+  const updated = await prisma.shift.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data,
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Turno non trovato')
+    return
+  }
+  const shift = await prisma.shift.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(shift)
 })
 
 staffRouter.delete('/shifts/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.shift.delete({ where: { id: req.params.id } })
+  const deleted = await prisma.shift.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) {
+    tenantNotFound(res, 'Turno non trovato')
+    return
+  }
   res.status(204).send()
 })

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { prisma } from '../lib/prisma'
+import { tenantForbidden } from '../lib/tenant'
 
 export interface AuthRequest extends Request {
   userId?: string
@@ -24,6 +24,14 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
       restaurantId: string
       role: string
     }
+
+    // Optional header: must match JWT tenant if provided
+    const headerTenant = req.headers['x-restaurant-id']
+    if (headerTenant && headerTenant !== payload.restaurantId) {
+      tenantForbidden(res)
+      return
+    }
+
     req.userId = payload.userId
     req.restaurantId = payload.restaurantId
     req.userRole = payload.role

@@ -2,12 +2,13 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const waitlistRouter = Router()
 
 waitlistRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { date } = req.query
-  const where: Record<string, unknown> = { restaurantId: req.restaurantId!, status: 'WAITING' }
+  const where: Record<string, unknown> = { ...tenantWhere(req), status: 'WAITING' }
   if (date) {
     const d = new Date(date as string)
     const next = new Date(d)
@@ -37,37 +38,44 @@ waitlistRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> 
     data: {
       ...result.data,
       requestedDate: new Date(result.data.requestedDate),
-      restaurantId: req.restaurantId!,
+      restaurantId: tenantId(req),
     },
   })
   res.status(201).json(entry)
 })
 
-waitlistRouter.patch('/:id/notify', async (req: AuthRequest, res: Response): Promise<void> => {
-  const entry = await prisma.waitlistEntry.update({
-    where: { id: req.params.id },
-    data: { status: 'NOTIFIED', notifiedAt: new Date() },
+async function updateWaitlistEntry(req: AuthRequest, res: Response, data: Record<string, unknown>) {
+  const updated = await prisma.waitlistEntry.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data,
   })
-  res.json(entry)
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Voce non trovata')
+    return null
+  }
+  return prisma.waitlistEntry.findFirst({ where: scopedWhere(req, req.params.id) })
+}
+
+waitlistRouter.patch('/:id/notify', async (req: AuthRequest, res: Response): Promise<void> => {
+  const entry = await updateWaitlistEntry(req, res, { status: 'NOTIFIED', notifiedAt: new Date() })
+  if (entry) res.json(entry)
 })
 
 waitlistRouter.patch('/:id/confirm', async (req: AuthRequest, res: Response): Promise<void> => {
-  const entry = await prisma.waitlistEntry.update({
-    where: { id: req.params.id },
-    data: { status: 'CONFIRMED' },
-  })
-  res.json(entry)
+  const entry = await updateWaitlistEntry(req, res, { status: 'CONFIRMED' })
+  if (entry) res.json(entry)
 })
 
 waitlistRouter.patch('/:id/cancel', async (req: AuthRequest, res: Response): Promise<void> => {
-  const entry = await prisma.waitlistEntry.update({
-    where: { id: req.params.id },
-    data: { status: 'CANCELLED' },
-  })
-  res.json(entry)
+  const entry = await updateWaitlistEntry(req, res, { status: 'CANCELLED' })
+  if (entry) res.json(entry)
 })
 
 waitlistRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.waitlistEntry.delete({ where: { id: req.params.id } })
+  const deleted = await prisma.waitlistEntry.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) {
+    tenantNotFound(res, 'Voce non trovata')
+    return
+  }
   res.status(204).send()
 })

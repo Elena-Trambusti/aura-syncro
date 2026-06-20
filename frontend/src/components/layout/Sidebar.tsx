@@ -2,10 +2,11 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone,   FileText, CreditCard, Brain, Scale,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth } from '../../contexts/AuthContext'
+import { getTenantTheme } from '../../lib/tenantTheme'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
@@ -33,18 +34,30 @@ const externalLinks = [
 export default function Sidebar() {
   const location = useLocation()
   const { restaurant } = useAuth()
+  const theme = getTenantTheme(restaurant?.colorTheme)
 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
-      {/* Logo */}
+      {/* Logo tenant */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shrink-0">
-            <ChefHat className="w-6 h-6 text-white" />
-          </div>
+          {restaurant?.logoUrl ? (
+            <img
+              src={restaurant.logoUrl}
+              alt={restaurant.name}
+              className="w-10 h-10 rounded-xl object-cover shrink-0"
+            />
+          ) : (
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: theme.color }}
+            >
+              <ChefHat className="w-6 h-6 text-white" />
+            </div>
+          )}
           <div className="min-w-0">
             <p className="font-bold text-sm truncate">{restaurant?.name || 'Ristorante'}</p>
-            <p className="text-xs text-slate-400">Super App</p>
+            <p className="text-xs text-slate-400">Super App SaaS</p>
           </div>
         </div>
       </div>
@@ -65,9 +78,10 @@ export default function Sidebar() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
                     isActive
-                      ? 'bg-orange-500 text-white'
+                      ? 'text-white'
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   )}
+                  style={isActive ? { backgroundColor: theme.color } : undefined}
                 >
                   <Icon className="w-5 h-5 shrink-0" />
                   {item.label}
@@ -100,7 +114,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-slate-700">
-        <p className="text-xs text-slate-500 text-center">Super App Ristorante v1.0</p>
+        <p className="text-xs text-slate-500 text-center">Multi-Tenant · v2.0</p>
       </div>
     </aside>
   )

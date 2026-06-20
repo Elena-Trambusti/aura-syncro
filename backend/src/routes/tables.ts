@@ -3,12 +3,13 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { io } from '../index'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const tablesRouter = Router()
 
 tablesRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const tables = await prisma.table.findMany({
-    where: { restaurantId: req.restaurantId! },
+    where: tenantWhere(req),
     include: {
       orders: {
         where: { status: { notIn: ['PAID', 'CANCELLED'] } },
@@ -37,9 +38,9 @@ tablesRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
   }
 
   const table = await prisma.table.create({
-    data: { ...result.data, restaurantId: req.restaurantId! },
+    data: { ...result.data, restaurantId: tenantId(req) },
   })
-  io.to(req.restaurantId!).emit('table:created', table)
+  io.to(tenantId(req)).emit('table:created', table)
   res.status(201).json(table)
 })
 
@@ -60,26 +61,40 @@ tablesRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> 
     return
   }
 
-  const table = await prisma.table.update({
-    where: { id: req.params.id },
+  const updated = await prisma.table.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: result.data,
   })
-  io.to(req.restaurantId!).emit('table:updated', table)
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  io.to(tenantId(req)).emit('table:updated', table)
   res.json(table)
 })
 
 tablesRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
-  const table = await prisma.table.update({
-    where: { id: req.params.id },
+  const updated = await prisma.table.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: { status },
   })
-  io.to(req.restaurantId!).emit('table:updated', table)
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  io.to(tenantId(req)).emit('table:updated', table)
   res.json(table)
 })
 
 tablesRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.table.delete({ where: { id: req.params.id } })
-  io.to(req.restaurantId!).emit('table:deleted', { id: req.params.id })
+  const deleted = await prisma.table.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+  io.to(tenantId(req)).emit('table:deleted', { id: req.params.id })
   res.status(204).send()
 })

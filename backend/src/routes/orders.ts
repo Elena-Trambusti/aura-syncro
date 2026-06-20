@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth'
 import { io } from '../index'
 import { parseLocalDate } from '../lib/dates'
 import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const ordersRouter = Router()
 
@@ -199,7 +200,7 @@ ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
   const { items, ...orderData } = result.data
 
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: items.map(i => i.menuItemId) } },
+    where: { id: { in: items.map(i => i.menuItemId) }, restaurantId: tenantId(req) },
   })
 
   const itemsWithPrice = items.map(item => {
@@ -235,10 +236,14 @@ ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
   })
 
   if (orderData.tableId) {
-    await prisma.table.update({
-      where: { id: orderData.tableId },
+    const tableUpdated = await prisma.table.updateMany({
+      where: { id: orderData.tableId, restaurantId: tenantId(req) },
       data: { status: 'OCCUPIED' },
     })
+    if (tableUpdated.count === 0) {
+      tenantNotFound(res, 'Tavolo non trovato')
+      return
+    }
   }
 
   io.to(req.restaurantId!).emit('order:created', order)
@@ -338,9 +343,19 @@ ordersRouter.post('/:id/items', async (req: AuthRequest, res: Response): Promise
     return
   }
 
-  const menuItem = await prisma.menuItem.findUnique({ where: { id: result.data.menuItemId } })
+  const order = await prisma.order.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!order) {
+    tenantNotFound(res, 'Ordine non trovato')
+    return
+  }
+
+  const menuItem = await prisma.menuItem.findFirst({
+    where: { id: result.data.menuItemId, restaurantId: tenantId(req) },
+  })
   if (!menuItem) {
-    res.status(404).json({ error: 'Piatto non trovato' })
+    tenantNotFound(res, 'Piatto non trovato')
     return
   }
 
@@ -355,24 +370,24 @@ ordersRouter.post('/:id/items', async (req: AuthRequest, res: Response): Promise
     include: { menuItem: true },
   })
 
-  const order = await prisma.order.findUnique({
-    where: { id: req.params.id },
+  const orderWithItems = await prisma.order.findFirst({
+    where: scopedWhere(req, req.params.id),
     include: { items: true },
   })
-  if (order) {
-    const subtotal = order.items.reduce((s: number, i: { unitPrice: number; quantity: number }) => s + i.unitPrice * i.quantity, 0)
+  if (orderWithItems) {
+    const subtotal = orderWithItems.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
     const tax = subtotal * 0.1
     const total = subtotal + tax
-    await prisma.order.update({
-      where: { id: req.params.id },
+    await prisma.order.updateMany({
+      where: scopedWhere(req, req.params.id),
       data: { subtotal, tax, total, revenueAmount: total },
     })
   }
 
-  const updatedOrder = await prisma.order.findUnique({
-    where: { id: req.params.id },
+  const updatedOrder = await prisma.order.findFirst({
+    where: scopedWhere(req, req.params.id),
     include: orderInclude,
   })
-  io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+  io.to(tenantId(req)).emit('order:updated', updatedOrder)
   res.status(201).json(orderItem)
 })

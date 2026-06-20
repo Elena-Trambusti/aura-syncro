@@ -14,6 +14,7 @@ async function main() {
     create: {
       name: 'Ristorante La Bella Italia',
       slug: 'ristorante-demo',
+      colorTheme: '#f97316',
       address: 'Via Roma 1, Milano',
       phone: '+39 02 1234567',
       email: 'info@labellaitalai.it',

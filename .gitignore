@@ -5,10 +5,14 @@ node_modules/
 
 # ── File di ambiente (CONTENGONO SEGRETI - non caricare mai) ──
 .env
-.env.local
-.env.production
-.env.*.local
+.env.*
+!.env.example
+backend/.env
+backend/.env.local
+backend/.env.production
 frontend/.env
+frontend/.env.local
+frontend/.env.production
 
 # ── Database locale ────────────────────────────────────────
 backend/dev.db

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
+import { useAuth } from '../contexts/AuthContext'
+import { getTenantTheme } from '../lib/tenantTheme'
 import {
   TrendingUp, TrendingDown, ShoppingBag, CalendarCheck,
   Users, AlertTriangle, ClipboardList,
@@ -17,13 +19,13 @@ interface DashboardData {
 }
 
 function StatCard({
-  title, value, subtitle, icon: Icon, color, trend,
+  title, value, subtitle, icon: Icon, bgColor, trend,
 }: {
   title: string
   value: string
   subtitle?: string
   icon: React.ElementType
-  color: string
+  bgColor: string
   trend?: number
 }) {
   return (
@@ -40,7 +42,7 @@ function StatCard({
             </div>
           )}
         </div>
-        <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center`}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: bgColor }}>
           <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
@@ -49,6 +51,8 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const { restaurant } = useAuth()
+  const theme = getTenantTheme(restaurant?.colorTheme)
   const { data: dashboard } = useQuery<DashboardData>({
     queryKey: ['analytics', 'dashboard'],
     queryFn: () => api.get('/analytics/dashboard').then(r => r.data),
@@ -68,7 +72,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-800">
+          Dashboard — {restaurant?.name || 'Ristorante'}
+        </h1>
         <p className="text-slate-500 text-sm mt-1">
           {new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
         </p>
@@ -81,27 +87,27 @@ export default function DashboardPage() {
           value={formatCurrency(dashboard?.today.revenue || 0)}
           subtitle="ordini pagati oggi"
           icon={TrendingUp}
-          color="bg-emerald-500"
+          bgColor="#10b981"
         />
         <StatCard
           title="Ordini Attivi"
           value={String(dashboard?.today.activeOrders || 0)}
           subtitle="tavoli con ordine aperto"
           icon={ClipboardList}
-          color="bg-orange-500"
+          bgColor={theme.color}
         />
         <StatCard
           title="Prenotazioni Oggi"
           value={String(dashboard?.today.reservations || 0)}
           subtitle="coperti confermati"
           icon={CalendarCheck}
-          color="bg-blue-500"
+          bgColor="#3b82f6"
         />
         <StatCard
           title="Fatturato Mensile"
           value={formatCurrency(dashboard?.month.revenue || 0)}
           icon={ShoppingBag}
-          color="bg-purple-500"
+          bgColor="#a855f7"
           trend={dashboard?.month.revenueGrowth}
         />
       </div>
@@ -113,14 +119,14 @@ export default function DashboardPage() {
           value={String(dashboard?.totals.customers || 0)}
           subtitle="nel tuo CRM"
           icon={Users}
-          color="bg-indigo-500"
+          bgColor="#6366f1"
         />
         <StatCard
           title="Allerte Magazzino"
           value={String(dashboard?.totals.lowStockAlerts || 0)}
           subtitle="prodotti sotto scorta minima"
           icon={AlertTriangle}
-          color={dashboard?.totals.lowStockAlerts ? 'bg-red-500' : 'bg-slate-400'}
+          bgColor={dashboard?.totals.lowStockAlerts ? '#ef4444' : '#94a3b8'}
         />
       </div>
 
@@ -132,8 +138,8 @@ export default function DashboardPage() {
             <AreaChart data={revenueData || []}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                  <stop offset="5%" stopColor={theme.color} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={theme.color} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -155,7 +161,7 @@ export default function DashboardPage() {
                 labelFormatter={d => new Date(d).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
               />
-              <Area type="monotone" dataKey="revenue" stroke="#f97316" strokeWidth={2.5} fill="url(#revenueGradient)" />
+              <Area type="monotone" dataKey="revenue" stroke={theme.color} strokeWidth={2.5} fill="url(#revenueGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -170,8 +176,11 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-slate-700 truncate">{item.name}</p>
                   <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1">
                     <div
-                      className="bg-orange-500 h-1.5 rounded-full"
-                      style={{ width: `${Math.min(100, (item.quantity / ((topItems?.[0]?.quantity || 1))) * 100)}%` }}
+                      className="h-1.5 rounded-full"
+                      style={{
+                        width: `${Math.min(100, (item.quantity / ((topItems?.[0]?.quantity || 1))) * 100)}%`,
+                        backgroundColor: theme.color,
+                      }}
                     />
                   </div>
                 </div>

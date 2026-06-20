@@ -389,8 +389,12 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
-paymentsRouter.get('/overview', async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/overview', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
+  if (!restaurantId) {
+    res.status(401).json({ error: 'Tenant non autenticato' })
+    return
+  }
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfYear = new Date(now.getFullYear(), 0, 1)

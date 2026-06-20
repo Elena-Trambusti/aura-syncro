@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { scopedWhere, tenantNotFound } from '../lib/tenant'
 
 export const customersRouter = Router()
 
@@ -85,9 +86,32 @@ customersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void>
 })
 
 customersRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const customer = await prisma.customer.update({
-    where: { id: req.params.id },
-    data: req.body,
+  const schema = z.object({
+    name: z.string().trim().min(2).optional(),
+    email: z.string().email().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    allergens: z.string().optional().nullable(),
+    birthdate: z.string().datetime().optional().nullable(),
   })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  const updated = await prisma.customer.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data: {
+      ...result.data,
+      ...(result.data.birthdate ? { birthdate: new Date(result.data.birthdate) } : {}),
+    },
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Cliente non trovato')
+    return
+  }
+
+  const customer = await prisma.customer.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(customer)
 })

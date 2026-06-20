@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { api } from '../lib/api'
+import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
+import { applyTenantCssVars } from '../lib/tenantTheme'
 
 interface User {
   id: string
@@ -9,10 +10,12 @@ interface User {
   role: string
 }
 
-interface Restaurant {
+export interface Restaurant {
   id: string
   name: string
   slug: string
+  colorTheme: string
+  logoUrl?: string | null
 }
 
 interface AuthContextType {
@@ -43,17 +46,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setAuth = useCallback((data: { token: string; user: User; restaurant: Restaurant }) => {
     localStorage.setItem('token', data.token)
+    setTenantHeader(data.restaurant.id)
     setToken(data.token)
     setUser(data.user)
     setRestaurant(data.restaurant)
+    applyTenantCssVars(data.restaurant.colorTheme)
     connectSocket(data.token)
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
+    setTenantHeader(null)
     setToken(null)
     setUser(null)
     setRestaurant(null)
+    applyTenantCssVars('#f97316')
     disconnectSocket()
   }, [])
 
@@ -64,12 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(res => {
         setUser(res.data.user)
         setRestaurant(res.data.restaurant)
+        setTenantHeader(res.data.restaurant.id)
+        applyTenantCssVars(res.data.restaurant.colorTheme)
         connectSocket(storedToken)
       })
       .catch(() => logout())
       .finally(() => setIsLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    applyTenantCssVars(restaurant?.colorTheme)
+  }, [restaurant?.colorTheme])
 
   const login = async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password })
@@ -93,4 +106,10 @@ export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useTenantTheme() {
+  const { restaurant } = useAuth()
+  return restaurant?.colorTheme ?? '#f97316'
 }

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ===== RISTORANTE =====
@@ -12,6 +13,8 @@ model Restaurant {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
+  colorTheme  String   @default("#f97316")
+  logoUrl     String?
   address     String?
   phone       String?
   email       String?

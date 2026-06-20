@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+
 export const loyaltyRouter = Router()
 
 // ── Livelli VIP ─────────────────────────────────────────────────────────────
@@ -37,15 +39,31 @@ loyaltyRouter.post('/tiers', async (req: AuthRequest, res: Response): Promise<vo
 })
 
 loyaltyRouter.put('/tiers/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const tier = await prisma.loyaltyTier.update({
-    where: { id: req.params.id },
-    data: req.body,
+  const schema = z.object({
+    name: z.string().min(1).optional(),
+    minPoints: z.number().int().min(0).optional(),
+    color: z.string().optional(),
+    benefits: z.string().optional(),
+    discountPct: z.number().min(0).max(100).optional(),
+    cashbackPct: z.number().min(0).max(100).optional(),
+    pointsPerEuro: z.number().min(0).optional(),
+    sortOrder: z.number().int().optional(),
   })
+  const result = schema.safeParse(req.body)
+  if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }
+
+  const updated = await prisma.loyaltyTier.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data: result.data,
+  })
+  if (updated.count === 0) { tenantNotFound(res, 'Livello non trovato'); return }
+  const tier = await prisma.loyaltyTier.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(tier)
 })
 
 loyaltyRouter.delete('/tiers/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.loyaltyTier.delete({ where: { id: req.params.id } })
+  const deleted = await prisma.loyaltyTier.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) { tenantNotFound(res, 'Livello non trovato'); return }
   res.status(204).send()
 })
 
@@ -71,9 +89,14 @@ loyaltyRouter.post('/earn', async (req: AuthRequest, res: Response): Promise<voi
   if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }
 
   const { customerId, points, description, orderId } = result.data
-  const restaurantId = req.restaurantId!
+  const restaurantId = tenantId(req)
 
-  const [tx, customer] = await prisma.$transaction([
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, restaurantId },
+  })
+  if (!customer) { tenantNotFound(res, 'Cliente non trovato'); return }
+
+  const [tx, updatedCustomer] = await prisma.$transaction([
     prisma.loyaltyTransaction.create({
       data: { customerId, restaurantId, type: 'EARNED', points, description, orderId },
     }),
@@ -83,10 +106,9 @@ loyaltyRouter.post('/earn', async (req: AuthRequest, res: Response): Promise<voi
     }),
   ])
 
-  // Aggiorna tier automaticamente
-  await updateCustomerTier(restaurantId, customerId, customer.loyaltyPoints + points)
+  await updateCustomerTier(restaurantId, customerId, updatedCustomer.loyaltyPoints)
 
-  res.status(201).json({ transaction: tx, newPoints: customer.loyaltyPoints + points })
+  res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
 loyaltyRouter.post('/redeem', async (req: AuthRequest, res: Response): Promise<void> => {
@@ -100,14 +122,16 @@ loyaltyRouter.post('/redeem', async (req: AuthRequest, res: Response): Promise<v
 
   const { customerId, points, description } = result.data
 
-  const customer = await prisma.customer.findUnique({ where: { id: customerId } })
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, restaurantId: tenantId(req) },
+  })
   if (!customer || customer.loyaltyPoints < points) {
     res.status(400).json({ error: 'Punti insufficienti' }); return
   }
 
-  const [tx] = await prisma.$transaction([
+  const [tx, updatedCustomer] = await prisma.$transaction([
     prisma.loyaltyTransaction.create({
-      data: { customerId, restaurantId: req.restaurantId!, type: 'REDEEMED', points: -points, description },
+      data: { customerId, restaurantId: tenantId(req), type: 'REDEEMED', points: -points, description },
     }),
     prisma.customer.update({
       where: { id: customerId },
@@ -115,7 +139,7 @@ loyaltyRouter.post('/redeem', async (req: AuthRequest, res: Response): Promise<v
     }),
   ])
 
-  res.status(201).json({ transaction: tx, newPoints: customer.loyaltyPoints - points })
+  res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
 loyaltyRouter.post('/adjust', async (req: AuthRequest, res: Response): Promise<void> => {
@@ -128,10 +152,16 @@ loyaltyRouter.post('/adjust', async (req: AuthRequest, res: Response): Promise<v
   if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }
 
   const { customerId, points, description } = result.data
+  const restaurantId = tenantId(req)
 
-  const [tx, customer] = await prisma.$transaction([
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, restaurantId },
+  })
+  if (!customer) { tenantNotFound(res, 'Cliente non trovato'); return }
+
+  const [tx, updatedCustomer] = await prisma.$transaction([
     prisma.loyaltyTransaction.create({
-      data: { customerId, restaurantId: req.restaurantId!, type: 'ADJUSTMENT', points, description },
+      data: { customerId, restaurantId, type: 'ADJUSTMENT', points, description },
     }),
     prisma.customer.update({
       where: { id: customerId },
@@ -139,7 +169,7 @@ loyaltyRouter.post('/adjust', async (req: AuthRequest, res: Response): Promise<v
     }),
   ])
 
-  res.status(201).json({ transaction: tx, newPoints: customer.loyaltyPoints + points })
+  res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
 // ── Overview statistiche fedeltà ────────────────────────────────────────────
@@ -194,10 +224,10 @@ async function updateCustomerTier(restaurantId: string, customerId: string, curr
     where: { restaurantId },
     orderBy: { minPoints: 'desc' },
   })
-  const newTier = tiers.find((t: { minPoints: number; id: string }) => currentPoints >= t.minPoints)
+  const newTier = tiers.find(t => currentPoints >= t.minPoints)
   if (newTier) {
-    await prisma.customer.update({
-      where: { id: customerId },
+    await prisma.customer.updateMany({
+      where: { id: customerId, restaurantId },
       data: { loyaltyTierId: newTier.id },
     })
   }

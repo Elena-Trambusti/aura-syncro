@@ -86,6 +86,6 @@ setupSocketHandlers(io)
 const PORT = process.env.PORT || 3001
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server avviato su http://localhost:${PORT}`)
-  console.log(`📦 Database: SQLite (dev.db)`)
+  console.log(`📦 Database: ${process.env.DATABASE_URL?.includes('postgresql') ? 'PostgreSQL (Supabase)' : 'SQLite'}`)
   console.log(`🔌 WebSocket pronto`)
 })

@@ -3,12 +3,13 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { io } from '../index'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const reservationsRouter = Router()
 
 reservationsRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { date, status } = req.query
-  const where: Record<string, unknown> = { restaurantId: req.restaurantId! }
+  const where: Record<string, unknown> = { ...tenantWhere(req) }
 
   if (date) {
     const d = new Date(date as string)
@@ -31,11 +32,11 @@ reservationsRouter.get('/', async (req: AuthRequest, res: Response): Promise<voi
 
 reservationsRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   const reservation = await prisma.reservation.findFirst({
-    where: { id: req.params.id, restaurantId: req.restaurantId! },
+    where: scopedWhere(req, req.params.id),
     include: { table: true, customer: true },
   })
   if (!reservation) {
-    res.status(404).json({ error: 'Prenotazione non trovata' })
+    tenantNotFound(res, 'Prenotazione non trovata')
     return
   }
   res.json(reservation)
@@ -60,13 +61,23 @@ reservationsRouter.post('/', async (req: AuthRequest, res: Response): Promise<vo
     return
   }
 
+  if (result.data.tableId) {
+    const table = await prisma.table.findFirst({
+      where: { id: result.data.tableId, restaurantId: tenantId(req) },
+    })
+    if (!table) {
+      tenantNotFound(res, 'Tavolo non trovato')
+      return
+    }
+  }
+
   let customerId: string | undefined
   if (result.data.guestEmail) {
     const customer = await prisma.customer.upsert({
-      where: { restaurantId_email: { restaurantId: req.restaurantId!, email: result.data.guestEmail } },
+      where: { restaurantId_email: { restaurantId: tenantId(req), email: result.data.guestEmail } },
       update: { name: result.data.guestName, phone: result.data.guestPhone },
       create: {
-        restaurantId: req.restaurantId!,
+        restaurantId: tenantId(req),
         name: result.data.guestName,
         email: result.data.guestEmail,
         phone: result.data.guestPhone,
@@ -79,42 +90,89 @@ reservationsRouter.post('/', async (req: AuthRequest, res: Response): Promise<vo
     data: {
       ...result.data,
       date: new Date(result.data.date),
-      restaurantId: req.restaurantId!,
+      restaurantId: tenantId(req),
       customerId,
     },
     include: { table: true, customer: true },
   })
 
-  io.to(req.restaurantId!).emit('reservation:created', reservation)
+  io.to(tenantId(req)).emit('reservation:created', reservation)
   res.status(201).json(reservation)
 })
 
 reservationsRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  const reservation = await prisma.reservation.update({
-    where: { id: req.params.id },
+  const schema = z.object({
+    guestName: z.string().min(2).optional(),
+    guestPhone: z.string().min(6).optional(),
+    guestEmail: z.string().email().optional(),
+    covers: z.number().int().positive().optional(),
+    date: z.string().datetime().optional(),
+    duration: z.number().int().optional(),
+    tableId: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    internalNotes: z.string().optional().nullable(),
+    status: z.enum(['PENDING', 'CONFIRMED', 'SEATED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
+  })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  if (result.data.tableId) {
+    const table = await prisma.table.findFirst({
+      where: { id: result.data.tableId, restaurantId: tenantId(req) },
+    })
+    if (!table) {
+      tenantNotFound(res, 'Tavolo non trovato')
+      return
+    }
+  }
+
+  const updated = await prisma.reservation.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: {
-      ...req.body,
-      ...(req.body.date ? { date: new Date(req.body.date) } : {}),
+      ...result.data,
+      ...(result.data.date ? { date: new Date(result.data.date) } : {}),
     },
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+
+  const reservation = await prisma.reservation.findFirst({
+    where: scopedWhere(req, req.params.id),
     include: { table: true, customer: true },
   })
-  io.to(req.restaurantId!).emit('reservation:updated', reservation)
+  io.to(tenantId(req)).emit('reservation:updated', reservation)
   res.json(reservation)
 })
 
 reservationsRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
-  const reservation = await prisma.reservation.update({
-    where: { id: req.params.id },
+  const updated = await prisma.reservation.updateMany({
+    where: scopedWhere(req, req.params.id),
     data: { status },
+  })
+  if (updated.count === 0) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+  const reservation = await prisma.reservation.findFirst({
+    where: scopedWhere(req, req.params.id),
     include: { table: true },
   })
-  io.to(req.restaurantId!).emit('reservation:updated', reservation)
+  io.to(tenantId(req)).emit('reservation:updated', reservation)
   res.json(reservation)
 })
 
 reservationsRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.reservation.delete({ where: { id: req.params.id } })
-  io.to(req.restaurantId!).emit('reservation:deleted', { id: req.params.id })
+  const deleted = await prisma.reservation.deleteMany({ where: scopedWhere(req, req.params.id) })
+  if (deleted.count === 0) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+  io.to(tenantId(req)).emit('reservation:deleted', { id: req.params.id })
   res.status(204).send()
 })

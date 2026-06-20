@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
+import { restaurantPayload } from '../lib/tenant'
 
 export const authRouter = Router()
 
@@ -43,6 +44,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
     data: {
       name: restaurantName,
       slug,
+      colorTheme: '#f97316',
       settings: { create: {} },
       users: {
         create: {
@@ -67,7 +69,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
   res.status(201).json({
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    restaurant: { id: restaurant.id, name: restaurant.name, slug: restaurant.slug },
+    restaurant: restaurantPayload(restaurant),
   })
 })
 
@@ -104,7 +106,7 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
   res.json({
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    restaurant: { id: user.restaurant.id, name: user.restaurant.name, slug: user.restaurant.slug },
+    restaurant: restaurantPayload(user.restaurant),
   })
 })
 
@@ -121,13 +123,13 @@ authRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
       where: { id: payload.userId },
       include: { restaurant: true },
     })
-    if (!user) {
+    if (!user || user.restaurantId !== payload.restaurantId) {
       res.status(404).json({ error: 'Utente non trovato' })
       return
     }
     res.json({
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      restaurant: { id: user.restaurant.id, name: user.restaurant.name, slug: user.restaurant.slug },
+      restaurant: restaurantPayload(user.restaurant),
     })
   } catch {
     res.status(401).json({ error: 'Token non valido' })
