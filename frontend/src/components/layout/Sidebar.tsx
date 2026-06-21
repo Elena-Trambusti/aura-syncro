@@ -123,8 +123,9 @@ export default function Sidebar() {
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/60 transition-opacity lg:hidden',
-          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+          'max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:bg-black/60 max-lg:transition-opacity',
+          sidebarOpen ? 'max-lg:opacity-100 max-lg:pointer-events-auto' : 'max-lg:pointer-events-none max-lg:opacity-0',
+          'lg:hidden',
         )}
         onClick={closeSidebar}
         aria-hidden={!sidebarOpen}
@@ -132,9 +133,10 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col bg-slate-900 border-r border-slate-800',
-          'transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'flex w-64 shrink-0 flex-col bg-slate-900 border-r border-slate-800',
+          'max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[min(280px,88vw)]',
+          'max-lg:transition-transform max-lg:duration-300 max-lg:ease-out',
+          sidebarOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full',
         )}
         aria-label={t('common.mainMenu')}
       >
