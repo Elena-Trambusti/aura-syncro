@@ -9,6 +9,7 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ModalPortal from '../components/ModalPortal'
 
 interface MenuItem {
   id: string; name: string; description?: string; price: number
@@ -39,7 +40,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
   })
 
   return (
-    <div className={ui.modalOverlay} onClick={onCancel}>
+    <ModalPortal onClose={onCancel}>
       <div className={ui.modal} onClick={e => e.stopPropagation()}>
         <h3 className={ui.modalTitle}>{item?.id ? t('menu.editDish') : t('menu.newDish')}</h3>
         <div className="space-y-4">
@@ -101,7 +102,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
           <button onClick={() => onSave(form)} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm`}>{t('common.save')}</button>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   )
 }
 

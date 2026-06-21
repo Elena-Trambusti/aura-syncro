@@ -7,8 +7,9 @@ export const ui = {
   cardHover: 'saas-card-hover',
   cardSolid: 'saas-card-lg',
   panel: 'bg-white border-b border-slate-200 shadow-sm',
-  modalOverlay: 'saas-overlay flex items-center justify-center p-4',
-  modal: 'saas-modal p-6 w-full max-w-lg',
+  modalOverlay: 'saas-overlay flex items-end sm:items-center justify-center p-0 sm:p-4',
+  modal:
+    'saas-modal p-4 sm:p-6 w-full max-w-lg max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto rounded-t-2xl sm:rounded-xl mx-auto',
   modalTitle: 'text-lg font-bold text-slate-900 mb-5',
   label: 'block text-sm font-medium text-slate-700 mb-1.5',
   input:

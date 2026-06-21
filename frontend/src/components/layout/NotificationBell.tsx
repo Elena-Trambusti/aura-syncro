@@ -23,14 +23,23 @@ const TYPE_CONFIG = {
 }
 
 const PANEL_WIDTH = 320
+const MOBILE_BREAKPOINT = 640
 const OVERLAY_Z = 99998
 const MENU_Z = 99999
+
+type PanelPosition =
+  | { mode: 'desktop'; top: number; right: number }
+  | { mode: 'mobile'; top: number }
+
+function getViewportWidth() {
+  return window.visualViewport?.width ?? window.innerWidth
+}
 
 export default function NotificationBell() {
   const { t } = useTranslation()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
-  const [panelPos, setPanelPos] = useState<{ top: number; right: number } | null>(null)
+  const [panelPos, setPanelPos] = useState<PanelPosition | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -40,10 +49,24 @@ export default function NotificationBell() {
     const btn = buttonRef.current
     if (!btn) return
     const rect = btn.getBoundingClientRect()
-    setPanelPos({
-      top: rect.bottom + 8,
-      right: Math.max(8, window.innerWidth - rect.right),
-    })
+    const vv = window.visualViewport
+    const top = (vv?.offsetTop ?? 0) + rect.bottom + 8
+
+    if (getViewportWidth() < MOBILE_BREAKPOINT) {
+      setPanelPos({ mode: 'mobile', top })
+      return
+    }
+
+    const vw = getViewportWidth()
+    const offsetLeft = vv?.offsetLeft ?? 0
+    const panelWidth = Math.min(PANEL_WIDTH, vw - 16)
+    const rightFromButton = vw + offsetLeft - rect.right
+    const right = Math.min(
+      Math.max(8, rightFromButton),
+      vw + offsetLeft - panelWidth - 8,
+    )
+
+    setPanelPos({ mode: 'desktop', top, right })
   }, [])
 
   const close = useCallback(() => setOpen(false), [])
@@ -77,9 +100,13 @@ export default function NotificationBell() {
     updatePanelPosition()
     window.addEventListener('resize', updatePanelPosition)
     window.addEventListener('scroll', updatePanelPosition, true)
+    window.visualViewport?.addEventListener('resize', updatePanelPosition)
+    window.visualViewport?.addEventListener('scroll', updatePanelPosition)
     return () => {
       window.removeEventListener('resize', updatePanelPosition)
       window.removeEventListener('scroll', updatePanelPosition, true)
+      window.visualViewport?.removeEventListener('resize', updatePanelPosition)
+      window.visualViewport?.removeEventListener('scroll', updatePanelPosition)
     }
   }, [open, updatePanelPosition])
 
@@ -127,12 +154,21 @@ export default function NotificationBell() {
               style={{
                 position: 'fixed',
                 top: panelPos.top,
-                right: panelPos.right,
-                width: PANEL_WIDTH,
-                maxWidth: 'calc(100vw - 1rem - env(safe-area-inset-right))',
                 zIndex: MENU_Z,
+                ...(panelPos.mode === 'mobile'
+                  ? {
+                      left: 'max(0.75rem, env(safe-area-inset-left))',
+                      right: 'max(0.75rem, env(safe-area-inset-right))',
+                      width: 'auto',
+                      maxWidth: 'none',
+                    }
+                  : {
+                      right: panelPos.right,
+                      width: PANEL_WIDTH,
+                      maxWidth: 'calc(100vw - 1rem - env(safe-area-inset-left) - env(safe-area-inset-right))',
+                    }),
               }}
-              className="saas-dropdown overflow-hidden"
+              className="saas-dropdown overflow-hidden max-w-none"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
                 <h3 className="font-semibold text-slate-900">{t('notifications.title')}</h3>

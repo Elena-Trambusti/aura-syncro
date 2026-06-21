@@ -28,7 +28,6 @@
 
   * {
     box-sizing: border-box;
-    max-width: 100vw;
   }
 
   html {
@@ -53,7 +52,7 @@
     min-height: 100dvh;
     overflow-x: hidden;
     width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
   }
 
   ::-webkit-scrollbar {
@@ -108,7 +107,9 @@
   }
 
   .saas-overlay {
-    @apply fixed inset-0 z-[99998] min-h-[100dvh] bg-black/50;
+    @apply fixed inset-0 z-[99998] min-h-[100dvh] w-full max-w-none bg-black/50;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .saas-dropdown {
@@ -208,7 +209,9 @@
   }
 
   .glass-overlay {
-    @apply fixed inset-0 bg-black/50 z-[99998];
+    @apply fixed inset-0 w-full max-w-none bg-black/50 z-[99998];
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .glass-dropdown {
@@ -254,7 +257,7 @@
   }
 
   .pwa-app-shell {
-    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-[100vw] flex-row overflow-hidden overflow-x-hidden;
+    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-full flex-row overflow-hidden overflow-x-hidden;
     background: linear-gradient(
       to bottom,
       #C9A227 0,

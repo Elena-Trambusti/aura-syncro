@@ -17,7 +17,7 @@ export default function Header() {
     : ''
 
   return (
-    <header className="pwa-header relative z-50 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 shadow-sm sm:h-16 sm:px-6">
+    <header className="pwa-header relative z-50 flex h-14 shrink-0 items-center justify-between gap-1 border-b border-slate-200 bg-white px-2 shadow-sm sm:h-16 sm:gap-2 sm:px-6">
       <div className="flex items-center gap-2 min-w-0 lg:min-w-[4.5rem]">
         <button
           type="button"

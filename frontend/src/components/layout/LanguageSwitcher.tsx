@@ -161,7 +161,7 @@ export default function LanguageSwitcher({ prominent = false }: LanguageSwitcher
         title={t('common.selectLanguage')}
       >
         <Globe className={cn('shrink-0', prominent ? 'w-4 h-4' : 'w-3.5 h-3.5')} />
-        <span>{current.name}</span>
+        <span className="hidden sm:inline">{current.name}</span>
         <ChevronDown className={cn('shrink-0 opacity-60 transition-transform', prominent ? 'w-3.5 h-3.5' : 'w-3 h-3', open && 'rotate-180')} />
       </button>
       {portal}
