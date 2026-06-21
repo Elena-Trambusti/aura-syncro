@@ -6,14 +6,13 @@ import { AuthRequest, authenticate } from '../middleware/auth'
 import { requireDashboardAccess } from '../middleware/dashboardAccess'
 import { requirePermission } from '../middleware/permissions'
 import { requireProPlan } from '../middleware/planTier'
-import { io } from '../index'
 import {
   computeSplitBreakdown,
   type SplitBreakdown,
 } from '../lib/orderPayment'
-import { completeOrderPayment, completeGuestStripePayment } from '../lib/completePayment'
+import { completeOrderPayment } from '../lib/completePayment'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
-import { markReservationDepositPaid } from '../lib/depositWebhook'
+import { handleCheckoutSessionCompleted } from '../lib/stripeCheckoutWebhook'
 import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
 import { PublicOrderError } from '../lib/publicOrder'
 
@@ -331,40 +330,7 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response): Promise<voi
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as {
-      id: string
-      metadata?: { orderId?: string; reservationId?: string }
-      payment_intent?: string
-      payment_status?: string
-      amount_total?: number
-    }
-
-    const reservationId = session.metadata?.reservationId
-    if (reservationId) {
-      const deposit = await markReservationDepositPaid(session)
-      if (deposit) {
-        console.info('[payments-webhook] Caparra pagata', deposit.reservationId, deposit.amountPaid)
-        io.to(deposit.restaurantId).emit('reservation:deposit_paid', {
-          reservationId: deposit.reservationId,
-          amountPaid: deposit.amountPaid,
-        })
-      }
-    }
-
-    const orderId = session.metadata?.orderId
-
-    if (orderId && session.payment_status === 'paid') {
-      const completed = await completeGuestStripePayment(
-        orderId,
-        typeof session.payment_intent === 'string' ? session.payment_intent : null,
-      )
-      if (completed?.updatedOrder) {
-        io.to(completed.updatedOrder.restaurantId).emit('order:updated', completed.updatedOrder)
-        io.to(completed.updatedOrder.restaurantId).emit('order:new', completed.updatedOrder)
-      }
-    } else if (orderId) {
-      console.warn('[payments-webhook] Sessione non pagata, ordine non finalizzato:', orderId)
-    }
+    await handleCheckoutSessionCompleted(event.data.object)
   }
 
   res.json({ received: true })

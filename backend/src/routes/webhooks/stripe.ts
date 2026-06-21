@@ -1,16 +1,14 @@
 import { Router, Request, Response } from 'express'
 import { stripe } from '../../lib/stripe'
-import {
-  activateRestaurantSubscription,
-  syncRestaurantSubscriptionStatus,
-} from '../../lib/stripeSubscriptionWebhook'
-import { activateProPlan, isProUpgradeSession } from '../../lib/stripeProWebhook'
+import { handleCheckoutSessionCompleted } from '../../lib/stripeCheckoutWebhook'
+import { syncRestaurantSubscriptionStatus } from '../../lib/stripeSubscriptionWebhook'
 
 export const stripeWebhookRouter = Router()
 
 /**
  * POST /api/webhooks/stripe
- * Notifiche Stripe (abbonamento SaaS). Richiede body raw — vedi index.ts.
+ * Notifiche Stripe: abbonamento SaaS, Pro, ordini guest e caparre.
+ * Richiede body raw — vedi index.ts.
  */
 stripeWebhookRouter.post('/', async (req: Request, res: Response): Promise<void> => {
   const sig = req.headers['stripe-signature']
@@ -43,23 +41,7 @@ stripeWebhookRouter.post('/', async (req: Request, res: Response): Promise<void>
 
   try {
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object
-
-      if (isProUpgradeSession(session)) {
-        const proResult = await activateProPlan(session)
-        if (proResult) {
-          console.info('[stripe-webhook] Piano Pro attivato', proResult.restaurantId)
-        }
-      } else {
-        const result = await activateRestaurantSubscription(session)
-        if (result) {
-          console.info(
-            '[stripe-webhook] Premium attivato',
-            result.restaurantId,
-            result.stripeSubscriptionId ?? '(no subscription id)',
-          )
-        }
-      }
+      await handleCheckoutSessionCompleted(event.data.object)
     }
 
     if (

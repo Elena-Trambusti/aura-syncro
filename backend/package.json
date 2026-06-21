@@ -16,6 +16,8 @@
     "db:seed": "tsx src/seed.ts",
     "db:seed-tenant": "tsx src/seed-tenant.ts",
     "test": "tsx --test src/lib/taxEngine.test.ts src/lib/predictiveEngine.test.ts",
+    "stripe:verify": "tsx scripts/verify-stripe.ts",
+    "stripe:sync-webhooks": "tsx scripts/sync-stripe-webhooks.ts",
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
