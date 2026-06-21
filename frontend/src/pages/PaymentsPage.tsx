@@ -30,7 +30,7 @@ interface OverviewData {
 export default function PaymentsPage() {
   const { t } = useTranslation()
   const tk = useTenantQueryKey()
-  const { data, isLoading } = useQuery<OverviewData>({
+  const { data, isLoading, isError } = useQuery<OverviewData>({
     queryKey: tq(tk, 'payments', 'overview'),
     queryFn: () => api.get('/payments/overview').then(r => r.data),
   })
@@ -38,6 +38,19 @@ export default function PaymentsPage() {
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+
+  if (isError) return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="aura-page-title">{t('payments.title')}</h1>
+        <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
+      </div>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-8 flex flex-col items-center gap-3">
+        <AlertCircle className="w-10 h-10 text-red-400" />
+        <p className="text-sm text-red-700">{t('common.loadError')}</p>
+      </div>
     </div>
   )
 

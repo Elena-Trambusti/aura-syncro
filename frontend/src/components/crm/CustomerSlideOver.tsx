@@ -1,7 +1,9 @@
-import { X, Mail, Phone, Calendar, AlertTriangle, Receipt } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Mail, Phone, Calendar, AlertTriangle, Receipt, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatCurrency, formatDate, cn } from '../../lib/utils'
 import { tagBadgeClass, customerDisplayName } from '../../lib/customerTags'
+import { ui } from '../../lib/ui'
 
 export interface CustomerOrder {
   id: string
@@ -30,14 +32,59 @@ export interface CustomerDetail {
   orders?: CustomerOrder[]
 }
 
+export interface CustomerEditData {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  notes: string
+  allergens: string
+  tags: string
+}
+
 interface CustomerSlideOverProps {
   customer: CustomerDetail | null
   onClose: () => void
   isLoading?: boolean
+  onSave?: (data: CustomerEditData) => void | Promise<void>
+  isSaving?: boolean
 }
 
-export default function CustomerSlideOver({ customer, onClose, isLoading }: CustomerSlideOverProps) {
+function toEditForm(customer: CustomerDetail): CustomerEditData {
+  return {
+    firstName: customer.firstName || '',
+    lastName: customer.lastName || '',
+    email: customer.email || '',
+    phone: customer.phone || '',
+    notes: customer.notes || '',
+    allergens: customer.allergens || '',
+    tags: customer.tags.join(', '),
+  }
+}
+
+export default function CustomerSlideOver({ customer, onClose, isLoading, onSave, isSaving }: CustomerSlideOverProps) {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState<CustomerEditData>({
+    firstName: '', lastName: '', email: '', phone: '', notes: '', allergens: '', tags: '',
+  })
+
+  useEffect(() => {
+    if (customer) {
+      setForm(toEditForm(customer))
+      setEditing(false)
+    }
+  }, [customer?.id])
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await onSave?.(form)
+      setEditing(false)
+    } catch {
+      // keep edit mode open on error
+    }
+  }
 
   return (
     <>
@@ -59,14 +106,26 @@ export default function CustomerSlideOver({ customer, onClose, isLoading }: Cust
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <h2 className="text-lg font-bold text-slate-900">{t('crm.slideOver.title')}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-            aria-label={t('common.close')}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {customer && onSave && !editing && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                aria-label={t('common.edit')}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              aria-label={t('common.close')}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {isLoading && (
@@ -75,7 +134,92 @@ export default function CustomerSlideOver({ customer, onClose, isLoading }: Cust
           </div>
         )}
 
-        {!isLoading && customer && (
+        {!isLoading && customer && editing && (
+          <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={ui.label}>{t('crm.form.firstName')}</label>
+                <input
+                  value={form.firstName}
+                  onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))}
+                  className={ui.input}
+                  required
+                />
+              </div>
+              <div>
+                <label className={ui.label}>{t('crm.form.lastName')}</label>
+                <input
+                  value={form.lastName}
+                  onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))}
+                  className={ui.input}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={ui.label}>{t('common.email')}</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                className={ui.input}
+              />
+            </div>
+            <div>
+              <label className={ui.label}>{t('common.phone')}</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                className={ui.input}
+              />
+            </div>
+            <div>
+              <label className={ui.label}>{t('crm.form.tags')}</label>
+              <input
+                value={form.tags}
+                onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
+                className={ui.input}
+                placeholder={t('crm.form.tagsPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className={ui.label}>{t('crm.slideOver.allergens')}</label>
+              <input
+                value={form.allergens}
+                onChange={e => setForm(p => ({ ...p, allergens: e.target.value }))}
+                className={ui.input}
+              />
+            </div>
+            <div>
+              <label className={ui.label}>{t('crm.form.notes')}</label>
+              <textarea
+                value={form.notes}
+                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                rows={3}
+                className={ui.textarea}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => { setEditing(false); setForm(toEditForm(customer)) }}
+                disabled={isSaving}
+                className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium', ui.chipInactive)}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
+              >
+                {isSaving ? t('common.saving') : t('common.save')}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {!isLoading && customer && !editing && (
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
             <div>
               <p className="text-xl font-bold text-slate-900">{customerDisplayName(customer)}</p>

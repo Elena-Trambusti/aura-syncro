@@ -2,21 +2,21 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
-
-import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { requirePermission } from '../middleware/permissions'
 import { ensureMarketingAutomations } from '../lib/marketingAutomations'
+import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { AutomationType } from '@prisma/client'
 
 export const marketingRouter = Router()
 
 // ── Automazioni marketing ─────────────────────────────────────────────────────
 
-marketingRouter.get('/automations', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.get('/automations', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const automations = await ensureMarketingAutomations(req.restaurantId!)
   res.json(automations)
 })
 
-marketingRouter.put('/automations/:type', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.put('/automations/:type', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const typeSchema = z.nativeEnum(AutomationType)
   const typeResult = typeSchema.safeParse(req.params.type)
   if (!typeResult.success) {
@@ -52,7 +52,7 @@ marketingRouter.put('/automations/:type', async (req: AuthRequest, res: Response
 
 // ── Campagne ──────────────────────────────────────────────────────────────────
 
-marketingRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.get('/', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const campaigns = await prisma.campaign.findMany({
     where: { restaurantId: req.restaurantId! },
     orderBy: { createdAt: 'desc' },
@@ -60,7 +60,7 @@ marketingRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(campaigns)
 })
 
-marketingRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.post('/', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(1),
     type: z.enum(['EMAIL', 'SMS', 'BIRTHDAY', 'WIN_BACK', 'PROMOTION', 'NEWS']),
@@ -130,7 +130,7 @@ marketingRouter.post('/preview', async (req: AuthRequest, res: Response): Promis
 
 // ── Invio campagna ─────────────────────────────────────────────────────────────
 
-marketingRouter.post('/:id/send', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.post('/:id/send', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const campaign = await prisma.campaign.findFirst({
     where: scopedWhere(req, req.params.id),
   })
@@ -138,6 +138,9 @@ marketingRouter.post('/:id/send', async (req: AuthRequest, res: Response): Promi
   if (campaign.status === 'SENT') { res.status(400).json({ error: 'Campagna già inviata' }); return }
 
   const recipients = await getTargetCustomers(tenantId(req), campaign.targetFilter || null)
+
+  const { sendCampaignEmails } = await import('../lib/marketingSend')
+  const { sent, failed } = await sendCampaignEmails(tenantId(req), campaign, recipients)
 
   const updated = await prisma.campaign.updateMany({
     where: scopedWhere(req, req.params.id),
@@ -154,8 +157,9 @@ marketingRouter.post('/:id/send', async (req: AuthRequest, res: Response): Promi
   res.json({
     success: true,
     recipientCount: recipients.length,
+    emailsSent: sent,
+    emailsFailed: failed,
     campaign: refreshed,
-    note: 'In produzione verrà inviato tramite provider email/SMS',
   })
 })
 

@@ -8,6 +8,7 @@ import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
+import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
 import toast from 'react-hot-toast'
 
 interface OrderItem {
@@ -48,6 +49,8 @@ export default function OrdersPage() {
   const tk = useTenantQueryKey()
   const { canSetOrderStatus, can } = useRole()
   const [filter, setFilter] = useState<string>('active')
+
+  useRealtimeOrders()
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: tq(tk, 'orders', filter),

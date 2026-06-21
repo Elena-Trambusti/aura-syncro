@@ -7,7 +7,8 @@ import { requirePermission } from '../middleware/permissions'
 import { canSetOrderStatus, canUpdateOrderItemStatus } from '../lib/permissions'
 import { io } from '../index'
 import { parseLocalDate } from '../lib/dates'
-import { computePaymentSplit, decrementInventoryForOrder, releaseTableIfEmpty } from '../lib/orderPayment'
+import { completeOrderPayment } from '../lib/completePayment'
+import { releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxForRestaurant } from '../lib/orderTax'
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
@@ -105,15 +106,29 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
 
   const { items, ...orderData } = result.data
 
-  const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: items.map(i => i.menuItemId) }, restaurantId: tenantId(req) },
-  })
-
-  const itemsWithPrice = items.map(item => {
-    const menuItem = menuItems.find((m: { id: string; price: number }) => m.id === item.menuItemId)
-    if (!menuItem) throw new Error(`Piatto ${item.menuItemId} non trovato`)
-    return { ...item, unitPrice: menuItem.price }
-  })
+  let itemsWithPrice
+  try {
+    const menuItems = await prisma.menuItem.findMany({
+      where: { id: { in: items.map(i => i.menuItemId) }, restaurantId: tenantId(req) },
+    })
+    itemsWithPrice = items.map(item => {
+      const menuItem = menuItems.find(m => m.id === item.menuItemId)
+      if (!menuItem) throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
+      if (!menuItem.available) throw Object.assign(new Error('unavailable'), { code: 'MENU_ITEM_UNAVAILABLE' })
+      return { ...item, unitPrice: menuItem.price }
+    })
+  } catch (e) {
+    const code = (e as { code?: string }).code
+    if (code === 'MENU_ITEM_NOT_FOUND') {
+      res.status(400).json({ error: 'Piatto non trovato nel menu' })
+      return
+    }
+    if (code === 'MENU_ITEM_UNAVAILABLE') {
+      res.status(400).json({ error: 'Piatto non disponibile' })
+      return
+    }
+    throw e
+  }
 
   const subtotal = itemsWithPrice.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   const { tax, total, taxRateApplied } = await computeTaxForRestaurant(req.restaurantId!, subtotal)
@@ -186,6 +201,10 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
+  if (['PAID', 'CANCELLED'].includes(order.status)) {
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
   if (!order.items.some(i => i.id === req.params.itemId)) {
     res.status(404).json({ error: 'Piatto non trovato nell\'ordine' })
     return
@@ -222,26 +241,32 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
+  if (['PAID', 'CANCELLED'].includes(existingOrder.status) && status !== existingOrder.status) {
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
 
-  const paymentData: Prisma.OrderUpdateInput = {}
   if (status === 'PAID') {
-    const split = computePaymentSplit(existingOrder, req.body.tipAmount)
-    paymentData.paidAt = split.paidAt
-    paymentData.paymentMethod = req.body.paymentMethod
-    paymentData.revenueAmount = split.revenueAmount
-    paymentData.tipAmount = split.tipAmount
-    paymentData.total = split.total
-
-    await prisma.$transaction(async tx => {
-      await tx.orderItem.updateMany({
-        where: {
+    const paymentMethod = req.body.paymentMethod === 'CASH' ? 'CASH' : 'CARD'
+    try {
+      const { updatedOrder } = await completeOrderPayment({
+        finalize: {
           orderId: req.params.id,
-          status: { notIn: ['CANCELLED', 'SERVED'] },
+          restaurantId: req.restaurantId!,
+          tipAmount: Number(req.body.tipAmount) || 0,
+          paymentMethod,
         },
-        data: { status: 'SERVED' },
       })
-      await decrementInventoryForOrder(tx, req.params.id, req.restaurantId!)
-    })
+      res.json(updatedOrder)
+      return
+    } catch (err) {
+      const code = err instanceof Error ? err.message : 'UNKNOWN'
+      if (code === 'ORDER_ALREADY_PAID') {
+        res.status(400).json({ error: 'Ordine già pagato' })
+        return
+      }
+      throw err
+    }
   }
 
   if (status === 'READY') {
@@ -253,10 +278,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
 
   const order = await prisma.order.update({
     where: { id: req.params.id },
-    data: {
-      status: status as OrderStatus,
-      ...paymentData,
-    },
+    data: { status: status as OrderStatus },
     include: orderInclude,
   })
 
@@ -288,12 +310,20 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     tenantNotFound(res, 'Ordine non trovato')
     return
   }
+  if (['PAID', 'CANCELLED'].includes(order.status)) {
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
 
   const menuItem = await prisma.menuItem.findFirst({
     where: { id: result.data.menuItemId, restaurantId: tenantId(req) },
   })
   if (!menuItem) {
     tenantNotFound(res, 'Piatto non trovato')
+    return
+  }
+  if (!menuItem.available) {
+    res.status(400).json({ error: 'Piatto non disponibile' })
     return
   }
 

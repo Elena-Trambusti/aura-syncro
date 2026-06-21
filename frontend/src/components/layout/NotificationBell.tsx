@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bell, X, ShoppingBag, CalendarDays, AlertTriangle, ChefHat } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
@@ -37,6 +38,7 @@ function getViewportWidth() {
 
 export default function NotificationBell() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const [panelPos, setPanelPos] = useState<PanelPosition | null>(null)
@@ -134,6 +136,14 @@ export default function NotificationBell() {
   const clearAll = () => setNotifications([])
   const markRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
 
+  const handleNotifClick = (notif: Notification) => {
+    markRead(notif.id)
+    if (notif.orderId) {
+      close()
+      navigate('/ordini')
+    }
+  }
+
   const toggleOpen = () => {
     if (!open) markAllRead()
     setOpen(prev => !prev)
@@ -197,7 +207,7 @@ export default function NotificationBell() {
                     return (
                       <div
                         key={notif.id}
-                        onClick={() => markRead(notif.id)}
+                        onClick={() => handleNotifClick(notif)}
                         className={cn(
                           'flex items-start gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors',
                           !notif.read && 'bg-amber-50',

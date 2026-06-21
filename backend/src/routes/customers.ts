@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { buildCustomerName, splitCustomerName } from '../lib/crmCustomer'
 import { scopedWhere, tenantNotFound } from '../lib/tenant'
 
@@ -38,7 +39,7 @@ function serializeCustomer(customer: {
   }
 }
 
-customersRouter.get('/stats', async (req: AuthRequest, res: Response): Promise<void> => {
+customersRouter.get('/stats', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const customers = await prisma.customer.findMany({
     where: { restaurantId },
@@ -56,7 +57,7 @@ customersRouter.get('/stats', async (req: AuthRequest, res: Response): Promise<v
   res.json({ total, vipCount, avgSpent: Math.round(avgSpent * 100) / 100 })
 })
 
-customersRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+customersRouter.get('/', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { search } = req.query
   const customers = await prisma.customer.findMany({
     where: {
@@ -77,7 +78,7 @@ customersRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(customers.map(serializeCustomer))
 })
 
-customersRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+customersRouter.get('/:id', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const customer = await prisma.customer.findFirst({
     where: { id: req.params.id, restaurantId: req.restaurantId! },
     include: {
@@ -105,7 +106,7 @@ customersRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<voi
   res.json({ ...serializeCustomer(base), orders, reservations })
 })
 
-customersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+customersRouter.post('/', requirePermission('customers.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const emptyToUndefined = (val: unknown) =>
     val === '' || val === null || val === undefined ? undefined : val
 
@@ -163,7 +164,7 @@ customersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void>
   }
 })
 
-customersRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+customersRouter.put('/:id', requirePermission('customers.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     firstName: z.string().trim().min(1).optional(),
     lastName: z.string().trim().optional(),

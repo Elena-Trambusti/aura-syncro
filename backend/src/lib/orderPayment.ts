@@ -1,6 +1,7 @@
 import type { Prisma, Table } from '@prisma/client'
 import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
+import { applyPostPaymentEffects } from './postPayment'
 
 export interface FinalizePaymentInput {
   orderId: string
@@ -96,6 +97,8 @@ export async function finalizeOrderPayment(
   })
 
   const fiscalRow = buildFiscalTransactionRow(updatedOrder, paidAt)
+
+  await applyPostPaymentEffects(order.id, input.restaurantId)
 
   return {
     revenueAmount: split.revenueAmount,

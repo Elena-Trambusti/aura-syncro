@@ -111,7 +111,7 @@ export default function AIPredictivePage() {
 
 function AIPredictivePageContent() {
   const { t, i18n } = useTranslation()
-  const { forecast, alerts, factorsUsed, engineVersion, generatedAt, isLoading, refetch } = usePredictiveAI()
+  const { forecast, alerts, factorsUsed, engineVersion, generatedAt, isLoading, isError, refetch } = usePredictiveAI()
 
   const chartData = forecast.map(day => ({
     ...day,
@@ -177,6 +177,13 @@ function AIPredictivePageContent() {
         </div>
       </div>
 
+      {isError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700">{t('aiPredictive.loadError')}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
         <section className="xl:col-span-3 rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-4">
@@ -189,6 +196,8 @@ function AIPredictivePageContent() {
 
           {isLoading ? (
             <ChartSkeleton />
+          ) : isError ? (
+            <div className="p-8 text-center text-sm text-red-600">{t('aiPredictive.loadError')}</div>
           ) : (
             <div className="p-4 sm:p-6">
               <ResponsiveContainer width="100%" height={320}>
@@ -284,6 +293,8 @@ function AIPredictivePageContent() {
 
           {isLoading ? (
             <AlertsSkeleton />
+          ) : isError ? (
+            <div className="p-8 text-center text-sm text-red-600">{t('aiPredictive.loadError')}</div>
           ) : alerts.length === 0 ? (
             <div className="p-8 text-center">
               <Sparkles className="mx-auto mb-3 h-10 w-10 text-emerald-500" />

@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { formatCurrency, formatDate, cn } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { customerDisplayName, isVipCustomer, tagBadgeClass } from '../lib/customerTags'
-import CustomerSlideOver, { type CustomerDetail } from '../components/crm/CustomerSlideOver'
+import CustomerSlideOver, { type CustomerDetail, type CustomerEditData } from '../components/crm/CustomerSlideOver'
 import { Search, Users, TrendingUp, Award, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
@@ -92,6 +92,28 @@ export default function CrmPage() {
       setForm(emptyForm())
       setSelectedId(res.data.id)
       toast.success(t('crm.created'))
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error || t('crm.saveError'))
+    },
+  })
+
+  const updateCustomer = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CustomerEditData }) =>
+      api.put(`/customers/${id}`, {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim() || null,
+        phone: data.phone.trim() || null,
+        notes: data.notes.trim() || null,
+        allergens: data.allergens.trim() || null,
+        tags: data.tags.trim()
+          ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+          : [],
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tq(tk, 'customers') })
+      toast.success(t('crm.updated'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
       toast.error(err.response?.data?.error || t('crm.saveError'))
@@ -245,6 +267,10 @@ export default function CrmPage() {
         customer={selectedId ? (selectedCustomer ?? null) : null}
         onClose={() => setSelectedId(null)}
         isLoading={detailLoading && Boolean(selectedId)}
+        isSaving={updateCustomer.isPending}
+        onSave={async data => {
+          if (selectedId) await updateCustomer.mutateAsync({ id: selectedId, data })
+        }}
       />
 
       {showCreateModal && (

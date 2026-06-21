@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { startOfLocalDay } from '../lib/dates'
 import { resolveRevenueAmount } from '../lib/fiscalAmounts'
 
@@ -22,7 +23,7 @@ function paidInRange(start: Date, end: Date) {
   }
 }
 
-analyticsRouter.get('/dashboard', async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/dashboard', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const today = startOfLocalDay()
   const tomorrow = new Date(today)

@@ -34,6 +34,7 @@
     "closeMenu": "Cerrar menú",
     "mainMenu": "Menú principal",
     "noData": "No hay datos disponibles",
+    "loadError": "Error al cargar los datos",
     "saving": "Guardando...",
     "copyLink": "Copiar enlace",
     "linkCopied": "¡Enlace copiado!",
@@ -115,7 +116,18 @@
     "countryES": "España",
     "taxRegion": "Región fiscal",
     "taxRegionCanarias": "Islas Canarias (IGIC)",
-    "taxRegionPeninsula": "España peninsular (IVA)"
+    "taxRegionPeninsula": "España peninsular (IVA)",
+    "forgotPassword": "¿Olvidaste la contraseña?",
+    "forgotPasswordTitle": "Recuperar contraseña",
+    "forgotPasswordSubtitle": "Introduce tu email y te enviaremos un enlace para restablecer la contraseña.",
+    "forgotPasswordSent": "Si el email existe, recibirás las instrucciones.",
+    "resetPasswordTitle": "Nueva contraseña",
+    "resetPasswordSubtitle": "Elige una nueva contraseña para tu cuenta.",
+    "newPassword": "Nueva contraseña",
+    "resetPassword": "Restablecer contraseña",
+    "resetPasswordSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
+    "resetPasswordInvalidToken": "Enlace no válido o caducado.",
+    "backToLogin": "Volver al inicio de sesión"
   },
   "status": {
     "order": {
@@ -191,7 +203,13 @@
     "markFree": "Marcar Libre",
     "tableReady": "Mesa {{number}} lista",
     "needsCleaning": "Por limpiar",
-    "startCleaningHint": "Tras el pago la mesa pasa a limpieza. Márcala libre cuando esté lista."
+    "startCleaningHint": "Tras el pago la mesa pasa a limpieza. Márcala libre cuando esté lista.",
+    "manageSection": "Gestión de mesas",
+    "newTable": "Nueva mesa",
+    "editTable": "Editar mesa",
+    "confirmDelete": "¿Eliminar esta mesa?",
+    "saved": "Mesa guardada",
+    "deleted": "Mesa eliminada"
   },
   "orders": {
     "title": "Pedidos",
@@ -235,7 +253,15 @@
     "confirmDelete": "¿Eliminar este plato?",
     "added": "¡Plato añadido!",
     "updated": "¡Plato actualizado!",
-    "deleted": "Plato eliminado"
+    "deleted": "Plato eliminado",
+    "newCategory": "Nueva categoría",
+    "editCategory": "Editar categoría",
+    "categoryName": "Nombre de categoría",
+    "confirmDeleteCategory": "¿Eliminar esta categoría?",
+    "categoryAdded": "Categoría creada",
+    "categoryUpdated": "Categoría actualizada",
+    "categoryDeleted": "Categoría eliminada",
+    "categorySaveError": "Error al guardar la categoría"
   },
   "settings": {
     "title": "Ajustes",
@@ -288,7 +314,12 @@
     "formDuration2h": "2 horas",
     "formDuration2h30": "2,5 horas",
     "formNotesPlaceholder": "Alergias, ocasiones especiales...",
-    "formConfirm": "Confirmar reserva"
+    "formConfirm": "Confirmar reserva",
+    "depositRequired": "Depósito requerido",
+    "depositPaid": "Depósito pagado",
+    "payDeposit": "Pagar depósito",
+    "depositRequiredNotice": "Reserva confirmada — se requiere el pago del depósito",
+    "depositPayError": "No se pudo iniciar el pago del depósito"
   },
   "waitlist": {
     "subtitle": "{{count}} clientes en espera",
@@ -317,6 +348,7 @@
     "subtitle": "Reconoce a cada comensal en la mesa — etiquetas, alergias e historial de gasto",
     "newCustomer": "Nuevo Cliente",
     "created": "Cliente creado con éxito",
+    "updated": "Cliente actualizado",
     "saveError": "Error al guardar",
     "firstNameRequired": "El nombre es obligatorio",
     "noCustomers": "No se encontraron clientes",
@@ -443,6 +475,16 @@
     "campaignCreated": "Campaña creada",
     "campaignSent": "¡Campaña enviada!",
     "deleted": "Eliminada",
+    "tabAutomations": "Automatizaciones",
+    "tabCampaigns": "Campañas",
+    "campaignsSectionTitle": "Campañas email",
+    "campaignsSectionSubtitle": "Crea y envía campañas puntuales a tus clientes CRM",
+    "sendCampaign": "Enviar",
+    "campaignSubject": "Asunto del email",
+    "campaignMessage": "Mensaje",
+    "confirmDeleteCampaign": "¿Eliminar esta campaña?",
+    "sendError": "Error al enviar la campaña",
+    "createError": "Error al crear la campaña",
     "automations": {
       "sectionTitle": "Automatizaciones activas",
       "sectionSubtitle": "Activa o desactiva las reglas automáticas. Los mensajes se enviarán por email/SMS en producción.",
@@ -649,6 +691,7 @@
     "title": "IA Predictiva — Almacén y Ventas",
     "subtitle": "Análisis cruzado de historial de pedidos, día de la semana y clima previsto",
     "engineLabel": "Motor {{version}}",
+    "loadError": "Error al cargar los datos predictivos",
     "chartTitle": "Previsión de afluencia — próximos 7 días",
     "chartSubtitle": "Cubiertos estimados según historial, ajustados por clima",
     "chartPredicted": "Cubiertos previstos",

@@ -9,9 +9,9 @@ import { requireProPlan } from '../middleware/planTier'
 import { io } from '../index'
 import {
   computeSplitBreakdown,
-  finalizeOrderPayment,
-  releaseTableIfEmpty,
+  type SplitBreakdown,
 } from '../lib/orderPayment'
+import { completeOrderPayment, completeGuestStripePayment } from '../lib/completePayment'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { markReservationDepositPaid } from '../lib/depositWebhook'
 import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
@@ -24,22 +24,20 @@ const posOrderInclude = {
   items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' as const } },
 }
 
-/** Simula l'invio del pagamento a un terminale POS fisico (Stripe Terminal / SumUp). */
+/** Simula l'invio del pagamento a un terminale POS fisico (legacy — usa posCharge). */
 async function simulatePosTerminal(amount: number): Promise<{
   success: boolean
   transactionId: string
   terminalId: string
   provider: string
 }> {
-  const delayMs = Number(process.env.POS_SIMULATE_DELAY_MS) || 800
-  await new Promise(resolve => setTimeout(resolve, delayMs))
-
-  const transactionId = `pos_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  const { chargePosCard } = await import('../lib/posCharge')
+  const r = await chargePosCard(amount, {})
   return {
-    success: true,
-    transactionId,
-    terminalId: process.env.POS_TERMINAL_ID || 'SIM-TPV-001',
-    provider: process.env.POS_PROVIDER || 'simulated',
+    success: r.success,
+    transactionId: r.transactionId,
+    terminalId: r.terminalId,
+    provider: r.provider,
   }
 }
 
@@ -61,6 +59,7 @@ const finalizeSchema = z.object({
   splitSettlement: z.enum(['CARD', 'CASH']).optional(),
   split: splitSchema,
   simulateEmail: z.string().email().optional(),
+  stripePaymentIntentId: z.string().optional(),
 })
 
 async function loadOrderForCheckout(orderId: string, restaurantId: string) {
@@ -106,7 +105,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
-  const { orderId, tipAmount, paymentMethod, splitSettlement, split, simulateEmail } = parsed.data
+  const { orderId, tipAmount, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId } = parsed.data
 
   const order = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!order) {
@@ -129,34 +128,24 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   }
 
   try {
-    const terminalResponse = await simulatePosTerminal(order.total + tipAmount)
-
-    const result = await finalizeOrderPayment(
-      {
-        orderId,
-        restaurantId: req.restaurantId!,
-        tipAmount,
-        paymentMethod: settlementMethod,
-      },
-      { splitBreakdown },
-    )
-
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: posOrderInclude,
-    })
-
-    await releaseTableIfEmpty(order.tableId).then(table => {
-      if (table) io.to(req.restaurantId!).emit('table:updated', table)
-    })
-
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: req.restaurantId! },
       include: { settings: true },
     })
     const fiscal = buildFiscalConfig(restaurant?.settings)
 
-    io.to(req.restaurantId!).emit('order:updated', updatedOrder)
+    const { result, updatedOrder, posResult, emailSent } = await completeOrderPayment({
+      finalize: {
+        orderId,
+        restaurantId: req.restaurantId!,
+        tipAmount,
+        paymentMethod: settlementMethod,
+      },
+      splitBreakdown,
+      stripePaymentIntentId,
+      receiptEmail: simulateEmail,
+      restaurantName: restaurant?.name,
+    })
 
     res.json({
       success: true,
@@ -168,9 +157,9 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
         row: result.fiscalRow,
       },
       splitBreakdown: result.splitBreakdown,
-      pos: terminalResponse,
+      pos: posResult,
       receipt: {
-        simulatedEmailSent: Boolean(simulateEmail),
+        emailSent,
         emailTo: simulateEmail ?? null,
       },
     })
@@ -186,6 +175,10 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     }
     if (code === 'ORDER_CANCELLED') {
       res.status(400).json({ error: 'Ordine annullato' })
+      return
+    }
+    if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
+      res.status(402).json({ error: 'Pagamento carta non riuscito', code })
       return
     }
     throw err
@@ -209,37 +202,28 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
   const { orderId, tipAmount, paymentMethod } = result.data
 
   try {
-    const terminalResponse = await simulatePosTerminal(0)
-    const finalized = await finalizeOrderPayment({
-      orderId,
-      restaurantId: req.restaurantId!,
-      tipAmount,
-      paymentMethod,
+    const { result, updatedOrder, posResult } = await completeOrderPayment({
+      finalize: {
+        orderId,
+        restaurantId: req.restaurantId!,
+        tipAmount,
+        paymentMethod,
+      },
     })
-
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: posOrderInclude,
-    })
-
-    const releasedTable = await releaseTableIfEmpty(updatedOrder?.tableId)
-    if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
-
-    io.to(req.restaurantId!).emit('order:updated', updatedOrder)
 
     res.json({
       success: true,
       message: 'Pagamento POS completato',
       order: updatedOrder,
       pos: {
-        transactionId: finalized.transactionId,
-        terminalId: terminalResponse.terminalId,
-        provider: terminalResponse.provider,
-        amountCharged: finalized.total,
-        revenueAmount: finalized.revenueAmount,
-        tipAmount: finalized.tipAmount,
+        transactionId: result.transactionId,
+        terminalId: posResult?.terminalId ?? 'POS',
+        provider: posResult?.provider ?? 'simulated',
+        amountCharged: result.total,
+        revenueAmount: result.revenueAmount,
+        tipAmount: result.tipAmount,
       },
-      fiscal: { row: finalized.fiscalRow },
+      fiscal: { row: result.fiscalRow },
     })
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
@@ -369,20 +353,17 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response): Promise<voi
 
     const orderId = session.metadata?.orderId
 
-    if (orderId) {
-      const updatedOrder = await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CONFIRMED',
-          paymentMethod: 'STRIPE',
-          stripePaymentIntent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
-          paidAt: new Date(),
-        },
-        include: { items: { include: { menuItem: true } }, table: true },
-      })
-
-      io.to(updatedOrder.restaurantId).emit('order:updated', updatedOrder)
-      io.to(updatedOrder.restaurantId).emit('order:new', updatedOrder)
+    if (orderId && session.payment_status === 'paid') {
+      const completed = await completeGuestStripePayment(
+        orderId,
+        typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      )
+      if (completed?.updatedOrder) {
+        io.to(completed.updatedOrder.restaurantId).emit('order:updated', completed.updatedOrder)
+        io.to(completed.updatedOrder.restaurantId).emit('order:new', completed.updatedOrder)
+      }
+    } else if (orderId) {
+      console.warn('[payments-webhook] Sessione non pagata, ordine non finalizzato:', orderId)
     }
   }
 

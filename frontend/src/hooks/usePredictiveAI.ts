@@ -42,83 +42,15 @@ export interface PredictiveAIData {
   generatedAt: string
 }
 
-/** Fallback client-side quando l'API non è disponibile */
-function buildMockPredictiveData(): PredictiveAIData {
-  const today = new Date()
-  const forecast: AffluenceForecastDay[] = []
-  const weathers: WeatherCondition[] = ['sunny', 'sunny', 'cloudy', 'rain', 'sunny', 'sunny', 'rain']
-  const baseByDow = [55, 48, 52, 58, 72, 95, 150]
-
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date(today)
-    date.setDate(date.getDate() + i)
-    const dow = date.getDay()
-    const weather = weathers[i - 1]
-    const mult = weather === 'rain' ? 0.75 : weather === 'cloudy' ? 0.92 : 1
-    const base = baseByDow[dow]
-    forecast.push({
-      date: date.toISOString().split('T')[0],
-      dayOfWeek: dow,
-      baseCovers: base,
-      predictedCovers: Math.round(base * mult),
-      weather,
-      weatherImpactPct: Math.round((mult - 1) * 100),
-      confidence: 72,
-      historicalSamples: 8,
-    })
-  }
-
-  return {
-    forecast,
-    alerts: [
-      {
-        id: 'mock-stock',
-        severity: 'critical',
-        i18nKey: 'aiPredictive.alerts.stockCritical',
-        params: {
-          covers: 150,
-          dayKey: 'aiPredictive.days.saturday',
-          item: 'Farina',
-          qty: 10,
-          unit: 'kg',
-          orderQty: 20,
-        },
-      },
-      {
-        id: 'mock-rain',
-        severity: 'optimization',
-        i18nKey: 'aiPredictive.alerts.rainFish',
-        params: { dayKey: 'aiPredictive.days.sunday', pct: 25, item: 'Pesce fresco' },
-      },
-      {
-        id: 'mock-trend',
-        severity: 'opportunity',
-        i18nKey: 'aiPredictive.alerts.trendDish',
-        params: { dish: 'Tiramisù della Casa', pct: 40 },
-      },
-    ],
-    factorsUsed: ['orderHistory', 'dayOfWeek', 'weather'],
-    engineVersion: 'statistical_rules_v1',
-    generatedAt: new Date().toISOString(),
-  }
-}
-
 /**
  * Hook predittivo: incrocia storico ordini, giorno settimana e meteo simulato.
- * Chiama GET /api/ai/predictive con fallback mock locale.
+ * Chiama GET /api/ai/predictive — errori propagati al consumer.
  */
 export function usePredictiveAI() {
   const tk = useTenantQueryKey()
   const query = useQuery<PredictiveAIData>({
     queryKey: tq(tk, 'ai', 'predictive'),
-    queryFn: async () => {
-      try {
-        const { data } = await api.get<PredictiveAIData>('/ai/predictive')
-        return data
-      } catch {
-        return buildMockPredictiveData()
-      }
-    },
+    queryFn: () => api.get<PredictiveAIData>('/ai/predictive').then(r => r.data),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
   })

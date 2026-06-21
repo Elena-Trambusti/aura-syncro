@@ -31,9 +31,11 @@ import { publicRouter } from './routes/public'
 import { adminRouter } from './routes/admin'
 import { aiRouter } from './routes/ai'
 import { pushRouter } from './routes/push'
-import { authenticate } from './middleware/auth'
+import { AuthRequest, authenticate } from './middleware/auth'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
+import { buildDashboardSummary } from './lib/analyticsSummary'
+import { processScheduledCampaigns } from './lib/marketingSend'
 import { errorHandler } from './middleware/errorHandler'
 import { setupSocketHandlers } from './socket/handlers'
 import { validateEnv } from './lib/env'
@@ -85,6 +87,20 @@ app.use('/api/auth', authRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/admin', adminRouter)
 
+app.get('/api/analytics/summary', authenticate, requireDashboardAccess, async (req, res) => {
+  try {
+    const restaurantId = (req as AuthRequest).restaurantId
+    if (!restaurantId) {
+      res.status(401).json({ error: 'Non autenticato' })
+      return
+    }
+    const summary = await buildDashboardSummary(restaurantId)
+    res.json(summary)
+  } catch {
+    res.status(500).json({ error: 'Errore caricamento dashboard' })
+  }
+})
+
 // Routes protette — sbarramento centralizzato su tier operativo
 app.use('/api/restaurant', authenticate, restaurantRouter)
 app.use('/api/push', authenticate, requireDashboardAccess, pushRouter)
@@ -119,4 +135,14 @@ httpServer.listen(PORT, () => {
   console.log(`🚀 Server avviato su http://localhost:${PORT}`)
   console.log(`📦 Database: ${process.env.DATABASE_URL?.includes('postgresql') ? 'PostgreSQL (Supabase)' : 'SQLite'}`)
   console.log(`🔌 WebSocket pronto`)
+
+  const schedulerMs = Number(process.env.MARKETING_SCHEDULER_MS || 3600_000)
+  setInterval(async () => {
+    try {
+      const campaigns = await processScheduledCampaigns()
+      if (campaigns > 0) console.info('[scheduler] Campagne inviate:', campaigns)
+    } catch (err) {
+      console.error('[scheduler] Errore campagne:', err)
+    }
+  }, schedulerMs)
 })

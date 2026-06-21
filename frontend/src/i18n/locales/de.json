@@ -34,6 +34,7 @@
     "closeMenu": "Menü schließen",
     "mainMenu": "Hauptmenü",
     "noData": "Keine Daten verfügbar",
+    "loadError": "Fehler beim Laden der Daten",
     "saving": "Speichern...",
     "copyLink": "Link kopieren",
     "linkCopied": "Link kopiert!",
@@ -115,7 +116,18 @@
     "countryES": "Spanien",
     "taxRegion": "Steuerregion",
     "taxRegionCanarias": "Kanarische Inseln (IGIC)",
-    "taxRegionPeninsula": "Festlandspanien (MwSt.)"
+    "taxRegionPeninsula": "Festlandspanien (MwSt.)",
+    "forgotPassword": "Passwort vergessen?",
+    "forgotPasswordTitle": "Passwort zurücksetzen",
+    "forgotPasswordSubtitle": "Geben Sie Ihre E-Mail ein — wir senden Ihnen einen Reset-Link.",
+    "forgotPasswordSent": "Falls die E-Mail existiert, erhalten Sie Anweisungen.",
+    "resetPasswordTitle": "Neues Passwort",
+    "resetPasswordSubtitle": "Wählen Sie ein neues Passwort für Ihr Konto.",
+    "newPassword": "Neues Passwort",
+    "resetPassword": "Passwort zurücksetzen",
+    "resetPasswordSuccess": "Passwort aktualisiert. Sie können sich anmelden.",
+    "resetPasswordInvalidToken": "Ungültiger oder abgelaufener Link.",
+    "backToLogin": "Zurück zur Anmeldung"
   },
   "status": {
     "order": {
@@ -191,7 +203,13 @@
     "markFree": "Als frei markieren",
     "tableReady": "Tisch {{number}} bereit",
     "needsCleaning": "Zu reinigen",
-    "startCleaningHint": "Nach der Zahlung wechselt der Tisch in Reinigung. Markieren Sie ihn frei, wenn er bereit ist."
+    "startCleaningHint": "Nach der Zahlung wechselt der Tisch in Reinigung. Markieren Sie ihn frei, wenn er bereit ist.",
+    "manageSection": "Tischverwaltung",
+    "newTable": "Neuer Tisch",
+    "editTable": "Tisch bearbeiten",
+    "confirmDelete": "Diesen Tisch löschen?",
+    "saved": "Tisch gespeichert",
+    "deleted": "Tisch gelöscht"
   },
   "orders": {
     "title": "Bestellungen",
@@ -235,7 +253,15 @@
     "confirmDelete": "Dieses Gericht löschen?",
     "added": "Gericht hinzugefügt!",
     "updated": "Gericht aktualisiert!",
-    "deleted": "Gericht gelöscht"
+    "deleted": "Gericht gelöscht",
+    "newCategory": "Neue Kategorie",
+    "editCategory": "Kategorie bearbeiten",
+    "categoryName": "Kategoriename",
+    "confirmDeleteCategory": "Diese Kategorie löschen?",
+    "categoryAdded": "Kategorie erstellt",
+    "categoryUpdated": "Kategorie aktualisiert",
+    "categoryDeleted": "Kategorie gelöscht",
+    "categorySaveError": "Fehler beim Speichern der Kategorie"
   },
   "settings": {
     "title": "Einstellungen",
@@ -288,7 +314,12 @@
     "formDuration2h": "2 Stunden",
     "formDuration2h30": "2,5 Stunden",
     "formNotesPlaceholder": "Allergien, besondere Anlässe...",
-    "formConfirm": "Reservierung bestätigen"
+    "formConfirm": "Reservierung bestätigen",
+    "depositRequired": "Anzahlung erforderlich",
+    "depositPaid": "Anzahlung bezahlt",
+    "payDeposit": "Anzahlung bezahlen",
+    "depositRequiredNotice": "Reservierung bestätigt — Anzahlung erforderlich",
+    "depositPayError": "Anzahlungszahlung konnte nicht gestartet werden"
   },
   "waitlist": {
     "subtitle": "{{count}} Gäste warten",
@@ -317,6 +348,7 @@
     "subtitle": "Erkennen Sie jeden Gast am Tisch — Tags, Allergien und Ausgabeverlauf",
     "newCustomer": "Neuer Kunde",
     "created": "Kunde erfolgreich erstellt",
+    "updated": "Kunde aktualisiert",
     "saveError": "Fehler beim Speichern",
     "firstNameRequired": "Vorname ist erforderlich",
     "noCustomers": "Keine Kunden gefunden",
@@ -443,6 +475,16 @@
     "campaignCreated": "Kampagne erstellt",
     "campaignSent": "Kampagne gesendet!",
     "deleted": "Gelöscht",
+    "tabAutomations": "Automatisierungen",
+    "tabCampaigns": "Kampagnen",
+    "campaignsSectionTitle": "E-Mail-Kampagnen",
+    "campaignsSectionSubtitle": "Erstellen und versenden Sie Einzelkampagnen an Ihre CRM-Gäste",
+    "sendCampaign": "Senden",
+    "campaignSubject": "E-Mail-Betreff",
+    "campaignMessage": "Nachricht",
+    "confirmDeleteCampaign": "Diese Kampagne löschen?",
+    "sendError": "Kampagne konnte nicht gesendet werden",
+    "createError": "Kampagne konnte nicht erstellt werden",
     "automations": {
       "sectionTitle": "Aktive Automatisierungen",
       "sectionSubtitle": "Automatisierungsregeln ein- oder ausschalten. Nachrichten werden in Produktion per E-Mail/SMS versendet.",
@@ -649,6 +691,7 @@
     "title": "Predictive KI — Lager & Umsatz",
     "subtitle": "Kreuzanalyse von Bestellhistorie, Wochentag und Wettervorhersage",
     "engineLabel": "Engine {{version}}",
+    "loadError": "Fehler beim Laden der Prognosedaten",
     "chartTitle": "Gästeprognose — nächste 7 Tage",
     "chartSubtitle": "Geschätzte Gäste basierend auf Historie, wetterbereinigt",
     "chartPredicted": "Prognostizierte Gäste",

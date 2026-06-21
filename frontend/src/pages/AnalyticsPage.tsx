@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { downloadCSV } from '../lib/export'
-import { Download } from 'lucide-react'
+import { Download, AlertCircle } from 'lucide-react'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import {
@@ -20,20 +20,22 @@ export default function AnalyticsPage() {
   const tk = useTenantQueryKey()
   const [period, setPeriod] = useState<Period>('30d')
 
-  const { data: revenue } = useQuery({
+  const { data: revenue, isError: revenueError } = useQuery({
     queryKey: tq(tk, 'analytics', 'revenue', period),
     queryFn: () => api.get(`/analytics/revenue?period=${period}`).then(r => r.data),
   })
 
-  const { data: topItems } = useQuery({
+  const { data: topItems, isError: topItemsError } = useQuery({
     queryKey: tq(tk, 'analytics', 'top-items'),
     queryFn: () => api.get('/analytics/top-items').then(r => r.data),
   })
 
-  const { data: hourly } = useQuery({
+  const { data: hourly, isError: hourlyError } = useQuery({
     queryKey: tq(tk, 'analytics', 'hourly'),
     queryFn: () => api.get('/analytics/hourly').then(r => r.data),
   })
+
+  const hasError = revenueError || topItemsError || hourlyError
 
   const totalRevenue = (revenue || []).reduce((s: number, d: { revenue: number }) => s + d.revenue, 0)
   const totalOrders = (revenue || []).reduce((s: number, d: { orders: number }) => s + d.orders, 0)
@@ -85,6 +87,13 @@ export default function AnalyticsPage() {
           </button>
         </div>
       </div>
+
+      {hasError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700">{t('common.loadError')}</p>
+        </div>
+      )}
 
       {/* KPI */}
       <div className="grid grid-cols-3 gap-4">

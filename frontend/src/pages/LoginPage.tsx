@@ -79,9 +79,17 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label htmlFor="login-password" className={ui.label}>
-                  {t('common.password')}
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="login-password" className={ui.label}>
+                    {t('common.password')}
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-amber-600 transition-colors hover:text-amber-700"
+                  >
+                    {t('auth.forgotPassword')}
+                  </Link>
+                </div>
                 <div className="relative">
                   <input
                     id="login-password"

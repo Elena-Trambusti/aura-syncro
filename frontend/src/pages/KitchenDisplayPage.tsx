@@ -211,7 +211,7 @@ export default function KitchenDisplayPage() {
     mutationFn: ({ orderId, itemId, status }: { orderId: string; itemId: string; status: string }) =>
       api.patch(`/orders/${orderId}/items/${itemId}/status`, { status }).then(r => r.data as Order),
     onSuccess: (updatedOrder: Order) => {
-      queryClient.setQueryData<Order[]>(['kitchen', 'orders'], prev =>
+      queryClient.setQueryData<Order[]>(tq(tk, 'kitchen', 'orders'), prev =>
         prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
       )
       refreshKitchen()
@@ -223,7 +223,7 @@ export default function KitchenDisplayPage() {
     mutationFn: (orderId: string) =>
       api.patch(`/orders/${orderId}/status`, { status: 'READY' }).then(r => r.data as Order),
     onSuccess: (updatedOrder: Order) => {
-      queryClient.setQueryData<Order[]>(['kitchen', 'orders'], prev =>
+      queryClient.setQueryData<Order[]>(tq(tk, 'kitchen', 'orders'), prev =>
         prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
       )
       refreshKitchen()

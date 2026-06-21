@@ -7,6 +7,7 @@ import { prisma } from '../lib/prisma'
 import { restaurantPayload } from '../lib/tenant'
 import { getPermissionsForRole } from '../lib/permissions'
 import { settingsForRegistration } from '../lib/taxEngine'
+import { sendEmail } from '../lib/email'
 
 export const authRouter = Router()
 
@@ -158,5 +159,60 @@ authRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
     })
   } catch {
     res.status(401).json({ error: 'Token non valido' })
+  }
+})
+
+authRouter.post('/forgot-password', async (req: Request, res: Response): Promise<void> => {
+  const parsed = z.object({ email: z.string().email() }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Email non valida' })
+    return
+  }
+
+  const user = await prisma.user.findFirst({ where: { email: parsed.data.email, active: true } })
+  if (user) {
+    const token = jwt.sign(
+      { userId: user.id, purpose: 'password-reset' },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' },
+    )
+    const frontend = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0]
+    await sendEmail({
+      to: user.email,
+      subject: 'Reimposta password — Aura Syncro',
+      text: `Clicca per reimpostare la password (valido 1 ora):\n${frontend}/reset-password?token=${token}`,
+    })
+  }
+
+  res.json({ success: true, message: 'Se l\'email esiste, riceverai le istruzioni.' })
+})
+
+authRouter.post('/reset-password', async (req: Request, res: Response): Promise<void> => {
+  const parsed = z.object({
+    token: z.string().min(1),
+    password: z.string().min(6),
+  }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  try {
+    const payload = jwt.verify(parsed.data.token, process.env.JWT_SECRET!) as {
+      userId: string
+      purpose?: string
+    }
+    if (payload.purpose !== 'password-reset') {
+      res.status(400).json({ error: 'Token non valido' })
+      return
+    }
+    const hashed = await bcrypt.hash(parsed.data.password, 12)
+    await prisma.user.update({
+      where: { id: payload.userId },
+      data: { password: hashed },
+    })
+    res.json({ success: true, message: 'Password aggiornata' })
+  } catch {
+    res.status(400).json({ error: 'Token scaduto o non valido' })
   }
 })

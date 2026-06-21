@@ -34,6 +34,7 @@
     "closeMenu": "Chiudi menu",
     "mainMenu": "Menu principale",
     "noData": "Nessun dato disponibile",
+    "loadError": "Errore nel caricamento dei dati",
     "saving": "Salvando...",
     "copyLink": "Copia link",
     "linkCopied": "Link copiato!",
@@ -115,7 +116,18 @@
     "countryES": "Spagna",
     "taxRegion": "Regione fiscale",
     "taxRegionCanarias": "Isole Canarie (IGIC)",
-    "taxRegionPeninsula": "Spagna peninsulare (IVA)"
+    "taxRegionPeninsula": "Spagna peninsulare (IVA)",
+    "forgotPassword": "Password dimenticata?",
+    "forgotPasswordTitle": "Recupera password",
+    "forgotPasswordSubtitle": "Inserisci la tua email: ti invieremo un link per reimpostare la password.",
+    "forgotPasswordSent": "Se l'email esiste, riceverai le istruzioni per reimpostare la password.",
+    "resetPasswordTitle": "Nuova password",
+    "resetPasswordSubtitle": "Scegli una nuova password per il tuo account.",
+    "newPassword": "Nuova password",
+    "resetPassword": "Reimposta password",
+    "resetPasswordSuccess": "Password aggiornata. Ora puoi accedere.",
+    "resetPasswordInvalidToken": "Link non valido o scaduto. Richiedi un nuovo reset.",
+    "backToLogin": "Torna al login"
   },
   "status": {
     "order": {
@@ -191,7 +203,13 @@
     "markFree": "Segna Libero",
     "tableReady": "Tavolo {{number}} pronto",
     "needsCleaning": "Da pulire",
-    "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Segnalo libero quando è pronto."
+    "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Segnalo libero quando è pronto.",
+    "manageSection": "Gestione tavoli",
+    "newTable": "Nuovo tavolo",
+    "editTable": "Modifica tavolo",
+    "confirmDelete": "Eliminare questo tavolo?",
+    "saved": "Tavolo salvato",
+    "deleted": "Tavolo eliminato"
   },
   "orders": {
     "title": "Ordini",
@@ -235,7 +253,15 @@
     "confirmDelete": "Eliminare questo piatto?",
     "added": "Piatto aggiunto!",
     "updated": "Piatto aggiornato!",
-    "deleted": "Piatto eliminato"
+    "deleted": "Piatto eliminato",
+    "newCategory": "Nuova categoria",
+    "editCategory": "Modifica categoria",
+    "categoryName": "Nome categoria",
+    "confirmDeleteCategory": "Eliminare questa categoria?",
+    "categoryAdded": "Categoria creata",
+    "categoryUpdated": "Categoria aggiornata",
+    "categoryDeleted": "Categoria eliminata",
+    "categorySaveError": "Errore nel salvataggio della categoria"
   },
   "settings": {
     "title": "Impostazioni",
@@ -288,7 +314,12 @@
     "formDuration2h": "2 ore",
     "formDuration2h30": "2.5 ore",
     "formNotesPlaceholder": "Allergie, occasioni speciali...",
-    "formConfirm": "Conferma Prenotazione"
+    "formConfirm": "Conferma Prenotazione",
+    "depositRequired": "Caparra richiesta",
+    "depositPaid": "Caparra pagata",
+    "payDeposit": "Paga caparra",
+    "depositRequiredNotice": "Prenotazione confermata — è richiesto il pagamento della caparra",
+    "depositPayError": "Impossibile avviare il pagamento della caparra"
   },
   "waitlist": {
     "subtitle": "{{count}} ospiti in attesa",
@@ -317,6 +348,7 @@
     "subtitle": "Riconosci ogni ospite al tavolo — tag, allergie e storico spese",
     "newCustomer": "Nuovo Cliente",
     "created": "Cliente creato con successo",
+    "updated": "Cliente aggiornato",
     "saveError": "Errore durante il salvataggio",
     "firstNameRequired": "Il nome è obbligatorio",
     "noCustomers": "Nessun cliente trovato",
@@ -443,6 +475,16 @@
     "campaignCreated": "Campagna creata",
     "campaignSent": "Campagna inviata!",
     "deleted": "Eliminata",
+    "tabAutomations": "Automazioni",
+    "tabCampaigns": "Campagne",
+    "campaignsSectionTitle": "Campagne email",
+    "campaignsSectionSubtitle": "Crea e invia campagne una tantum ai clienti CRM",
+    "sendCampaign": "Invia",
+    "campaignSubject": "Oggetto email",
+    "campaignMessage": "Messaggio",
+    "confirmDeleteCampaign": "Eliminare questa campagna?",
+    "sendError": "Invio campagna non riuscito",
+    "createError": "Creazione campagna non riuscita",
     "automations": {
       "sectionTitle": "Automazioni attive",
       "sectionSubtitle": "Attiva o disattiva le regole automatiche. I messaggi verranno inviati in produzione tramite email/SMS.",
@@ -587,6 +629,7 @@
     "title": "AI Predittiva Magazzino e Vendite",
     "subtitle": "Analisi incrociata di storico ordini, giorno settimana e meteo previsto",
     "engineLabel": "Motore {{version}}",
+    "loadError": "Errore nel caricamento dei dati predittivi",
     "chartTitle": "Previsione Affluenza prossimi 7 giorni",
     "chartSubtitle": "Coperti stimati in base allo storico, con aggiustamento meteo",
     "chartPredicted": "Coperti previsti",

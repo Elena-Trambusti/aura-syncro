@@ -23,6 +23,11 @@ export const PERMISSIONS = [
   'settings.manage',
   'reports.read',
   'payments.overview',
+  'customers.read',
+  'customers.manage',
+  'loyalty.manage',
+  'marketing.manage',
+  'analytics.read',
 ] as const
 
 export type Permission = (typeof PERMISSIONS)[number]

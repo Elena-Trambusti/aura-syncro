@@ -116,6 +116,7 @@ export default function MenuPage() {
   const [editingItem, setEditingItem] = useState<(Partial<MenuItem> & { categoryId?: string }) | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
+  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string } | null>(null)
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
@@ -137,6 +138,36 @@ export default function MenuPage() {
   const toggleAvail = useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) => api.patch(`/menu/items/${id}/availability`, { available }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
+  })
+
+  const createCategory = useMutation({
+    mutationFn: (name: string) => api.post('/menu/categories', { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      setCategoryForm(null)
+      toast.success(t('menu.categoryAdded'))
+    },
+    onError: () => toast.error(t('menu.categorySaveError')),
+  })
+
+  const updateCategory = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => api.put(`/menu/categories/${id}`, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      setCategoryForm(null)
+      toast.success(t('menu.categoryUpdated'))
+    },
+    onError: () => toast.error(t('menu.categorySaveError')),
+  })
+
+  const deleteCategory = useMutation({
+    mutationFn: (id: string) => api.delete(`/menu/categories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      if (selectedCat) setSelectedCat(null)
+      toast.success(t('menu.categoryDeleted'))
+    },
+    onError: () => toast.error(t('menu.categorySaveError')),
   })
 
   const allItems = categories.flatMap(c =>
@@ -166,11 +197,45 @@ export default function MenuPage() {
             {t('common.all')} ({allItems.length})
           </button>
           {categories.map(cat => (
-            <button key={cat.id} onClick={() => setSelectedCat(cat.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedCat === cat.id ? ui.tabActive : ui.tabInactive}`}>
-              {cat.name} ({cat.items.length})
-            </button>
+            <div key={cat.id} className="flex items-center gap-0.5">
+              <button onClick={() => setSelectedCat(cat.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedCat === cat.id ? ui.tabActive : ui.tabInactive}`}>
+                {cat.name} ({cat.items.length})
+              </button>
+              {canManageMenu && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryForm({ id: cat.id, name: cat.name })}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    aria-label={t('menu.editCategory')}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(t('menu.confirmDeleteCategory'))) deleteCategory.mutate(cat.id)
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
+                    aria-label={t('common.delete')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           ))}
+          {canManageMenu && (
+            <button
+              type="button"
+              onClick={() => setCategoryForm({ name: '' })}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium ${ui.chipInactive}`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t('menu.newCategory')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -262,6 +327,53 @@ export default function MenuPage() {
           onSave={data => updateItem.mutate({ id: editingItem.id!, data })}
           onCancel={() => setEditingItem(null)}
         />
+      )}
+
+      {categoryForm && (
+        <ModalPortal onClose={() => !createCategory.isPending && !updateCategory.isPending && setCategoryForm(null)}>
+          <div className={ui.modal} onClick={e => e.stopPropagation()}>
+            <h3 className={ui.modalTitle}>
+              {categoryForm.id ? t('menu.editCategory') : t('menu.newCategory')}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className={ui.label}>{t('menu.categoryName')}</label>
+                <input
+                  value={categoryForm.name}
+                  onChange={e => setCategoryForm(f => f ? { ...f, name: e.target.value } : f)}
+                  className={ui.input}
+                  autoFocus
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setCategoryForm(null)}
+                disabled={createCategory.isPending || updateCategory.isPending}
+                className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={!categoryForm.name.trim() || createCategory.isPending || updateCategory.isPending}
+                onClick={() => {
+                  const name = categoryForm.name.trim()
+                  if (categoryForm.id) {
+                    updateCategory.mutate({ id: categoryForm.id, name })
+                  } else {
+                    createCategory.mutate(name)
+                  }
+                }}
+                className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-60`}
+              >
+                {createCategory.isPending || updateCategory.isPending ? t('common.saving') : t('common.save')}
+              </button>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   )

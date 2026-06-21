@@ -39,6 +39,21 @@ export function useRealtimeTables(): void {
   }, [queryClient, tenantKey])
 }
 
+export function useRealtimeOrders(): void {
+  useRealtimeQuery(['order:created', 'order:updated'], 'orders')
+}
+
+const RESERVATION_EVENTS = [
+  'reservation:created',
+  'reservation:updated',
+  'reservation:deleted',
+  'reservation:deposit_paid',
+] as const
+
+export function useRealtimeReservations(): void {
+  useRealtimeQuery(RESERVATION_EVENTS, 'reservations')
+}
+
 export function useRealtimeQuery(events: readonly string[], queryKey: string): void {
   const queryClient = useQueryClient()
   const tenantKey = useTenantQueryKey()

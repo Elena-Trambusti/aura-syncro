@@ -34,6 +34,7 @@
     "closeMenu": "Close menu",
     "mainMenu": "Main menu",
     "noData": "No data available",
+    "loadError": "Error loading data",
     "saving": "Saving...",
     "copyLink": "Copy link",
     "linkCopied": "Link copied!",
@@ -115,7 +116,18 @@
     "countryES": "Spain",
     "taxRegion": "Tax region",
     "taxRegionCanarias": "Canary Islands (IGIC)",
-    "taxRegionPeninsula": "Mainland Spain (VAT)"
+    "taxRegionPeninsula": "Mainland Spain (VAT)",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Reset password",
+    "forgotPasswordSubtitle": "Enter your email and we'll send you a reset link.",
+    "forgotPasswordSent": "If the email exists, you will receive reset instructions.",
+    "resetPasswordTitle": "New password",
+    "resetPasswordSubtitle": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "resetPassword": "Reset password",
+    "resetPasswordSuccess": "Password updated. You can now sign in.",
+    "resetPasswordInvalidToken": "Invalid or expired link. Request a new reset.",
+    "backToLogin": "Back to login"
   },
   "status": {
     "order": {
@@ -191,7 +203,13 @@
     "markFree": "Mark Free",
     "tableReady": "Table {{number}} ready",
     "needsCleaning": "Needs cleaning",
-    "startCleaningHint": "After payment the table moves to cleaning. Mark it free when ready."
+    "startCleaningHint": "After payment the table moves to cleaning. Mark it free when ready.",
+    "manageSection": "Table management",
+    "newTable": "New table",
+    "editTable": "Edit table",
+    "confirmDelete": "Delete this table?",
+    "saved": "Table saved",
+    "deleted": "Table deleted"
   },
   "orders": {
     "title": "Orders",
@@ -235,7 +253,15 @@
     "confirmDelete": "Delete this dish?",
     "added": "Dish added!",
     "updated": "Dish updated!",
-    "deleted": "Dish deleted"
+    "deleted": "Dish deleted",
+    "newCategory": "New category",
+    "editCategory": "Edit category",
+    "categoryName": "Category name",
+    "confirmDeleteCategory": "Delete this category?",
+    "categoryAdded": "Category created",
+    "categoryUpdated": "Category updated",
+    "categoryDeleted": "Category deleted",
+    "categorySaveError": "Error saving category"
   },
   "settings": {
     "title": "Settings",
@@ -288,7 +314,12 @@
     "formDuration2h": "2 hours",
     "formDuration2h30": "2.5 hours",
     "formNotesPlaceholder": "Allergies, special occasions...",
-    "formConfirm": "Confirm Reservation"
+    "formConfirm": "Confirm Reservation",
+    "depositRequired": "Deposit required",
+    "depositPaid": "Deposit paid",
+    "payDeposit": "Pay deposit",
+    "depositRequiredNotice": "Reservation confirmed — deposit payment required",
+    "depositPayError": "Could not start deposit payment"
   },
   "waitlist": {
     "subtitle": "{{count}} guests waiting",
@@ -317,6 +348,7 @@
     "subtitle": "Recognize every guest at the table — tags, allergies and spending history",
     "newCustomer": "New Customer",
     "created": "Customer created successfully",
+    "updated": "Customer updated",
     "saveError": "Error while saving",
     "firstNameRequired": "First name is required",
     "noCustomers": "No customers found",
@@ -443,6 +475,16 @@
     "campaignCreated": "Campaign created",
     "campaignSent": "Campaign sent!",
     "deleted": "Deleted",
+    "tabAutomations": "Automations",
+    "tabCampaigns": "Campaigns",
+    "campaignsSectionTitle": "Email campaigns",
+    "campaignsSectionSubtitle": "Create and send one-off campaigns to your CRM guests",
+    "sendCampaign": "Send",
+    "campaignSubject": "Email subject",
+    "campaignMessage": "Message",
+    "confirmDeleteCampaign": "Delete this campaign?",
+    "sendError": "Failed to send campaign",
+    "createError": "Failed to create campaign",
     "automations": {
       "sectionTitle": "Active automations",
       "sectionSubtitle": "Toggle automation rules on or off. Messages will be sent via email/SMS in production.",
@@ -585,6 +627,7 @@
     "title": "Predictive AI — Inventory & Sales",
     "subtitle": "Cross-analysis of order history, day of week and weather forecast",
     "engineLabel": "Engine {{version}}",
+    "loadError": "Error loading predictive data",
     "chartTitle": "Footfall forecast — next 7 days",
     "chartSubtitle": "Estimated covers based on history, adjusted for weather",
     "chartPredicted": "Predicted covers",

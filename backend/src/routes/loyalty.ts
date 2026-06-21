@@ -2,14 +2,15 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
-
+import { requirePermission } from '../middleware/permissions'
+import { updateCustomerTier } from '../lib/loyaltyHelpers'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const loyaltyRouter = Router()
 
 // ── Livelli VIP ─────────────────────────────────────────────────────────────
 
-loyaltyRouter.get('/tiers', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.get('/tiers', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const tiers = await prisma.loyaltyTier.findMany({
     where: { restaurantId: req.restaurantId! },
     orderBy: { sortOrder: 'asc' },
@@ -18,7 +19,7 @@ loyaltyRouter.get('/tiers', async (req: AuthRequest, res: Response): Promise<voi
   res.json(tiers)
 })
 
-loyaltyRouter.post('/tiers', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.post('/tiers', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(1),
     minPoints: z.number().int().min(0),
@@ -38,7 +39,7 @@ loyaltyRouter.post('/tiers', async (req: AuthRequest, res: Response): Promise<vo
   res.status(201).json(tier)
 })
 
-loyaltyRouter.put('/tiers/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.put('/tiers/:id', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(1).optional(),
     minPoints: z.number().int().min(0).optional(),
@@ -61,7 +62,7 @@ loyaltyRouter.put('/tiers/:id', async (req: AuthRequest, res: Response): Promise
   res.json(tier)
 })
 
-loyaltyRouter.delete('/tiers/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.delete('/tiers/:id', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.loyaltyTier.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) { tenantNotFound(res, 'Livello non trovato'); return }
   res.status(204).send()
@@ -69,7 +70,7 @@ loyaltyRouter.delete('/tiers/:id', async (req: AuthRequest, res: Response): Prom
 
 // ── Transazioni punti ────────────────────────────────────────────────────────
 
-loyaltyRouter.get('/transactions/:customerId', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.get('/transactions/:customerId', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const transactions = await prisma.loyaltyTransaction.findMany({
     where: { customerId: req.params.customerId, restaurantId: req.restaurantId! },
     orderBy: { createdAt: 'desc' },
@@ -78,7 +79,7 @@ loyaltyRouter.get('/transactions/:customerId', async (req: AuthRequest, res: Res
   res.json(transactions)
 })
 
-loyaltyRouter.post('/earn', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.post('/earn', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     customerId: z.string(),
     points: z.number().int().positive(),
@@ -111,7 +112,7 @@ loyaltyRouter.post('/earn', async (req: AuthRequest, res: Response): Promise<voi
   res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
-loyaltyRouter.post('/redeem', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.post('/redeem', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     customerId: z.string(),
     points: z.number().int().positive(),
@@ -142,7 +143,7 @@ loyaltyRouter.post('/redeem', async (req: AuthRequest, res: Response): Promise<v
   res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
-loyaltyRouter.post('/adjust', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     customerId: z.string(),
     points: z.number().int(),
@@ -174,7 +175,7 @@ loyaltyRouter.post('/adjust', async (req: AuthRequest, res: Response): Promise<v
 
 // ── Overview statistiche fedeltà ────────────────────────────────────────────
 
-loyaltyRouter.get('/overview', async (req: AuthRequest, res: Response): Promise<void> => {
+loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const [tiers, totalMembers, activeThisMonth, topCustomers] = await Promise.all([
@@ -217,18 +218,3 @@ loyaltyRouter.get('/overview', async (req: AuthRequest, res: Response): Promise<
   })
 })
 
-// ── Helper ───────────────────────────────────────────────────────────────────
-
-async function updateCustomerTier(restaurantId: string, customerId: string, currentPoints: number) {
-  const tiers = await prisma.loyaltyTier.findMany({
-    where: { restaurantId },
-    orderBy: { minPoints: 'desc' },
-  })
-  const newTier = tiers.find(t => currentPoints >= t.minPoints)
-  if (newTier) {
-    await prisma.customer.updateMany({
-      where: { id: customerId, restaurantId },
-      data: { loyaltyTierId: newTier.id },
-    })
-  }
-}
