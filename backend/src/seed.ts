@@ -43,7 +43,7 @@ async function main() {
 
   const staffData = [
     { name: 'Marco Bianchi', email: 'marco@demo.it', role: 'WAITER' as const },
-    { name: 'Sofia Ferrari', email: 'sofia@demo.it', role: 'KITCHEN' as const },
+    { name: 'Sofia Ferrari', email: 'sofia@demo.it', role: 'CHEF' as const },
     { name: 'Luca Conti', email: 'luca@demo.it', role: 'MANAGER' as const },
   ]
   for (const s of staffData) {

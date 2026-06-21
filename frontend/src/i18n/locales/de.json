@@ -131,9 +131,16 @@
       "OWNER": "Inhaber",
       "MANAGER": "Manager",
       "WAITER": "Kellner",
+      "CHEF": "Küchenchef",
       "KITCHEN": "Küche",
       "CASHIER": "Kassierer"
     }
+  },
+  "rbac": {
+    "accessDeniedTitle": "Zugriff verweigert",
+    "accessDeniedMessage": "Unzureichende Berechtigung. Sie haben keinen Zugriff auf diesen Bereich.",
+    "staffOnlyManagers": "Nur Inhaber und Manager können das Personal verwalten.",
+    "backToDashboard": "Zurück zum Dashboard"
   },
   "errors": {
     "invalidCredentials": "Ungültige Anmeldedaten oder Zugriffsfehler.",
@@ -295,12 +302,29 @@
     "noCustomers": "Keine Kunden"
   },
   "staff": {
-    "title": "Personal",
-    "subtitle": "Team- und Schichtverwaltung",
+    "title": "Personalverwaltung",
+    "subtitle": "Restaurant-Team und Zugriffsrollen",
     "addMember": "Mitglied hinzufügen",
+    "addMemberTitle": "Teammitglied hinzufügen",
     "memberAdded": "Teammitglied hinzugefügt!",
+    "memberAddError": "Mitglied konnte nicht hinzugefügt werden",
     "shifts": "Schichten",
-    "noStaff": "Keine Teammitglieder"
+    "noStaff": "Keine Teammitglieder",
+    "empty": "Kein Personal",
+    "colName": "Name",
+    "colEmail": "E-Mail",
+    "colRole": "Rolle",
+    "colStatus": "Status",
+    "colActions": "Aktionen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "activate": "Reaktivieren",
+    "deactivate": "Deaktivieren",
+    "formName": "Vollständiger Name",
+    "formEmail": "E-Mail",
+    "formPassword": "Temporäres Passwort",
+    "formRole": "Rolle",
+    "formPhone": "Telefon"
   },
   "inventory": {
     "title": "Lager",

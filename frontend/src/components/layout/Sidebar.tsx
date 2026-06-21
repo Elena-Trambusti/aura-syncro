@@ -7,12 +7,23 @@ import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth, useSubscription } from '../../contexts/AuthContext'
+import { useRole } from '../../hooks/useRole'
 import { getTenantTheme } from '../../lib/tenantTheme'
 import { BRAND } from '../../lib/brand'
 import BrandLogo from '../brand/BrandLogo'
 import { useDashboardLayout } from './DashboardLayout'
 
-const navItems = [
+const navItems: Array<{
+  to: string
+  icon: typeof LayoutDashboard
+  labelKey: string
+  exact?: boolean
+  premium?: boolean
+  /** Visibile solo a OWNER e MANAGER */
+  adminOnly?: boolean
+  /** Visibile solo a chi gestisce lo staff */
+  staffManagersOnly?: boolean
+}> = [
   { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', exact: true },
   { to: '/tavoli', icon: UtensilsCrossed, labelKey: 'nav.tables' },
   { to: '/ordini', icon: ClipboardList, labelKey: 'nav.orders' },
@@ -23,14 +34,14 @@ const navItems = [
   { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai', premium: true },
   { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty' },
   { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing', premium: true },
-  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments' },
-  { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing' },
+  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments', adminOnly: true },
+  { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing', adminOnly: true },
   { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true },
-  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, premium: true },
-  { to: '/personale', icon: UserCog, labelKey: 'nav.staff' },
+  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, premium: true, adminOnly: true },
+  { to: '/dashboard/staff', icon: UserCog, labelKey: 'nav.staff', staffManagersOnly: true },
   { to: '/magazzino', icon: Package, labelKey: 'nav.inventory' },
   { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
-  { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings' },
+  { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings', adminOnly: true },
 ]
 
 const externalLinks = [
@@ -42,6 +53,7 @@ export default function Sidebar() {
   const location = useLocation()
   const { restaurant } = useAuth()
   const { hasActiveSubscription } = useSubscription()
+  const { canAccessAdminNav, canManageStaff } = useRole()
   const theme = getTenantTheme(restaurant?.colorTheme)
   const { sidebarOpen, closeSidebar } = useDashboardLayout()
 
@@ -101,6 +113,9 @@ export default function Sidebar() {
         <nav className="flex-1 py-3 px-3 overflow-y-auto overscroll-contain">
           <ul className="space-y-1">
             {navItems.map(item => {
+              if (item.adminOnly && !canAccessAdminNav()) return null
+              if (item.staffManagersOnly && !canManageStaff()) return null
+
               const Icon = item.icon
               const isPremiumLocked = item.premium && !hasActiveSubscription
               const NavIcon = isPremiumLocked ? Lock : Icon

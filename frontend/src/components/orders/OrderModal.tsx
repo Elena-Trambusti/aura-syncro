@@ -423,13 +423,16 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   )
 
   return (
-    <div className="saas-overlay flex items-end justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div
+      className="saas-overlay flex min-h-[100dvh] flex-col p-0 sm:items-center sm:justify-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="saas-modal flex h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white sm:h-[85vh] sm:max-w-4xl sm:rounded-xl"
+        className="saas-modal flex min-h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white sm:min-h-0 sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white p-4">
+        {/* Header — sempre visibile, non scrolla */}
+        <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white p-4 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-900">{t('orderModal.title', { number: table.number })}</h2>
             <p className="text-sm text-slate-500">{t('orderModal.seats', { count: table.seats })}</p>
@@ -442,9 +445,9 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </div>
         </div>
 
-        {/* Tab bar mobile — shrink-0, no overlap */}
+        {/* Tab bar mobile — shrink-0, sotto header fisso */}
         {!isDesktop && (
-          <div className="shrink-0 border-b border-slate-200 bg-white px-3 py-2.5">
+          <div className="sticky top-0 z-10 shrink-0 border-b border-slate-200 bg-white px-3 py-2.5">
             <div className="flex items-center gap-2">
               {tab === 'order' ? (
                 <button
@@ -464,17 +467,17 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </div>
         )}
 
-        {/* Body: rendering condizionale mobile vs desktop */}
-        <div className="min-h-0 flex-1 overflow-hidden">
+        {/* Body: solo questa area scrolla; header/tab restano fissi */}
+        <div className="min-h-0 flex-1 overflow-hidden overscroll-contain">
           {isDesktop ? (
             <div className="grid h-full min-h-0 grid-cols-3">
-              <div className="col-span-2 min-h-0 overflow-hidden">{menuPanel}</div>
-              <div className="col-span-1 min-h-0 overflow-hidden">{orderPanel}</div>
+              <div className="col-span-2 flex min-h-0 flex-col overflow-hidden">{menuPanel}</div>
+              <div className="col-span-1 flex min-h-0 flex-col overflow-hidden">{orderPanel}</div>
             </div>
           ) : tab === 'menu' ? (
-            <div className="h-full min-h-0 overflow-hidden">{menuPanel}</div>
+            <div className="flex h-full min-h-0 flex-col overflow-hidden">{menuPanel}</div>
           ) : (
-            <div className="h-full min-h-0 overflow-hidden">{orderPanel}</div>
+            <div className="flex h-full min-h-0 flex-col overflow-hidden">{orderPanel}</div>
           )}
         </div>
       </div>

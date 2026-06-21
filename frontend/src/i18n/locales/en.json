@@ -137,9 +137,16 @@
       "OWNER": "Owner",
       "MANAGER": "Manager",
       "WAITER": "Waiter",
+      "CHEF": "Chef",
       "KITCHEN": "Kitchen",
       "CASHIER": "Cashier"
     }
+  },
+  "rbac": {
+    "accessDeniedTitle": "Access denied",
+    "accessDeniedMessage": "Insufficient authorization. You do not have permission to access this section.",
+    "staffOnlyManagers": "Only owners and managers can manage staff.",
+    "backToDashboard": "Back to dashboard"
   },
   "errors": {
     "invalidCredentials": "Invalid credentials or access error.",

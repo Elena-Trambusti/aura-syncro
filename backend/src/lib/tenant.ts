@@ -40,6 +40,8 @@ type RestaurantWithSettings = {
     taxRate?: number | null
     defaultLocale?: string | null
     taxId?: string | null
+    hasActiveSubscription?: boolean | null
+    stripeSubscriptionId?: string | null
   } | null
 }
 
@@ -50,6 +52,8 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     process.env.NODE_ENV !== 'production'
     && process.env.PREMIUM_DEV_UNLOCK === 'true'
 
+  const dbSubscriptionActive = restaurant.settings?.hasActiveSubscription === true
+
   return {
     id: restaurant.id,
     name: restaurant.name,
@@ -58,7 +62,6 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     logoUrl: restaurant.logoUrl ?? restaurant.logo ?? null,
     ...fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
     timezone: restaurant.timezone ?? fiscal.timezone,
-    /** Mock freemium — true in dev se PREMIUM_DEV_UNLOCK=true, altrimenti da Stripe (futuro) */
-    hasActiveSubscription: devPremiumUnlock,
+    hasActiveSubscription: devPremiumUnlock || dbSubscriptionActive,
   }
 }

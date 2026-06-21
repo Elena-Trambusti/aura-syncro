@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
-import { AuthRequest, authenticate } from '../middleware/auth'
+import { AuthRequest, authenticate, requireRole } from '../middleware/auth'
 import { io } from '../index'
 import {
   computeSplitBreakdown,
@@ -526,7 +526,7 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
-paymentsRouter.get('/overview', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/overview', authenticate, requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   if (!restaurantId) {
     res.status(401).json({ error: 'Tenant non autenticato' })

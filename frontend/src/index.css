@@ -83,7 +83,7 @@
   }
 
   .saas-overlay {
-    @apply fixed inset-0 bg-black/50 z-[99998];
+    @apply fixed inset-0 z-[99998] min-h-[100dvh] bg-black/50;
   }
 
   .saas-dropdown {

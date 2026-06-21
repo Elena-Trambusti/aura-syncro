@@ -137,9 +137,16 @@
       "OWNER": "Proprietario",
       "MANAGER": "Manager",
       "WAITER": "Cameriere",
+      "CHEF": "Chef",
       "KITCHEN": "Cucina",
       "CASHIER": "Cassiere"
     }
+  },
+  "rbac": {
+    "accessDeniedTitle": "Accesso negato",
+    "accessDeniedMessage": "Autorizzazione insufficiente. Non hai i permessi per accedere a questa sezione.",
+    "staffOnlyManagers": "Solo titolari e manager possono gestire il personale.",
+    "backToDashboard": "Torna alla dashboard"
   },
   "errors": {
     "invalidCredentials": "Credenziali non valide o errore di accesso.",
@@ -310,12 +317,29 @@
     "noCustomers": "Nessun cliente"
   },
   "staff": {
-    "title": "Personale",
-    "subtitle": "Gestione team e turni",
+    "title": "Gestione Staff",
+    "subtitle": "Team del ristorante e ruoli di accesso",
     "addMember": "Aggiungi membro",
+    "addMemberTitle": "Aggiungi membro del team",
     "memberAdded": "Membro del team aggiunto!",
+    "memberAddError": "Impossibile aggiungere il membro",
     "shifts": "Turni",
-    "noStaff": "Nessun membro del team"
+    "noStaff": "Nessun membro del team",
+    "empty": "Nessun membro dello staff",
+    "colName": "Nome",
+    "colEmail": "Email",
+    "colRole": "Ruolo",
+    "colStatus": "Stato",
+    "colActions": "Azioni",
+    "active": "Attivo",
+    "inactive": "Inattivo",
+    "activate": "Riattiva",
+    "deactivate": "Disattiva",
+    "formName": "Nome completo",
+    "formEmail": "Email",
+    "formPassword": "Password temporanea",
+    "formRole": "Ruolo",
+    "formPhone": "Telefono"
   },
   "inventory": {
     "title": "Magazzino",

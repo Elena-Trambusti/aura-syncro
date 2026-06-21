@@ -131,9 +131,16 @@
       "OWNER": "Propriétaire",
       "MANAGER": "Manager",
       "WAITER": "Serveur",
+      "CHEF": "Chef",
       "KITCHEN": "Cuisine",
       "CASHIER": "Caissier"
     }
+  },
+  "rbac": {
+    "accessDeniedTitle": "Accès refusé",
+    "accessDeniedMessage": "Autorisation insuffisante. Vous n'avez pas les droits pour accéder à cette section.",
+    "staffOnlyManagers": "Seuls les propriétaires et managers peuvent gérer le personnel.",
+    "backToDashboard": "Retour au tableau de bord"
   },
   "errors": {
     "invalidCredentials": "Identifiants invalides ou erreur d'accès.",
@@ -295,12 +302,29 @@
     "noCustomers": "Aucun client"
   },
   "staff": {
-    "title": "Personnel",
-    "subtitle": "Gestion de l'équipe et des shifts",
+    "title": "Gestion du Personnel",
+    "subtitle": "Équipe du restaurant et rôles d'accès",
     "addMember": "Ajouter un membre",
+    "addMemberTitle": "Ajouter un membre de l'équipe",
     "memberAdded": "Membre de l'équipe ajouté !",
+    "memberAddError": "Impossible d'ajouter le membre",
     "shifts": "Shifts",
-    "noStaff": "Aucun membre de l'équipe"
+    "noStaff": "Aucun membre de l'équipe",
+    "empty": "Aucun personnel",
+    "colName": "Nom",
+    "colEmail": "Email",
+    "colRole": "Rôle",
+    "colStatus": "Statut",
+    "colActions": "Actions",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "activate": "Réactiver",
+    "deactivate": "Désactiver",
+    "formName": "Nom complet",
+    "formEmail": "Email",
+    "formPassword": "Mot de passe temporaire",
+    "formRole": "Rôle",
+    "formPhone": "Téléphone"
   },
   "inventory": {
     "title": "Stock",

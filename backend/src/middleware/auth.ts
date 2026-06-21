@@ -10,6 +10,13 @@ export interface AuthRequest extends Request {
   params: Record<string, string>
 }
 
+/** Allinea ruoli legacy del JWT ai valori Prisma Role */
+function normalizeRole(role: string): string {
+  if (role === 'KITCHEN') return 'CHEF'
+  if (role === 'CASHIER') return 'WAITER'
+  return role
+}
+
 export async function authenticate(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
@@ -34,7 +41,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
 
     req.userId = payload.userId
     req.restaurantId = payload.restaurantId
-    req.userRole = payload.role
+    req.userRole = normalizeRole(payload.role)
     next()
   } catch {
     res.status(401).json({ error: 'Token non valido' })
@@ -43,7 +50,8 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
 
 export function requireRole(...roles: string[]) {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.userRole || !roles.includes(req.userRole)) {
+    const role = normalizeRole(req.userRole ?? '')
+    if (!role || !roles.includes(role)) {
       res.status(403).json({ error: 'Permessi insufficienti' })
       return
     }

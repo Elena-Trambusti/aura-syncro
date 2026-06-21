@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest, requireRole } from '../middleware/auth'
 
 export const checkoutRouter = Router()
 
@@ -14,7 +14,7 @@ function resolveFrontendUrl(): string {
 }
 
 /** POST /api/checkout — Stripe Checkout Session (setup + abbonamento SaaS) */
-checkoutRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   if (!STRIPE_ENABLED) {
     res.status(503).json({ error: 'Stripe non configurato. Inserisci STRIPE_SECRET_KEY in backend/.env' })
     return
@@ -43,6 +43,7 @@ checkoutRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: user.email,
+      client_reference_id: restaurantId,
       line_items: [
         {
           price_data: {

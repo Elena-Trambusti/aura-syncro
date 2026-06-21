@@ -34,6 +34,8 @@ import AIPredictivePage from './pages/AIPredictivePage'
 import CheckoutPage from './pages/CheckoutPage'
 import BillingPage from './pages/BillingPage'
 import QRBuilderPage from './pages/QRBuilderPage'
+import RequireRole from './components/auth/RequireRole'
+import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 
 function AuthLoadingScreen() {
   const { t } = useTranslation()
@@ -86,21 +88,22 @@ function AppRoutes() {
         <Route path="prenotazioni" element={<ReservationsPage />} />
         <Route path="crm" element={<CrmPage />} />
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
-        <Route path="personale" element={<StaffPage />} />
+        <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
+        <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<InventoryPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="fedelta" element={<LoyaltyPage />} />
         <Route path="marketing" element={<MarketingPage />} />
         <Route path="report" element={<Outlet />}>
           <Route index element={<ReportsPage />} />
-          <Route path="fiscal" element={<ReportFiscal />} />
+          <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><ReportFiscal /></RequireRole>} />
         </Route>
-        <Route path="pagamenti" element={<PaymentsPage />} />
+        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><PaymentsPage /></RequireRole>} />
         <Route path="dashboard/ai-predictive" element={<AIPredictivePage />} />
         <Route path="dashboard/qr-builder" element={<QRBuilderPage />} />
-        <Route path="dashboard/billing" element={<BillingPage />} />
+        <Route path="dashboard/billing" element={<RequireRole roles={ADMIN_NAV_ROLES}><BillingPage /></RequireRole>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
-        <Route path="impostazioni" element={<SettingsPage />} />
+        <Route path="impostazioni" element={<RequireRole roles={ADMIN_NAV_ROLES}><SettingsPage /></RequireRole>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

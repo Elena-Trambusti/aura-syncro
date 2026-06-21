@@ -2,12 +2,14 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest, requireRole } from '../middleware/auth'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const staffRouter = Router()
 
-staffRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+const assignableRoles = ['MANAGER', 'WAITER', 'CHEF'] as const
+
+staffRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const staff = await prisma.user.findMany({
     where: tenantWhere(req),
     select: {
@@ -19,12 +21,12 @@ staffRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   res.json(staff)
 })
 
-staffRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
     password: z.string().min(6),
-    role: z.enum(['MANAGER', 'WAITER', 'KITCHEN', 'CASHIER']),
+    role: z.enum(assignableRoles),
     phone: z.string().optional(),
   })
   const result = schema.safeParse(req.body)
@@ -45,12 +47,12 @@ staffRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => 
   res.status(201).json(user)
 })
 
-staffRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.put('/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(2).optional(),
     email: z.string().email().optional(),
     password: z.string().min(6).optional(),
-    role: z.enum(['MANAGER', 'WAITER', 'KITCHEN', 'CASHIER', 'OWNER']).optional(),
+    role: z.enum(['MANAGER', 'WAITER', 'CHEF', 'OWNER']).optional(),
     phone: z.string().optional().nullable(),
     active: z.boolean().optional(),
   })

@@ -9,6 +9,8 @@ import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
 import { useAuth, useFiscalRegime, useSubscription, useTenantQueryKey } from '../contexts/AuthContext'
 import PremiumPaywall from '../components/PremiumPaywall'
+import AccessDenied from '../components/AccessDenied'
+import { useRole } from '../hooks/useRole'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
 import {
   FileDown, CalendarRange, Loader2, Receipt, Coins, Wallet,
@@ -33,7 +35,9 @@ const inputClass = cn(
 )
 
 export default function ReportFiscal() {
+  const { canAccessAdminNav } = useRole()
   const { hasActiveSubscription } = useSubscription()
+  if (!canAccessAdminNav()) return <AccessDenied />
   if (!hasActiveSubscription) return <PremiumPaywall />
   return <ReportFiscalContent />
 }

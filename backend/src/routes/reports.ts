@@ -1,6 +1,6 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest, requireRole } from '../middleware/auth'
 import {
   buildDateRange,
   buildMonthRange,
@@ -290,7 +290,7 @@ reportsRouter.get('/yearly', async (req: AuthRequest, res: Response): Promise<vo
 
 // ── Report fiscal (multi-nazione: IVA / IGIC) ─────────────────────────────────
 
-reportsRouter.get('/fiscal', async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const mode = (req.query.mode as string) || 'month'
 

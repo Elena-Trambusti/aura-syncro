@@ -234,54 +234,59 @@ export default function KitchenDisplayPage() {
   const ready = orders.filter(o => o.status === 'READY')
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
-      {/* Header KDS */}
-      <header className={`px-6 py-3 flex items-center justify-between border-b border-slate-700 transition-colors ${newOrderAlert ? 'bg-orange-600' : 'bg-slate-800'}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center">
-            <ChefHat className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black text-white">CUCINA</h1>
-            <p className="text-xs text-stone-500">Kitchen Display System</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6">
-          {/* Contatori */}
-          <div className="flex items-center gap-4">
-            {[
-              { label: 'In attesa', count: pending.length, color: 'text-yellow-400' },
-              { label: 'Preparando', count: preparing.length, color: 'text-orange-400' },
-              { label: 'Pronti', count: ready.length, color: 'text-emerald-400' },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <p className={`text-2xl font-black ${s.color}`}>{s.count}</p>
-                <p className="text-xs text-stone-500">{s.label}</p>
-              </div>
-            ))}
+    <div className="flex min-h-[100dvh] flex-col bg-slate-900 text-white">
+      {/* Header KDS — flex-wrap su tablet per non tagliare orologio e contatori */}
+      <header className={`shrink-0 border-b border-slate-700 px-4 py-3 transition-colors sm:px-6 ${newOrderAlert ? 'bg-orange-600' : 'bg-slate-800'}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 gap-y-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-600">
+              <ChefHat className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-black text-white">CUCINA</h1>
+              <p className="text-xs text-stone-500">Kitchen Display System</p>
+            </div>
           </div>
 
-          <div className="text-right">
-            <p className="text-2xl font-mono font-bold text-white">
-              {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </p>
-            <p className="text-xs text-stone-500">
-              {time.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}
-            </p>
-          </div>
+          <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4 md:gap-6">
+            {/* Contatori */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {[
+                { label: 'In attesa', count: pending.length, color: 'text-yellow-400' },
+                { label: 'Preparando', count: preparing.length, color: 'text-orange-400' },
+                { label: 'Pronti', count: ready.length, color: 'text-emerald-400' },
+              ].map(s => (
+                <div key={s.label} className="text-center">
+                  <p className={`text-xl font-black sm:text-2xl ${s.color}`}>{s.count}</p>
+                  <p className="text-[10px] text-stone-500 sm:text-xs">{s.label}</p>
+                </div>
+              ))}
+            </div>
 
-          <a href="/" className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-white transition-colors border border-slate-600 px-3 py-1.5 rounded-lg">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Dashboard
-          </a>
+            <div className="shrink-0 text-right">
+              <p className="font-mono text-xl font-bold text-white sm:text-2xl">
+                {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </p>
+              <p className="text-[10px] text-stone-500 sm:text-xs">
+                {time.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}
+              </p>
+            </div>
+
+            <a
+              href="/"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-stone-500 transition-colors hover:text-white"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Dashboard
+            </a>
+          </div>
         </div>
       </header>
 
-      {/* Colonne KDS */}
-      <div className="flex-1 grid grid-cols-3 divide-x divide-slate-700 overflow-hidden">
+      {/* Colonne KDS — stack su mobile/tablet, 3 colonne da lg */}
+      <div className="min-h-0 flex-1 grid grid-cols-1 divide-y divide-slate-700 overflow-y-auto lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:overflow-hidden">
         {/* Colonna IN ATTESA */}
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
           <div className="px-4 py-2.5 bg-yellow-500/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
@@ -309,7 +314,7 @@ export default function KitchenDisplayPage() {
         </div>
 
         {/* Colonna IN PREPARAZIONE */}
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
           <div className="px-4 py-2.5 bg-amber-600/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <Flame className="w-3.5 h-3.5 text-orange-400" />
@@ -337,7 +342,7 @@ export default function KitchenDisplayPage() {
         </div>
 
         {/* Colonna PRONTI */}
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
           <div className="px-4 py-2.5 bg-emerald-950/400/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -366,11 +371,11 @@ export default function KitchenDisplayPage() {
       </div>
 
       {/* Footer con istruzioni */}
-      <footer className="px-6 py-2 bg-slate-800 border-t border-slate-700 flex items-center justify-between">
-        <p className="text-xs text-stone-400">
+      <footer className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800 px-4 py-2 sm:px-6">
+        <p className="min-w-0 text-xs text-stone-400">
           Clicca su un piatto per avanzare lo stato (In attesa → In prep. → Pronto) · "Segna Tutto Pronto" completa l'ordine
         </p>
-        <div className="flex items-center gap-4 text-xs text-stone-400">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-stone-400 sm:gap-4">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-yellow-400 rounded-full" />In attesa</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-orange-400 rounded-full" />In prep.</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-400 rounded-full" />Pronto</span>

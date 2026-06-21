@@ -71,6 +71,9 @@ model RestaurantSettings {
   noShowDepositRequired   Boolean @default(false)
   depositAmount    Float       @default(0.0)
   taxId            String?
+  /** Abbonamento SaaS Aura Syncro Premium */
+  hasActiveSubscription Boolean  @default(false)
+  stripeSubscriptionId  String?
 }
 
 // ===== UTENTI =====
@@ -81,7 +84,7 @@ model User {
   name         String
   email        String
   password     String
-  role         UserRole @default(WAITER)
+  role         Role     @default(WAITER)
   avatar       String?
   phone        String?
   active       Boolean  @default(true)
@@ -94,12 +97,11 @@ model User {
   @@unique([restaurantId, email])
 }
 
-enum UserRole {
+enum Role {
   OWNER
   MANAGER
   WAITER
-  KITCHEN
-  CASHIER
+  CHEF
 }
 
 // ===== TAVOLI =====
