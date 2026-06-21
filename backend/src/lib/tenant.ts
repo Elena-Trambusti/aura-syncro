@@ -34,6 +34,7 @@ type RestaurantWithSettings = {
   logoUrl?: string | null
   logo?: string | null
   timezone?: string | null
+  isSetupComplete?: boolean | null
   settings?: {
     countryCode?: import('@prisma/client').CountryCode | null
     taxRegion?: import('@prisma/client').TaxRegion | null
@@ -42,6 +43,7 @@ type RestaurantWithSettings = {
     taxId?: string | null
     hasActiveSubscription?: boolean | null
     stripeSubscriptionId?: string | null
+    planTier?: import('@prisma/client').PlanTier | null
   } | null
 }
 
@@ -53,6 +55,10 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     && process.env.PREMIUM_DEV_UNLOCK === 'true'
 
   const dbSubscriptionActive = restaurant.settings?.hasActiveSubscription === true
+  const devProUnlock =
+    process.env.NODE_ENV !== 'production'
+    && process.env.PRO_PLAN_DEV_UNLOCK === 'true'
+  const dbPlanTier = restaurant.settings?.planTier ?? 'BASE'
 
   return {
     id: restaurant.id,
@@ -63,5 +69,7 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     ...fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
     timezone: restaurant.timezone ?? fiscal.timezone,
     hasActiveSubscription: devPremiumUnlock || dbSubscriptionActive,
+    isSetupComplete: restaurant.isSetupComplete === true,
+    planTier: devProUnlock ? 'PRO' : dbPlanTier,
   }
 }

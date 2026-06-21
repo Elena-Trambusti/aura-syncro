@@ -27,16 +27,17 @@ interface SessionData {
 export default function PaymentSuccessPage() {
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
+  const orderId = params.get('order_id')
   const [data, setData] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(!!sessionId)
-  const [error, setError] = useState(!sessionId)
+  const [error, setError] = useState(!sessionId || !orderId)
 
   useEffect(() => {
-    if (!sessionId) return
-    api.get(`/payments/session/${sessionId}`)
+    if (!sessionId || !orderId) return
+    api.get(`/payments/session/${sessionId}`, { params: { orderId } })
       .then(r => { setData(r.data); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
-  }, [sessionId])
+  }, [sessionId, orderId])
 
   if (loading) return (
     <div className="min-h-screen bg-white flex items-center justify-center">

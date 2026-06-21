@@ -52,13 +52,27 @@ staffRouter.put('/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest
     name: z.string().min(2).optional(),
     email: z.string().email().optional(),
     password: z.string().min(6).optional(),
-    role: z.enum(['MANAGER', 'WAITER', 'CHEF', 'OWNER']).optional(),
+    role: z.enum(assignableRoles).optional(),
     phone: z.string().optional().nullable(),
     active: z.boolean().optional(),
   })
   const result = schema.safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  const target = await prisma.user.findFirst({
+    where: scopedWhere(req, req.params.id),
+    select: { id: true, role: true },
+  })
+  if (!target) {
+    tenantNotFound(res, 'Utente non trovato')
+    return
+  }
+
+  if (target.role === 'OWNER' && req.userRole !== 'OWNER') {
+    res.status(403).json({ error: 'Solo il titolare può modificare il titolare' })
     return
   }
 

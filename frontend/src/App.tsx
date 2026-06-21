@@ -6,7 +6,6 @@
  * CONFIDENZIALE — NON DISTRIBUIRE
  */
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -34,20 +33,12 @@ import AIPredictivePage from './pages/AIPredictivePage'
 import CheckoutPage from './pages/CheckoutPage'
 import BillingPage from './pages/BillingPage'
 import QRBuilderPage from './pages/QRBuilderPage'
+import OnboardingPage from './pages/OnboardingPage'
 import RequireRole from './components/auth/RequireRole'
+import RequireProPlan from './components/auth/RequireProPlan'
+import DashboardAccessGate from './components/auth/DashboardAccessGate'
+import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
-
-function AuthLoadingScreen() {
-  const { t } = useTranslation()
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-950">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-500 font-medium">{t('common.loading')}</p>
-      </div>
-    </div>
-  )
-}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -70,13 +61,24 @@ function AppRoutes() {
       <Route path="/menu/:slug" element={<PublicMenuPage />} />
       <Route path="/payment/success" element={<PaymentSuccessPage />} />
       <Route path="/payment/cancel" element={<PaymentCancelPage />} />
-      {/* KDS - Kitchen Display (auth richiesta) */}
-      <Route path="/cucina" element={<ProtectedRoute><KitchenDisplayPage /></ProtectedRoute>} />
+      {/* KDS — stesso sbarramento tier della dashboard */}
+      <Route
+        path="/cucina"
+        element={
+          <ProtectedRoute>
+            <DashboardAccessGate>
+              <KitchenDisplayPage />
+            </DashboardAccessGate>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <DashboardAccessGate>
+              <DashboardLayout />
+            </DashboardAccessGate>
           </ProtectedRoute>
         }
       >
@@ -86,22 +88,23 @@ function AppRoutes() {
         <Route path="ordini" element={<OrdersPage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="prenotazioni" element={<ReservationsPage />} />
-        <Route path="crm" element={<CrmPage />} />
+        <Route path="crm" element={<RequireProPlan><CrmPage /></RequireProPlan>} />
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
+        <Route path="dashboard/onboarding" element={<OnboardingPage />} />
+        <Route path="dashboard/billing" element={<BillingPage />} />
         <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<InventoryPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="fedelta" element={<LoyaltyPage />} />
-        <Route path="marketing" element={<MarketingPage />} />
+        <Route path="analytics" element={<RequireProPlan><AnalyticsPage /></RequireProPlan>} />
+        <Route path="fedelta" element={<RequireProPlan><LoyaltyPage /></RequireProPlan>} />
+        <Route path="marketing" element={<RequireProPlan><MarketingPage /></RequireProPlan>} />
         <Route path="report" element={<Outlet />}>
           <Route index element={<ReportsPage />} />
-          <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><ReportFiscal /></RequireRole>} />
+          <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />
         </Route>
-        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><PaymentsPage /></RequireRole>} />
-        <Route path="dashboard/ai-predictive" element={<AIPredictivePage />} />
+        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><PaymentsPage /></RequireProPlan></RequireRole>} />
+        <Route path="dashboard/ai-predictive" element={<RequireProPlan><AIPredictivePage /></RequireProPlan>} />
         <Route path="dashboard/qr-builder" element={<QRBuilderPage />} />
-        <Route path="dashboard/billing" element={<RequireRole roles={ADMIN_NAV_ROLES}><BillingPage /></RequireRole>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
         <Route path="impostazioni" element={<RequireRole roles={ADMIN_NAV_ROLES}><SettingsPage /></RequireRole>} />
       </Route>

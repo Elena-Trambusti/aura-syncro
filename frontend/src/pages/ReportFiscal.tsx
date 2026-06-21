@@ -7,8 +7,7 @@ import { generateFiscalPdf, type FiscalReportData } from '../lib/fiscalPdf'
 import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
 import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
-import { useAuth, useFiscalRegime, useSubscription, useTenantQueryKey } from '../contexts/AuthContext'
-import PremiumPaywall from '../components/PremiumPaywall'
+import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import AccessDenied from '../components/AccessDenied'
 import { useRole } from '../hooks/useRole'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
@@ -36,9 +35,7 @@ const inputClass = cn(
 
 export default function ReportFiscal() {
   const { canAccessAdminNav } = useRole()
-  const { hasActiveSubscription } = useSubscription()
   if (!canAccessAdminNav()) return <AccessDenied />
-  if (!hasActiveSubscription) return <PremiumPaywall />
   return <ReportFiscalContent />
 }
 

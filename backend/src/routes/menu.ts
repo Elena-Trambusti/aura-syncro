@@ -1,7 +1,6 @@
 import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { AuthRequest } from '../middleware/auth'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
@@ -161,39 +160,4 @@ menuRouter.delete('/items/:id', async (req: AuthRequest, res: Response): Promise
     return
   }
   res.status(204).send()
-})
-
-// Menu pubblico (per QR code - no auth)
-menuRouter.get('/public/:slug', async (req, res: Response): Promise<void> => {
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: req.params.slug },
-    include: {
-      settings: true,
-      menuCategories: {
-        where: { active: true },
-        include: {
-          items: {
-            where: { available: true },
-            orderBy: { sortOrder: 'asc' },
-          },
-        },
-        orderBy: { sortOrder: 'asc' },
-      },
-    },
-  })
-  if (!restaurant) {
-    res.status(404).json({ error: 'Ristorante non trovato' })
-    return
-  }
-  const fiscal = buildFiscalConfig(restaurant.settings)
-  res.json({
-    restaurant: {
-      name: restaurant.name,
-      logo: restaurant.logoUrl ?? restaurant.logo,
-      description: restaurant.description,
-      colorTheme: restaurant.colorTheme,
-      fiscal: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
-    },
-    categories: restaurant.menuCategories.filter(cat => cat.items.length > 0),
-  })
 })

@@ -24,6 +24,10 @@ export interface Restaurant extends FiscalRegime {
   timezone?: string
   /** Mock freemium — true solo con abbonamento Stripe attivo */
   hasActiveSubscription: boolean
+  /** Concierge onboarding completato dal team */
+  isSetupComplete: boolean
+  /** Piano moduli: BASE (core) o PRO (avanzato) */
+  planTier: 'BASE' | 'PRO'
 }
 
 interface AuthContextType {
@@ -62,6 +66,8 @@ function normalizeRestaurant(raw: Record<string, unknown>): Restaurant {
     logoUrl: (raw.logoUrl as string | null | undefined) ?? null,
     timezone: raw.timezone ? String(raw.timezone) : fiscal.timezone,
     hasActiveSubscription: raw.hasActiveSubscription === true,
+    isSetupComplete: raw.isSetupComplete === true,
+    planTier: raw.planTier === 'PRO' ? 'PRO' : 'BASE',
     ...fiscal,
   }
 }
@@ -219,12 +225,25 @@ export function useFiscalRegime(): FiscalRegime {
   }
 }
 
-/** Stato abbonamento SaaS del tenant (mock: false finché Stripe webhook non attiva Premium) */
+/** Stato abbonamento e tier di accesso dashboard */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSubscription() {
   const { restaurant } = useAuth()
+  const tier =
+    !restaurant?.hasActiveSubscription
+      ? 'unsubscribed'
+      : !restaurant?.isSetupComplete
+        ? 'onboarding'
+        : 'operational'
+
   return {
     hasActiveSubscription: restaurant?.hasActiveSubscription ?? false,
+    isSetupComplete: restaurant?.isSetupComplete ?? false,
+    accessTier: tier,
+    needsConciergeOnboarding: tier === 'onboarding',
+    isOperational: tier === 'operational',
+    planTier: restaurant?.planTier ?? 'BASE',
+    hasProPlan: restaurant?.planTier === 'PRO',
   }
 }
 

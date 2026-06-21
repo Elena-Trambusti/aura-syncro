@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, authenticate, requireRole } from '../middleware/auth'
+import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
+import { requireProPlan } from '../middleware/planTier'
 import { io } from '../index'
 import {
   computeSplitBreakdown,
@@ -10,7 +12,9 @@ import {
   releaseTableIfEmpty,
 } from '../lib/orderPayment'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
-import { computeTaxForRestaurant } from '../lib/orderTax'
+import { markReservationDepositPaid } from '../lib/depositWebhook'
+import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
+import { PublicOrderError } from '../lib/publicOrder'
 
 export const paymentsRouter = Router()
 
@@ -69,7 +73,7 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
 }
 
 // ── Anteprima checkout (riepilogo pre-pagamento) ─────────────────────────────
-paymentsRouter.get('/checkout/:orderId', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await loadOrderForCheckout(req.params.orderId, req.restaurantId!)
   if (!order) {
     res.status(404).json({ error: 'Ordine non trovato' })
@@ -94,7 +98,7 @@ paymentsRouter.get('/checkout/:orderId', authenticate, async (req: AuthRequest, 
 })
 
 // ── Finalizza pagamento e chiusura conto ─────────────────────────────────────
-paymentsRouter.post('/finalize', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
   const parsed = finalizeSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
@@ -186,7 +190,7 @@ paymentsRouter.post('/finalize', authenticate, async (req: AuthRequest, res: Res
 })
 
 // ── Checkout POS fisico (compat — delega a finalize) ─────────────────────────
-paymentsRouter.post('/pos-checkout', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/pos-checkout', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     orderId: z.string(),
     tipAmount: z.number().min(0).optional().default(0),
@@ -249,137 +253,23 @@ paymentsRouter.post('/pos-checkout', authenticate, async (req: AuthRequest, res:
 
 // ── Checkout pubblico: crea ordine + sessione Stripe ─────────────────────────
 paymentsRouter.post('/checkout', async (req: Request, res: Response): Promise<void> => {
-  if (!STRIPE_ENABLED) {
-    res.status(503).json({ error: 'Pagamenti online non configurati. Inserisci le chiavi Stripe nel file .env del backend.' })
+  const parsed = guestCheckoutSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
     return
   }
 
-  const schema = z.object({
-    slug: z.string(),
-    type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
-    tableNumber: z.number().int().positive().optional(),
-    notes: z.string().optional(),
-    customerName: z.string().optional(),
-    customerEmail: z.string().email().optional(),
-    items: z.array(z.object({
-      menuItemId: z.string(),
-      quantity: z.number().int().positive(),
-      notes: z.string().optional(),
-    })).min(1),
-  })
-
-  const result = schema.safeParse(req.body)
-  if (!result.success) {
-    res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
-    return
+  try {
+    const result = await createGuestStripeCheckout(parsed.data)
+    res.json(result)
+  } catch (err) {
+    if (err instanceof PublicOrderError) {
+      res.status(err.statusCode).json({ error: err.message })
+      return
+    }
+    console.error('[payments/checkout]', err)
+    res.status(500).json({ error: 'Errore durante il checkout' })
   }
-
-  const { items, tableNumber, slug, customerName, customerEmail, ...orderData } = result.data
-
-  const restaurant = await prisma.restaurant.findUnique({ where: { slug } })
-  if (!restaurant) {
-    res.status(404).json({ error: 'Ristorante non trovato' })
-    return
-  }
-
-  const restaurantId = restaurant.id
-
-  let tableId: string | undefined
-  if (tableNumber) {
-    const table = await prisma.table.findUnique({
-      where: { restaurantId_number: { restaurantId, number: tableNumber } },
-    })
-    if (table) tableId = table.id
-  }
-
-  const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: items.map(i => i.menuItemId) }, restaurantId },
-  })
-
-  if (menuItems.length !== items.length) {
-    res.status(400).json({ error: 'Alcuni piatti non sono disponibili' })
-    return
-  }
-
-  const itemsWithPrice = items.map(item => {
-    const mi = menuItems.find((m: { id: string }) => m.id === item.menuItemId)!
-    return { ...item, unitPrice: mi.price, name: mi.name }
-  })
-
-  const subtotal = itemsWithPrice.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
-  const { tax, total, taxRateApplied } = await computeTaxForRestaurant(restaurantId, subtotal)
-
-  // Crea l'ordine nel DB con status PENDING_PAYMENT
-  const order = await prisma.order.create({
-    data: {
-      restaurantId,
-      tableId,
-      subtotal,
-      tax,
-      total,
-      taxRateApplied,
-      revenueAmount: total,
-      tipAmount: 0,
-      type: orderData.type,
-      notes: orderData.notes,
-      status: 'PENDING',
-      items: {
-        create: itemsWithPrice.map(item => ({
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-        })),
-      },
-    },
-  })
-
-  if (tableId) {
-    await prisma.table.update({ where: { id: tableId }, data: { status: 'OCCUPIED' } })
-  }
-
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-
-  // Crea la sessione Stripe Checkout
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    customer_email: customerEmail,
-    metadata: {
-      orderId: order.id,
-      restaurantId,
-      tableNumber: tableNumber?.toString() || '',
-      customerName: customerName || '',
-    },
-    line_items: itemsWithPrice.map(item => ({
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: item.name,
-          ...(item.notes ? { description: item.notes } : {}),
-        },
-        unit_amount: Math.round(item.unitPrice * 100),
-      },
-      quantity: item.quantity,
-    })),
-    // Riga IVA
-    ...(tax > 0 ? {
-      invoice_creation: { enabled: false },
-    } : {}),
-    success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
-    cancel_url: `${frontendUrl}/menu/${slug}?payment=cancelled`,
-  })
-
-  // Salva il session ID sull'ordine
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { stripeSessionId: session.id },
-  })
-
-  res.json({
-    checkoutUrl: session.url,
-    sessionId: session.id,
-    orderId: order.id,
-  })
 })
 
 // ── Verifica stato sessione (dalla pagina di successo) ────────────────────────
@@ -389,16 +279,33 @@ paymentsRouter.get('/session/:sessionId', async (req: Request, res: Response): P
     return
   }
 
+  const orderId = typeof req.query.orderId === 'string' ? req.query.orderId : null
+  if (!orderId) {
+    res.status(400).json({ error: 'orderId richiesto' })
+    return
+  }
+
   try {
     const sessionId = String(req.params.sessionId)
     const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    if (session.metadata?.orderId !== orderId) {
+      res.status(403).json({ error: 'Sessione non valida per questo ordine' })
+      return
+    }
+
     const order = await prisma.order.findFirst({
-      where: { stripeSessionId: sessionId },
+      where: { id: orderId, stripeSessionId: sessionId },
       include: {
         items: { include: { menuItem: true } },
         table: true,
       },
     })
+
+    if (!order) {
+      res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
 
     res.json({
       status: session.payment_status,
@@ -415,15 +322,19 @@ paymentsRouter.get('/session/:sessionId', async (req: Request, res: Response): P
 paymentsRouter.post('/webhook', async (req: Request, res: Response): Promise<void> => {
   const sig = req.headers['stripe-signature']
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
+  const secretConfigured = webhookSecret && !webhookSecret.includes('inserisci')
 
   let event
 
   try {
-    if (webhookSecret && sig && !webhookSecret.includes('inserisci')) {
-      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret)
-    } else {
-      // Modalità dev senza firma
+    if (secretConfigured && sig) {
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig as string, webhookSecret!)
+    } else if (!isProduction) {
       event = JSON.parse((req.body as Buffer).toString())
+    } else {
+      res.status(400).json({ error: 'Firma webhook obbligatoria in produzione' })
+      return
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Webhook error'
@@ -432,7 +343,26 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response): Promise<voi
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as { id: string; metadata?: { orderId?: string }; payment_intent?: string }
+    const session = event.data.object as {
+      id: string
+      metadata?: { orderId?: string; reservationId?: string }
+      payment_intent?: string
+      payment_status?: string
+      amount_total?: number
+    }
+
+    const reservationId = session.metadata?.reservationId
+    if (reservationId) {
+      const deposit = await markReservationDepositPaid(session)
+      if (deposit) {
+        console.info('[payments-webhook] Caparra pagata', deposit.reservationId, deposit.amountPaid)
+        io.to(deposit.restaurantId).emit('reservation:deposit_paid', {
+          reservationId: deposit.reservationId,
+          amountPaid: deposit.amountPaid,
+        })
+      }
+    }
+
     const orderId = session.metadata?.orderId
 
     if (orderId) {
@@ -526,7 +456,7 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
-paymentsRouter.get('/overview', authenticate, requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/overview', authenticate, requireRole('OWNER', 'MANAGER'), requireFullDashboardAccess, requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   if (!restaurantId) {
     res.status(401).json({ error: 'Tenant non autenticato' })

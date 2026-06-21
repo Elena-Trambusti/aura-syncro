@@ -3,10 +3,12 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Lock,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { useAuth, useSubscription } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { useAccessTier } from '../../hooks/useAccessTier'
+import { usePlanTier } from '../../hooks/usePlanTier'
 import { useRole } from '../../hooks/useRole'
 import { getTenantTheme } from '../../lib/tenantTheme'
 import { BRAND } from '../../lib/brand'
@@ -18,29 +20,33 @@ const navItems: Array<{
   icon: typeof LayoutDashboard
   labelKey: string
   exact?: boolean
-  premium?: boolean
-  /** Visibile solo a OWNER e MANAGER */
   adminOnly?: boolean
-  /** Visibile solo a chi gestisce lo staff */
   staffManagersOnly?: boolean
+  /** Visibile solo senza abbonamento */
+  billingOnly?: boolean
+  /** Visibile solo durante onboarding concierge */
+  onboardingOnly?: boolean
+  /** Modulo riservato al piano Pro */
+  proOnly?: boolean
 }> = [
+  { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing', billingOnly: true },
+  { to: '/dashboard/onboarding', icon: Sparkles, labelKey: 'nav.onboarding', onboardingOnly: true },
   { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', exact: true },
   { to: '/tavoli', icon: UtensilsCrossed, labelKey: 'nav.tables' },
   { to: '/ordini', icon: ClipboardList, labelKey: 'nav.orders' },
   { to: '/prenotazioni', icon: CalendarDays, labelKey: 'nav.reservations' },
   { to: '/menu', icon: BookOpen, labelKey: 'nav.menu' },
   { to: '/dashboard/qr-builder', icon: QrCode, labelKey: 'nav.qrMenu' },
-  { to: '/crm', icon: Users, labelKey: 'nav.crm', premium: true },
-  { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai', premium: true },
-  { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty' },
-  { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing', premium: true },
-  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments', adminOnly: true },
-  { to: '/dashboard/billing', icon: Crown, labelKey: 'nav.billing', adminOnly: true },
+  { to: '/crm', icon: Users, labelKey: 'nav.crm', proOnly: true },
+  { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai', proOnly: true },
+  { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty', proOnly: true },
+  { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing', proOnly: true },
+  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments', adminOnly: true, proOnly: true },
   { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true },
-  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, premium: true, adminOnly: true },
+  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, adminOnly: true, proOnly: true },
   { to: '/dashboard/staff', icon: UserCog, labelKey: 'nav.staff', staffManagersOnly: true },
   { to: '/magazzino', icon: Package, labelKey: 'nav.inventory' },
-  { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
+  { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics', proOnly: true },
   { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings', adminOnly: true },
 ]
 
@@ -52,7 +58,8 @@ export default function Sidebar() {
   const { t } = useTranslation()
   const location = useLocation()
   const { restaurant } = useAuth()
-  const { hasActiveSubscription } = useSubscription()
+  const { tier, isOperational } = useAccessTier()
+  const { hasProPlan } = usePlanTier()
   const { canAccessAdminNav, canManageStaff } = useRole()
   const theme = getTenantTheme(restaurant?.colorTheme)
   const { sidebarOpen, closeSidebar } = useDashboardLayout()
@@ -60,6 +67,15 @@ export default function Sidebar() {
   useEffect(() => {
     closeSidebar()
   }, [location.pathname, closeSidebar])
+
+  const visibleNavItems = navItems.filter(item => {
+    if (tier === 'unsubscribed') return item.billingOnly === true
+    if (tier === 'onboarding') return item.onboardingOnly === true
+    if (item.billingOnly || item.onboardingOnly) return false
+    if (item.adminOnly && !canAccessAdminNav()) return false
+    if (item.staffManagersOnly && !canManageStaff()) return false
+    return true
+  })
 
   return (
     <>
@@ -112,13 +128,9 @@ export default function Sidebar() {
 
         <nav className="flex-1 py-3 px-3 overflow-y-auto overscroll-contain">
           <ul className="space-y-1">
-            {navItems.map(item => {
-              if (item.adminOnly && !canAccessAdminNav()) return null
-              if (item.staffManagersOnly && !canManageStaff()) return null
-
-              const Icon = item.icon
-              const isPremiumLocked = item.premium && !hasActiveSubscription
-              const NavIcon = isPremiumLocked ? Lock : Icon
+            {visibleNavItems.map(item => {
+              const isProLocked = item.proOnly && !hasProPlan
+              const Icon = isProLocked ? Lock : item.icon
               const isActive = item.exact
                 ? location.pathname === item.to
                 : location.pathname.startsWith(item.to)
@@ -132,11 +144,16 @@ export default function Sidebar() {
                       isActive
                         ? 'text-white font-semibold bg-slate-800'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white',
-                      isPremiumLocked && !isActive && 'text-slate-400',
+                      isProLocked && !isActive && 'text-slate-400',
                     )}
                   >
-                    <NavIcon className={cn('w-5 h-5 shrink-0', isPremiumLocked && 'text-amber-400/90')} />
+                    <Icon className={cn('w-5 h-5 shrink-0', isProLocked && 'text-violet-400/90')} />
                     {t(item.labelKey)}
+                    {isProLocked && (
+                      <span className="ml-auto rounded bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-violet-300">
+                        Pro
+                      </span>
+                    )}
                   </NavLink>
                 </li>
               )
@@ -145,7 +162,7 @@ export default function Sidebar() {
         </nav>
 
         <div className="px-3 pb-2 border-t border-slate-800 pt-3">
-          {externalLinks.map(link => {
+          {isOperational && externalLinks.map(link => {
             const Icon = link.icon
             return (
               <a

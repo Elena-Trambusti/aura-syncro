@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express'
 import { stripe } from '../../lib/stripe'
-import { activateRestaurantSubscription } from '../../lib/stripeSubscriptionWebhook'
+import {
+  activateRestaurantSubscription,
+  syncRestaurantSubscriptionStatus,
+} from '../../lib/stripeSubscriptionWebhook'
 
 export const stripeWebhookRouter = Router()
 
@@ -47,6 +50,23 @@ stripeWebhookRouter.post('/', async (req: Request, res: Response): Promise<void>
           '[stripe-webhook] Premium attivato',
           result.restaurantId,
           result.stripeSubscriptionId ?? '(no subscription id)',
+        )
+      }
+    }
+
+    if (
+      event.type === 'customer.subscription.updated'
+      || event.type === 'customer.subscription.deleted'
+    ) {
+      const subscription = event.data.object as { id: string; status: string; metadata?: Record<string, string> }
+      const result = await syncRestaurantSubscriptionStatus(subscription)
+
+      if (result) {
+        console.info(
+          '[stripe-webhook] Abbonamento sincronizzato',
+          result.restaurantId,
+          result.status,
+          result.hasActiveSubscription ? 'attivo' : 'disattivato',
         )
       }
     }

@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useAuth } from '../contexts/AuthContext'
@@ -16,29 +16,28 @@ export default function QRBuilderPage() {
   const { t } = useTranslation()
   const { restaurant } = useAuth()
   const exportCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [tableNumber, setTableNumber] = useState('')
 
-  const menuUrl = `${window.location.origin}/menu/${restaurant?.slug ?? ''}`
+  const baseUrl = `${window.location.origin}/menu/${restaurant?.slug ?? ''}`
+  const parsedTable = tableNumber.trim() ? Number.parseInt(tableNumber, 10) : NaN
+  const menuUrl = Number.isFinite(parsedTable) && parsedTable > 0
+    ? `${baseUrl}?tavolo=${parsedTable}`
+    : baseUrl
 
-  /**
-   * Download PNG ad alta risoluzione:
-   * 1. Un canvas nascosto (2048×2048) viene renderizzato da qrcode.react con gli stessi
-   *    parametri del QR visibile (URL, livello H, margini).
-   * 2. canvas.toDataURL('image/png') serializza i pixel in base64.
-   * 3. Un link <a download> temporaneo avvia il salvataggio sul filesystem locale.
-   */
   const downloadPng = useCallback(() => {
     const canvas = exportCanvasRef.current
     if (!canvas || !restaurant?.slug) return
 
     const pngDataUrl = canvas.toDataURL('image/png')
     const link = document.createElement('a')
-    link.download = `menu-qr-${restaurant.slug}.png`
+    const suffix = Number.isFinite(parsedTable) && parsedTable > 0 ? `-tavolo-${parsedTable}` : ''
+    link.download = `menu-qr-${restaurant.slug}${suffix}.png`
     link.href = pngDataUrl
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     toast.success(t('qrBuilder.downloadSuccess'))
-  }, [restaurant?.slug, t])
+  }, [restaurant?.slug, parsedTable, t])
 
   const copyLink = () => {
     navigator.clipboard.writeText(menuUrl)
@@ -61,8 +60,22 @@ export default function QRBuilderPage() {
       </header>
 
       <div className="w-full rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-6 w-full">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {t('qrBuilder.tableNumberOptional')}
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={tableNumber}
+            onChange={e => setTableNumber(e.target.value)}
+            placeholder={t('qrBuilder.tableNumberPlaceholder')}
+            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+          />
+          <p className="mt-1.5 text-xs text-slate-500">{t('qrBuilder.tableNumberHint')}</p>
+        </div>
+
         <div className="flex flex-col items-center">
-          {/* Anteprima grande — rigorosamente bianco e nero */}
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <QRCodeCanvas
               value={menuUrl}
@@ -74,7 +87,6 @@ export default function QRBuilderPage() {
             />
           </div>
 
-          {/* URL esplicito sotto il QR */}
           <div className="mt-8 w-full text-center">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
               {t('qrBuilder.scanTarget')}
@@ -84,7 +96,6 @@ export default function QRBuilderPage() {
             </p>
           </div>
 
-          {/* Download primario */}
           <button
             type="button"
             onClick={downloadPng}
@@ -98,7 +109,6 @@ export default function QRBuilderPage() {
             {t('qrBuilder.printHint')}
           </p>
 
-          {/* Azioni secondarie */}
           <div className="mt-6 flex w-full flex-wrap justify-center gap-3 border-t border-slate-100 pt-6">
             <button
               type="button"
@@ -121,7 +131,6 @@ export default function QRBuilderPage() {
         </div>
       </div>
 
-      {/* Canvas nascosto ad alta risoluzione — usato solo per l'export PNG */}
       <div className="pointer-events-none fixed left-[-9999px] top-0 opacity-0" aria-hidden>
         <QRCodeCanvas
           ref={exportCanvasRef}

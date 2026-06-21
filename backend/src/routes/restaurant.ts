@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { CountryCode, TaxRegion } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { AuthRequest, requireRole } from '../middleware/auth'
+import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
 import { buildFiscalConfig, resolveTaxRegion } from '../lib/taxEngine'
 
 export const restaurantRouter = Router()
@@ -41,7 +42,7 @@ restaurantRouter.get('/', async (req: AuthRequest, res: Response): Promise<void>
   res.json(restaurant)
 })
 
-restaurantRouter.put('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+restaurantRouter.put('/', requireRole('OWNER', 'MANAGER'), requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
   const parsed = updateSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })

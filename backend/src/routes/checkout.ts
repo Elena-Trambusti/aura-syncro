@@ -81,7 +81,7 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
           plan: 'premium',
         },
       },
-      success_url: `${frontendUrl}/dashboard/billing?success=true`,
+      success_url: `${frontendUrl}/dashboard/onboarding?welcome=true`,
       cancel_url: `${frontendUrl}/dashboard/billing?canceled=true`,
     })
 

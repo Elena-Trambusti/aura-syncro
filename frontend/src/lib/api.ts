@@ -37,9 +37,13 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem(RESTAURANT_ID_KEY)
-      window.location.href = '/login'
+      const path = window.location.pathname
+      const isGuestRoute = path.startsWith('/menu/') || path.startsWith('/payment/')
+      if (!isGuestRoute) {
+        localStorage.removeItem('token')
+        localStorage.removeItem(RESTAURANT_ID_KEY)
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }

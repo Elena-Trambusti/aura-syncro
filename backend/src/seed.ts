@@ -10,11 +10,12 @@ async function main() {
 
   const restaurant = await prisma.restaurant.upsert({
     where: { slug: 'ristorante-demo' },
-    update: { colorTheme: '#c9a227' },
+    update: { colorTheme: '#c9a227', isSetupComplete: true },
     create: {
       name: 'Ristorante La Bella Italia',
       slug: 'ristorante-demo',
       colorTheme: '#c9a227',
+      isSetupComplete: true,
       address: 'Via Roma 1, Milano',
       phone: '+39 02 1234567',
       email: 'info@labellaitalai.it',
@@ -38,6 +39,26 @@ async function main() {
           role: 'OWNER',
         },
       },
+    },
+  })
+
+  await prisma.restaurantSettings.upsert({
+    where: { restaurantId: restaurant.id },
+    update: {
+      hasActiveSubscription: true,
+      planTier: 'PRO',
+    },
+    create: {
+      restaurantId: restaurant.id,
+      hasActiveSubscription: true,
+      planTier: 'PRO',
+      openTime: '12:00',
+      closeTime: '23:00',
+      countryCode: 'IT',
+      taxRegion: 'IT_MAIN',
+      defaultLocale: 'it',
+      taxRate: 10,
+      taxId: 'IT12345678901',
     },
   })
 

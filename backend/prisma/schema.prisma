@@ -20,6 +20,11 @@ enum TaxRegion {
   ES_PENINSULA
 }
 
+enum PlanTier {
+  BASE
+  PRO
+}
+
 // ===== RISTORANTE =====
 model Restaurant {
   id          String   @id @default(cuid())
@@ -35,6 +40,8 @@ model Restaurant {
   description String?
   currency    String   @default("EUR")
   timezone    String   @default("Europe/Rome")
+  /** Concierge onboarding completato dal team Aura Syncro */
+  isSetupComplete Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -74,6 +81,8 @@ model RestaurantSettings {
   /** Abbonamento SaaS Aura Syncro Premium */
   hasActiveSubscription Boolean  @default(false)
   stripeSubscriptionId  String?
+  /** Piano moduli: BASE (core POS) o PRO (CRM, AI, marketing, fiscal…) */
+  planTier              PlanTier @default(BASE)
 }
 
 // ===== UTENTI =====

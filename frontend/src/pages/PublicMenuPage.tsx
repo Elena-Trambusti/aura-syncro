@@ -1,13 +1,18 @@
-import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
+import { computeGuestOrderTax } from '../lib/guestOrderTax'
+import { useGuestCart } from '../hooks/useGuestCart'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
+import GuestCartBar from '../components/public/GuestCartBar'
+import GuestCartDrawer from '../components/public/GuestCartDrawer'
 import {
   AlertCircle, Search, X, Star, Wheat, Milk, Egg, Fish, Shell,
-  Nut, Bean, Clock, Flame,
+  Nut, Bean, Clock, Flame, Plus, Minus,
 } from 'lucide-react'
 
 interface MenuItem {
@@ -28,6 +33,11 @@ interface Category {
   name: string
   description?: string | null
   items: MenuItem[]
+}
+
+interface FiscalInfo {
+  taxRate: number
+  taxName: string
 }
 
 const ALLERGEN_ICONS: Record<string, typeof Wheat> = {
@@ -64,7 +74,15 @@ function AllergenBadge({ allergen }: { allergen: string }) {
   )
 }
 
-function MenuItemCard({ item }: { item: MenuItem }) {
+interface MenuItemCardProps {
+  item: MenuItem
+  quantity: number
+  onAdd: () => void
+  onIncrement: () => void
+  onDecrement: () => void
+}
+
+function MenuItemCard({ item, quantity, onAdd, onIncrement, onDecrement }: MenuItemCardProps) {
   const { t } = useTranslation()
   const allergenList = item.allergens?.split(',').map(a => a.trim()).filter(Boolean) ?? []
 
@@ -75,7 +93,7 @@ function MenuItemCard({ item }: { item: MenuItem }) {
           <img
             src={item.image}
             alt=""
-            className="h-20 w-20 shrink-0 rounded-lg object-cover border border-slate-100"
+            className="h-20 w-20 shrink-0 rounded-lg border border-slate-100 object-cover"
             loading="lazy"
           />
         )}
@@ -85,7 +103,7 @@ function MenuItemCard({ item }: { item: MenuItem }) {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-semibold text-slate-900">{item.name}</h3>
                 {item.featured && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
                     <Star className="h-3 w-3 fill-amber-500 text-amber-500" aria-hidden />
                     {t('publicMenu.featured')}
                   </span>
@@ -111,18 +129,51 @@ function MenuItemCard({ item }: { item: MenuItem }) {
             </div>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-            {item.calories != null && item.calories > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Flame className="h-3.5 w-3.5" aria-hidden />
-                {item.calories} kcal
-              </span>
-            )}
-            {item.preparationTime != null && item.preparationTime > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" aria-hidden />
-                {t('publicMenu.prepTime', { min: item.preparationTime })}
-              </span>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+              {item.calories != null && item.calories > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Flame className="h-3.5 w-3.5" aria-hidden />
+                  {item.calories} kcal
+                </span>
+              )}
+              {item.preparationTime != null && item.preparationTime > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" aria-hidden />
+                  {t('publicMenu.prepTime', { min: item.preparationTime })}
+                </span>
+              )}
+            </div>
+
+            {quantity === 0 ? (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                {t('publicMenu.addToCart')}
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  type="button"
+                  onClick={onDecrement}
+                  className="rounded-lg p-1.5 text-slate-600 hover:bg-white"
+                  aria-label={t('publicMenu.decreaseQty')}
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-[1.5rem] text-center text-sm font-bold tabular-nums">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={onIncrement}
+                  className="rounded-lg p-1.5 text-slate-600 hover:bg-white"
+                  aria-label={t('publicMenu.increaseQty')}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -131,21 +182,51 @@ function MenuItemCard({ item }: { item: MenuItem }) {
   )
 }
 
+function parseTableFromSearch(params: URLSearchParams): number | null {
+  const raw = params.get('tavolo') ?? params.get('table')
+  if (!raw) return null
+  const n = Number.parseInt(raw, 10)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 export default function PublicMenuPage() {
   const { slug } = useParams<{ slug: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useTranslation()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [cartOpen, setCartOpen] = useState(false)
+
+  const tableNumber = useMemo(() => parseTableFromSearch(searchParams), [searchParams])
+
+  const cart = useGuestCart(slug)
 
   const { data, isLoading, error } = useQuery<{
-    restaurant: { name: string; logo?: string | null; description?: string | null; colorTheme?: string }
+    restaurant: {
+      name: string
+      logo?: string | null
+      description?: string | null
+      colorTheme?: string
+      slug: string
+      stripeEnabled: boolean
+      fiscal: FiscalInfo
+    }
     categories: Category[]
   }>({
     queryKey: ['public-menu', slug],
-    queryFn: () => api.get(`/menu/public/${slug}`).then(r => r.data),
+    queryFn: () => api.get(`/public/menu/${slug}`).then(r => r.data),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   })
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'cancelled') {
+      toast.error(t('publicMenu.paymentCancelled'))
+      const next = new URLSearchParams(searchParams)
+      next.delete('payment')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams, t])
 
   const categories = useMemo(() => {
     if (!data?.categories) return []
@@ -179,6 +260,9 @@ export default function PublicMenuPage() {
     ? t('publicMenu.searchResults', { query: search })
     : activeCategory?.name ?? t('publicMenu.title')
 
+  const fiscal = data?.restaurant.fiscal ?? { taxRate: 10, taxName: 'IVA' }
+  const { total: cartTotal } = computeGuestOrderTax(cart.subtotal, fiscal.taxRate)
+
   if (isLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
@@ -190,7 +274,7 @@ export default function PublicMenuPage() {
     )
   }
 
-  if (error || !data) {
+  if (error || !data || !slug) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 p-6">
         <div className="max-w-sm rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -204,13 +288,17 @@ export default function PublicMenuPage() {
 
   return (
     <div className="mx-auto min-h-[100dvh] max-w-lg bg-slate-50">
-      {/* Header fisso con lingua */}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold text-slate-900">{data.restaurant.name}</h1>
             {data.restaurant.description && (
               <p className="truncate text-xs text-slate-500">{data.restaurant.description}</p>
+            )}
+            {tableNumber != null && (
+              <p className="mt-0.5 text-xs font-semibold text-amber-700">
+                {t('publicMenu.tableBadge', { number: tableNumber })}
+              </p>
             )}
           </div>
           <PublicLanguageSwitcher />
@@ -240,7 +328,6 @@ export default function PublicMenuPage() {
         </div>
       </header>
 
-      {/* Tab categorie */}
       {!search.trim() && categories.length > 1 && (
         <nav
           className="sticky top-[7.5rem] z-10 border-b border-slate-200 bg-white"
@@ -268,17 +355,30 @@ export default function PublicMenuPage() {
         </nav>
       )}
 
-      {/* Lista piatti — sola lettura */}
-      <main className="px-4 py-4 pb-8">
+      <main className={`px-4 py-4 ${cart.itemCount > 0 ? 'pb-28' : 'pb-8'}`}>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
           {displayTitle}
         </h2>
 
         {displayItems.length > 0 ? (
           <div className="space-y-3">
-            {displayItems.map(item => (
-              <MenuItemCard key={item.id} item={item} />
-            ))}
+            {displayItems.map(item => {
+              const qty = cart.getQuantity(item.id)
+              return (
+                <MenuItemCard
+                  key={item.id}
+                  item={item}
+                  quantity={qty}
+                  onAdd={() => cart.addItem({
+                    menuItemId: item.id,
+                    name: item.name,
+                    price: item.price,
+                  })}
+                  onIncrement={() => cart.setQuantity(item.id, qty + 1)}
+                  onDecrement={() => cart.setQuantity(item.id, qty - 1)}
+                />
+              )
+            })}
           </div>
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white py-12 text-center shadow-sm">
@@ -289,9 +389,30 @@ export default function PublicMenuPage() {
         )}
 
         <p className="mt-8 text-center text-xs text-slate-400">
-          {t('publicMenu.readOnlyNotice')}
+          {t('publicMenu.orderHint')}
         </p>
       </main>
+
+      <GuestCartBar
+        itemCount={cart.itemCount}
+        total={cartTotal}
+        onOpen={() => setCartOpen(true)}
+      />
+
+      <GuestCartDrawer
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        slug={slug}
+        restaurantName={data.restaurant.name}
+        stripeEnabled={data.restaurant.stripeEnabled}
+        fiscal={fiscal}
+        tableNumber={tableNumber}
+        items={cart.items}
+        subtotal={cart.subtotal}
+        onSetQuantity={cart.setQuantity}
+        onRemoveItem={cart.removeItem}
+        onClearCart={cart.clearCart}
+      />
     </div>
   )
 }
