@@ -175,7 +175,7 @@ export default function LoyaltyPage() {
           <h2 className="text-base font-semibold text-slate-700">Top Clienti</h2>
           <div className="glass-card overflow-hidden">
             {topCustomers.length === 0 ? (
-              <p className="text-sm text-stone-500 text-center p-6">Nessun dato</p>
+              <p className="text-sm text-slate-600 text-center p-6">Nessun dato</p>
             ) : (
               <ul className="divide-y divide-slate-200">
                 {topCustomers.map((c, idx) => (

@@ -92,7 +92,7 @@ export default function PaymentsPage() {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900">{formatCurrency(data.mese.amount)}</p>
-          <p className="text-xs text-stone-500 mt-1">{data.mese.count} transazioni</p>
+          <p className="text-xs text-slate-600 mt-1">{data.mese.count} transazioni</p>
         </div>
 
         <div className="glass-card p-5">
@@ -103,7 +103,7 @@ export default function PaymentsPage() {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900">{formatCurrency(avgOrder)}</p>
-          <p className="text-xs text-stone-500 mt-1">per ordine Stripe</p>
+          <p className="text-xs text-slate-600 mt-1">per ordine Stripe</p>
         </div>
 
         <div className="glass-card p-5">
@@ -114,7 +114,7 @@ export default function PaymentsPage() {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900">{formatCurrency(data.totale.amount)}</p>
-          <p className="text-xs text-stone-500 mt-1">{data.totale.count} ordini totali</p>
+          <p className="text-xs text-slate-600 mt-1">{data.totale.count} ordini totali</p>
         </div>
       </div>
 
@@ -143,17 +143,17 @@ export default function PaymentsPage() {
 
       {/* Ultimi pagamenti */}
       <div className="glass-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-stone-800/50">
+        <div className="px-5 py-4 border-b border-slate-200">
           <h2 className="text-sm font-bold text-slate-700">Ultimi pagamenti</h2>
         </div>
         {data.recentPayments.length === 0 ? (
-          <div className="flex flex-col items-center py-12 text-stone-500">
+          <div className="flex flex-col items-center py-12 text-slate-600">
             <CreditCard className="w-10 h-10 mb-2 opacity-30" />
             <p className="text-sm">Nessun pagamento digitale ancora</p>
             <p className="text-xs mt-1">I pagamenti dal menu QR appariranno qui</p>
           </div>
         ) : (
-          <div className="divide-y divide-stone-800/40">
+          <div className="divide-y divide-slate-200">
             {data.recentPayments.map(order => (
               <div key={order.id} className="flex items-center gap-4 px-5 py-3.5 hover:glass-table-head transition-colors">
                 <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
@@ -163,7 +163,7 @@ export default function PaymentsPage() {
                   <p className="text-sm font-semibold text-slate-900">
                     {order.items.map(i => `${i.quantity}× ${i.menuItem.name}`).join(', ')}
                   </p>
-                  <p className="text-xs text-stone-500 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {order.table ? `Tavolo ${order.table.number}` : order.type === 'TAKEAWAY' ? 'Asporto' : 'QR'}
                     {order.paidAt && ` · ${new Date(order.paidAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
                   </p>
@@ -184,7 +184,7 @@ export default function PaymentsPage() {
         <ol className="space-y-2 text-sm text-slate-500">
           <li className="flex gap-2"><span className="text-[#635BFF] font-bold">1.</span> Crea un account su <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="text-[#635BFF] underline">stripe.com</a></li>
           <li className="flex gap-2"><span className="text-[#635BFF] font-bold">2.</span> Vai in <strong>Sviluppatori → Chiavi API</strong> e copia le chiavi di test</li>
-          <li className="flex gap-2"><span className="text-[#635BFF] font-bold">3.</span> Incollale nel file <code className="bg-stone-800/50 px-1 rounded text-xs">backend/.env</code> (STRIPE_SECRET_KEY e STRIPE_PUBLISHABLE_KEY)</li>
+          <li className="flex gap-2"><span className="text-[#635BFF] font-bold">3.</span> Incollale nel file <code className="bg-slate-100 px-1 rounded text-xs">backend/.env</code> (STRIPE_SECRET_KEY e STRIPE_PUBLISHABLE_KEY)</li>
           <li className="flex gap-2"><span className="text-[#635BFF] font-bold">4.</span> Riavvia il backend — i clienti potranno pagare dal menu QR</li>
         </ol>
       </div>

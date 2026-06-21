@@ -1,7 +1,7 @@
 /** Classi UI condivise — Aura Syncro SaaS Professional theme */
 export const ui = {
   pageTitle: 'text-2xl font-bold text-slate-900 tracking-tight',
-  pageSubtitle: 'text-sm text-slate-500 mt-1',
+  pageSubtitle: 'text-sm text-slate-600 mt-1',
   card: 'saas-card-lg',
   cardSm: 'saas-card',
   cardHover: 'saas-card-hover',
@@ -18,9 +18,9 @@ export const ui = {
   textarea:
     'saas-input w-full px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none',
   chip: 'saas-chip rounded-lg',
-  chipInactive: 'saas-chip text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors',
+  chipInactive: 'saas-chip text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors',
   tabActive: 'bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm rounded-lg',
-  tabInactive: 'saas-chip text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg',
+  tabInactive: 'saas-chip text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg',
   dropdown: 'saas-dropdown',
   tableHead: 'text-xs font-semibold uppercase tracking-wider text-slate-500',
   tableRow: 'border-b border-slate-200 hover:bg-slate-50 transition-colors',

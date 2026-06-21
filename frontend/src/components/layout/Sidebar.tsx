@@ -140,23 +140,21 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="p-4 sm:p-6 border-b border-slate-800">
-          <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <BrandLogo size="md" />
-              <div className="min-w-0">
-                <p className="font-bold text-sm text-white tracking-wide">{BRAND.name}</p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('brand.saasPlatform')}</p>
-              </div>
+        <div className="relative p-4 sm:p-6 border-b border-slate-800">
+          <button
+            type="button"
+            onClick={closeSidebar}
+            className="absolute top-4 right-4 lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
+            aria-label={t('common.closeMenu')}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex flex-col items-center text-center gap-2 mb-4 px-8">
+            <BrandLogo size="md" className="mx-auto" />
+            <div>
+              <p className="font-bold text-sm text-white tracking-wide">{BRAND.name}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('brand.saasPlatform')}</p>
             </div>
-            <button
-              type="button"
-              onClick={closeSidebar}
-              className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
-              aria-label={t('common.closeMenu')}
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl bg-slate-800 border border-slate-700">
             {restaurant?.logoUrl ? (

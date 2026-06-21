@@ -87,7 +87,7 @@
   }
 
   .saas-chip {
-    @apply rounded-lg bg-white border border-slate-200 text-slate-600 shadow-sm;
+    @apply rounded-lg bg-white border border-slate-200 text-slate-700 shadow-sm;
   }
 
   .saas-input {
@@ -187,7 +187,7 @@
   }
 
   .glass-chip {
-    @apply rounded-lg bg-white border border-slate-200 text-slate-600 shadow-sm;
+    @apply rounded-lg bg-white border border-slate-200 text-slate-700 shadow-sm;
   }
 
   .glass-input {
@@ -237,7 +237,7 @@
   }
 
   .aura-page-subtitle {
-    @apply text-sm text-slate-500 mt-1;
+    @apply text-sm text-slate-600 mt-1;
   }
 
   .aura-page-header {
@@ -245,22 +245,22 @@
   }
 
   .pwa-app-shell {
-    @apply flex h-dvh w-full min-h-0 flex-row overflow-hidden bg-slate-50;
-  }
-
-  /* Safe-area solo quando l'app è installata come PWA — non nel browser desktop */
-  @media (display-mode: standalone) {
-    .pwa-app-shell {
-      padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      padding-left: env(safe-area-inset-left, 0px);
-      padding-right: env(safe-area-inset-right, 0px);
-      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    }
+    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 flex-row overflow-hidden;
+    background: linear-gradient(
+      to bottom,
+      #C9A227 0,
+      #C9A227 env(safe-area-inset-top, 0px),
+      #f8fafc env(safe-area-inset-top, 0px),
+      #f8fafc 100%
+    );
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .pwa-header {
-    @apply shrink-0;
+    @apply shrink-0 bg-white;
   }
 
   .pwa-main-scroll {

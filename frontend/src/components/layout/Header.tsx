@@ -2,7 +2,7 @@ import { LogOut, MonitorCheck, ExternalLink, Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials } from '../../lib/utils'
-import { BRAND } from '../../lib/brand'
+import BrandLogo from '../brand/BrandLogo'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useDashboardLayout } from './DashboardLayout'
@@ -18,7 +18,7 @@ export default function Header() {
 
   return (
     <header className="pwa-header relative z-50 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 shadow-sm sm:h-16 sm:px-6">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 lg:min-w-[4.5rem]">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -27,7 +27,10 @@ export default function Header() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <p className="lg:hidden text-sm font-semibold text-slate-900 truncate">{BRAND.name}</p>
+      </div>
+
+      <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center lg:hidden">
+        <BrandLogo size="sm" className="shadow-none border border-amber-200/80" />
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">

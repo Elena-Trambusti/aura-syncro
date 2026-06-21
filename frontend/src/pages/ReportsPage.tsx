@@ -103,7 +103,7 @@ export default function ReportsPage() {
           { key: 'annuale', label: '📈 Trend Annuale', icon: BarChart2 },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === t.key ? 'bg-amber-600 text-white' : 'glass-chip text-slate-500 hover:bg-slate-50'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === t.key ? 'bg-amber-600 text-white' : 'glass-chip hover:bg-slate-50'}`}>
             {t.label}
           </button>
         ))}
@@ -115,17 +115,17 @@ export default function ReportsPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              { label: 'Fatturato', value: formatCurrency(s?.revenue || 0), icon: TrendingUp, color: 'bg-emerald-950/400', sub: `${s?.orders || 0} ordini` },
+              { label: 'Fatturato', value: formatCurrency(s?.revenue || 0), icon: TrendingUp, color: 'bg-emerald-600', sub: `${s?.orders || 0} ordini` },
               { label: 'Food Cost', value: formatCurrency(s?.estimatedFoodCost || 0), icon: TrendingDown, color: 'bg-amber-600', sub: `${s?.foodCostPct || 0}% del fatturato` },
-              { label: 'Utile Lordo', value: formatCurrency(s?.grossProfit || 0), icon: TrendingUp, color: (s?.grossProfit || 0) >= 0 ? 'bg-blue-950/400' : 'bg-red-950/400', sub: 'Ricavi - Food Cost' },
-              { label: 'Utile Netto', value: formatCurrency(s?.netProfit || 0), icon: TrendingUp, color: (s?.netProfit || 0) >= 0 ? 'bg-purple-500' : 'bg-red-950/400', sub: `Costo personale: ${formatCurrency(s?.laborCost || 0)}` },
+              { label: 'Utile Lordo', value: formatCurrency(s?.grossProfit || 0), icon: TrendingUp, color: (s?.grossProfit || 0) >= 0 ? 'bg-blue-600' : 'bg-red-600', sub: 'Ricavi - Food Cost' },
+              { label: 'Utile Netto', value: formatCurrency(s?.netProfit || 0), icon: TrendingUp, color: (s?.netProfit || 0) >= 0 ? 'bg-violet-600' : 'bg-red-600', sub: `Costo personale: ${formatCurrency(s?.laborCost || 0)}` },
             ].map(c => (
               <div key={c.label} className="glass-card p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-500">{c.label}</p>
                     <p className="text-xl font-bold text-slate-900 mt-1">{c.value}</p>
-                    <p className="text-xs text-stone-500 mt-1">{c.sub}</p>
+                    <p className="text-xs text-slate-600 mt-1">{c.sub}</p>
                   </div>
                   <div className={`w-10 h-10 ${c.color} rounded-xl flex items-center justify-center`}>
                     <c.icon className="w-5 h-5 text-white" />
@@ -140,7 +140,7 @@ export default function ReportsPage() {
             <div className="glass-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-slate-900">Dettaglio {MONTHS[selectedMonth]} {selectedYear}</h3>
-                <button onClick={exportPL} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-400 font-medium">
+                <button onClick={exportPL} className="flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 font-medium">
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
               </div>
@@ -152,12 +152,12 @@ export default function ReportsPage() {
                   { label: 'Food Cost stimato', value: -(s?.estimatedFoodCost || 0), positive: false },
                   { label: 'Costo personale', value: -(s?.laborCost || 0), positive: false },
                 ].map(row => (
-                  <div key={row.label} className={`flex justify-between items-center py-2 ${row.sub ? 'pl-4 text-xs text-slate-500' : 'border-t border-stone-800/40 text-sm'}`}>
+                  <div key={row.label} className={`flex justify-between items-center py-2 ${row.sub ? 'pl-4 text-xs text-slate-500' : 'border-t border-slate-200 text-sm'}`}>
                     <span className={row.sub ? '' : 'font-medium text-slate-700'}>{row.label}</span>
                     <span className={`font-semibold ${row.value >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(row.value)}</span>
                   </div>
                 ))}
-                <div className="border-t-2 border-stone-700/50 pt-3 flex justify-between">
+                <div className="border-t-2 border-slate-300 pt-3 flex justify-between">
                   <span className="font-bold text-slate-900">Utile Netto Stimato</span>
                   <span className={`text-lg font-bold ${(s?.netProfit || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(s?.netProfit || 0)}</span>
                 </div>
@@ -201,7 +201,7 @@ export default function ReportsPage() {
 
             {/* Tabella food cost */}
             <div className="xl:col-span-2 glass-card overflow-hidden">
-              <div className="flex items-center justify-between p-5 border-b border-stone-800/50">
+              <div className="flex items-center justify-between p-5 border-b border-slate-200">
                 <h3 className="text-base font-semibold text-slate-900">Margini per Piatto</h3>
                 <button onClick={exportFoodCost} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-400 font-medium">
                   <Download className="w-3.5 h-3.5" /> Esporta CSV
@@ -216,19 +216,19 @@ export default function ReportsPage() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stone-800/40">
+                  <tbody className="divide-y divide-slate-200">
                     {foodCost.slice(0, 15).map(item => (
                       <tr key={item.id} className="hover:glass-table-head transition-colors">
                         <td className="px-4 py-3">
                           <p className="font-medium text-slate-900 truncate max-w-[150px]">{item.name}</p>
-                          <p className="text-xs text-stone-500">{item.category}</p>
+                          <p className="text-xs text-slate-600">{item.category}</p>
                         </td>
                         <td className="px-4 py-3 text-slate-500">{formatCurrency(item.price)}</td>
                         <td className="px-4 py-3 text-red-500">{formatCurrency(item.ingredientCost)}</td>
                         <td className="px-4 py-3 font-semibold text-emerald-600">{formatCurrency(item.margin)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-16 bg-stone-800/50 rounded-full h-1.5">
+                            <div className="w-16 bg-slate-100 rounded-full h-1.5">
                               <div className="h-1.5 rounded-full" style={{ width: `${Math.min(100, item.marginPct)}%`, backgroundColor: item.marginPct > 60 ? '#10b981' : item.marginPct > 30 ? '#f59e0b' : '#ef4444' }} />
                             </div>
                             <span className={`text-xs font-semibold ${item.marginPct > 60 ? 'text-emerald-600' : item.marginPct > 30 ? 'text-amber-600' : 'text-red-500'}`}>{item.marginPct}%</span>
@@ -238,7 +238,7 @@ export default function ReportsPage() {
                       </tr>
                     ))}
                     {foodCost.length === 0 && (
-                      <tr><td colSpan={6} className="text-center text-stone-500 text-sm py-8">Collega gli ingredienti ai piatti nel Magazzino per vedere il food cost</td></tr>
+                      <tr><td colSpan={6} className="text-center text-slate-600 text-sm py-8">Collega gli ingredienti ai piatti nel Magazzino per vedere il food cost</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -259,7 +259,7 @@ export default function ReportsPage() {
             <div className="glass-card p-5 text-center">
               <p className="text-sm text-slate-500">Mese Migliore</p>
               <p className="text-xl font-bold text-amber-400 mt-1">{yearly?.bestMonth?.monthName || '—'}</p>
-              <p className="text-sm text-stone-500">{formatCurrency(yearly?.bestMonth?.revenue || 0)}</p>
+              <p className="text-sm text-slate-600">{formatCurrency(yearly?.bestMonth?.revenue || 0)}</p>
             </div>
             <div className="glass-card p-5 text-center">
               <p className="text-sm text-slate-500">Media Mensile</p>
@@ -289,7 +289,7 @@ export default function ReportsPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-800/40">
+              <tbody className="divide-y divide-slate-200">
                 {(yearly?.months || []).map(m => (
                   <tr key={m.month} className="hover:glass-table-head transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">{m.monthName}</td>

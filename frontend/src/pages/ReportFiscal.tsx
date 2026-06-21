@@ -302,7 +302,7 @@ function ReportFiscalContent() {
                     <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">
                       {isLoading ? '—' : formatCurrency(summaryValues[i])}
                     </p>
-                    <p className="mt-1 text-xs text-stone-500">{card.sub}</p>
+                    <p className="mt-1 text-xs text-slate-600">{card.sub}</p>
                   </div>
                   <div className={cn('rounded-xl glass-card p-3 shadow-sm', card.iconColor)}>
                     <Icon className="h-6 w-6" />
@@ -378,7 +378,7 @@ function ReportFiscalContent() {
           </div>
 
           {data && (
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-slate-600">
               {t('reportFiscal.transactionsMeta', { count: data.summary.transactionCount, period: periodMeta })}
               {data.restaurant.taxId && tRegime(t, taxRegion, 'taxIdMeta', { taxId: data.restaurant.taxId })}
             </p>
@@ -387,7 +387,7 @@ function ReportFiscalContent() {
 
         <div className={cn(glassPanel, 'overflow-hidden p-4 sm:p-6')}>
           {(isLoading || isFetching) && (
-            <div className="flex flex-col items-center justify-center gap-3 py-20 text-stone-500">
+            <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-600">
               <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
               <p className="text-sm font-medium">{t('reportFiscal.loading')}</p>
             </div>
@@ -403,7 +403,7 @@ function ReportFiscalContent() {
           {!isLoading && !isError && data && (
             <>
               {data.rows.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-stone-500">
+                <div className="flex flex-col items-center gap-3 py-16 text-slate-600">
                   <AlertCircle className="h-10 w-10 opacity-40" />
                   <p className="text-sm font-medium">{t('reportFiscal.emptyTitle')}</p>
                   <p className="text-xs">{t('reportFiscal.emptyHint')}</p>
@@ -416,7 +416,7 @@ function ReportFiscalContent() {
                         {tableHeaders.map(h => (
                           <th
                             key={h}
-                            className="px-4 pb-1 text-left text-[10px] font-bold uppercase tracking-widest text-stone-500"
+                            className="px-4 pb-1 text-left text-[10px] font-bold uppercase tracking-widest text-slate-600"
                           >
                             {h}
                           </th>
@@ -437,7 +437,7 @@ function ReportFiscalContent() {
                               className={cn(
                                 'grid grid-cols-7 items-center rounded-xl border border-gray-200/40',
                                 'glass-card px-4 py-3.5 shadow-sm transition-all duration-200',
-                                'group-hover:border-orange-200/60 group-hover:bg-white/[0.08] group-hover:shadow-lg group-hover:shadow-orange-100/30',
+                                'group-hover:border-orange-200 group-hover:bg-slate-50 group-hover:shadow-md group-hover:shadow-orange-100/40',
                               )}
                             >
                               <span className="whitespace-nowrap text-slate-500">
@@ -451,7 +451,7 @@ function ReportFiscalContent() {
                               <span className="text-slate-500">{formatCurrency(row.tax)}</span>
                               <span className="font-semibold text-slate-900">{formatCurrency(row.revenueAmount)}</span>
                               <span className="font-medium text-amber-600">{formatCurrency(row.tipAmount)}</span>
-                              <span className="font-bold text-amber-400">{formatCurrency(row.total)}</span>
+                              <span className="font-bold text-amber-700">{formatCurrency(row.total)}</span>
                             </div>
                           </td>
                         </tr>

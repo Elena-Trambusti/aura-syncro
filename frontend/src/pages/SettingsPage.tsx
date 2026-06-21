@@ -239,7 +239,7 @@ export default function SettingsPage() {
         <h2 className="text-base font-semibold text-slate-900 mb-2">{t('settings.kds')}</h2>
         <p className="text-sm text-slate-500 mb-4">{t('settings.kdsDesc')}</p>
         <div className="flex items-center gap-3">
-          <code className="flex-1 text-xs bg-stone-800/50 px-3 py-2 rounded-lg text-slate-500 break-all">{kitchenUrl}</code>
+          <code className="flex-1 text-xs bg-slate-100 px-3 py-2 rounded-lg text-slate-800 break-all">{kitchenUrl}</code>
           <button
             onClick={() => window.open(kitchenUrl, '_blank')}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors"
@@ -260,7 +260,7 @@ export default function SettingsPage() {
             { label: t('settings.taxRegion'), value: form.taxRegion },
             { label: t('settings.appVersion'), value: '1.0.0 MVP' },
           ].map(row => (
-            <div key={row.label} className="flex justify-between py-1.5 border-b border-stone-800/40">
+            <div key={row.label} className="flex justify-between py-1.5 border-b border-slate-200">
               <span className="text-sm text-slate-500">{row.label}</span>
               <span className="text-sm font-medium text-slate-700 font-mono">{row.value}</span>
             </div>

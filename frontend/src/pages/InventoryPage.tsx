@@ -72,7 +72,7 @@ function ItemForm({ item, onSave, onCancel }: {
           </div>
         </div>
         <div className="flex gap-3 mt-5">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium">Annulla</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-medium">Annulla</button>
           <button onClick={() => onSave(form)} className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold">Salva</button>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function InventoryPage() {
       <div className="flex gap-2 flex-wrap">
         {categories.map(cat => (
           <button key={cat} onClick={() => setFilterCategory(cat)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCategory === cat ? 'bg-amber-600 text-white' : 'glass-chip text-slate-500'}`}>
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCategory === cat ? 'bg-amber-600 text-white' : 'glass-chip'}`}>
             {cat}
           </button>
         ))}
@@ -166,7 +166,7 @@ export default function InventoryPage() {
       <div className="glass-card overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-stone-800/50 glass-table-head">
+            <tr className="border-b border-slate-200 glass-table-head">
               <th className="text-left text-xs font-semibold text-slate-500 uppercase px-5 py-3">Prodotto</th>
               <th className="text-left text-xs font-semibold text-slate-500 uppercase px-4 py-3">Categoria</th>
               <th className="text-left text-xs font-semibold text-slate-500 uppercase px-4 py-3">Quantità</th>
@@ -177,7 +177,7 @@ export default function InventoryPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-800/40">
+          <tbody className="divide-y divide-slate-200">
             {filtered.map(item => {
               const isLow = item.quantity <= item.minQuantity
               return (
@@ -189,19 +189,19 @@ export default function InventoryPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className="text-xs bg-stone-800/50 text-slate-500 px-2 py-1 rounded-lg">{item.category || '—'}</span>
+                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{item.category || '—'}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2">
                       {canManageInventory ? (
                         <>
                       <button onClick={() => adjustQty.mutate({ id: item.id, delta: -1 })}
-                        className="w-6 h-6 rounded-full bg-stone-800/50 hover:bg-red-100 flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors text-xs font-bold">−</button>
+                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-red-100 flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors text-xs font-bold">−</button>
                       <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
                         {item.quantity} {item.unit}
                       </span>
                       <button onClick={() => adjustQty.mutate({ id: item.id, delta: 1 })}
-                        className="w-6 h-6 rounded-full bg-stone-800/50 hover:bg-emerald-100 flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors text-xs font-bold">+</button>
+                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-emerald-100 flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors text-xs font-bold">+</button>
                         </>
                       ) : (
                       <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
@@ -213,14 +213,14 @@ export default function InventoryPage() {
                   <td className="px-4 py-3.5 text-sm text-slate-500">{item.minQuantity} {item.unit}</td>
                   <td className="px-4 py-3.5 text-sm text-slate-500">{formatCurrency(item.cost)}</td>
                   <td className="px-4 py-3.5 text-sm font-medium text-slate-700">{formatCurrency(item.quantity * item.cost)}</td>
-                  <td className="px-4 py-3.5 text-xs text-stone-500">{item.supplier || '—'}</td>
+                  <td className="px-4 py-3.5 text-xs text-slate-600">{item.supplier || '—'}</td>
                   <td className="px-4 py-3.5">
                     {canManageInventory && (
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setEditingItem(item)} className="p-1.5 hover:bg-stone-800/50 rounded-lg text-stone-500 hover:text-slate-700 transition-colors">
+                      <button onClick={() => setEditingItem(item)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-700 transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => { if (confirm('Eliminare?')) remove.mutate(item.id) }} className="p-1.5 hover:bg-red-950/30 rounded-lg text-stone-500 hover:text-red-500 transition-colors">
+                      <button onClick={() => { if (confirm('Eliminare?')) remove.mutate(item.id) }} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-500 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -232,7 +232,7 @@ export default function InventoryPage() {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center py-12 text-stone-500">
+          <div className="flex flex-col items-center py-12 text-slate-600">
             <Package className="w-10 h-10 mb-2 opacity-30" />
             <p>Nessun prodotto trovato</p>
           </div>

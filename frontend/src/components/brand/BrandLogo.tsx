@@ -18,8 +18,8 @@ interface BrandLogoProps {
 export default function BrandLogo({ size = 'md', className }: BrandLogoProps) {
   const s = SIZES[size]
   return (
-    <div className={cn('flex items-center justify-center shrink-0 overflow-hidden shadow-sm', s.box, className)}>
-      <img src={ICON_SRC} alt="" className={cn(s.img, 'object-contain')} aria-hidden />
+    <div className={cn('mx-auto flex items-center justify-center shrink-0 overflow-hidden shadow-sm', s.box, className)}>
+      <img src={ICON_SRC} alt="" className={cn(s.img, 'object-contain object-center')} aria-hidden />
     </div>
   )
 }

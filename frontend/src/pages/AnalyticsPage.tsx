@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-2">
           {(['7d', '30d', '90d'] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${period === p ? 'bg-amber-600 text-white' : 'glass-chip text-slate-500'}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${period === p ? 'bg-amber-600 text-white' : 'glass-chip'}`}>
               {p === '7d' ? '7 giorni' : p === '30d' ? '30 giorni' : '90 giorni'}
             </button>
           ))}
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
                 ])
               )
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium glass-chip text-slate-500 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium glass-chip hover:bg-slate-50 transition-colors"
           >
             <Download className="w-4 h-4" />
             CSV
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
 
       {/* Tabella piatti dettagliata */}
       <div className="glass-card overflow-hidden">
-        <div className="p-5 border-b border-stone-800/50">
+        <div className="p-5 border-b border-slate-200">
           <h3 className="text-base font-semibold text-slate-900">Analisi Menu — Top 10</h3>
         </div>
         <table className="w-full">
@@ -183,12 +183,12 @@ export default function AnalyticsPage() {
               <th className="text-left text-xs font-semibold text-slate-500 uppercase px-4 py-3">Prezzo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-800/40">
+          <tbody className="divide-y divide-slate-200">
             {(topItems || []).map((item: { menuItemId: string; name: string; category: string; quantity: number; revenue: number; price: number }, i: number) => (
               <tr key={item.menuItemId} className="hover:glass-table-head">
-                <td className="px-5 py-3 text-sm font-bold text-stone-500">{i + 1}</td>
+                <td className="px-5 py-3 text-sm font-bold text-slate-600">{i + 1}</td>
                 <td className="px-4 py-3 text-sm font-semibold text-slate-900">{item.name}</td>
-                <td className="px-4 py-3"><span className="text-xs bg-stone-800/50 text-slate-500 px-2 py-1 rounded-lg">{item.category}</span></td>
+                <td className="px-4 py-3"><span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{item.category}</span></td>
                 <td className="px-4 py-3 text-sm text-slate-500">{item.quantity}</td>
                 <td className="px-4 py-3 text-sm font-bold text-emerald-600">{formatCurrency(item.revenue)}</td>
                 <td className="px-4 py-3 text-sm text-amber-400 font-medium">{formatCurrency(item.price)}</td>

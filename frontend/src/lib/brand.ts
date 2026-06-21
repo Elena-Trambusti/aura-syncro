@@ -15,3 +15,9 @@ export const BRAND = {
 } as const
 
 export const BRAND_LOGO_GRADIENT = `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})`
+
+/** Colori PWA — barra di stato / splash allineati al brand gold */
+export const PWA = {
+  themeColor: '#C9A227',
+  backgroundColor: '#C9A227',
+} as const

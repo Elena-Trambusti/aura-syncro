@@ -107,7 +107,7 @@ export default function OrdersPage() {
               ])
             )
           }}
-          className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900/55 border border-stone-700/50 rounded-xl text-sm font-medium text-slate-500 hover:glass-table-head transition-colors w-full sm:w-auto shrink-0"
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors w-full sm:w-auto shrink-0"
         >
           <Download className="w-4 h-4" />
           {t('orders.exportCsv')}
@@ -119,11 +119,11 @@ export default function OrdersPage() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === f.key ? 'bg-amber-600 text-white' : 'glass-chip text-slate-500 hover:bg-slate-50'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === f.key ? 'bg-amber-600 text-white' : 'glass-chip text-slate-700 hover:bg-slate-50'}`}
           >
             {f.label}
             {f.count !== undefined && (
-              <span className={`text-xs px-1.5 rounded-full ${filter === f.key ? 'bg-stone-900/55/20 text-white' : 'bg-stone-800/50 text-slate-500'}`}>
+              <span className={`text-xs px-1.5 rounded-full ${filter === f.key ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'}`}>
                 {f.count}
               </span>
             )}
@@ -149,7 +149,7 @@ export default function OrdersPage() {
                       {ORDER_STATUS_LABELS[order.status]}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-stone-500">
+                  <div className="flex items-center gap-1 mt-1 text-xs text-slate-600">
                     <Clock className="w-3 h-3" />
                     {formatDateTime(order.createdAt)}
                     {order.waiter && <span className="ml-2">· {order.waiter.name}</span>}
@@ -161,7 +161,7 @@ export default function OrdersPage() {
               <div className="space-y-1 mb-4">
                 {order.items.map(item => (
                   <div key={item.id} className="flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 bg-stone-800/50 rounded-full flex items-center justify-center text-xs font-bold text-slate-500">
+                    <span className="w-5 h-5 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-500">
                       {item.quantity}
                     </span>
                     <span className="text-slate-700 flex-1">{item.menuItem.name}</span>
@@ -183,7 +183,7 @@ export default function OrdersPage() {
                 {can('orders.cancel') && !['PAID', 'CANCELLED'].includes(order.status) && (
                   <button
                     onClick={() => updateStatus.mutate({ id: order.id, status: 'CANCELLED' })}
-                    className="p-2 hover:bg-red-950/30 rounded-lg text-stone-500 hover:text-red-500 transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-500 transition-colors"
                     title={t('orders.cancel')}
                   >
                     <XCircle className="w-4 h-4" />
@@ -197,7 +197,7 @@ export default function OrdersPage() {
                     </div>
                     <button
                       onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'))}
-                      className="p-1.5 hover:bg-stone-800/50 rounded-lg text-stone-500 hover:text-slate-700 transition-colors"
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-700 transition-colors"
                       title={t('common.printReceipt')}
                     >
                       <Printer className="w-4 h-4" />
@@ -208,7 +208,7 @@ export default function OrdersPage() {
             </div>
           ))}
           {orders.length === 0 && (
-            <div className="col-span-full flex flex-col items-center py-16 text-stone-500">
+            <div className="col-span-full flex flex-col items-center py-16 text-slate-600">
               <ChefHat className="w-12 h-12 mb-3 opacity-30" />
               <p className="font-medium">{t('orders.noOrders')}</p>
             </div>

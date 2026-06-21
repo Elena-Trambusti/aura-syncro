@@ -9,7 +9,7 @@
   <rect x="0" y="0" width="320" height="320" rx="80" fill="url(#aura-gold)"/>
   <path
     fill="#0f172a"
-    transform="translate(40 40) scale(12)"
+    transform="translate(160 160) scale(12) translate(-12 -12)"
     d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
   />
   <!-- Wordmark -->

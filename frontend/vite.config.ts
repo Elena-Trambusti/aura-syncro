@@ -14,6 +14,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       injectRegister: false,
+      manifestFilename: 'manifest.json',
       includeAssets: pwaIncludeAssets,
       manifest: pwaManifest,
       devOptions: {

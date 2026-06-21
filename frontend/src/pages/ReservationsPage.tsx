@@ -83,7 +83,7 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
           </div>
         </div>
         <div className="flex gap-3 mt-5">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium">{t('common.cancel')}</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-medium">{t('common.cancel')}</button>
           <button onClick={() => onSave({ ...form, date: new Date(form.date).toISOString() })}
             className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold">
             {t('reservations.formConfirm')}
@@ -130,7 +130,7 @@ export default function ReservationsPage() {
     PENDING: 'bg-yellow-100 text-yellow-800',
     CONFIRMED: 'bg-blue-100 text-blue-800',
     SEATED: 'bg-emerald-100 text-emerald-800',
-    COMPLETED: 'bg-stone-800/50 text-slate-500',
+    COMPLETED: 'bg-slate-100 text-slate-500',
     CANCELLED: 'bg-red-100 text-red-600',
     NO_SHOW: 'bg-gray-100 text-gray-500',
   }
@@ -191,7 +191,7 @@ export default function ReservationsPage() {
             const labels = ['Ieri', 'Oggi', 'Domani']
             return (
               <button key={offset} onClick={() => setSelectedDate(dateStr)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedDate === dateStr ? 'bg-amber-600 text-white' : 'glass-chip text-slate-500'}`}>
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedDate === dateStr ? 'bg-amber-600 text-white' : 'glass-chip'}`}>
                 {labels[offset + 1]}
               </button>
             )
@@ -226,7 +226,7 @@ export default function ReservationsPage() {
                 <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{res.guestPhone}</span>
                 {res.table && <span className="text-amber-400 font-medium">T{res.table.number}</span>}
               </div>
-              {res.notes && <p className="text-xs text-stone-500 mt-1 italic">"{res.notes}"</p>}
+              {res.notes && <p className="text-xs text-slate-600 mt-1 italic">"{res.notes}"</p>}
             </div>
             <div className="flex items-center gap-2">
               {canManageReservations && res.status === 'CONFIRMED' && (
@@ -237,7 +237,7 @@ export default function ReservationsPage() {
               )}
               {canManageReservations && !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(res.status) && (
                 <button onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
-                  className="p-2 hover:bg-red-950/30 text-stone-500 hover:text-red-500 rounded-lg transition-colors" title="Annulla">
+                  className="p-2 hover:bg-red-50 text-slate-600 hover:text-red-500 rounded-lg transition-colors" title="Annulla">
                   <XCircle className="w-4 h-4" />
                 </button>
               )}
@@ -245,7 +245,7 @@ export default function ReservationsPage() {
           </div>
         ))}
         {reservations.length === 0 && (
-          <div className="flex flex-col items-center py-16 text-stone-500">
+          <div className="flex flex-col items-center py-16 text-slate-600">
             <CalendarDays className="w-12 h-12 mb-3 opacity-30" />
             <p className="font-medium">Nessuna prenotazione per questa data</p>
           </div>
