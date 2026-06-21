@@ -5,6 +5,8 @@ import { api } from '../lib/api'
 import { Plus, AlertTriangle, Package, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency } from '../lib/utils'
 import { useRole } from '../hooks/useRole'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {
@@ -81,6 +83,7 @@ function ItemForm({ item, onSave, onCancel }: {
 export default function InventoryPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManageInventory = can('inventory.manage')
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
@@ -88,7 +91,7 @@ export default function InventoryPage() {
   const [filterCategory, setFilterCategory] = useState('Tutti')
 
   const { data } = useQuery<{ items: InventoryItem[]; alerts: InventoryItem[] }>({
-    queryKey: ['inventory'],
+    queryKey: tq(tk, 'inventory'),
     queryFn: () => api.get('/inventory').then(r => r.data),
   })
   const items = data?.items || []
@@ -99,19 +102,19 @@ export default function InventoryPage() {
 
   const create = useMutation({
     mutationFn: (d: Record<string, unknown>) => api.post('/inventory', d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setShowForm(false); toast.success(t('inventory.added')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setShowForm(false); toast.success(t('inventory.added')) },
   })
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/inventory/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); setEditingItem(null); toast.success(t('inventory.updated')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setEditingItem(null); toast.success(t('inventory.updated')) },
   })
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/inventory/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventory'] }); toast.success(t('inventory.deleted')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); toast.success(t('inventory.deleted')) },
   })
   const adjustQty = useMutation({
     mutationFn: ({ id, delta }: { id: string; delta: number }) => api.patch(`/inventory/${id}/quantity`, { delta, operation: 'add' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }),
   })
 
   const totalValue = items.reduce((s, i) => s + i.quantity * i.cost, 0)

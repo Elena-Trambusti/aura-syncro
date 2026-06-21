@@ -30,6 +30,7 @@ import { stripeWebhookRouter } from './routes/webhooks/stripe'
 import { publicRouter } from './routes/public'
 import { adminRouter } from './routes/admin'
 import { aiRouter } from './routes/ai'
+import { pushRouter } from './routes/push'
 import { authenticate } from './middleware/auth'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
@@ -80,6 +81,7 @@ app.use('/api/admin', adminRouter)
 
 // Routes protette — sbarramento centralizzato su tier operativo
 app.use('/api/restaurant', authenticate, restaurantRouter)
+app.use('/api/push', authenticate, requireDashboardAccess, pushRouter)
 app.use('/api/tables', authenticate, requireDashboardAccess, tablesRouter)
 app.use('/api/menu', authenticate, requireDashboardAccess, menuRouter)
 app.use('/api/orders', authenticate, requireDashboardAccess, ordersRouter)

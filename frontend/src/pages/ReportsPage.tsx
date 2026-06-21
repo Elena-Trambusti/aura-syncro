@@ -7,7 +7,8 @@ import { formatCurrency } from '../lib/utils'
 import { TrendingUp, TrendingDown, FileText, PieChart, BarChart2, Download } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart as RechartsPie, Pie, Legend } from 'recharts'
 import { downloadCSV } from '../lib/export'
-import { useFiscalRegime } from '../contexts/AuthContext'
+import { useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
 
 interface PLSummary {
@@ -26,28 +27,29 @@ const PIE_COLORS = ['#c9a227', '#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ef4
 export default function ReportsPage() {
   const { t } = useTranslation()
   const fiscal = useFiscalRegime()
+  const tk = useTenantQueryKey()
   const now = new Date()
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1)
   const [activeTab, setActiveTab] = useState<'pl' | 'foodcost' | 'annuale'>('pl')
 
   const { data: plData } = useQuery<PLData>({
-    queryKey: ['reports', 'pl', selectedYear, selectedMonth],
+    queryKey: tq(tk, 'reports', 'pl', selectedYear, selectedMonth),
     queryFn: () => api.get(`/reports/pl?year=${selectedYear}&month=${selectedMonth}`).then(r => r.data),
   })
 
   const { data: foodCost = [] } = useQuery<FoodCostItem[]>({
-    queryKey: ['reports', 'foodcost'],
+    queryKey: tq(tk, 'reports', 'foodcost'),
     queryFn: () => api.get('/reports/food-cost').then(r => r.data),
   })
 
   const { data: categories = [] } = useQuery<CategoryData[]>({
-    queryKey: ['reports', 'categories'],
+    queryKey: tq(tk, 'reports', 'categories'),
     queryFn: () => api.get('/reports/categories').then(r => r.data),
   })
 
   const { data: yearly } = useQuery<YearlyData>({
-    queryKey: ['reports', 'yearly', selectedYear],
+    queryKey: tq(tk, 'reports', 'yearly', selectedYear),
     queryFn: () => api.get(`/reports/yearly?year=${selectedYear}`).then(r => r.data),
   })
 

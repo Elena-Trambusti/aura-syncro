@@ -19,8 +19,19 @@
 }
 
 @layer base {
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
   * {
     box-sizing: border-box;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -29,6 +40,8 @@
     color: #0f172a;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
   }
 
   ::-webkit-scrollbar {
@@ -225,7 +238,50 @@
   }
 
   .aura-page-header {
-    @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .pwa-app-shell {
+    padding-top: var(--safe-top);
+  }
+
+  .pwa-header {
+    padding-top: max(0px, calc(var(--safe-top) * 0.25));
+    padding-left: max(0.75rem, var(--safe-left));
+    padding-right: max(0.75rem, var(--safe-right));
+  }
+
+  .pwa-main-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  .pwa-mobile-page {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .pwa-stat-grid {
+    @apply grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4;
+  }
+
+  .pwa-stat-grid-2 {
+    @apply grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-4;
+  }
+
+  .pwa-chart-card {
+    @apply rounded-xl bg-white border border-slate-200 shadow-sm text-slate-900 p-4 sm:p-6;
+  }
+
+  .pwa-tables-stats {
+    @apply grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3;
+  }
+
+  .pwa-tables-stats .saas-stat {
+    @apply relative overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm p-3 pl-4 sm:p-4 sm:pl-5;
+  }
+
+  .pwa-tables-stats .saas-stat p:first-child {
+    @apply text-xl sm:text-2xl;
   }
 
   .aura-table-wrap {

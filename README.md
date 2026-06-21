@@ -6,195 +6,104 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![License](https://img.shields.io/badge/License-Proprietary-red)](./LICENSE)
 
 ---
 
-## ✨ Panoramica
+## Panoramica
 
-**Aura Syncro** risolve i 7 problemi critici che ogni ristoratore affronta quotidianamente:
+**Aura Syncro** è un gestionale multi-tenant per ristoranti con:
 
-| Problema | Soluzione |
+| Area | Funzionalità |
 |---|---|
-| 6-7 app separate che non comunicano | Piattaforma all-in-one |
-| Commissioni delivery 25-30% | Menu QR con ordine e pagamento diretto |
-| Sprechi alimentari | AI predittiva con riordino automatico |
-| No-show alle prenotazioni | Caparra online con Stripe |
-| Zero ownership clienti | CRM proprietario con marketing automation |
-| Nessuna visibilità P&L | Report finanziari in tempo reale |
-| Gestione manuale cucina | Kitchen Display System real-time |
+| Operatività | Dashboard, POS/tavoli, ordini, menu, pagamenti, report base |
+| Real-time | Socket.IO su tavoli, ordini, turni staff, waitlist |
+| Growth | KDS, menu QR pubblico, prenotazioni, waitlist, analytics |
+| Pro | CRM, fedeltà, marketing, AI predittiva, report fiscale |
+| SaaS | Onboarding Stripe Premium, upgrade Pro, RBAC granulare, i18n (it/en/es/fr/de) |
 
 ---
 
-## 📸 Screenshot
-
-### Dashboard — KPI e grafici in tempo reale
-![Dashboard](./screenshots/dashboard.png)
-
-### AI Predittiva — Previsione domanda e Menu Matrix BCG
-![AI Predittiva](./screenshots/ai-predictive.png)
-
-### Gestione Tavoli — Mappa interattiva e POS
-![Gestione Tavoli](./screenshots/tables-pos.png)
-
----
-
-## 🏗️ Architettura
+## Architettura
 
 ```
 aura-syncro/
-├── backend/                 # API Node.js + Express + TypeScript
-│   ├── prisma/
-│   │   └── schema.prisma    # Schema DB (15+ modelli)
+├── backend/          # Express + Prisma + PostgreSQL + Socket.IO + Stripe
+│   ├── prisma/schema.prisma
+│   └── src/routes/   # auth, orders, menu, tables, staff, waitlist, checkout, webhooks…
+├── frontend/         # React 19 + Vite + Tailwind + React Query + i18next
 │   └── src/
-│       ├── routes/          # 15 moduli API REST
-│       │   ├── auth.ts
-│       │   ├── orders.ts
-│       │   ├── menu.ts
-│       │   ├── tables.ts
-│       │   ├── reservations.ts
-│       │   ├── customers.ts
-│       │   ├── inventory.ts
-│       │   ├── staff.ts
-│       │   ├── analytics.ts
-│       │   ├── loyalty.ts
-│       │   ├── marketing.ts
-│       │   ├── reports.ts
-│       │   ├── waitlist.ts
-│       │   ├── payments.ts
-│       │   └── ai.ts        # ← AI predittiva
-│       ├── middleware/       # Auth JWT + error handling
-│       ├── socket/           # WebSocket handlers
-│       └── lib/              # Prisma client, Stripe
-├── frontend/                # React + Vite + TypeScript
-│   └── src/
-│       ├── pages/           # 18 pagine complete
-│       ├── components/      # Componenti riutilizzabili
-│       ├── contexts/        # Auth + Socket context
-│       └── lib/             # API client, utilities
-└── landing/
-    └── index.html           # Landing page standalone
+│       ├── pages/    # Dashboard, Tavoli, CRM, Billing, Report Fiscal…
+│       ├── hooks/    # useRealtimeInvalidation, usePredictiveAI
+│       └── lib/      # accessTier, queryKeys (tenant-scoped cache)
+└── landing/          # Landing page statica
 ```
+
+**Deploy attuale:** backend su DigitalOcean, frontend su Vercel.
 
 ---
 
-## 🚀 Stack Tecnologico
+## Stack
 
-### Backend
-| Tecnologia | Uso |
+| Layer | Tecnologie |
 |---|---|
-| **Node.js 24 + TypeScript** | Runtime e linguaggio |
-| **Express.js** | Framework HTTP |
-| **Prisma ORM** | Database ORM + migrations |
-| **SQLite** (dev) / PostgreSQL (prod) | Database |
-| **Socket.io** | WebSocket real-time |
-| **JWT + bcryptjs** | Autenticazione |
-| **Zod** | Validazione input |
-| **Stripe** | Pagamenti online |
+| Backend | Node.js 24, Express, Prisma, **PostgreSQL**, JWT, Zod, Stripe, Socket.IO |
+| Frontend | React 19, Vite, Tailwind, TanStack Query, React Router, Recharts, Radix UI |
+| Real-time | Socket.IO (invalidazione cache tenant via `useTenantQueryKey`) |
 
-### Frontend
-| Tecnologia | Uso |
+---
+
+## Piani e accesso
+
+| Tier | Accesso |
 |---|---|
-| **React 19 + TypeScript** | Framework UI |
-| **Vite** | Build tool |
-| **Tailwind CSS** | Styling utility-first |
-| **React Query (TanStack)** | Server state management |
-| **React Router v6** | Routing SPA |
-| **Socket.io-client** | Real-time updates |
-| **Recharts** | Grafici e visualizzazioni |
-| **Radix UI + Lucide** | Componenti e icone |
+| **Free (registrato)** | Dashboard, Ordini, Menu, Pagamenti, Report — anteprima senza abbonamento |
+| **Premium (Stripe)** | Setup concierge, moduli core sbloccati dopo onboarding |
+| **Base** | POS completo incluso nel Premium |
+| **Pro (add-on €79/mo)** | CRM, AI, marketing, fedeltà, report fiscale, analytics avanzate |
+
+Flusso checkout:
+- `POST /api/checkout` → abbonamento Premium
+- `POST /api/checkout/pro` → upgrade Pro (richiede Premium attivo + piano Base)
+- Webhook `POST /api/webhooks/stripe` gestisce `metadata.plan=pro` e sync downgrade
 
 ---
 
-## 📦 Moduli Implementati
-
-### Fase 1 — MVP
-- ✅ **Dashboard** — KPI in tempo reale, grafici fatturato
-- ✅ **POS & Tavoli** — Mappa interattiva, presa comande touch
-- ✅ **Gestione Ordini** — Stati multipli, modifica real-time
-- ✅ **Menu Digitale** — Categorie, disponibilità, featured
-- ✅ **Prenotazioni** — Slot intelligenti, conferme, note
-- ✅ **CRM Clienti** — Storico, allergie, preferenze
-- ✅ **Magazzino** — Alert scorte, fornitori, categorie
-- ✅ **Personale & Turni** — Pianificazione, timbrature
-- ✅ **Autenticazione** — JWT, ruoli (Owner/Manager/Waiter/Kitchen)
-
-### Fase 2 — Growth
-- ✅ **Kitchen Display System** — Schermo cucina real-time, timer, notifiche
-- ✅ **Menu QR Pubblico** — Clienti ordinano dal telefono
-- ✅ **WebSocket** — Aggiornamenti live su tutti i dispositivi
-- ✅ **Analytics** — Grafici avanzati, trend, performance
-
-### Fase 3 — Intelligence
-- ✅ **Programma Fedeltà** — Livelli VIP, punti, cashback automatico
-- ✅ **Marketing Automation** — Campagne email/SMS, compleanno, win-back
-- ✅ **Report P&L** — Fatturato, food cost, margini, trend annuale
-- ✅ **Waitlist** — Lista d'attesa prenotazioni
-
-### Fase 4 — Enterprise
-- ✅ **Pagamenti Stripe** — Checkout dal menu QR, caparra prenotazioni
-- ✅ **AI Predittiva** — 4 motori: previsione domanda, riordino, menu matrix, alert
-- 🔜 Multi-ristorante / SaaS
-- 🔜 Fatturazione elettronica
-
----
-
-## 🤖 AI Predittiva (zero API esterne)
-
-Tutti gli algoritmi girano sui dati storici del ristorante, in locale:
-
-```
-┌─────────────────────────────────────────────────────┐
-│  GET /api/ai/forecast     → Previsione 7 giorni     │
-│  GET /api/ai/reorder      → Suggerimenti riordino   │
-│  GET /api/ai/menu-matrix  → Classificazione BCG     │
-│  GET /api/ai/alerts       → Alert intelligenti      │
-│  GET /api/ai/summary      → Widget dashboard        │
-└─────────────────────────────────────────────────────┘
-```
-
-**Menu Matrix BCG:** classifica ogni piatto in:
-- ⭐ **Star** — Alto volume + alto margine → mantieni in stock
-- 🐴 **Trainante** — Alto volume + basso margine → aumenta prezzo
-- 🔮 **Potenziale** — Basso volume + alto margine → promuovi
-- 🐕 **Da rivedere** — Basso volume + basso margine → considera rimozione
-
----
-
-## ⚙️ Installazione locale
+## Installazione locale
 
 ### Prerequisiti
+
 - Node.js 18+
-- npm 9+
+- PostgreSQL (locale o Supabase/Neon)
 
 ### Setup
 
 ```bash
-# 1. Clona il repository
 git clone https://github.com/Elena-Trambusti/aura-syncro.git
 cd aura-syncro
 
-# 2. Backend
+# Backend
 cd backend
 npm install
 cp .env.example .env
-# Modifica .env con i tuoi valori
+# Compila DATABASE_URL, JWT_SECRET, Stripe…
 
-# 3. Database
-npx prisma db push
-npx tsx src/seed.ts    # Carica dati demo
+npx prisma generate
+npx prisma db push    # oppure: npx prisma migrate dev
+npx tsx src/seed.ts   # dati demo
 
-# 4. Frontend (nuovo terminale)
+npm run dev
+
+# Frontend (altro terminale)
 cd ../frontend
 npm install
 cp .env.example .env
-
-# 5. Avvia tutto
-cd ..
-.\avvia-app.ps1        # Windows
+npm run dev
 ```
 
+Su Windows: `.\avvia-app.ps1` avvia backend + frontend insieme.
+
 ### Credenziali demo
+
 | Campo | Valore |
 |---|---|
 | Email | `admin@demo.it` |
@@ -202,70 +111,63 @@ cd ..
 
 ---
 
-## 🗄️ Schema Database
+## Variabili d'ambiente
 
-```
-Restaurant ──┬── User (ruoli: Owner/Manager/Waiter/Kitchen/Cashier)
-             ├── Table (tavoli con mappa e QR code)
-             ├── MenuCategory ── MenuItem
-             ├── Order ──────── OrderItem
-             ├── Reservation
-             ├── Customer ───── LoyaltyTransaction
-             ├── LoyaltyTier
-             ├── Campaign
-             ├── WaitlistEntry
-             ├── InventoryItem ── InventoryItemLink
-             ├── Shift
-             └── RestaurantSettings
+### Backend (`backend/.env`)
+
+| Variabile | Descrizione |
+|---|---|
+| `DATABASE_URL` | PostgreSQL (connection pooler) |
+| `DIRECT_URL` | PostgreSQL direct (migrations) |
+| `JWT_SECRET` | Secret firma JWT |
+| `FRONTEND_URL` | Origini CORS (comma-separated) |
+| `STRIPE_SECRET_KEY` | Chiave segreta Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Verifica webhook |
+| `ADMIN_API_KEY` | Endpoint admin (setup concierge, downgrade piano) |
+| `PREMIUM_DEV_UNLOCK` | `true` in dev → bypass paywall Premium |
+| `PRO_PLAN_DEV_UNLOCK` | `true` in dev → bypass paywall Pro |
+
+### Frontend (`frontend/.env`)
+
+| Variabile | Descrizione |
+|---|---|
+| `VITE_API_URL` | URL backend (es. `http://localhost:3001`) |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Chiave pubblica Stripe |
+
+---
+
+## Database
+
+Modelli principali: `Restaurant`, `User`, `Table`, `Order`, `MenuItem`, `Reservation`, `Customer`, `InventoryItem`, `Shift`, `WaitlistEntry`, `RestaurantSettings` (inclusi `stripeSubscriptionId`, `stripeProSubscriptionId`, `planTier`).
+
+```bash
+cd backend
+npx prisma migrate dev      # sviluppo
+npx prisma migrate deploy   # produzione
+npx prisma studio           # UI esplorazione dati
 ```
 
 ---
 
-## 📁 Struttura API
+## API principali
 
 ```
-POST   /api/auth/login
-POST   /api/auth/register
-
+POST   /api/auth/login | /api/auth/register
 GET    /api/analytics/dashboard
-GET    /api/analytics/charts
-
-GET    /api/ai/forecast
-GET    /api/ai/reorder
-GET    /api/ai/menu-matrix
-GET    /api/ai/alerts
-
-GET    /api/menu/categories
-POST   /api/menu/items
-PATCH  /api/menu/items/:id/availability
-
-POST   /api/orders/public          ← senza auth (menu QR)
-GET    /api/orders
-PATCH  /api/orders/:id/status
-
-POST   /api/payments/checkout      ← Stripe checkout
-POST   /api/payments/webhook       ← Stripe webhook
-GET    /api/payments/overview
-
-GET    /api/loyalty/tiers
-POST   /api/loyalty/transactions/earn
-
-GET    /api/reports/monthly
-GET    /api/reports/food-cost
+GET    /api/orders | PATCH /api/orders/:id/status
+POST   /api/orders/public          # menu QR (guest)
+GET    /api/tables
+GET    /api/staff/shifts
+GET    /api/waitlist
+POST   /api/checkout               # Premium
+POST   /api/checkout/pro           # Upgrade Pro
+POST   /api/webhooks/stripe
+GET    /api/reports/fiscal         # Pro
+GET    /api/ai/predictive          # Pro
 ```
 
 ---
 
-## 👩‍💻 Autrice
+## Licenza
 
-**Elena Trambusti**
-- Email: [elenatrambusti2024@gmail.com](mailto:elenatrambusti2024@gmail.com)
-- LinkedIn: [linkedin.com/in/elena-trambusti-7b3431232](https://www.linkedin.com/in/elena-trambusti-7b3431232)
-
----
-
-## 📄 Licenza
-
-Software proprietario — © 2026 Elena Trambusti. Tutti i diritti riservati.
-Vedere [LICENSE](./LICENSE) per i dettagli completi.
-Il codice è visibile a scopo di portfolio. È vietato l'uso commerciale senza autorizzazione scritta.
+Software proprietario — © 2026 Elena Trambusti. Vedere [LICENSE](./LICENSE).

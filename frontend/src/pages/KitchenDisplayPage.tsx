@@ -5,6 +5,8 @@ import { api } from '../lib/api'
 import { getSocket, connectSocket } from '../lib/socket'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 interface OrderItem {
   id: string
@@ -153,6 +155,7 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
 export default function KitchenDisplayPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const [time, setTime] = useState(new Date())
   const [newOrderAlert, setNewOrderAlert] = useState(false)
 
@@ -162,7 +165,7 @@ export default function KitchenDisplayPage() {
   }, [])
 
   const { data: orders = [] } = useQuery<Order[]>({
-    queryKey: ['kitchen', 'orders'],
+    queryKey: tq(tk, 'kitchen', 'orders'),
     queryFn: () => api.get('/orders/active').then(r =>
       r.data.filter((o: Order) => !['PAID', 'CANCELLED', 'SERVED'].includes(o.status))
     ),
@@ -170,8 +173,8 @@ export default function KitchenDisplayPage() {
   })
 
   const refreshKitchen = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
-  }, [queryClient])
+    queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
+  }, [queryClient, tk])
 
   useEffect(() => {
     const token = localStorage.getItem('token')

@@ -7,6 +7,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 interface PaymentOrder {
   id: string
@@ -27,8 +29,9 @@ interface OverviewData {
 
 export default function PaymentsPage() {
   const { t } = useTranslation()
+  const tk = useTenantQueryKey()
   const { data, isLoading } = useQuery<OverviewData>({
-    queryKey: ['payments', 'overview'],
+    queryKey: tq(tk, 'payments', 'overview'),
     queryFn: () => api.get('/payments/overview').then(r => r.data),
   })
 

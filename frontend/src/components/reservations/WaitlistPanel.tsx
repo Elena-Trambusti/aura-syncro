@@ -9,6 +9,8 @@ import {
   Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, X, ListOrdered,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { tq } from '../../lib/queryKeys'
 
 interface WaitlistEntry {
   id: string
@@ -137,6 +139,7 @@ interface WaitlistPanelProps {
 export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManage = can('reservations.manage')
   const [showForm, setShowForm] = useState(false)
@@ -144,14 +147,14 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
   useRealtimeQuery(['waitlist:created', 'waitlist:updated', 'waitlist:deleted'], 'waitlist')
 
   const { data: entries = [], isLoading } = useQuery<WaitlistEntry[]>({
-    queryKey: ['waitlist', selectedDate],
+    queryKey: tq(tk, 'waitlist', selectedDate),
     queryFn: () => api.get(`/waitlist?date=${selectedDate}`).then(r => r.data),
   })
 
   const createEntry = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/waitlist', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['waitlist'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       setShowForm(false)
       toast.success(t('waitlist.added'))
     },
@@ -161,7 +164,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
   const notifyGuest = useMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/notify`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['waitlist'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.success(t('waitlist.notified'))
     },
   })
@@ -169,7 +172,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
   const confirmGuest = useMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/confirm`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['waitlist'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.success(t('waitlist.confirmed'))
     },
   })
@@ -177,7 +180,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
   const cancelEntry = useMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/cancel`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['waitlist'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.success(t('waitlist.removed'))
     },
   })

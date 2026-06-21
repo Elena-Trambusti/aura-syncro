@@ -6,6 +6,8 @@ import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { downloadCSV } from '../lib/export'
 import { Download } from 'lucide-react'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -15,20 +17,21 @@ type Period = '7d' | '30d' | '90d'
 
 export default function AnalyticsPage() {
   const { t } = useTranslation()
+  const tk = useTenantQueryKey()
   const [period, setPeriod] = useState<Period>('30d')
 
   const { data: revenue } = useQuery({
-    queryKey: ['analytics', 'revenue', period],
+    queryKey: tq(tk, 'analytics', 'revenue', period),
     queryFn: () => api.get(`/analytics/revenue?period=${period}`).then(r => r.data),
   })
 
   const { data: topItems } = useQuery({
-    queryKey: ['analytics', 'top-items'],
+    queryKey: tq(tk, 'analytics', 'top-items'),
     queryFn: () => api.get('/analytics/top-items').then(r => r.data),
   })
 
   const { data: hourly } = useQuery({
-    queryKey: ['analytics', 'hourly'],
+    queryKey: tq(tk, 'analytics', 'hourly'),
     queryFn: () => api.get('/analytics/hourly').then(r => r.data),
   })
 

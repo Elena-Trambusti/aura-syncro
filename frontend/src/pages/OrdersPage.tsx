@@ -5,7 +5,8 @@ import { api } from '../lib/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime } from '../lib/utils'
 import { printReceipt, downloadCSV } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import toast from 'react-hot-toast'
 
@@ -44,11 +45,12 @@ export default function OrdersPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { restaurant } = useAuth()
+  const tk = useTenantQueryKey()
   const { canSetOrderStatus, can } = useRole()
   const [filter, setFilter] = useState<string>('active')
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
-    queryKey: ['orders', filter],
+    queryKey: tq(tk, 'orders', filter),
     queryFn: () => {
       if (filter === 'active') return api.get('/orders/active').then(r => r.data)
       if (filter === 'today') return api.get(`/orders?date=${new Date().toISOString().split('T')[0]}`).then(r => r.data)
@@ -61,8 +63,8 @@ export default function OrdersPage() {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       api.patch(`/orders/${id}/status`, { status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       toast.success(t('orders.statusUpdated'))
     },
   })

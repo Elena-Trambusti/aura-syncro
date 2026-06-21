@@ -7,10 +7,11 @@ export type CheckoutSessionPayload = {
   mode?: string | null
 }
 
-/** Esclude pagamenti guest (ordini, caparre) dall'attivazione abbonamento SaaS */
+/** Esclude pagamenti guest (ordini, caparre) e upgrade Pro dall'attivazione abbonamento Premium */
 export function isSaasSubscriptionSession(session: CheckoutSessionPayload): boolean {
   if (session.metadata?.orderId) return false
   if (session.metadata?.reservationId) return false
+  if (session.metadata?.plan === 'pro') return false
   if (session.metadata?.plan === 'premium') return true
   if (session.mode === 'subscription') return true
   if (session.subscription) return true
@@ -115,17 +116,36 @@ export interface SubscriptionSyncResult {
   status: string
 }
 
-/** Allinea hasActiveSubscription allo stato Stripe (updated / deleted) */
+/** Allinea hasActiveSubscription / planTier allo stato Stripe (updated / deleted) */
 export async function syncRestaurantSubscriptionStatus(
   subscription: SubscriptionPayload,
 ): Promise<SubscriptionSyncResult | null> {
+  const hasActiveSubscription = ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)
+
+  const proSettings = await prisma.restaurantSettings.findFirst({
+    where: { stripeProSubscriptionId: subscription.id },
+    select: { restaurantId: true },
+  })
+
+  if (proSettings) {
+    if (!hasActiveSubscription) {
+      await prisma.restaurantSettings.update({
+        where: { restaurantId: proSettings.restaurantId },
+        data: { planTier: 'BASE', stripeProSubscriptionId: null },
+      })
+    }
+    return {
+      restaurantId: proSettings.restaurantId,
+      hasActiveSubscription,
+      status: subscription.status,
+    }
+  }
+
   const restaurantId = await resolveRestaurantIdFromSubscription(subscription)
   if (!restaurantId) {
     console.warn('[stripe-webhook] Subscription senza restaurantId:', subscription.id)
     return null
   }
-
-  const hasActiveSubscription = ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
@@ -140,6 +160,7 @@ export async function syncRestaurantSubscriptionStatus(
   const data = {
     hasActiveSubscription,
     stripeSubscriptionId: subscription.id,
+    ...(!hasActiveSubscription ? { planTier: 'BASE' as const, stripeProSubscriptionId: null } : {}),
   }
 
   if (restaurant.settings) {

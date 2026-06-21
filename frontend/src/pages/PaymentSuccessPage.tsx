@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { CheckCircle2, ChefHat, ArrowLeft, Loader2 } from 'lucide-react'
@@ -25,6 +26,7 @@ interface SessionData {
 }
 
 export default function PaymentSuccessPage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
   const orderId = params.get('order_id')
@@ -43,7 +45,7 @@ export default function PaymentSuccessPage() {
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-        <p className="text-slate-500">Verifica pagamento...</p>
+        <p className="text-slate-500">{t('guestCheckout.verifying')}</p>
       </div>
     </div>
   )
@@ -54,9 +56,9 @@ export default function PaymentSuccessPage() {
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-3xl">✗</span>
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-2">Pagamento non confermato</h2>
-        <p className="text-slate-500 mb-6">Non riusciamo a verificare il tuo pagamento. Mostra lo screenshot al cameriere.</p>
-        <Link to="/" className="text-orange-500 font-semibold hover:underline">Torna al menu</Link>
+        <h2 className="text-xl font-bold text-slate-800 mb-2">{t('guestCheckout.errorTitle')}</h2>
+        <p className="text-slate-500 mb-6">{t('guestCheckout.errorDesc')}</p>
+        <Link to="/" className="text-orange-500 font-semibold hover:underline">{t('guestCheckout.backToMenu')}</Link>
       </div>
     </div>
   )
@@ -65,7 +67,6 @@ export default function PaymentSuccessPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 max-w-lg mx-auto">
-      {/* Header */}
       <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
         <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
           {isPaid
@@ -74,13 +75,10 @@ export default function PaymentSuccessPage() {
           }
         </div>
         <h1 className="text-2xl font-black mb-1">
-          {isPaid ? 'Pagamento confermato!' : 'Pagamento in elaborazione'}
+          {isPaid ? t('guestCheckout.confirmedTitle') : t('guestCheckout.processingTitle')}
         </h1>
         <p className="text-white/80 text-sm">
-          {isPaid
-            ? 'Il tuo ordine è stato inviato alla cucina'
-            : 'Il pagamento è in corso di verifica'
-          }
+          {isPaid ? t('guestCheckout.confirmedSubtitle') : t('guestCheckout.processingSubtitle')}
         </p>
         {data.amount > 0 && (
           <div className="mt-4 bg-white/20 rounded-2xl px-6 py-3 inline-block">
@@ -89,11 +87,10 @@ export default function PaymentSuccessPage() {
         )}
       </div>
 
-      {/* Dettagli ordine */}
       {data.order && (
         <div className="px-5 py-6 space-y-4">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-4">Riepilogo ordine</h2>
+            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-4">{t('guestCheckout.orderSummary')}</h2>
             <div className="space-y-2.5">
               {data.order.items.map(item => (
                 <div key={item.id} className="flex items-center justify-between">
@@ -110,7 +107,7 @@ export default function PaymentSuccessPage() {
               ))}
             </div>
             <div className="border-t border-slate-100 mt-4 pt-3 flex justify-between">
-              <span className="font-bold text-slate-800">Totale pagato</span>
+              <span className="font-bold text-slate-800">{t('guestCheckout.totalPaid')}</span>
               <span className="font-black text-emerald-600 text-lg">{formatCurrency(data.order.total)}</span>
             </div>
           </div>
@@ -121,21 +118,21 @@ export default function PaymentSuccessPage() {
                 <span className="text-lg font-black text-orange-600">{data.order.table.number}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-700">Tavolo {data.order.table.number}</p>
-                <p className="text-xs text-slate-400">Il cameriere ti porterà i piatti al tavolo</p>
+                <p className="text-sm font-semibold text-slate-700">{t('guestCheckout.table', { number: data.order.table.number })}</p>
+                <p className="text-xs text-slate-400">{t('guestCheckout.tableHint')}</p>
               </div>
             </div>
           )}
 
           {data.customerEmail && (
             <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-sm text-emerald-700">
-              Ricevuta inviata a <strong>{data.customerEmail}</strong>
+              {t('guestCheckout.receiptSent', { email: data.customerEmail })}
             </div>
           )}
 
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700">
-            <p className="font-semibold mb-1">Il tuo ordine è in cucina!</p>
-            <p>Conserva questa pagina come prova di pagamento. In caso di problemi, mostrala al cameriere.</p>
+            <p className="font-semibold mb-1">{t('guestCheckout.kitchenNoteTitle')}</p>
+            <p>{t('guestCheckout.kitchenNoteDesc')}</p>
           </div>
         </div>
       )}
@@ -146,7 +143,7 @@ export default function PaymentSuccessPage() {
           className="flex items-center justify-center gap-2 w-full py-3.5 border-2 border-slate-200 rounded-2xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Torna alla home
+          {t('guestCheckout.backHome')}
         </Link>
       </div>
     </div>

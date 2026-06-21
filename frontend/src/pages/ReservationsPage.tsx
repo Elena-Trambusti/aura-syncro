@@ -8,6 +8,8 @@ import toast from 'react-hot-toast'
 import { useRole } from '../hooks/useRole'
 import WaitlistPanel from '../components/reservations/WaitlistPanel'
 import { cn } from '../lib/utils'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 type ReservationTab = 'bookings' | 'waitlist'
 
@@ -19,6 +21,7 @@ interface Reservation {
 }
 
 function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, string | number>) => void; onCancel: () => void }) {
+  const { t } = useTranslation()
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   const [form, setForm] = useState({
@@ -31,59 +34,59 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
   return (
     <div className="glass-overlay flex items-center justify-center p-4" onClick={onCancel}>
       <div className="glass-modal p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold text-slate-900 mb-5">Nuova Prenotazione</h3>
+        <h3 className="text-lg font-bold text-slate-900 mb-5">{t('reservations.formTitle')}</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nome ospite *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('reservations.formGuestName')}</label>
               <input value={form.guestName} onChange={e => update('guestName', e.target.value)}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
-                placeholder="Mario Rossi" />
+                placeholder={t('reservations.formGuestNamePlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Telefono *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('reservations.formPhone')}</label>
               <input value={form.guestPhone} onChange={e => update('guestPhone', e.target.value)}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
-                placeholder="+39 333..." />
+                placeholder={t('reservations.formPhonePlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Coperti *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('reservations.formCovers')}</label>
               <input type="number" min={1} max={20} value={form.covers} onChange={e => update('covers', parseInt(e.target.value))}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Data e ora *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('reservations.formDateTime')}</label>
               <input type="datetime-local" value={form.date} onChange={e => update('date', e.target.value)}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('common.email')}</label>
               <input type="email" value={form.guestEmail} onChange={e => update('guestEmail', e.target.value)}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Durata (min)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('reservations.formDuration')}</label>
               <select value={form.duration} onChange={e => update('duration', parseInt(e.target.value))}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35">
-                <option value={60}>1 ora</option>
-                <option value={90}>1.5 ore</option>
-                <option value={120}>2 ore</option>
-                <option value={150}>2.5 ore</option>
+                <option value={60}>{t('reservations.formDuration1h')}</option>
+                <option value={90}>{t('reservations.formDuration1h30')}</option>
+                <option value={120}>{t('reservations.formDuration2h')}</option>
+                <option value={150}>{t('reservations.formDuration2h30')}</option>
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('waitlist.notes')}</label>
               <textarea value={form.notes} onChange={e => update('notes', e.target.value)}
                 className="w-full px-3 py-2 glass-input rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/35 resize-none"
-                rows={2} placeholder="Allergie, occasioni speciali..." />
+                rows={2} placeholder={t('reservations.formNotesPlaceholder')} />
             </div>
           </div>
         </div>
         <div className="flex gap-3 mt-5">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium">Annulla</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-stone-700/50 rounded-xl text-sm font-medium">{t('common.cancel')}</button>
           <button onClick={() => onSave({ ...form, date: new Date(form.date).toISOString() })}
             className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold">
-            Conferma Prenotazione
+            {t('reservations.formConfirm')}
           </button>
         </div>
       </div>
@@ -94,6 +97,7 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
 export default function ReservationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManageReservations = can('reservations.manage')
   const [activeTab, setActiveTab] = useState<ReservationTab>('bookings')
@@ -101,7 +105,7 @@ export default function ReservationsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
   const { data: reservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['reservations', selectedDate],
+    queryKey: tq(tk, 'reservations', selectedDate),
     queryFn: () => api.get(`/reservations?date=${selectedDate}`).then(r => r.data),
     refetchInterval: 30_000,
   })
@@ -109,7 +113,7 @@ export default function ReservationsPage() {
   const createReservation = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/reservations', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reservations'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
       setShowForm(false)
       toast.success(t('reservations.confirmed'))
     },
@@ -117,7 +121,7 @@ export default function ReservationsPage() {
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`/reservations/${id}/status`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reservations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') }),
   })
 
   const totalCovers = reservations.filter(r => !['CANCELLED', 'NO_SHOW'].includes(r.status)).reduce((s, r) => s + r.covers, 0)

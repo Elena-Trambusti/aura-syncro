@@ -5,6 +5,8 @@ import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { useRole } from '../hooks/useRole'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -106,6 +108,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
 export default function MenuPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManageMenu = can('menu.manage')
   const canToggleAvailability = can('menu.availability')
@@ -114,25 +117,25 @@ export default function MenuPage() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['menu', 'categories'],
+    queryKey: tq(tk, 'menu', 'categories'),
     queryFn: () => api.get('/menu/categories').then(r => r.data),
   })
 
   const createItem = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/menu/items', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['menu'] }); setShowForm(false); toast.success(t('menu.added')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setShowForm(false); toast.success(t('menu.added')) },
   })
   const updateItem = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/menu/items/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['menu'] }); setEditingItem(null); toast.success(t('menu.updated')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setEditingItem(null); toast.success(t('menu.updated')) },
   })
   const deleteItem = useMutation({
     mutationFn: (id: string) => api.delete(`/menu/items/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['menu'] }); toast.success(t('menu.deleted')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); toast.success(t('menu.deleted')) },
   })
   const toggleAvail = useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) => api.patch(`/menu/items/${id}/availability`, { available }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['menu'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
   })
 
   const allItems = categories.flatMap(c =>

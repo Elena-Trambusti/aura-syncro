@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getSocket } from '../lib/socket'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 const TABLE_EVENTS = [
   'table:updated',
@@ -15,13 +17,14 @@ const TABLE_EVENTS = [
  */
 export function useRealtimeTables(): void {
   const queryClient = useQueryClient()
+  const tenantKey = useTenantQueryKey()
 
   useEffect(() => {
     const socket = getSocket()
     if (!socket.connected) socket.connect()
 
     const refresh = () => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
+      queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'tables') })
     }
 
     for (const event of TABLE_EVENTS) {
@@ -33,11 +36,12 @@ export function useRealtimeTables(): void {
         socket.off(event, refresh)
       }
     }
-  }, [queryClient])
+  }, [queryClient, tenantKey])
 }
 
 export function useRealtimeQuery(events: readonly string[], queryKey: string): void {
   const queryClient = useQueryClient()
+  const tenantKey = useTenantQueryKey()
   const eventsKey = events.join('|')
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export function useRealtimeQuery(events: readonly string[], queryKey: string): v
 
     const eventList = eventsKey.split('|').filter(Boolean)
     const refresh = () => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] })
+      queryClient.invalidateQueries({ queryKey: tq(tenantKey, queryKey) })
     }
 
     for (const event of eventList) {
@@ -58,5 +62,5 @@ export function useRealtimeQuery(events: readonly string[], queryKey: string): v
         socket.off(event, refresh)
       }
     }
-  }, [queryClient, queryKey, eventsKey])
+  }, [queryClient, tenantKey, queryKey, eventsKey])
 }

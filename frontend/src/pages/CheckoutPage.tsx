@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { formatCurrency, cn } from '../lib/utils'
-import { useAuth, useFiscalRegime } from '../contexts/AuthContext'
+import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
 import { printReceipt } from '../lib/export'
 import ReceiptPreviewModal, { type CheckoutFinalizeResult } from '../components/checkout/ReceiptPreviewModal'
@@ -43,6 +44,7 @@ export default function CheckoutPage() {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
   const { restaurant } = useAuth()
+  const tk = useTenantQueryKey()
   const fiscal = useFiscalRegime()
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CARD')
@@ -59,7 +61,7 @@ export default function CheckoutPage() {
     order: CheckoutOrder
     restaurant: { name: string; taxId?: string | null }
   }>({
-    queryKey: ['checkout', orderId],
+    queryKey: tq(tk, 'checkout', orderId),
     queryFn: () => api.get(`/payments/checkout/${orderId}`).then(r => r.data),
     enabled: !!orderId,
   })
@@ -135,9 +137,9 @@ export default function CheckoutPage() {
       return api.post('/payments/finalize', payload).then(r => r.data)
     },
     onSuccess: (result: CheckoutFinalizeResult) => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['reports', 'fiscal'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reports', 'fiscal') })
       setFinalizeResult(result)
       toast.success(t('checkout.paymentSuccess'))
     },

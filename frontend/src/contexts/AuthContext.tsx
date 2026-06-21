@@ -91,7 +91,7 @@ function applyActiveRestaurant(
 
   const nextKey = tenantIdentityKey(tenantIdentity(normalized))
   if (options?.invalidateCache !== false && options?.previousKey && options.previousKey !== nextKey) {
-    invalidateTenantQueries(normalized.id, normalized.taxRegion)
+    invalidateTenantQueries(tenantIdentityKey(tenantIdentity(normalized)))
   }
 }
 

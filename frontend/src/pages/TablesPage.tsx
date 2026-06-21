@@ -7,7 +7,10 @@ import { RefreshCw } from 'lucide-react'
 import OrderModal from '../components/orders/OrderModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import { cn } from '../lib/utils'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { useRealtimeTables } from '../hooks/useRealtimeInvalidation'
+import { PwaInstallHint } from '../components/layout/PwaNotificationBanner'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
@@ -26,6 +29,7 @@ const STAT_ACCENTS = [
 export default function TablesPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   useRealtimeTables()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
@@ -33,7 +37,7 @@ export default function TablesPage() {
   const [filterArea, setFilterArea] = useState(allAreasKey)
 
   const { data: tables = [], isLoading } = useQuery<Table[]>({
-    queryKey: ['tables'],
+    queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
   })
 
@@ -63,14 +67,15 @@ export default function TablesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="pwa-mobile-page">
+      <PwaInstallHint />
       <div className="aura-page-header">
         <div>
           <h1 className="aura-page-title">{t('tables.title')}</h1>
           <p className="aura-page-subtitle">{t('tables.subtitle')}</p>
         </div>
         <button
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['tables'] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })}
           className="flex items-center justify-center gap-2 px-4 py-2 saas-chip rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors w-full sm:w-auto shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
@@ -78,7 +83,7 @@ export default function TablesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="pwa-tables-stats">
         {STAT_ACCENTS.map(({ key, status, accent }) => (
           <div key={key} className={cn('saas-stat p-4 pl-5', accent)}>
             <p className="text-2xl font-bold text-slate-900 tabular-nums">{stats[key]}</p>
@@ -91,14 +96,14 @@ export default function TablesPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
           {areas.map(area => (
             <button
               key={area}
               type="button"
               onClick={() => setFilterArea(area)}
               className={cn(
-                'px-4 py-1.5 rounded-lg text-sm font-medium transition-all',
+                'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0',
                 filterArea === area
                   ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
                   : 'saas-chip text-slate-600 hover:bg-slate-50',

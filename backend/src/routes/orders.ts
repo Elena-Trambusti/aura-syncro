@@ -9,6 +9,7 @@ import { io } from '../index'
 import { parseLocalDate } from '../lib/dates'
 import { computePaymentSplit, decrementInventoryForOrder, releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxForRestaurant } from '../lib/orderTax'
+import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const ordersRouter = Router()
@@ -154,6 +155,14 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   }
 
   io.to(req.restaurantId!).emit('order:created', order)
+
+  const tableLabel = order.table ? `tavolo ${order.table.number}` : order.type.toLowerCase()
+  void broadcastNewOrderNotification(
+    req.restaurantId!,
+    order.id,
+    `Nuovo ordine da ${tableLabel} — ${formatOrderCurrency(order.total)}`,
+  )
+
   res.status(201).json(order)
 })
 

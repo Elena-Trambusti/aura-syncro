@@ -3,13 +3,14 @@ import { prisma } from '../lib/prisma'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { createPublicOrder, publicOrderSchema, PublicOrderError } from '../lib/publicOrder'
 import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
+import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { STRIPE_ENABLED } from '../lib/stripe'
 import { io } from '../index'
 
 export const publicRouter = Router()
 
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount)
+  return formatOrderCurrency(amount)
 }
 
 /** GET /api/public/menu/:slug — Menu QR senza autenticazione */
@@ -63,11 +64,11 @@ publicRouter.post('/orders', async (req: Request, res: Response): Promise<void> 
     const { order, restaurantId, tableNumber, total } = await createPublicOrder(parsed.data)
 
     io.to(restaurantId).emit('order:created', order)
-    io.to(restaurantId).emit('notification', {
-      type: 'new_order',
-      message: `Nuovo ordine dal tavolo ${tableNumber || 'asporto'} — ${formatCurrency(total)}`,
-      orderId: order.id,
-    })
+    void broadcastNewOrderNotification(
+      restaurantId,
+      order.id,
+      `Nuovo ordine dal tavolo ${tableNumber || 'asporto'} — ${formatCurrency(total)}`,
+    )
 
     res.status(201).json({ success: true, orderId: order.id })
   } catch (err) {

@@ -8,6 +8,7 @@ import { buildFiscalPdfLabels } from '../lib/fiscalLabels'
 import { downloadCSV } from '../lib/export'
 import { getIntlLocale } from '../i18n'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import AccessDenied from '../components/AccessDenied'
 import { useRole } from '../hooks/useRole'
 import { tRegime, type FiscalRegime, type TaxRegion } from '../lib/fiscalRegime'
@@ -56,7 +57,7 @@ function ReportFiscalContent() {
   const intlLocale = getIntlLocale()
 
   const { data, isLoading, isFetching, isError } = useQuery<FiscalApiResponse>({
-    queryKey: ['reports', 'fiscal', tenantQueryKey, mode, dayDate, year, month, rangeFrom, rangeTo],
+    queryKey: tq(tenantQueryKey, 'reports', 'fiscal', mode, dayDate, year, month, rangeFrom, rangeTo),
     queryFn: () => api.get(`/reports/fiscal?${queryParams(mode, dayDate, year, month, rangeFrom, rangeTo)}`).then(r => r.data),
     enabled: !!restaurant?.id,
   })

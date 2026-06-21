@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 export type WeatherCondition = 'sunny' | 'cloudy' | 'rain'
 export type AlertSeverity = 'critical' | 'optimization' | 'opportunity'
@@ -106,8 +108,9 @@ function buildMockPredictiveData(): PredictiveAIData {
  * Chiama GET /api/ai/predictive con fallback mock locale.
  */
 export function usePredictiveAI() {
+  const tk = useTenantQueryKey()
   const query = useQuery<PredictiveAIData>({
-    queryKey: ['ai', 'predictive'],
+    queryKey: tq(tk, 'ai', 'predictive'),
     queryFn: async () => {
       try {
         const { data } = await api.get<PredictiveAIData>('/ai/predictive')

@@ -81,6 +81,8 @@ model RestaurantSettings {
   /** Abbonamento SaaS Aura Syncro Premium */
   hasActiveSubscription Boolean  @default(false)
   stripeSubscriptionId  String?
+  /** Abbonamento add-on piano Pro (CRM, AI, marketing…) */
+  stripeProSubscriptionId String?
   /** Piano moduli: BASE (core POS) o PRO (CRM, AI, marketing, fiscal…) */
   planTier              PlanTier @default(BASE)
 }
@@ -102,8 +104,24 @@ model User {
 
   orders       Order[]
   shifts       Shift[]
+  pushSubscriptions PushSubscription[]
 
   @@unique([restaurantId, email])
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurantId String
+  endpoint     String
+  p256dh       String
+  auth         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, endpoint])
+  @@index([restaurantId])
 }
 
 enum Role {

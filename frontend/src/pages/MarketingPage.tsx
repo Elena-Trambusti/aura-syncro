@@ -6,6 +6,8 @@ import { ui } from '../lib/ui'
 import AutomationCard from '../components/marketing/AutomationCard'
 import { Cake, RefreshCw, Crown } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 type AutomationType = 'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS'
 
@@ -28,9 +30,10 @@ const AUTOMATION_META: Record<
 export default function MarketingPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const tk = useTenantQueryKey()
 
   const { data: automations = [], isLoading } = useQuery<MarketingAutomation[]>({
-    queryKey: ['marketing', 'automations'],
+    queryKey: tq(tk, 'marketing', 'automations'),
     queryFn: () => api.get('/marketing/automations').then(r => r.data),
   })
 
@@ -38,7 +41,7 @@ export default function MarketingPage() {
     mutationFn: ({ type, ...body }: { type: AutomationType; isActive?: boolean; messageTemplate?: string }) =>
       api.put(`/marketing/automations/${type}`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['marketing', 'automations'] })
+      qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'automations') })
       toast.success(t('marketing.automations.saved'))
     },
     onError: () => toast.error(t('marketing.automations.saveError')),

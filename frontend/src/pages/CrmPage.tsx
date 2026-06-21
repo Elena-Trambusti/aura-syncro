@@ -8,6 +8,8 @@ import { customerDisplayName, isVipCustomer, tagBadgeClass } from '../lib/custom
 import CustomerSlideOver, { type CustomerDetail } from '../components/crm/CustomerSlideOver'
 import { Search, Users, TrendingUp, Award, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 interface CustomerListItem {
   id: string
@@ -50,23 +52,24 @@ const emptyForm = (): NewCustomerForm => ({
 export default function CrmPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const tk = useTenantQueryKey()
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [form, setForm] = useState<NewCustomerForm>(emptyForm)
 
   const { data: customers = [] } = useQuery<CustomerListItem[]>({
-    queryKey: ['customers', search],
+    queryKey: tq(tk, 'customers', search),
     queryFn: () => api.get(`/customers${search ? `?search=${encodeURIComponent(search)}` : ''}`).then(r => r.data),
   })
 
   const { data: stats } = useQuery<CrmStats>({
-    queryKey: ['customers', 'stats'],
+    queryKey: tq(tk, 'customers', 'stats'),
     queryFn: () => api.get('/customers/stats').then(r => r.data),
   })
 
   const { data: selectedCustomer, isLoading: detailLoading } = useQuery<CustomerDetail>({
-    queryKey: ['customers', selectedId],
+    queryKey: tq(tk, 'customers', selectedId),
     queryFn: () => api.get(`/customers/${selectedId}`).then(r => r.data),
     enabled: Boolean(selectedId),
   })
@@ -84,7 +87,7 @@ export default function CrmPage() {
           : {}),
       }),
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: tq(tk, 'customers') })
       setShowCreateModal(false)
       setForm(emptyForm())
       setSelectedId(res.data.id)

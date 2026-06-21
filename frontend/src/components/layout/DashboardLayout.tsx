@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import PwaNotificationBanner from './PwaNotificationBanner'
+import { useAuth } from '../../contexts/AuthContext'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 interface LayoutContextType {
   sidebarOpen: boolean
@@ -20,6 +23,8 @@ export function useDashboardLayout() {
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user } = useAuth()
+  usePushNotifications(!!user)
 
   const openSidebar = useCallback(() => setSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
@@ -38,11 +43,12 @@ export default function DashboardLayout() {
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar }}>
-      <div className="flex h-[100dvh] overflow-hidden bg-slate-50">
+      <div className="pwa-app-shell flex h-[100dvh] overflow-hidden bg-slate-50">
         <Sidebar />
-        <div className="dashboard-main flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+        <div className="dashboard-main flex min-w-0 flex-1 flex-col overflow-hidden bg-slate-50">
           <Header />
-          <main className="relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+          <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+            <PwaNotificationBanner enabled={!!user} />
             <Outlet />
           </main>
         </div>

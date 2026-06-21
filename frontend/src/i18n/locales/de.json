@@ -108,7 +108,13 @@
     "yourName": "Ihr Name",
     "yourNamePlaceholder": "Max Mustermann",
     "phonePlaceholder": "+49 170 1234567",
-    "passwordMinLength": "Mindestens 6 Zeichen"
+    "passwordMinLength": "Mindestens 6 Zeichen",
+    "country": "Land des Restaurants",
+    "countryIT": "Italien",
+    "countryES": "Spanien",
+    "taxRegion": "Steuerregion",
+    "taxRegionCanarias": "Kanarische Inseln (IGIC)",
+    "taxRegionPeninsula": "Festlandspanien (MwSt.)"
   },
   "status": {
     "order": {
@@ -248,7 +254,16 @@
     "restaurantId": "Restaurant-ID",
     "slug": "Slug (URL)",
     "database": "Datenbank",
-    "appVersion": "App-Version"
+    "appVersion": "App-Version",
+    "fiscalTitle": "Steuern & Fiskalregime",
+    "fiscalDesc": "Land, Steuersatz und Steuer-ID für Ihr Restaurant",
+    "country": "Land",
+    "taxRegion": "Steuerregion",
+    "taxRate": "Steuersatz (%)",
+    "taxId": "Steuer-ID (USt / NIF)",
+    "taxRegionIT_MAIN": "Italien",
+    "taxRegionES_CANARIAS": "Kanarische Inseln (IGIC)",
+    "taxRegionES_PENINSULA": "Festlandspanien (MwSt.)"
   },
   "reservations": {
     "title": "Reservierungen",
@@ -258,7 +273,21 @@
     "guests": "Gäste",
     "noReservations": "Keine Reservierungen",
     "tabBookings": "Reservierungen",
-    "tabWaitlist": "Warteliste"
+    "tabWaitlist": "Warteliste",
+    "formTitle": "Neue Reservierung",
+    "formGuestName": "Gastname *",
+    "formGuestNamePlaceholder": "Max Mustermann",
+    "formPhone": "Telefon *",
+    "formPhonePlaceholder": "+49 170 1234567",
+    "formCovers": "Gäste *",
+    "formDateTime": "Datum und Uhrzeit *",
+    "formDuration": "Dauer (Min.)",
+    "formDuration1h": "1 Stunde",
+    "formDuration1h30": "1,5 Stunden",
+    "formDuration2h": "2 Stunden",
+    "formDuration2h30": "2,5 Stunden",
+    "formNotesPlaceholder": "Allergien, besondere Anlässe...",
+    "formConfirm": "Reservierung bestätigen"
   },
   "waitlist": {
     "subtitle": "{{count}} Gäste warten",
@@ -700,7 +729,19 @@
     "checkoutCanceled": "Zahlung abgebrochen. Sie können es jederzeit erneut versuchen.",
     "checkoutError": "Checkout konnte nicht gestartet werden. Bitte erneut versuchen.",
     "checkoutUrlMissing": "Checkout-URL von Stripe nicht erhalten",
-    "secureNote": "Sichere Zahlung über Stripe Checkout"
+    "secureNote": "Sichere Zahlung über Stripe Checkout",
+    "proBadge": "Empfohlenes Upgrade",
+    "proTitle": "Aura Syncro Pro",
+    "proSubtitle": "Erweiterte Module: CRM, KI, Marketing und Steuerberichte",
+    "proPriceLabel": "Pro-Monats-Add-on",
+    "proPriceHint": "Zusätzlich zur Premium-Gebühr · jederzeit kündbar",
+    "proActivateButton": "Auf Pro upgraden — sichere Zahlung",
+    "proLoading": "Weiterleitung zu Stripe...",
+    "proCheckoutSuccess": "Pro-Plan aktiviert! Alle erweiterten Module freigeschaltet.",
+    "proCheckoutCanceled": "Pro-Upgrade abgebrochen.",
+    "proCheckoutError": "Pro-Upgrade konnte nicht gestartet werden.",
+    "proActiveBadge": "Pro-Plan aktiv — alle erweiterten Module freigeschaltet",
+    "proAlreadyActive": "Sie haben bereits den Pro-Plan."
   },
   "onboarding": {
     "badge": "Aura Syncro Concierge",
@@ -719,7 +760,35 @@
   "paywall": {
     "title": "Premium-Funktion",
     "description": "Schalten Sie das Fiskalregister, die Predictive AI und mehr mit Aura Syncro Premium frei.",
-    "cta": "Premium-Plan entdecken"
+    "cta": "Premium-Plan entdecken",
+    "proBadge": "Pro-Plan",
+    "proTitle": "Aura Syncro Pro Modul",
+    "proDescription": "Diese Funktion ist im Pro-Plan enthalten. Ihr Konto nutzt derzeit den Base-Plan (Kern-POS).",
+    "proFeature1": "Kunden-CRM und Besuchshistorie",
+    "proFeature2": "Predictive AI, Marketing und Fiskalberichte",
+    "proFeature3": "Erweiterte Analytics, Treueprogramm und digitale Zahlungen",
+    "proCta": "Upgrade auf Pro — sichere Zahlung"
+  },
+  "guestCheckout": {
+    "verifying": "Zahlung wird überprüft...",
+    "errorTitle": "Zahlung nicht bestätigt",
+    "errorDesc": "Wir konnten Ihre Zahlung nicht verifizieren. Bitte zeigen Sie einen Screenshot dem Service.",
+    "backToMenu": "Zurück zur Speisekarte",
+    "confirmedTitle": "Zahlung bestätigt!",
+    "processingTitle": "Zahlung wird bearbeitet",
+    "confirmedSubtitle": "Ihre Bestellung wurde an die Küche gesendet",
+    "processingSubtitle": "Ihre Zahlung wird überprüft",
+    "orderSummary": "Bestellübersicht",
+    "totalPaid": "Bezahlt gesamt",
+    "table": "Tisch {{number}}",
+    "tableHint": "Der Service bringt die Gerichte an Ihren Tisch",
+    "receiptSent": "Beleg gesendet an {{email}}",
+    "kitchenNoteTitle": "Ihre Bestellung ist in der Küche!",
+    "kitchenNoteDesc": "Bewahren Sie diese Seite als Zahlungsnachweis auf. Bei Problemen dem Service zeigen.",
+    "backHome": "Zur Startseite",
+    "cancelTitle": "Zahlung abgebrochen",
+    "cancelDesc": "Die Zahlung wurde abgebrochen. Ihre Bestellung wurde nicht an die Küche gesendet.",
+    "retryOrder": "Bestellung erneut versuchen"
   },
   "publicMenu": {
     "title": "Speisekarte",
@@ -788,9 +857,20 @@
   "notifications": {
     "title": "Benachrichtigungen",
     "markAllRead": "Alle als gelesen markieren",
+    "clearAll": "Alle löschen",
     "noNotifications": "Keine Benachrichtigungen",
+    "newOrderTitle": "Neue Bestellung",
     "newOrder": "Neue Bestellung von Tisch {{table}}",
     "reservation": "Neue Reservierung für {{guests}} Gäste"
+  },
+  "pwa": {
+    "pushBannerTitle": "Bestellbenachrichtigungen im Hintergrund",
+    "pushBannerDesc": "Native Handy-Alerts auch wenn die App geschlossen ist.",
+    "enablePush": "Benachrichtigungen aktivieren",
+    "pushEnabled": "Push-Benachrichtigungen aktiviert",
+    "pushDenied": "Berechtigung verweigert. In den Browser-Einstellungen aktivieren.",
+    "pushError": "Push-Benachrichtigungen konnten nicht aktiviert werden.",
+    "installHint": "Auf Android: Chrome-Menü → «App installieren» oder «Zum Startbildschirm hinzufügen»."
   },
   "export": {
     "receipt": "Beleg",

@@ -2,7 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { Save, QrCode, ExternalLink, MonitorCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -31,10 +32,11 @@ interface RestaurantData {
 export default function SettingsPage() {
   const { t } = useTranslation()
   const { restaurant, refreshRestaurant } = useAuth()
+  const tk = useTenantQueryKey()
   const queryClient = useQueryClient()
 
   const { data: restaurantData } = useQuery<RestaurantData>({
-    queryKey: ['restaurant'],
+    queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
   })
 
@@ -92,7 +94,7 @@ export default function SettingsPage() {
       },
     }),
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurant'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'restaurant') })
       await refreshRestaurant()
       toast.success(t('settings.saved'))
     },

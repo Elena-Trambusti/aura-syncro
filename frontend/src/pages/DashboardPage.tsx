@@ -2,7 +2,8 @@
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, formatLongDate, getIntlLocale } from '../lib/utils'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { getTenantTheme } from '../lib/tenantTheme'
 import { BRAND } from '../lib/brand'
 import {
@@ -55,28 +56,29 @@ function StatCard({
 export default function DashboardPage() {
   const { t } = useTranslation()
   const { restaurant } = useAuth()
+  const tk = useTenantQueryKey()
   const theme = getTenantTheme(restaurant?.colorTheme)
   const locale = getIntlLocale()
 
   const { data: dashboard } = useQuery<DashboardData>({
-    queryKey: ['analytics', 'dashboard'],
+    queryKey: tq(tk, 'analytics', 'dashboard'),
     queryFn: () => api.get('/analytics/dashboard').then(r => r.data),
     refetchInterval: 30_000,
   })
 
   const { data: revenueData } = useQuery({
-    queryKey: ['analytics', 'revenue', '7d'],
+    queryKey: tq(tk, 'analytics', 'revenue', '7d'),
     queryFn: () => api.get('/analytics/revenue?period=7d').then(r => r.data),
   })
 
   const { data: topItems } = useQuery({
-    queryKey: ['analytics', 'top-items'],
+    queryKey: tq(tk, 'analytics', 'top-items'),
     queryFn: () => api.get('/analytics/top-items').then(r => r.data),
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="pwa-mobile-page">
+      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: BRAND.gold }}>
             {BRAND.name}
@@ -88,7 +90,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="pwa-stat-grid">
         <StatCard
           title={t('dashboard.todayRevenue')}
           value={formatCurrency(dashboard?.today.revenue || 0)}
@@ -116,7 +118,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="pwa-stat-grid-2">
         <StatCard
           title={t('dashboard.totalCustomers')}
           value={String(dashboard?.totals.customers || 0)}
@@ -131,10 +133,10 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 saas-card p-6">
-          <h3 className="text-base font-semibold text-slate-900 mb-4 tracking-wide">{t('dashboard.revenueChart')}</h3>
-          <ResponsiveContainer width="100%" height={240}>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:gap-6">
+        <div className="xl:col-span-2 pwa-chart-card">
+          <h3 className="text-base font-semibold text-slate-900 mb-3 sm:mb-4 tracking-wide">{t('dashboard.revenueChart')}</h3>
+          <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={revenueData || []}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -172,7 +174,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="saas-card p-6">
+        <div className="pwa-chart-card">
           <h3 className="text-base font-semibold text-slate-900 mb-4 tracking-wide">{t('dashboard.topDishes')}</h3>
           <div className="space-y-3">
             {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (

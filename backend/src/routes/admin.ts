@@ -162,3 +162,66 @@ adminRouter.get('/restaurant/:slug', async (req: Request, res: Response): Promis
 
   res.json({ restaurant })
 })
+
+const planDowngradeSchema = z.object({
+  restaurantId: z.string().min(1).optional(),
+  slug: z.string().min(1).optional(),
+  ownerEmail: z.string().email().optional(),
+}).refine(
+  data => !!(data.restaurantId || data.slug || data.ownerEmail),
+  { message: 'Specificare almeno uno tra restaurantId, slug o ownerEmail' },
+)
+
+/**
+ * POST /api/admin/plan-downgrade
+ * Downgrade manuale PRO → BASE (non cancella l'abbonamento Stripe Pro).
+ */
+adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise<void> => {
+  const parsed = planDowngradeSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
+    return
+  }
+
+  const restaurantId = await resolveRestaurantId(parsed.data)
+  if (!restaurantId) {
+    res.status(404).json({ error: 'Ristorante non trovato con i criteri indicati' })
+    return
+  }
+
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId },
+    select: { planTier: true },
+  })
+
+  if (!settings) {
+    res.status(404).json({ error: 'Impostazioni ristorante non trovate' })
+    return
+  }
+
+  if (settings.planTier !== 'PRO') {
+    res.status(400).json({ error: 'Il tenant non è sul piano Pro', code: 'NOT_PRO' })
+    return
+  }
+
+  await prisma.restaurantSettings.update({
+    where: { restaurantId },
+    data: {
+      planTier: 'BASE',
+      stripeProSubscriptionId: null,
+    },
+  })
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: restaurantSummarySelect,
+  })
+
+  console.info('[admin] Downgrade Pro → Base:', restaurant?.slug, restaurantId)
+
+  res.json({
+    success: true,
+    message: 'Piano impostato su Base. Ricorda di annullare l\'abbonamento Pro su Stripe se necessario.',
+    restaurant,
+  })
+})

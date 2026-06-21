@@ -273,7 +273,21 @@
     "guests": "guests",
     "noReservations": "No reservations",
     "tabBookings": "Reservations",
-    "tabWaitlist": "Waitlist"
+    "tabWaitlist": "Waitlist",
+    "formTitle": "New Reservation",
+    "formGuestName": "Guest name *",
+    "formGuestNamePlaceholder": "John Smith",
+    "formPhone": "Phone *",
+    "formPhonePlaceholder": "+1 555 1234567",
+    "formCovers": "Covers *",
+    "formDateTime": "Date and time *",
+    "formDuration": "Duration (min)",
+    "formDuration1h": "1 hour",
+    "formDuration1h30": "1.5 hours",
+    "formDuration2h": "2 hours",
+    "formDuration2h30": "2.5 hours",
+    "formNotesPlaceholder": "Allergies, special occasions...",
+    "formConfirm": "Confirm Reservation"
   },
   "waitlist": {
     "subtitle": "{{count}} guests waiting",
@@ -715,7 +729,19 @@
     "checkoutCanceled": "Payment canceled. You can try again anytime.",
     "checkoutError": "Unable to start checkout. Please try again.",
     "checkoutUrlMissing": "Checkout URL not received from Stripe",
-    "secureNote": "Encrypted payment powered by Stripe"
+    "secureNote": "Encrypted payment powered by Stripe",
+    "proBadge": "Recommended upgrade",
+    "proTitle": "Aura Syncro Pro",
+    "proSubtitle": "Advanced modules: CRM, AI, marketing and fiscal reporting",
+    "proPriceLabel": "Pro monthly add-on",
+    "proPriceHint": "Added to your Premium fee · cancel anytime",
+    "proActivateButton": "Upgrade to Pro — secure payment",
+    "proLoading": "Redirecting to Stripe...",
+    "proCheckoutSuccess": "Pro plan activated! All advanced modules are unlocked.",
+    "proCheckoutCanceled": "Pro upgrade canceled.",
+    "proCheckoutError": "Could not start Pro upgrade.",
+    "proActiveBadge": "Pro plan active — all advanced modules unlocked",
+    "proAlreadyActive": "You already have the Pro plan."
   },
   "onboarding": {
     "badge": "Aura Syncro Concierge",
@@ -741,7 +767,28 @@
     "proFeature1": "Customer CRM and visit history",
     "proFeature2": "Predictive AI, marketing and fiscal reports",
     "proFeature3": "Advanced analytics, loyalty and digital payments",
-    "proCta": "Request Pro upgrade"
+    "proCta": "Upgrade to Pro — secure payment"
+  },
+  "guestCheckout": {
+    "verifying": "Verifying payment...",
+    "errorTitle": "Payment not confirmed",
+    "errorDesc": "We couldn't verify your payment. Please show a screenshot to your server.",
+    "backToMenu": "Back to menu",
+    "confirmedTitle": "Payment confirmed!",
+    "processingTitle": "Payment processing",
+    "confirmedSubtitle": "Your order has been sent to the kitchen",
+    "processingSubtitle": "Your payment is being verified",
+    "orderSummary": "Order summary",
+    "totalPaid": "Total paid",
+    "table": "Table {{number}}",
+    "tableHint": "Your server will bring dishes to your table",
+    "receiptSent": "Receipt sent to {{email}}",
+    "kitchenNoteTitle": "Your order is in the kitchen!",
+    "kitchenNoteDesc": "Keep this page as proof of payment. If there are issues, show it to your server.",
+    "backHome": "Back to home",
+    "cancelTitle": "Payment cancelled",
+    "cancelDesc": "Payment was cancelled. Your order was not sent to the kitchen.",
+    "retryOrder": "Try ordering again"
   },
   "publicMenu": {
     "title": "Menu",
@@ -810,9 +857,20 @@
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
+    "clearAll": "Clear all",
     "noNotifications": "No notifications",
+    "newOrderTitle": "New order",
     "newOrder": "New order from table {{table}}",
     "reservation": "New reservation for {{guests}} guests"
+  },
+  "pwa": {
+    "pushBannerTitle": "Background order alerts",
+    "pushBannerDesc": "Get native phone alerts even when the app is closed or in standby.",
+    "enablePush": "Enable notifications",
+    "pushEnabled": "Push notifications enabled",
+    "pushDenied": "Notification permission denied. Enable it in browser settings.",
+    "pushError": "Could not enable push notifications.",
+    "installHint": "For the best Android experience: Chrome menu → \"Install app\" or \"Add to Home screen\"."
   },
   "export": {
     "receipt": "Receipt",

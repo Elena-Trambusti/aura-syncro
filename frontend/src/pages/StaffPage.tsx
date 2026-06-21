@@ -8,6 +8,8 @@ import { type AppRole } from '../lib/rbac'
 import { Plus, UserCog, Loader2, X, UserMinus, UserCheck, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
 import StaffShiftsTab from '../components/staff/StaffShiftsTab'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 type StaffTab = 'team' | 'shifts'
 
@@ -30,6 +32,7 @@ const ROLE_COLORS: Record<string, string> = {
 export default function StaffPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const { assignableStaffRoles } = useRole()
   const [activeTab, setActiveTab] = useState<StaffTab>('team')
   const [showForm, setShowForm] = useState(false)
@@ -42,14 +45,14 @@ export default function StaffPage() {
   })
 
   const { data: staff = [], isLoading } = useQuery<StaffMember[]>({
-    queryKey: ['staff'],
+    queryKey: tq(tk, 'staff'),
     queryFn: () => api.get('/staff').then(r => r.data),
   })
 
   const createStaff = useMutation({
     mutationFn: (data: typeof newStaff) => api.post('/staff', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'staff') })
       setShowForm(false)
       setNewStaff({ name: '', email: '', password: '', role: 'WAITER', phone: '' })
       toast.success(t('staff.memberAdded'))
@@ -60,7 +63,7 @@ export default function StaffPage() {
   const toggleActive = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       api.put(`/staff/${id}`, { active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['staff'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'staff') }),
   })
 
   return (

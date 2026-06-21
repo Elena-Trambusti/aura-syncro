@@ -8,6 +8,8 @@ import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
 import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRole } from '../../hooks/useRole'
+import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { tq } from '../../lib/queryKeys'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface Category { id: string; name: string; items: MenuItem[] }
@@ -41,6 +43,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { can } = useRole()
+  const tk = useTenantQueryKey()
   const canPayOrder = can('orders.pay')
   const isDesktop = useIsDesktop()
   const [cart, setCart] = useState<CartItem[]>([])
@@ -49,7 +52,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const [cartPulse, setCartPulse] = useState(false)
 
   const { data: tables = [] } = useQuery<Table[]>({
-    queryKey: ['tables'],
+    queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
     refetchInterval: 5_000,
   })
@@ -58,7 +61,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const activeOrder = table?.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['menu', 'categories'],
+    queryKey: tq(tk, 'menu', 'categories'),
     queryFn: () => api.get('/menu/categories').then(r => r.data),
   })
 
@@ -70,9 +73,9 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
         items: data.items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity, notes: i.notes })),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
       setCart([])
       toast.success(t('orderModal.orderSent'))
       setTab('order')
@@ -83,8 +86,8 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     mutationFn: ({ orderId, menuItemId, quantity }: { orderId: string; menuItemId: string; quantity: number }) =>
       api.post(`/orders/${orderId}/items`, { menuItemId, quantity }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'orders'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
       setCart([])
       toast.success(t('orderModal.dishAdded'))
       setTab('order')
@@ -94,7 +97,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const markFree = useMutation({
     mutationFn: () => api.patch(`/tables/${tableId}/status`, { status: 'FREE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tables'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       toast.success(t('orderModal.tableReady', { number: table?.number ?? '' }))
       onClose()
     },

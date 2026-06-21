@@ -6,6 +6,8 @@ import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { Star, Plus, Edit2, Trash2, Gift, TrendingUp, Users, Award, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 
 interface LoyaltyTier {
   id: string; name: string; minPoints: number; color: string
@@ -28,6 +30,7 @@ const TIER_COLORS = ['#94a3b8', '#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2']
 export default function LoyaltyPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const tk = useTenantQueryKey()
   const [showTierModal, setShowTierModal] = useState(false)
   const [editTier, setEditTier] = useState<LoyaltyTier | null>(null)
   const [showAdjustModal, setShowAdjustModal] = useState(false)
@@ -37,12 +40,12 @@ export default function LoyaltyPage() {
   const [tierForm, setTierForm] = useState({ name: '', minPoints: 0, color: '#94a3b8', discountPct: 0, cashbackPct: 0, pointsPerEuro: 1, benefits: '', sortOrder: 0 })
 
   const { data: overview } = useQuery<Overview>({
-    queryKey: ['loyalty', 'overview'],
+    queryKey: tq(tk, 'loyalty', 'overview'),
     queryFn: () => api.get('/loyalty/overview').then(r => r.data),
   })
 
   const { data: customers = [] } = useQuery<Customer[]>({
-    queryKey: ['loyalty', 'customers'],
+    queryKey: tq(tk, 'loyalty', 'customers'),
     queryFn: () => api.get('/customers').then(r => r.data),
   })
 
@@ -51,7 +54,7 @@ export default function LoyaltyPage() {
       ? api.put(`/loyalty/tiers/${editTier.id}`, data)
       : api.post('/loyalty/tiers', data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['loyalty'] })
+      qc.invalidateQueries({ queryKey: tq(tk, 'loyalty') })
       setShowTierModal(false); setEditTier(null)
       toast.success(editTier ? 'Livello aggiornato' : 'Livello creato')
     },
@@ -59,7 +62,7 @@ export default function LoyaltyPage() {
 
   const deleteTier = useMutation({
     mutationFn: (id: string) => api.delete(`/loyalty/tiers/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['loyalty'] }); toast.success(t('loyalty.tierDeleted')) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: tq(tk, 'loyalty') }); toast.success(t('loyalty.tierDeleted')) },
   })
 
   const adjustMutation = useMutation({
@@ -69,8 +72,8 @@ export default function LoyaltyPage() {
       description: adjustNote,
     }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['loyalty'] })
-      qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: tq(tk, 'loyalty') })
+      qc.invalidateQueries({ queryKey: tq(tk, 'customers') })
       setShowAdjustModal(false); setSelectedCustomer(null); setAdjustPoints(0); setAdjustNote('')
       toast.success(t('loyalty.pointsUpdated'))
     },

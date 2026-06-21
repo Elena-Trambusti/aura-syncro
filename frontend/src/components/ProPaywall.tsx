@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 
-/** Paywall per moduli riservati al piano Pro (tenant già abbonato). */
+/** Paywall per moduli riservati al piano Pro (tenant già abbonato Premium). */
 export default function ProPaywall() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
@@ -24,12 +26,13 @@ export default function ProPaywall() {
             </li>
           ))}
         </ul>
-        <a
-          href="mailto:elenatrambusti2024@gmail.com?subject=Upgrade%20Aura%20Syncro%20Pro"
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard/billing?upgrade=pro')}
           className="mt-8 inline-block w-full rounded-xl bg-violet-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
         >
           {t('paywall.proCta')}
-        </a>
+        </button>
       </div>
     </div>
   )

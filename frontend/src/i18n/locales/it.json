@@ -273,7 +273,21 @@
     "guests": "ospiti",
     "noReservations": "Nessuna prenotazione",
     "tabBookings": "Prenotazioni",
-    "tabWaitlist": "Lista d'attesa"
+    "tabWaitlist": "Lista d'attesa",
+    "formTitle": "Nuova Prenotazione",
+    "formGuestName": "Nome ospite *",
+    "formGuestNamePlaceholder": "Mario Rossi",
+    "formPhone": "Telefono *",
+    "formPhonePlaceholder": "+39 333...",
+    "formCovers": "Coperti *",
+    "formDateTime": "Data e ora *",
+    "formDuration": "Durata (min)",
+    "formDuration1h": "1 ora",
+    "formDuration1h30": "1.5 ore",
+    "formDuration2h": "2 ore",
+    "formDuration2h30": "2.5 ore",
+    "formNotesPlaceholder": "Allergie, occasioni speciali...",
+    "formConfirm": "Conferma Prenotazione"
   },
   "waitlist": {
     "subtitle": "{{count}} ospiti in attesa",
@@ -717,7 +731,19 @@
     "checkoutCanceled": "Pagamento annullato. Puoi riprovare quando vuoi.",
     "checkoutError": "Impossibile avviare il checkout. Riprova.",
     "checkoutUrlMissing": "URL di checkout non ricevuto da Stripe",
-    "secureNote": "Pagamento crittografato e gestito da Stripe"
+    "secureNote": "Pagamento crittografato e gestito da Stripe",
+    "proBadge": "Upgrade consigliato",
+    "proTitle": "Aura Syncro Pro",
+    "proSubtitle": "Moduli avanzati per crescere: CRM, AI, marketing e fiscalità",
+    "proPriceLabel": "Add-on mensile Pro",
+    "proPriceHint": "Si aggiunge al canone Premium · disdici quando vuoi",
+    "proActivateButton": "Passa a Pro — pagamento sicuro",
+    "proLoading": "Reindirizzamento a Stripe...",
+    "proCheckoutSuccess": "Piano Pro attivato! Tutti i moduli avanzati sono sbloccati.",
+    "proCheckoutCanceled": "Upgrade Pro annullato.",
+    "proCheckoutError": "Impossibile avviare l'upgrade Pro.",
+    "proActiveBadge": "Piano Pro attivo — tutti i moduli avanzati sono sbloccati",
+    "proAlreadyActive": "Hai già il piano Pro attivo."
   },
   "onboarding": {
     "badge": "Concierge Aura Syncro",
@@ -743,7 +769,28 @@
     "proFeature1": "CRM clienti e storico visitatori",
     "proFeature2": "AI predittiva, marketing e report fiscal",
     "proFeature3": "Analytics avanzate, fedeltà e pagamenti digitali",
-    "proCta": "Richiedi upgrade a Pro"
+    "proCta": "Passa a Pro — pagamento sicuro"
+  },
+  "guestCheckout": {
+    "verifying": "Verifica pagamento...",
+    "errorTitle": "Pagamento non confermato",
+    "errorDesc": "Non riusciamo a verificare il tuo pagamento. Mostra lo screenshot al cameriere.",
+    "backToMenu": "Torna al menu",
+    "confirmedTitle": "Pagamento confermato!",
+    "processingTitle": "Pagamento in elaborazione",
+    "confirmedSubtitle": "Il tuo ordine è stato inviato alla cucina",
+    "processingSubtitle": "Il pagamento è in corso di verifica",
+    "orderSummary": "Riepilogo ordine",
+    "totalPaid": "Totale pagato",
+    "table": "Tavolo {{number}}",
+    "tableHint": "Il cameriere ti porterà i piatti al tavolo",
+    "receiptSent": "Ricevuta inviata a {{email}}",
+    "kitchenNoteTitle": "Il tuo ordine è in cucina!",
+    "kitchenNoteDesc": "Conserva questa pagina come prova di pagamento. In caso di problemi, mostrala al cameriere.",
+    "backHome": "Torna alla home",
+    "cancelTitle": "Pagamento annullato",
+    "cancelDesc": "Il pagamento è stato annullato. Il tuo ordine non è stato inviato alla cucina.",
+    "retryOrder": "Riprova l'ordine"
   },
   "publicMenu": {
     "title": "Menu",
@@ -812,9 +859,20 @@
   "notifications": {
     "title": "Notifiche",
     "markAllRead": "Segna tutte come lette",
+    "clearAll": "Cancella tutto",
     "noNotifications": "Nessuna notifica",
+    "newOrderTitle": "Nuovo ordine",
     "newOrder": "Nuovo ordine da tavolo {{table}}",
     "reservation": "Nuova prenotazione per {{guests}} ospiti"
+  },
+  "pwa": {
+    "pushBannerTitle": "Notifiche ordini in background",
+    "pushBannerDesc": "Ricevi avvisi nativi sul telefono anche quando l'app è chiusa o in standby.",
+    "enablePush": "Attiva notifiche",
+    "pushEnabled": "Notifiche push attivate",
+    "pushDenied": "Permesso notifiche negato. Abilitalo dalle impostazioni del browser.",
+    "pushError": "Impossibile attivare le notifiche push.",
+    "installHint": "Per un'esperienza migliore su Android: menu Chrome → «Installa app» o «Aggiungi a schermata Home»."
   },
   "export": {
     "receipt": "Scontrino",

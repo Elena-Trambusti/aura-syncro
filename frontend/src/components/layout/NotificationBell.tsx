@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { Bell, X, ShoppingBag, CalendarDays, AlertTriangle, ChefHat } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
 import { formatDateTime } from '../../lib/utils'
@@ -26,6 +27,7 @@ const OVERLAY_Z = 99998
 const MENU_Z = 99999
 
 export default function NotificationBell() {
+  const { t } = useTranslation()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const [panelPos, setPanelPos] = useState<{ top: number; right: number } | null>(null)
@@ -59,35 +61,11 @@ export default function NotificationBell() {
         orderId: data.orderId,
       }
       setNotifications(prev => [notif, ...prev].slice(0, 50))
-
-      try {
-        const ctx = new AudioContext()
-        const oscillator = ctx.createOscillator()
-        const gainNode = ctx.createGain()
-        oscillator.connect(gainNode)
-        gainNode.connect(ctx.destination)
-        oscillator.type = 'sine'
-        oscillator.frequency.setValueAtTime(800, ctx.currentTime)
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
-        oscillator.start(ctx.currentTime)
-        oscillator.stop(ctx.currentTime + 0.3)
-      } catch {
-        // Browser potrebbe bloccare AudioContext senza interazione utente
-      }
     }
 
     socket.on('notification', handleNotification)
-
-    const demoInterval = setInterval(() => {
-      if (Math.random() > 0.85) {
-        handleNotification({ type: 'new_order', message: 'Nuovo ordine da tavolo 3 — €42.50' })
-      }
-    }, 30000)
-
     return () => {
       socket.off('notification', handleNotification)
-      clearInterval(demoInterval)
     }
   }, [])
 
@@ -151,29 +129,30 @@ export default function NotificationBell() {
                 top: panelPos.top,
                 right: panelPos.right,
                 width: PANEL_WIDTH,
+                maxWidth: 'calc(100vw - 1rem - env(safe-area-inset-right))',
                 zIndex: MENU_Z,
               }}
               className="saas-dropdown overflow-hidden"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-                <h3 className="font-semibold text-slate-900">Notifiche</h3>
+                <h3 className="font-semibold text-slate-900">{t('notifications.title')}</h3>
                 <div className="flex items-center gap-2">
                   {notifications.length > 0 && (
                     <button onClick={clearAll} className="text-xs text-slate-500 hover:text-red-600 transition-colors">
-                      Cancella tutto
+                      {t('notifications.clearAll')}
                     </button>
                   )}
-                  <button onClick={close}>
+                  <button onClick={close} aria-label={t('common.close')}>
                     <X className="w-4 h-4 text-slate-500" />
                   </button>
                 </div>
               </div>
 
-              <div className="max-h-80 overflow-y-auto divide-y divide-slate-200">
+              <div className="max-h-[min(20rem,50dvh)] overflow-y-auto divide-y divide-slate-200">
                 {notifications.length === 0 ? (
                   <div className="py-8 text-center text-slate-500">
                     <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">Nessuna notifica</p>
+                    <p className="text-sm">{t('notifications.noNotifications')}</p>
                   </div>
                 ) : (
                   notifications.map(notif => {
@@ -215,12 +194,12 @@ export default function NotificationBell() {
         ref={buttonRef}
         type="button"
         onClick={toggleOpen}
-          className={cn(
+        className={cn(
           'relative p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600',
           open && 'z-[100000]',
         )}
         aria-expanded={open}
-        aria-label="Notifiche"
+        aria-label={t('notifications.title')}
       >
         <Bell className="w-5 h-5 text-slate-500" />
         {unreadCount > 0 && (

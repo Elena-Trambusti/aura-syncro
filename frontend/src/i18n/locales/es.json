@@ -273,7 +273,21 @@
     "guests": "comensales",
     "noReservations": "Sin reservas",
     "tabBookings": "Reservas",
-    "tabWaitlist": "Lista de espera"
+    "tabWaitlist": "Lista de espera",
+    "formTitle": "Nueva reserva",
+    "formGuestName": "Nombre del cliente *",
+    "formGuestNamePlaceholder": "Mario Rossi",
+    "formPhone": "Teléfono *",
+    "formPhonePlaceholder": "+34 612 345 678",
+    "formCovers": "Comensales *",
+    "formDateTime": "Fecha y hora *",
+    "formDuration": "Duración (min)",
+    "formDuration1h": "1 hora",
+    "formDuration1h30": "1,5 horas",
+    "formDuration2h": "2 horas",
+    "formDuration2h30": "2,5 horas",
+    "formNotesPlaceholder": "Alergias, ocasiones especiales...",
+    "formConfirm": "Confirmar reserva"
   },
   "waitlist": {
     "subtitle": "{{count}} clientes en espera",
@@ -715,7 +729,19 @@
     "checkoutCanceled": "Pago cancelado. Puedes intentarlo de nuevo cuando quieras.",
     "checkoutError": "No se pudo iniciar el checkout. Inténtalo de nuevo.",
     "checkoutUrlMissing": "URL de checkout no recibida de Stripe",
-    "secureNote": "Pago seguro gestionado por Stripe Checkout"
+    "secureNote": "Pago seguro gestionado por Stripe Checkout",
+    "proBadge": "Upgrade recomendado",
+    "proTitle": "Aura Syncro Pro",
+    "proSubtitle": "Módulos avanzados: CRM, IA, marketing e informes fiscales",
+    "proPriceLabel": "Add-on mensual Pro",
+    "proPriceHint": "Se suma a la cuota Premium · cancela cuando quieras",
+    "proActivateButton": "Pasar a Pro — pago seguro",
+    "proLoading": "Redirigiendo a Stripe...",
+    "proCheckoutSuccess": "¡Plan Pro activado! Todos los módulos avanzados desbloqueados.",
+    "proCheckoutCanceled": "Upgrade Pro cancelado.",
+    "proCheckoutError": "No se pudo iniciar el upgrade Pro.",
+    "proActiveBadge": "Plan Pro activo — todos los módulos avanzados desbloqueados",
+    "proAlreadyActive": "Ya tienes el plan Pro activo."
   },
   "onboarding": {
     "badge": "Concierge Aura Syncro",
@@ -734,7 +760,35 @@
   "paywall": {
     "title": "Función Premium",
     "description": "Para desbloquear el Libro Fiscal, la IA Predictiva y mucho más, pasa a Aura Syncro Premium.",
-    "cta": "Descubre el plan Premium"
+    "cta": "Descubre el plan Premium",
+    "proBadge": "Plan Pro",
+    "proTitle": "Módulo Aura Syncro Pro",
+    "proDescription": "Esta función está incluida en el plan Pro. Tu cuenta está actualmente en el plan Base (POS core).",
+    "proFeature1": "CRM de clientes e historial de visitas",
+    "proFeature2": "IA predictiva, marketing e informes fiscales",
+    "proFeature3": "Analytics avanzadas, fidelización y pagos digitales",
+    "proCta": "Pasar a Pro — pago seguro"
+  },
+  "guestCheckout": {
+    "verifying": "Verificando pago...",
+    "errorTitle": "Pago no confirmado",
+    "errorDesc": "No podemos verificar tu pago. Muestra la captura de pantalla al camarero.",
+    "backToMenu": "Volver al menú",
+    "confirmedTitle": "¡Pago confirmado!",
+    "processingTitle": "Pago en proceso",
+    "confirmedSubtitle": "Tu pedido se ha enviado a cocina",
+    "processingSubtitle": "El pago está siendo verificado",
+    "orderSummary": "Resumen del pedido",
+    "totalPaid": "Total pagado",
+    "table": "Mesa {{number}}",
+    "tableHint": "El camarero te traerá los platos a la mesa",
+    "receiptSent": "Recibo enviado a {{email}}",
+    "kitchenNoteTitle": "¡Tu pedido está en cocina!",
+    "kitchenNoteDesc": "Guarda esta página como prueba de pago. Si hay problemas, muéstrala al camarero.",
+    "backHome": "Volver al inicio",
+    "cancelTitle": "Pago cancelado",
+    "cancelDesc": "El pago fue cancelado. Tu pedido no se envió a cocina.",
+    "retryOrder": "Reintentar pedido"
   },
   "publicMenu": {
     "title": "Menú",
@@ -803,9 +857,20 @@
   "notifications": {
     "title": "Notificaciones",
     "markAllRead": "Marcar todas como leídas",
+    "clearAll": "Borrar todo",
     "noNotifications": "Sin notificaciones",
+    "newOrderTitle": "Nuevo pedido",
     "newOrder": "Nuevo pedido de mesa {{table}}",
     "reservation": "Nueva reserva para {{guests}} comensales"
+  },
+  "pwa": {
+    "pushBannerTitle": "Alertas de pedidos en segundo plano",
+    "pushBannerDesc": "Recibe avisos nativos en el móvil aunque la app esté cerrada.",
+    "enablePush": "Activar notificaciones",
+    "pushEnabled": "Notificaciones push activadas",
+    "pushDenied": "Permiso denegado. Actívalo en ajustes del navegador.",
+    "pushError": "No se pudieron activar las notificaciones push.",
+    "installHint": "En Android: menú de Chrome → «Instalar aplicación» o «Añadir a pantalla de inicio»."
   },
   "export": {
     "receipt": "Ticket",

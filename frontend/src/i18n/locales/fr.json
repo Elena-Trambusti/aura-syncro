@@ -108,7 +108,13 @@
     "yourName": "Votre nom",
     "yourNamePlaceholder": "Jean Dupont",
     "phonePlaceholder": "+33 6 12 34 56 78",
-    "passwordMinLength": "Minimum 6 caractères"
+    "passwordMinLength": "Minimum 6 caractères",
+    "country": "Pays du restaurant",
+    "countryIT": "Italie",
+    "countryES": "Espagne",
+    "taxRegion": "Région fiscale",
+    "taxRegionCanarias": "Îles Canaries (IGIC)",
+    "taxRegionPeninsula": "Espagne continentale (TVA)"
   },
   "status": {
     "order": {
@@ -248,7 +254,16 @@
     "restaurantId": "ID Restaurant",
     "slug": "Slug (URL)",
     "database": "Base de données",
-    "appVersion": "Version de l'app"
+    "appVersion": "Version de l'app",
+    "fiscalTitle": "Fiscalité et régime",
+    "fiscalDesc": "Pays, taux de taxe et identifiant fiscal de votre restaurant",
+    "country": "Pays",
+    "taxRegion": "Région fiscale",
+    "taxRate": "Taux de taxe (%)",
+    "taxId": "Identifiant fiscal (TVA / NIF)",
+    "taxRegionIT_MAIN": "Italie",
+    "taxRegionES_CANARIAS": "Canaries (IGIC)",
+    "taxRegionES_PENINSULA": "Espagne continentale (TVA)"
   },
   "reservations": {
     "title": "Réservations",
@@ -258,7 +273,21 @@
     "guests": "convives",
     "noReservations": "Aucune réservation",
     "tabBookings": "Réservations",
-    "tabWaitlist": "Liste d'attente"
+    "tabWaitlist": "Liste d'attente",
+    "formTitle": "Nouvelle réservation",
+    "formGuestName": "Nom du client *",
+    "formGuestNamePlaceholder": "Jean Dupont",
+    "formPhone": "Téléphone *",
+    "formPhonePlaceholder": "+33 6 12 34 56 78",
+    "formCovers": "Couverts *",
+    "formDateTime": "Date et heure *",
+    "formDuration": "Durée (min)",
+    "formDuration1h": "1 heure",
+    "formDuration1h30": "1 h 30",
+    "formDuration2h": "2 heures",
+    "formDuration2h30": "2 h 30",
+    "formNotesPlaceholder": "Allergies, occasions spéciales...",
+    "formConfirm": "Confirmer la réservation"
   },
   "waitlist": {
     "subtitle": "{{count}} clients en attente",
@@ -700,7 +729,19 @@
     "checkoutCanceled": "Paiement annulé. Vous pouvez réessayer quand vous voulez.",
     "checkoutError": "Impossible de démarrer le checkout. Réessayez.",
     "checkoutUrlMissing": "URL de checkout non reçue de Stripe",
-    "secureNote": "Paiement sécurisé via Stripe Checkout"
+    "secureNote": "Paiement sécurisé via Stripe Checkout",
+    "proBadge": "Upgrade recommandé",
+    "proTitle": "Aura Syncro Pro",
+    "proSubtitle": "Modules avancés : CRM, IA, marketing et fiscalité",
+    "proPriceLabel": "Add-on mensuel Pro",
+    "proPriceHint": "S'ajoute à l'abonnement Premium · résiliable à tout moment",
+    "proActivateButton": "Passer à Pro — paiement sécurisé",
+    "proLoading": "Redirection vers Stripe...",
+    "proCheckoutSuccess": "Plan Pro activé ! Tous les modules avancés sont débloqués.",
+    "proCheckoutCanceled": "Upgrade Pro annulé.",
+    "proCheckoutError": "Impossible de démarrer l'upgrade Pro.",
+    "proActiveBadge": "Plan Pro actif — tous les modules avancés débloqués",
+    "proAlreadyActive": "Vous avez déjà le plan Pro."
   },
   "onboarding": {
     "badge": "Concierge Aura Syncro",
@@ -719,7 +760,35 @@
   "paywall": {
     "title": "Fonctionnalité Premium",
     "description": "Pour débloquer le registre fiscal, l'IA prédictive et bien plus, passez à Aura Syncro Premium.",
-    "cta": "Découvrir le plan Premium"
+    "cta": "Découvrir le plan Premium",
+    "proBadge": "Plan Pro",
+    "proTitle": "Module Aura Syncro Pro",
+    "proDescription": "Cette fonctionnalité est incluse dans le plan Pro. Votre compte est actuellement sur le plan Base (POS core).",
+    "proFeature1": "CRM clients et historique des visites",
+    "proFeature2": "IA prédictive, marketing et rapports fiscaux",
+    "proFeature3": "Analytics avancées, fidélité et paiements digitaux",
+    "proCta": "Passer à Pro — paiement sécurisé"
+  },
+  "guestCheckout": {
+    "verifying": "Vérification du paiement...",
+    "errorTitle": "Paiement non confirmé",
+    "errorDesc": "Nous n'avons pas pu vérifier votre paiement. Montrez une capture d'écran au serveur.",
+    "backToMenu": "Retour au menu",
+    "confirmedTitle": "Paiement confirmé !",
+    "processingTitle": "Paiement en cours",
+    "confirmedSubtitle": "Votre commande a été envoyée en cuisine",
+    "processingSubtitle": "Votre paiement est en cours de vérification",
+    "orderSummary": "Récapitulatif de commande",
+    "totalPaid": "Total payé",
+    "table": "Table {{number}}",
+    "tableHint": "Le serveur apportera les plats à votre table",
+    "receiptSent": "Reçu envoyé à {{email}}",
+    "kitchenNoteTitle": "Votre commande est en cuisine !",
+    "kitchenNoteDesc": "Conservez cette page comme preuve de paiement. En cas de problème, montrez-la au serveur.",
+    "backHome": "Retour à l'accueil",
+    "cancelTitle": "Paiement annulé",
+    "cancelDesc": "Le paiement a été annulé. Votre commande n'a pas été envoyée en cuisine.",
+    "retryOrder": "Réessayer la commande"
   },
   "publicMenu": {
     "title": "Menu",
@@ -788,9 +857,20 @@
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Tout marquer comme lu",
+    "clearAll": "Tout effacer",
     "noNotifications": "Aucune notification",
+    "newOrderTitle": "Nouvelle commande",
     "newOrder": "Nouvelle commande de la table {{table}}",
     "reservation": "Nouvelle réservation pour {{guests}} convives"
+  },
+  "pwa": {
+    "pushBannerTitle": "Alertes commandes en arrière-plan",
+    "pushBannerDesc": "Recevez des alertes natives même lorsque l'app est fermée.",
+    "enablePush": "Activer les notifications",
+    "pushEnabled": "Notifications push activées",
+    "pushDenied": "Permission refusée. Activez-la dans les paramètres du navigateur.",
+    "pushError": "Impossible d'activer les notifications push.",
+    "installHint": "Sur Android : menu Chrome → « Installer l'application » ou « Ajouter à l'écran d'accueil »."
   },
   "export": {
     "receipt": "Ticket",

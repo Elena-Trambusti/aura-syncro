@@ -8,6 +8,8 @@ import {
   ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { tq } from '../../lib/queryKeys'
 
 interface StaffMember {
   id: string
@@ -56,6 +58,7 @@ function toDateInput(d: Date): string {
 export default function StaffShiftsTab() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const tk = useTenantQueryKey()
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -71,12 +74,12 @@ export default function StaffShiftsTab() {
   const weekIso = weekStart.toISOString()
 
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
-    queryKey: ['staff-shifts', weekIso],
+    queryKey: tq(tk, 'staff-shifts', weekIso),
     queryFn: () => api.get(`/staff/shifts?week=${weekIso}`).then(r => r.data),
   })
 
   const { data: staff = [] } = useQuery<StaffMember[]>({
-    queryKey: ['staff'],
+    queryKey: tq(tk, 'staff'),
     queryFn: () => api.get('/staff').then(r => r.data),
   })
 
@@ -109,7 +112,7 @@ export default function StaffShiftsTab() {
       notes: form.notes || undefined,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-shifts'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       setShowForm(false)
       toast.success(t('staff.shiftAdded'))
     },
@@ -120,7 +123,7 @@ export default function StaffShiftsTab() {
     mutationFn: ({ id, action }: { id: string; action: 'in' | 'out' }) =>
       api.patch(`/staff/shifts/${id}/clock`, { action }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-shifts'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       toast.success(t('staff.clockUpdated'))
     },
   })
@@ -128,7 +131,7 @@ export default function StaffShiftsTab() {
   const deleteShift = useMutation({
     mutationFn: (id: string) => api.delete(`/staff/shifts/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-shifts'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       toast.success(t('staff.shiftDeleted'))
     },
   })
