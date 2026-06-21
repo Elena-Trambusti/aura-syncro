@@ -8,6 +8,7 @@ import { restaurantPayload } from '../lib/tenant'
 import { getPermissionsForRole } from '../lib/permissions'
 import { settingsForRegistration } from '../lib/taxEngine'
 import { sendEmail } from '../lib/email'
+import { ensureDefaultTables } from '../lib/defaultTables'
 import {
   authForgotPasswordLimiter,
   authLoginLimiter,
@@ -87,6 +88,8 @@ authRouter.post('/register', authRegisterLimiter, async (req: Request, res: Resp
   })
 
   const user = restaurant.users[0]
+  await ensureDefaultTables(restaurant.id)
+
   const token = jwt.sign(
     { userId: user.id, restaurantId: restaurant.id, role: user.role },
     process.env.JWT_SECRET!,

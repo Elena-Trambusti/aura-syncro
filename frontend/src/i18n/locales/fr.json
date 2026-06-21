@@ -34,6 +34,7 @@
     "closeMenu": "Fermer le menu",
     "mainMenu": "Menu principal",
     "noData": "Aucune donnée disponible",
+    "noResults": "Aucun résultat",
     "loadError": "Erreur lors du chargement des données",
     "saving": "Enregistrement...",
     "copyLink": "Copier le lien",
@@ -209,7 +210,10 @@
     "editTable": "Modifier la table",
     "confirmDelete": "Supprimer cette table ?",
     "saved": "Table enregistrée",
-    "deleted": "Table supprimée"
+    "deleted": "Table supprimée",
+    "emptyTitle": "Aucune table configurée",
+    "emptyHint": "Ajoutez les tables de votre établissement pour utiliser le plan et le POS.",
+    "emptyAction": "Ajouter la première table"
   },
   "orders": {
     "title": "Commandes",

@@ -8,6 +8,7 @@ import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { Save, QrCode, ExternalLink, MonitorCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
+import { formatApiError } from '../lib/errors'
 import toast from 'react-hot-toast'
 
 interface RestaurantSettings {
@@ -27,6 +28,35 @@ interface RestaurantData {
   email?: string | null
   description?: string | null
   settings?: RestaurantSettings | null
+}
+
+type SettingsForm = {
+  name: string
+  address: string
+  phone: string
+  email: string
+  description: string
+  countryCode: CountryCode
+  taxRegion: TaxRegion
+  taxRate: number
+  taxId: string
+}
+
+function buildSavePayload(data: SettingsForm) {
+  const emptyToNull = (v: string) => v.trim() || null
+  return {
+    name: data.name.trim(),
+    address: emptyToNull(data.address),
+    phone: emptyToNull(data.phone),
+    email: emptyToNull(data.email),
+    description: emptyToNull(data.description),
+    settings: {
+      countryCode: data.countryCode,
+      taxRegion: data.taxRegion,
+      taxRate: data.taxRate,
+      taxId: emptyToNull(data.taxId),
+    },
+  }
 }
 
 export default function SettingsPage() {
@@ -80,25 +110,24 @@ export default function SettingsPage() {
   }
 
   const save = useMutation({
-    mutationFn: (data: typeof form) => api.put('/restaurant', {
-      name: data.name,
-      address: data.address,
-      phone: data.phone,
-      email: data.email,
-      description: data.description,
-      settings: {
-        countryCode: data.countryCode,
-        taxRegion: data.taxRegion,
-        taxRate: data.taxRate,
-        taxId: data.taxId || null,
-      },
-    }),
+    mutationFn: (data: typeof form) => api.put('/restaurant', buildSavePayload(data)),
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'restaurant') })
       await refreshRestaurant()
       toast.success(t('settings.saved'))
     },
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err))
+    },
   })
+
+  const handleSave = () => {
+    if (!form.name.trim()) {
+      toast.error(t('settings.nameRequired'))
+      return
+    }
+    save.mutate(form)
+  }
 
   const menuUrl = `${window.location.origin}/menu/${restaurant?.slug}`
   const kitchenUrl = `${window.location.origin}/cucina`
@@ -169,6 +198,7 @@ export default function SettingsPage() {
             />
           </div>
         </div>
+        <p className="text-xs text-slate-500 mt-4">{t('settings.saveHint')}</p>
       </div>
 
       <div className="glass-card p-6">
@@ -202,11 +232,6 @@ export default function SettingsPage() {
                 rows={3} />
             </div>
           </div>
-          <button onClick={() => save.mutate(form)} disabled={save.isPending}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60">
-            <Save className="w-4 h-4" />
-            {save.isPending ? t('common.saving') : t('settings.saveChanges')}
-          </button>
         </div>
       </div>
 
@@ -266,6 +291,18 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="sticky bottom-4 z-20">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={save.isPending}
+          className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-lg transition-colors disabled:opacity-60"
+        >
+          <Save className="w-4 h-4" />
+          {save.isPending ? t('common.saving') : t('settings.saveChanges')}
+        </button>
       </div>
     </div>
   )

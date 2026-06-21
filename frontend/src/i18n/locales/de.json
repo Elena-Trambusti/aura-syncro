@@ -34,6 +34,7 @@
     "closeMenu": "Menü schließen",
     "mainMenu": "Hauptmenü",
     "noData": "Keine Daten verfügbar",
+    "noResults": "Keine Ergebnisse",
     "loadError": "Fehler beim Laden der Daten",
     "saving": "Speichern...",
     "copyLink": "Link kopieren",
@@ -209,7 +210,10 @@
     "editTable": "Tisch bearbeiten",
     "confirmDelete": "Diesen Tisch löschen?",
     "saved": "Tisch gespeichert",
-    "deleted": "Tisch gelöscht"
+    "deleted": "Tisch gelöscht",
+    "emptyTitle": "Keine Tische konfiguriert",
+    "emptyHint": "Fügen Sie die Tische Ihres Lokals hinzu, um Plan und POS zu nutzen.",
+    "emptyAction": "Ersten Tisch hinzufügen"
   },
   "orders": {
     "title": "Bestellungen",

@@ -5,9 +5,14 @@ import { AuthRequest, requireRole } from '../middleware/auth'
 
 export const checkoutRouter = Router()
 
-const SETUP_AMOUNT_CENTS = 50_000
-const SUBSCRIPTION_AMOUNT_CENTS = 19_900
 const PRO_MONTHLY_AMOUNT_CENTS = 7_900
+
+function resolveStripePriceIds(): { setup: string; subscription: string } | null {
+  const setup = process.env.STRIPE_PRICE_SETUP?.trim()
+  const subscription = process.env.STRIPE_PRICE_SUBSCRIPTION?.trim()
+  if (!setup || !subscription) return null
+  return { setup, subscription }
+}
 
 function resolveFrontendUrl(): string {
   const raw = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -38,6 +43,14 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
     return
   }
 
+  const stripePrices = resolveStripePriceIds()
+  if (!stripePrices) {
+    res.status(503).json({
+      error: 'Prezzi Stripe non configurati. Imposta STRIPE_PRICE_SETUP e STRIPE_PRICE_SUBSCRIPTION in backend/.env',
+    })
+    return
+  }
+
   const frontendUrl = resolveFrontendUrl()
 
   try {
@@ -46,29 +59,8 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
       customer_email: user.email,
       client_reference_id: restaurantId,
       line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Setup Iniziale Aura Syncro',
-              description: 'Configurazione iniziale una tantum della piattaforma',
-            },
-            unit_amount: SETUP_AMOUNT_CENTS,
-          },
-          quantity: 1,
-        },
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Abbonamento Premium',
-              description: 'Accesso completo ad Aura Syncro',
-            },
-            unit_amount: SUBSCRIPTION_AMOUNT_CENTS,
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        },
+        { price: stripePrices.setup, quantity: 1 },
+        { price: stripePrices.subscription, quantity: 1 },
       ],
       metadata: {
         restaurantId,

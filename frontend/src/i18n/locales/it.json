@@ -34,6 +34,7 @@
     "closeMenu": "Chiudi menu",
     "mainMenu": "Menu principale",
     "noData": "Nessun dato disponibile",
+    "noResults": "Nessun risultato",
     "loadError": "Errore nel caricamento dei dati",
     "saving": "Salvando...",
     "copyLink": "Copia link",
@@ -209,7 +210,10 @@
     "editTable": "Modifica tavolo",
     "confirmDelete": "Eliminare questo tavolo?",
     "saved": "Tavolo salvato",
-    "deleted": "Tavolo eliminato"
+    "deleted": "Tavolo eliminato",
+    "emptyTitle": "Nessun tavolo configurato",
+    "emptyHint": "Aggiungi i tavoli del locale per usare la mappa e il POS.",
+    "emptyAction": "Aggiungi primo tavolo"
   },
   "orders": {
     "title": "Ordini",
@@ -270,6 +274,8 @@
     "restaurantName": "Nome Ristorante",
     "address": "Indirizzo",
     "saveChanges": "Salva modifiche",
+    "saveHint": "Dopo ogni modifica clicca «Salva modifiche» in fondo alla pagina.",
+    "nameRequired": "Il nome del ristorante è obbligatorio",
     "saved": "Impostazioni salvate!",
     "qrMenu": "Menu Digitale QR Code",
     "qrMenuDesc": "I tuoi clienti possono scansionare il QR code per vedere il menu digitale",

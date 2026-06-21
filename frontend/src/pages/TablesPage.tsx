@@ -256,8 +256,19 @@ export default function TablesPage() {
           <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="saas-card p-12 text-center text-slate-500 text-sm">
-          {t('common.noResults')}
+        <div className="saas-card p-12 text-center space-y-4">
+          <p className="text-base font-semibold text-slate-800">{t('tables.emptyTitle')}</p>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">{t('tables.emptyHint')}</p>
+          {canManageTables && (
+            <button
+              type="button"
+              onClick={() => { setShowManage(true); setEditingTable({} as Table) }}
+              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold"
+            >
+              <Plus className="w-4 h-4" />
+              {t('tables.emptyAction')}
+            </button>
+          )}
         </div>
       ) : (
         <TableFloorPlan

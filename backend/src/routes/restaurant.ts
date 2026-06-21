@@ -9,12 +9,15 @@ import { buildFiscalConfig, resolveTaxRegion } from '../lib/taxEngine'
 
 export const restaurantRouter = Router()
 
+const emptyToNull = (val: unknown) =>
+  val === '' || val === null || val === undefined ? null : val
+
 const settingsSchema = z.object({
   countryCode: z.nativeEnum(CountryCode).optional(),
   taxRegion: z.nativeEnum(TaxRegion).optional(),
   defaultLocale: z.string().min(2).max(5).optional(),
   taxRate: z.number().min(0).max(100).optional(),
-  taxId: z.string().max(32).nullable().optional(),
+  taxId: z.preprocess(emptyToNull, z.string().max(32).nullable().optional()),
   openTime: z.string().optional(),
   closeTime: z.string().optional(),
   maxCoversPerSlot: z.number().int().positive().optional(),
@@ -27,10 +30,10 @@ const settingsSchema = z.object({
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
-  address: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
-  description: z.string().nullable().optional(),
+  address: z.preprocess(emptyToNull, z.string().nullable().optional()),
+  phone: z.preprocess(emptyToNull, z.string().nullable().optional()),
+  email: z.preprocess(emptyToNull, z.string().email().nullable().optional()),
+  description: z.preprocess(emptyToNull, z.string().nullable().optional()),
   timezone: z.string().optional(),
   settings: settingsSchema,
 })

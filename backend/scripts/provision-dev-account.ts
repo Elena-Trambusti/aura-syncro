@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { settingsForRegistration } from '../src/lib/taxEngine'
+import { ensureDefaultTables } from '../src/lib/defaultTables'
 
 const prisma = new PrismaClient()
 
@@ -84,6 +85,11 @@ async function main() {
   }
 
   if (!user) throw new Error('Creazione account fallita')
+
+  const tablesCreated = await ensureDefaultTables(user.restaurantId)
+  if (tablesCreated > 0) {
+    console.log(`Creati ${tablesCreated} tavoli predefiniti.`)
+  }
 
   const summary = await prisma.user.findFirst({
     where: { email: EMAIL },

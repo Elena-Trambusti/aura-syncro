@@ -34,6 +34,7 @@
     "closeMenu": "Close menu",
     "mainMenu": "Main menu",
     "noData": "No data available",
+    "noResults": "No results",
     "loadError": "Error loading data",
     "saving": "Saving...",
     "copyLink": "Copy link",
@@ -209,7 +210,10 @@
     "editTable": "Edit table",
     "confirmDelete": "Delete this table?",
     "saved": "Table saved",
-    "deleted": "Table deleted"
+    "deleted": "Table deleted",
+    "emptyTitle": "No tables configured",
+    "emptyHint": "Add your venue tables to use the floor plan and POS.",
+    "emptyAction": "Add first table"
   },
   "orders": {
     "title": "Orders",
@@ -270,6 +274,8 @@
     "restaurantName": "Restaurant Name",
     "address": "Address",
     "saveChanges": "Save changes",
+    "saveHint": "After editing, click «Save changes» at the bottom of the page.",
+    "nameRequired": "Restaurant name is required",
     "saved": "Settings saved!",
     "qrMenu": "Digital Menu QR Code",
     "qrMenuDesc": "Your customers can scan the QR code to view the digital menu",

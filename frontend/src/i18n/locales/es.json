@@ -34,6 +34,7 @@
     "closeMenu": "Cerrar menú",
     "mainMenu": "Menú principal",
     "noData": "No hay datos disponibles",
+    "noResults": "Sin resultados",
     "loadError": "Error al cargar los datos",
     "saving": "Guardando...",
     "copyLink": "Copiar enlace",
@@ -209,7 +210,10 @@
     "editTable": "Editar mesa",
     "confirmDelete": "¿Eliminar esta mesa?",
     "saved": "Mesa guardada",
-    "deleted": "Mesa eliminada"
+    "deleted": "Mesa eliminada",
+    "emptyTitle": "No hay mesas configuradas",
+    "emptyHint": "Añade las mesas del local para usar el plano y el POS.",
+    "emptyAction": "Añadir primera mesa"
   },
   "orders": {
     "title": "Pedidos",
