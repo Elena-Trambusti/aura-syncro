@@ -2,12 +2,13 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const reservationsRouter = Router()
 
-reservationsRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.get('/', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { date, status } = req.query
   const where: Record<string, unknown> = { ...tenantWhere(req) }
 
@@ -30,7 +31,7 @@ reservationsRouter.get('/', async (req: AuthRequest, res: Response): Promise<voi
   res.json(reservations)
 })
 
-reservationsRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.get('/:id', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const reservation = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
     include: { table: true, customer: true },
@@ -42,7 +43,7 @@ reservationsRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<
   res.json(reservation)
 })
 
-reservationsRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.post('/', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     guestName: z.string().min(2),
     guestPhone: z.string().min(6),
@@ -100,7 +101,7 @@ reservationsRouter.post('/', async (req: AuthRequest, res: Response): Promise<vo
   res.status(201).json(reservation)
 })
 
-reservationsRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     guestName: z.string().min(2).optional(),
     guestPhone: z.string().min(6).optional(),
@@ -149,7 +150,7 @@ reservationsRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<
   res.json(reservation)
 })
 
-reservationsRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.patch('/:id/status', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
   const updated = await prisma.reservation.updateMany({
     where: scopedWhere(req, req.params.id),
@@ -167,7 +168,7 @@ reservationsRouter.patch('/:id/status', async (req: AuthRequest, res: Response):
   res.json(reservation)
 })
 
-reservationsRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.delete('/:id', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.reservation.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Prenotazione non trovata')

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { Plus, AlertTriangle, Package, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency } from '../lib/utils'
+import { useRole } from '../hooks/useRole'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {
@@ -80,6 +81,8 @@ function ItemForm({ item, onSave, onCancel }: {
 export default function InventoryPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { can } = useRole()
+  const canManageInventory = can('inventory.manage')
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [filterCategory, setFilterCategory] = useState('Tutti')
@@ -121,11 +124,13 @@ export default function InventoryPage() {
           <p className="aura-page-subtitle">{t('inventory.subtitle')}</p>
           <p className="text-slate-500 text-sm mt-1">{items.length} prodotti · Valore: {formatCurrency(totalValue)}</p>
         </div>
+        {canManageInventory && (
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">
           <Plus className="w-4 h-4" />
           Nuovo Prodotto
         </button>
+        )}
       </div>
 
       {/* Alert scorte */}
@@ -185,6 +190,8 @@ export default function InventoryPage() {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2">
+                      {canManageInventory ? (
+                        <>
                       <button onClick={() => adjustQty.mutate({ id: item.id, delta: -1 })}
                         className="w-6 h-6 rounded-full bg-stone-800/50 hover:bg-red-100 flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors text-xs font-bold">−</button>
                       <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
@@ -192,6 +199,12 @@ export default function InventoryPage() {
                       </span>
                       <button onClick={() => adjustQty.mutate({ id: item.id, delta: 1 })}
                         className="w-6 h-6 rounded-full bg-stone-800/50 hover:bg-emerald-100 flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors text-xs font-bold">+</button>
+                        </>
+                      ) : (
+                      <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
+                        {item.quantity} {item.unit}
+                      </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-sm text-slate-500">{item.minQuantity} {item.unit}</td>
@@ -199,6 +212,7 @@ export default function InventoryPage() {
                   <td className="px-4 py-3.5 text-sm font-medium text-slate-700">{formatCurrency(item.quantity * item.cost)}</td>
                   <td className="px-4 py-3.5 text-xs text-stone-500">{item.supplier || '—'}</td>
                   <td className="px-4 py-3.5">
+                    {canManageInventory && (
                     <div className="flex items-center gap-1">
                       <button onClick={() => setEditingItem(item)} className="p-1.5 hover:bg-stone-800/50 rounded-lg text-stone-500 hover:text-slate-700 transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
@@ -207,6 +221,7 @@ export default function InventoryPage() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
+                    )}
                   </td>
                 </tr>
               )

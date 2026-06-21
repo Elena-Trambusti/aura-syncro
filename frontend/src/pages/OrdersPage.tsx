@@ -6,6 +6,7 @@ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTim
 import { printReceipt, downloadCSV } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useRole } from '../hooks/useRole'
 import toast from 'react-hot-toast'
 
 interface OrderItem {
@@ -43,6 +44,7 @@ export default function OrdersPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { restaurant } = useAuth()
+  const { canSetOrderStatus, can } = useRole()
   const [filter, setFilter] = useState<string>('active')
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
@@ -167,7 +169,7 @@ export default function OrdersPage() {
               </div>
 
               <div className="flex gap-2">
-                {STATUS_FLOW[order.status] && (
+                {STATUS_FLOW[order.status] && canSetOrderStatus(STATUS_FLOW[order.status]) && (
                   <button
                     onClick={() => updateStatus.mutate({ id: order.id, status: STATUS_FLOW[order.status] })}
                     className="flex-1 flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
@@ -176,7 +178,7 @@ export default function OrdersPage() {
                     {ORDER_STATUS_LABELS[STATUS_FLOW[order.status]]}
                   </button>
                 )}
-                {!['PAID', 'CANCELLED'].includes(order.status) && (
+                {can('orders.cancel') && !['PAID', 'CANCELLED'].includes(order.status) && (
                   <button
                     onClick={() => updateStatus.mutate({ id: order.id, status: 'CANCELLED' })}
                     className="p-2 hover:bg-red-950/30 rounded-lg text-stone-500 hover:text-red-500 transition-colors"

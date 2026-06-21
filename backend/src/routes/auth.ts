@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { CountryCode, TaxRegion } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { restaurantPayload } from '../lib/tenant'
+import { getPermissionsForRole } from '../lib/permissions'
 import { settingsForRegistration } from '../lib/taxEngine'
 
 export const authRouter = Router()
@@ -90,6 +91,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     restaurant: restaurantPayload(restaurant),
+    permissions: getPermissionsForRole(user.role),
   })
 })
 
@@ -127,6 +129,7 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     restaurant: restaurantPayload(user.restaurant),
+    permissions: getPermissionsForRole(user.role),
   })
 })
 
@@ -151,6 +154,7 @@ authRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
     res.json({
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
       restaurant: restaurantPayload(user.restaurant),
+      permissions: getPermissionsForRole(user.role),
     })
   } catch {
     res.status(401).json({ error: 'Token non valido' })

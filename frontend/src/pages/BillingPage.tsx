@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
+import { BRAND } from '../lib/brand'
 
 const SETUP_FEE = 500
 const MONTHLY_FEE = 199
+const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-tally.svg'
 
 export default function BillingPage() {
   const { t } = useTranslation()
@@ -46,82 +48,90 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{t('billing.pageTitle')}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t('billing.pageSubtitle')}</p>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <div className="text-center sm:text-left">
+        <img
+          src={BRAND_LOGO_SRC}
+          alt={BRAND.name}
+          className="mx-auto mb-6 h-12 w-auto sm:mx-0 sm:h-14"
+        />
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          {t('billing.pageTitle')}
+        </h1>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-500 sm:text-base">
+          {t('billing.pageSubtitle')}
+        </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50">
-            <Sparkles className="h-6 w-6 text-amber-500" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">{t('billing.cardTitle')}</h2>
-            <p className="text-sm text-slate-500">{t('billing.cardSubtitle')}</p>
-          </div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 bg-gradient-to-br from-amber-50/80 via-white to-slate-50 px-6 py-8 sm:px-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-700/80">
+            {t('billing.planBadge')}
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-900">{t('billing.cardTitle')}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t('billing.cardSubtitle')}</p>
         </div>
 
-        <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-slate-900">{t('billing.setupLine')}</span>
-            <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(SETUP_FEE)}</span>
+        <div className="space-y-6 px-6 py-6 sm:px-8">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {t('billing.setupLabel')}
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                {formatCurrency(SETUP_FEE)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{t('billing.setupHint')}</p>
+            </div>
+            <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-800/70">
+                {t('billing.subscriptionLabel')}
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                {formatCurrency(MONTHLY_FEE)}
+                <span className="text-base font-semibold text-slate-500">/{t('billing.perMonth')}</span>
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{t('billing.subscriptionHint')}</p>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-slate-900">{t('billing.subscriptionLine')}</span>
-            <span className="font-semibold tabular-nums text-slate-900">
-              {formatCurrency(MONTHLY_FEE)}/{t('billing.perMonth')}
-            </span>
-          </div>
-          <div className="border-t border-slate-200 pt-3">
-            <p className="text-sm font-semibold text-slate-900">{t('billing.summary')}</p>
-            <p className="mt-1 text-xs text-slate-500">{t('billing.summaryHint')}</p>
-          </div>
-        </div>
 
-        <ul className="mt-5 space-y-2 text-sm text-slate-600">
-          <li className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-            {t('billing.feature1')}
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-            {t('billing.feature2')}
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-            {t('billing.feature3')}
-          </li>
-        </ul>
+          <ul className="space-y-3 text-sm text-slate-600">
+            {[t('billing.feature1'), t('billing.feature2'), t('billing.feature3')].map(feature => (
+              <li key={feature} className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
 
-        {error && (
-          <div
-            role="alert"
-            className="mt-5 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          >
-            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={handleActivate}
-          disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-4 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              {t('billing.loading')}
-            </>
-          ) : (
-            t('billing.activateButton')
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
           )}
-        </button>
 
-        <p className="mt-4 text-center text-xs text-slate-500">{t('billing.secureNote')}</p>
+          <button
+            type="button"
+            onClick={handleActivate}
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                {t('billing.loading')}
+              </>
+            ) : (
+              t('billing.activateButton')
+            )}
+          </button>
+
+          <p className="text-center text-xs text-slate-400">{t('billing.secureNote')}</p>
+        </div>
       </div>
     </div>
   )

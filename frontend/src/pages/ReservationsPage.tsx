@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { formatTime, RESERVATION_STATUS_LABELS } from '../lib/utils'
 import { Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRole } from '../hooks/useRole'
 
 interface Reservation {
   id: string; guestName: string; guestPhone: string; guestEmail?: string
@@ -89,6 +90,8 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
 export default function ReservationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { can } = useRole()
+  const canManageReservations = can('reservations.manage')
   const [showForm, setShowForm] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
@@ -130,11 +133,13 @@ export default function ReservationsPage() {
           <h1 className="aura-page-title">{t('reservations.title')}</h1>
           <p className="aura-page-subtitle">{t('reservations.subtitle', { count: reservations.length, covers: totalCovers })}</p>
         </div>
+        {canManageReservations && (
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">
           <Plus className="w-4 h-4" />
           {t('reservations.newReservation')}
         </button>
+        )}
       </div>
 
       {/* Selettore data */}
@@ -182,13 +187,13 @@ export default function ReservationsPage() {
               {res.notes && <p className="text-xs text-stone-500 mt-1 italic">"{res.notes}"</p>}
             </div>
             <div className="flex items-center gap-2">
-              {res.status === 'CONFIRMED' && (
+              {canManageReservations && res.status === 'CONFIRMED' && (
                 <button onClick={() => updateStatus.mutate({ id: res.id, status: 'SEATED' })}
                   className="p-2 bg-emerald-950/40 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors" title="Al tavolo">
                   <CheckCircle2 className="w-4 h-4" />
                 </button>
               )}
-              {!['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(res.status) && (
+              {canManageReservations && !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(res.status) && (
                 <button onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
                   className="p-2 hover:bg-red-950/30 text-stone-500 hover:text-red-500 rounded-lg transition-colors" title="Annulla">
                   <XCircle className="w-4 h-4" />

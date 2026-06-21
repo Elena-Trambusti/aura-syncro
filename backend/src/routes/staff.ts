@@ -2,14 +2,15 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
-import { AuthRequest, requireRole } from '../middleware/auth'
+import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const staffRouter = Router()
 
 const assignableRoles = ['MANAGER', 'WAITER', 'CHEF'] as const
 
-staffRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.get('/', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const staff = await prisma.user.findMany({
     where: tenantWhere(req),
     select: {
@@ -21,7 +22,7 @@ staffRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, r
   res.json(staff)
 })
 
-staffRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.post('/', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
@@ -47,7 +48,7 @@ staffRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, 
   res.status(201).json(user)
 })
 
-staffRouter.put('/:id', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.put('/:id', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(2).optional(),
     email: z.string().email().optional(),
@@ -114,7 +115,7 @@ staffRouter.get('/shifts', async (req: AuthRequest, res: Response): Promise<void
   res.json(shifts)
 })
 
-staffRouter.post('/shifts', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.post('/shifts', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     userId: z.string(),
     date: z.string().datetime(),

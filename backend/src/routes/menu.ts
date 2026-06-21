@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const menuRouter = Router()
@@ -35,7 +36,7 @@ async function assertCategoryBelongsToTenant(req: AuthRequest, categoryId: strin
 }
 
 // Categorie
-menuRouter.get('/categories', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.get('/categories', requirePermission('menu.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const categories = await prisma.menuCategory.findMany({
     where: tenantWhere(req),
     include: { items: { orderBy: { sortOrder: 'asc' } } },
@@ -44,7 +45,7 @@ menuRouter.get('/categories', async (req: AuthRequest, res: Response): Promise<v
   res.json(categories)
 })
 
-menuRouter.post('/categories', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.post('/categories', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = categorySchema.safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
@@ -56,7 +57,7 @@ menuRouter.post('/categories', async (req: AuthRequest, res: Response): Promise<
   res.status(201).json(category)
 })
 
-menuRouter.put('/categories/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.put('/categories/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = categorySchema.partial().safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
@@ -74,7 +75,7 @@ menuRouter.put('/categories/:id', async (req: AuthRequest, res: Response): Promi
   res.json(category)
 })
 
-menuRouter.delete('/categories/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.delete('/categories/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.menuCategory.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Categoria non trovata')
@@ -84,7 +85,7 @@ menuRouter.delete('/categories/:id', async (req: AuthRequest, res: Response): Pr
 })
 
 // Piatti
-menuRouter.get('/items', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.get('/items', requirePermission('menu.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const items = await prisma.menuItem.findMany({
     where: tenantWhere(req),
     include: { category: true },
@@ -93,7 +94,7 @@ menuRouter.get('/items', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(items)
 })
 
-menuRouter.post('/items', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.post('/items', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = itemSchema.safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
@@ -111,7 +112,7 @@ menuRouter.post('/items', async (req: AuthRequest, res: Response): Promise<void>
   res.status(201).json(item)
 })
 
-menuRouter.put('/items/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.put('/items/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = itemSchema.partial().safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
@@ -139,7 +140,7 @@ menuRouter.put('/items/:id', async (req: AuthRequest, res: Response): Promise<vo
   res.json(item)
 })
 
-menuRouter.patch('/items/:id/availability', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.patch('/items/:id/availability', requirePermission('menu.availability'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { available } = req.body
   const updated = await prisma.menuItem.updateMany({
     where: scopedWhere(req, req.params.id),
@@ -153,7 +154,7 @@ menuRouter.patch('/items/:id/availability', async (req: AuthRequest, res: Respon
   res.json(item)
 })
 
-menuRouter.delete('/items/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+menuRouter.delete('/items/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.menuItem.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Piatto non trovato')

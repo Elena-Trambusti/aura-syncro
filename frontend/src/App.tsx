@@ -36,6 +36,7 @@ import QRBuilderPage from './pages/QRBuilderPage'
 import OnboardingPage from './pages/OnboardingPage'
 import RequireRole from './components/auth/RequireRole'
 import RequireProPlan from './components/auth/RequireProPlan'
+import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
@@ -84,7 +85,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="tavoli" element={<TablesPage />} />
-        <Route path="checkout/:orderId" element={<CheckoutPage />} />
+        <Route path="checkout/:orderId" element={<RequirePermission permissions={['orders.pay']}><CheckoutPage /></RequirePermission>} />
         <Route path="ordini" element={<OrdersPage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="prenotazioni" element={<ReservationsPage />} />

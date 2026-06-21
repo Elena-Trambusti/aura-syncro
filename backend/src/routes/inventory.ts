@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const inventoryRouter = Router()
@@ -16,7 +17,7 @@ const itemSchema = z.object({
   category: z.string().optional(),
 })
 
-inventoryRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+inventoryRouter.get('/', requirePermission('inventory.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const items = await prisma.inventoryItem.findMany({
     where: tenantWhere(req),
     orderBy: [{ category: 'asc' }, { name: 'asc' }],
@@ -26,7 +27,7 @@ inventoryRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> 
   res.json({ items, alerts })
 })
 
-inventoryRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+inventoryRouter.post('/', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = itemSchema.safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
@@ -38,7 +39,7 @@ inventoryRouter.post('/', async (req: AuthRequest, res: Response): Promise<void>
   res.status(201).json(item)
 })
 
-inventoryRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+inventoryRouter.put('/:id', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = itemSchema.partial().safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
@@ -56,7 +57,7 @@ inventoryRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<voi
   res.json(item)
 })
 
-inventoryRouter.patch('/:id/quantity', async (req: AuthRequest, res: Response): Promise<void> => {
+inventoryRouter.patch('/:id/quantity', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { delta, operation } = req.body
   const current = await prisma.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
   if (!current) {
@@ -77,7 +78,7 @@ inventoryRouter.patch('/:id/quantity', async (req: AuthRequest, res: Response): 
   res.json(item)
 })
 
-inventoryRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+inventoryRouter.delete('/:id', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.inventoryItem.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Prodotto non trovato')

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
+import { useRole } from '../hooks/useRole'
 import { Plus, Edit2, Trash2, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -105,6 +106,9 @@ function ItemForm({ item, categories, onSave, onCancel }: {
 export default function MenuPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { can } = useRole()
+  const canManageMenu = can('menu.manage')
+  const canToggleAvailability = can('menu.availability')
   const [editingItem, setEditingItem] = useState<(Partial<MenuItem> & { categoryId?: string }) | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
@@ -144,11 +148,13 @@ export default function MenuPage() {
             <h1 className={ui.pageTitle}>{t('menu.title')}</h1>
             <p className={ui.pageSubtitle}>{t('menu.subtitle', { count: allItems.length, categories: categories.length })}</p>
           </div>
+          {canManageMenu && (
           <button onClick={() => setShowForm(true)}
             className={`flex items-center justify-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm w-full sm:w-auto shrink-0`}>
             <Plus className="w-4 h-4" />
             {t('menu.newDish')}
           </button>
+          )}
         </div>
         <div className={ui.filterRow}>
           <button onClick={() => setSelectedCat(null)}
@@ -200,12 +206,19 @@ export default function MenuPage() {
                   {item.preparationTime ? `${item.preparationTime} ${t('common.minutes')}` : '-'}
                 </td>
                 <td className="px-4 py-4 align-top">
+                  {canToggleAvailability ? (
                   <button onClick={() => toggleAvail.mutate({ id: item.id, available: !item.available })}
                     className={`text-xs px-2.5 py-1 rounded-full font-medium border ${item.available ? ui.badgeSuccess : ui.badgeMuted}`}>
                     {item.available ? `● ${t('menu.available')}` : `○ ${t('menu.notAvailable')}`}
                   </button>
+                  ) : (
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${item.available ? ui.badgeSuccess : ui.badgeMuted}`}>
+                      {item.available ? `● ${t('menu.available')}` : `○ ${t('menu.notAvailable')}`}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-4 align-top">
+                  {canManageMenu && (
                   <div className="flex items-center gap-1">
                     <button onClick={() => { setEditingItem({ ...item, categoryId: item.category.id }); }}
                       className={`p-1.5 ${ui.chipInactive} rounded-lg text-slate-500 hover:text-slate-900`}>
@@ -216,6 +229,7 @@ export default function MenuPage() {
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                  )}
                 </td>
               </tr>
             ))}

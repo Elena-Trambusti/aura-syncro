@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express'
+import { OrderStatus, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
+import { canSetOrderStatus, canUpdateOrderItemStatus } from '../lib/permissions'
 import { io } from '../index'
 import { parseLocalDate } from '../lib/dates'
 import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
@@ -34,7 +37,7 @@ async function syncOrderStatusFromItems(orderId: string): Promise<void> {
   await prisma.order.update({ where: { id: orderId }, data: { status } })
 }
 
-ordersRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.get('/', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { status, date } = req.query
   const where: Record<string, unknown> = { restaurantId: req.restaurantId! }
 
@@ -56,7 +59,7 @@ ordersRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => 
   res.json(orders)
 })
 
-ordersRouter.get('/active', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const orders = await prisma.order.findMany({
     where: {
       restaurantId: req.restaurantId!,
@@ -68,7 +71,7 @@ ordersRouter.get('/active', async (req: AuthRequest, res: Response): Promise<voi
   res.json(orders)
 })
 
-ordersRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.get('/:id', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await prisma.order.findFirst({
     where: { id: req.params.id, restaurantId: req.restaurantId! },
     include: orderInclude,
@@ -80,7 +83,7 @@ ordersRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(order)
 })
 
-ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     tableId: z.string().optional(),
     customerId: z.string().optional(),
@@ -153,6 +156,11 @@ ordersRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
 })
 
 ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!canUpdateOrderItemStatus(req.userRole)) {
+    res.status(403).json({ error: 'Permessi insufficienti', code: 'FORBIDDEN' })
+    return
+  }
+
   const parsed = itemStatusSchema.safeParse(req.body.status)
   if (!parsed.success) {
     res.status(400).json({ error: 'Stato non valido' })
@@ -191,6 +199,11 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
 ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
 
+  if (!status || typeof status !== 'string' || !canSetOrderStatus(req.userRole, status)) {
+    res.status(403).json({ error: 'Permessi insufficienti per questo stato ordine', code: 'FORBIDDEN' })
+    return
+  }
+
   const existingOrder = await prisma.order.findFirst({
     where: { id: req.params.id, restaurantId: req.restaurantId! },
   })
@@ -199,7 +212,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     return
   }
 
-  const paymentData: Record<string, unknown> = {}
+  const paymentData: Prisma.OrderUpdateInput = {}
   if (status === 'PAID') {
     const split = computePaymentSplit(existingOrder, req.body.tipAmount)
     paymentData.paidAt = split.paidAt
@@ -227,7 +240,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   const order = await prisma.order.update({
     where: { id: req.params.id },
     data: {
-      status,
+      status: status as OrderStatus,
       ...paymentData,
     },
     include: orderInclude,
@@ -241,7 +254,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   res.json(order)
 })
 
-ordersRouter.post('/:id/items', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     menuItemId: z.string(),
     quantity: z.number().int().positive(),

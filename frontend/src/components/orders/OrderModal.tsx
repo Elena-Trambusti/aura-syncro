@@ -7,6 +7,7 @@ import { api } from '../../lib/api'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
 import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRole } from '../../hooks/useRole'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface Category { id: string; name: string; items: MenuItem[] }
@@ -39,6 +40,8 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { can } = useRole()
+  const canPayOrder = can('orders.pay')
   const isDesktop = useIsDesktop()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -382,6 +385,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             {t('orderModal.orderTotal')}: {formatCurrency(activeOrder!.total)}
           </p>
 
+          {canPayOrder && (
           <button
             type="button"
             onClick={goToCheckout}
@@ -390,6 +394,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             <Receipt className="h-5 w-5" />
             {t('orderModal.goToPayment')}
           </button>
+          )}
 
           <button
             type="button"

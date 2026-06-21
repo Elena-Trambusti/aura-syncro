@@ -2,12 +2,13 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const tablesRouter = Router()
 
-tablesRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const tables = await prisma.table.findMany({
     where: tenantWhere(req),
     include: {
@@ -21,7 +22,7 @@ tablesRouter.get('/', async (req: AuthRequest, res: Response): Promise<void> => 
   res.json(tables)
 })
 
-tablesRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+tablesRouter.post('/', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     number: z.number().int().positive(),
     name: z.string().optional(),
@@ -44,7 +45,7 @@ tablesRouter.post('/', async (req: AuthRequest, res: Response): Promise<void> =>
   res.status(201).json(table)
 })
 
-tablesRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+tablesRouter.put('/:id', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     number: z.number().int().positive().optional(),
     name: z.string().optional(),
@@ -74,7 +75,7 @@ tablesRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> 
   res.json(table)
 })
 
-tablesRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
+tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
   const updated = await prisma.table.updateMany({
     where: scopedWhere(req, req.params.id),
@@ -89,7 +90,7 @@ tablesRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   res.json(table)
 })
 
-tablesRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+tablesRouter.delete('/:id', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.table.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Tavolo non trovato')

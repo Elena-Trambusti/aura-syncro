@@ -2,8 +2,9 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
-import { AuthRequest, authenticate, requireRole } from '../middleware/auth'
+import { AuthRequest, authenticate } from '../middleware/auth'
 import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
+import { requirePermission } from '../middleware/permissions'
 import { requireProPlan } from '../middleware/planTier'
 import { io } from '../index'
 import {
@@ -73,7 +74,7 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
 }
 
 // ── Anteprima checkout (riepilogo pre-pagamento) ─────────────────────────────
-paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await loadOrderForCheckout(req.params.orderId, req.restaurantId!)
   if (!order) {
     res.status(404).json({ error: 'Ordine non trovato' })
@@ -98,7 +99,7 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAcces
 })
 
 // ── Finalizza pagamento e chiusura conto ─────────────────────────────────────
-paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const parsed = finalizeSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
@@ -190,7 +191,7 @@ paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, async
 })
 
 // ── Checkout POS fisico (compat — delega a finalize) ─────────────────────────
-paymentsRouter.post('/pos-checkout', authenticate, requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/pos-checkout', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     orderId: z.string(),
     tipAmount: z.number().min(0).optional().default(0),
@@ -456,7 +457,7 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
-paymentsRouter.get('/overview', authenticate, requireRole('OWNER', 'MANAGER'), requireFullDashboardAccess, requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/overview', authenticate, requirePermission('payments.overview'), requireFullDashboardAccess, requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   if (!restaurantId) {
     res.status(401).json({ error: 'Tenant non autenticato' })
