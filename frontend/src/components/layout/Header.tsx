@@ -17,8 +17,8 @@ export default function Header() {
     : ''
 
   return (
-    <header className="pwa-header relative z-50 flex h-14 shrink-0 items-center justify-between gap-1 border-b border-slate-200 bg-white px-2 shadow-sm sm:h-16 sm:gap-2 sm:px-6">
-      <div className="flex items-center gap-2 min-w-0 lg:min-w-[4.5rem]">
+    <header className="pwa-header relative z-50 grid h-14 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 border-b border-slate-200 bg-white px-2 shadow-sm sm:h-16 sm:gap-2 sm:px-6">
+      <div className="flex items-center min-w-0 lg:min-w-[4.5rem]">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -29,11 +29,11 @@ export default function Header() {
         </button>
       </div>
 
-      <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center lg:hidden">
-        <BrandLogo size="sm" className="shadow-none border border-amber-200/80" />
+      <div className="flex min-w-0 items-center justify-center overflow-hidden lg:hidden">
+        <BrandLogo size="sm" className="mx-0 shadow-none border border-amber-200/80" />
       </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
         <a
           href="/cucina"
           target="_blank"

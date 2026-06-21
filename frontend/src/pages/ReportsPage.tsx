@@ -82,9 +82,10 @@ export default function ReportsPage() {
         <div className="flex items-center gap-2">
           <Link
             to="/report/fiscal"
-            className="flex items-center gap-1.5 px-3 py-2 bg-amber-950/30 border border-orange-200 rounded-xl text-sm font-medium text-amber-400 hover:bg-amber-950/40 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100"
           >
-            📄 {t('reportFiscal.linkLabel')}
+            <FileText className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+            {t('reportFiscal.linkLabel')}
           </Link>
           <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}

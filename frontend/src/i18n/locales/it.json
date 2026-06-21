@@ -70,7 +70,7 @@
     "billing": "Attiva piano",
     "onboarding": "Onboarding",
     "reports": "Report",
-    "reportFiscal": "Report Fiscal",
+    "reportFiscal": "Report Fiscale",
     "staff": "Personale",
     "inventory": "Magazzino",
     "analytics": "Analytics",
@@ -485,7 +485,7 @@
     "noData": "Nessun dato per il periodo selezionato",
     "pdfGenerated": "PDF generato correttamente",
     "pdfError": "Errore nella generazione del PDF. Riprova.",
-    "linkLabel": "Report Fiscal",
+    "linkLabel": "Report Fiscale",
     "byRegime": {
       "IT_MAIN": {
         "title": "Libro Registro Fiscale",
