@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
+import { requirePermission } from '../middleware/permissions'
 import { runPredictiveAnalysis } from '../lib/predictiveAI'
 
 export const aiRouter = Router()
@@ -21,7 +22,7 @@ function daysAgo(n: number) {
 
 // ── 1. PREVISIONE DOMANDA ─────────────────────────────────────────────────────
 // Analisi storica per giorno della settimana → previsione prossimi 7 giorni
-aiRouter.get('/forecast', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/forecast', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   // Ultimi 12 settimane di ordini (escluso cancellati)
@@ -101,7 +102,7 @@ aiRouter.get('/forecast', async (req: AuthRequest, res: Response): Promise<void>
 
 // ── 2. SUGGERIMENTI RIORDINO SCORTE ──────────────────────────────────────────
 // Calcola velocità di consumo per ogni prodotto e suggerisce la quantità da ordinare
-aiRouter.get('/reorder', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/reorder', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const [inventory, recentOrderItems] = await Promise.all([
@@ -191,7 +192,7 @@ aiRouter.get('/reorder', async (req: AuthRequest, res: Response): Promise<void> 
 
 // ── 3. MATRICE MENU (BCG) ─────────────────────────────────────────────────────
 // Classifica ogni piatto: Star / Plowhorse / Puzzle / Dog
-aiRouter.get('/menu-matrix', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/menu-matrix', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   // Vendite ultimi 30 giorni
@@ -284,7 +285,7 @@ aiRouter.get('/menu-matrix', async (req: AuthRequest, res: Response): Promise<vo
 
 // ── 4. ALERT INTELLIGENTI ─────────────────────────────────────────────────────
 // Anomalie, cali, opportunità rilevate automaticamente
-aiRouter.get('/alerts', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/alerts', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const alerts: {
@@ -470,7 +471,7 @@ aiRouter.get('/alerts', async (req: AuthRequest, res: Response): Promise<void> =
 })
 
 // ── 5. SOMMARIO AI (per widget dashboard) ─────────────────────────────────────
-aiRouter.get('/summary', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/summary', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
@@ -508,7 +509,7 @@ aiRouter.get('/summary', async (req: AuthRequest, res: Response): Promise<void> 
 })
 
 // ── 6. AI PREDITTIVA MAGAZZINO E VENDITE ─────────────────────────────────────
-aiRouter.get('/predictive', async (req: AuthRequest, res: Response): Promise<void> => {
+aiRouter.get('/predictive', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const result = await runPredictiveAnalysis(req.restaurantId!)
   res.json(result)
 })

@@ -243,7 +243,7 @@ export function useSubscription() {
     needsConciergeOnboarding: tier === 'onboarding',
     isOperational: tier === 'operational',
     planTier: restaurant?.planTier ?? 'BASE',
-    hasProPlan: restaurant?.planTier === 'PRO',
+    hasProPlan: restaurant?.hasActiveSubscription === true || restaurant?.planTier === 'PRO',
   }
 }
 

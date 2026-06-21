@@ -1,26 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { BRAND } from '../lib/brand'
 import { useAuth } from '../contexts/AuthContext'
-import { usePlanTier } from '../hooks/usePlanTier'
 
 const SETUP_FEE = 500
 const MONTHLY_FEE = 199
-const PRO_MONTHLY_FEE = 79
 const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-tally.svg'
 
 export default function BillingPage() {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { restaurant, refreshRestaurant } = useAuth()
-  const { hasProPlan } = usePlanTier()
+  const { restaurant } = useAuth()
   const [loadingPremium, setLoadingPremium] = useState(false)
-  const [loadingPro, setLoadingPro] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const hasPremium = restaurant?.hasActiveSubscription === true
@@ -34,23 +30,7 @@ export default function BillingPage() {
       toast(t('billing.checkoutCanceled'), { icon: 'ℹ️' })
       setSearchParams({}, { replace: true })
     }
-    if (searchParams.get('pro_success') === 'true') {
-      void refreshRestaurant().then(() => {
-        toast.success(t('billing.proCheckoutSuccess'))
-      })
-      setSearchParams({}, { replace: true })
-    }
-    if (searchParams.get('pro_canceled') === 'true') {
-      toast(t('billing.proCheckoutCanceled'), { icon: 'ℹ️' })
-      setSearchParams({}, { replace: true })
-    }
-  }, [searchParams, setSearchParams, t, refreshRestaurant])
-
-  useEffect(() => {
-    if (searchParams.get('upgrade') === 'pro') {
-      document.getElementById('pro-plan')?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [searchParams])
+  }, [searchParams, setSearchParams, t])
 
   const handleActivatePremium = async () => {
     setLoadingPremium(true)
@@ -71,24 +51,12 @@ export default function BillingPage() {
     }
   }
 
-  const handleUpgradePro = async () => {
-    setLoadingPro(true)
-    setError(null)
-
-    try {
-      const { data } = await api.post<{ checkoutUrl: string }>('/checkout/pro')
-      if (!data.checkoutUrl) {
-        throw new Error(t('billing.checkoutUrlMissing'))
-      }
-      window.location.href = data.checkoutUrl
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? (err instanceof Error ? err.message : t('billing.proCheckoutError'))
-      setError(message)
-      setLoadingPro(false)
-    }
-  }
+  const features = [
+    t('billing.feature1'),
+    t('billing.feature2'),
+    t('billing.feature3'),
+    t('billing.feature4'),
+  ]
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -106,10 +74,10 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {hasProPlan && (
-        <div className="flex items-center gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
-          <Sparkles className="h-5 w-5 shrink-0 text-violet-600" />
-          <p className="text-sm font-medium text-violet-900">{t('billing.proActiveBadge')}</p>
+      {hasPremium && (
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+          <p className="text-sm font-medium text-emerald-900">{t('billing.activeBadge')}</p>
         </div>
       )}
 
@@ -146,8 +114,10 @@ export default function BillingPage() {
               </div>
             </div>
 
+            <p className="text-center text-sm font-medium text-slate-700">{t('billing.summary')}</p>
+
             <ul className="space-y-3 text-sm text-slate-600">
-              {[t('billing.feature1'), t('billing.feature2'), t('billing.feature3')].map(feature => (
+              {features.map(feature => (
                 <li key={feature} className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                   <span>{feature}</span>
@@ -155,7 +125,7 @@ export default function BillingPage() {
               ))}
             </ul>
 
-            {error && !hasPremium && (
+            {error && (
               <div
                 role="alert"
                 className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -186,73 +156,18 @@ export default function BillingPage() {
         </div>
       )}
 
-      {hasPremium && !hasProPlan && (
-        <div
-          id="pro-plan"
-          className="overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm"
-        >
-          <div className="border-b border-violet-100 bg-gradient-to-br from-violet-50/80 via-white to-slate-50 px-6 py-8 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-violet-600">
-              {t('billing.proBadge')}
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-slate-900">{t('billing.proTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">{t('billing.proSubtitle')}</p>
-          </div>
-
-          <div className="space-y-6 px-6 py-6 sm:px-8">
-            <div className="rounded-xl border border-violet-200/60 bg-violet-50/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-violet-700/80">
-                {t('billing.proPriceLabel')}
-              </p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-                {formatCurrency(PRO_MONTHLY_FEE)}
-                <span className="text-base font-semibold text-slate-500">/{t('billing.perMonth')}</span>
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{t('billing.proPriceHint')}</p>
-            </div>
-
-            <ul className="space-y-3 text-sm text-slate-600">
-              {[t('paywall.proFeature1'), t('paywall.proFeature2'), t('paywall.proFeature3')].map(feature => (
-                <li key={feature} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            {error && hasPremium && (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-              >
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handleUpgradePro}
-              disabled={loadingPro}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loadingPro ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {t('billing.proLoading')}
-                </>
-              ) : (
-                t('billing.proActivateButton')
-              )}
-            </button>
-
-            <p className="text-center text-xs text-slate-400">{t('billing.secureNote')}</p>
-          </div>
+      {hasPremium && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-6 sm:px-8">
+          <p className="text-sm font-medium text-slate-900">{t('billing.allIncludedTitle')}</p>
+          <ul className="mt-4 space-y-2 text-sm text-slate-600">
+            {features.map(feature => (
+              <li key={feature} className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
-
-      {hasPremium && hasProPlan && (
-        <p className="text-center text-sm text-slate-500">{t('billing.proAlreadyActive')}</p>
       )}
     </div>
   )

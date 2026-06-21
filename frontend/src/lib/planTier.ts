@@ -14,6 +14,7 @@ export const PRO_MODULE_PATHS = [
 ] as const
 
 export function hasProPlan(restaurant: Restaurant | null | undefined): boolean {
+  if (restaurant?.hasActiveSubscription === true) return true
   return restaurant?.planTier === 'PRO'
 }
 

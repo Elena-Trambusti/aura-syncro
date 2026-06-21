@@ -78,7 +78,7 @@ analyticsRouter.get('/dashboard', requirePermission('analytics.read'), async (re
   })
 })
 
-analyticsRouter.get('/revenue', async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { period = '7d' } = req.query
   const restaurantId = req.restaurantId!
 
@@ -122,7 +122,7 @@ analyticsRouter.get('/revenue', async (req: AuthRequest, res: Response): Promise
   res.json(data)
 })
 
-analyticsRouter.get('/top-items', async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -156,7 +156,7 @@ analyticsRouter.get('/top-items', async (req: AuthRequest, res: Response): Promi
   res.json(result)
 })
 
-analyticsRouter.get('/hourly', async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/hourly', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)

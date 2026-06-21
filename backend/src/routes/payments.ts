@@ -329,7 +329,7 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
         covers: true,
         date: true,
         depositPaid: true,
-        restaurant: { select: { name: true } },
+        restaurant: { select: { name: true, slug: true } },
       },
     })
 
@@ -347,6 +347,7 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
         covers: reservation.covers,
         date: reservation.date.toISOString(),
         restaurantName: reservation.restaurant.name,
+        restaurantSlug: reservation.restaurant.slug,
       },
     })
   } catch {
@@ -416,6 +417,22 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
   if (reservation.depositPaid) {
     res.status(400).json({ error: 'Caparra già pagata' })
     return
+  }
+
+  if (reservation.depositStripeSessionId) {
+    try {
+      const existing = await stripe.checkout.sessions.retrieve(reservation.depositStripeSessionId)
+      if (existing.status === 'open' && existing.url) {
+        res.json({ checkoutUrl: existing.url, sessionId: existing.id })
+        return
+      }
+      if (existing.payment_status === 'paid') {
+        res.status(400).json({ error: 'Caparra già pagata' })
+        return
+      }
+    } catch {
+      // Sessione scaduta o invalida — ne creiamo una nuova
+    }
   }
 
   const settings = await prisma.restaurantSettings.findUnique({

@@ -12,36 +12,47 @@ export function isProPlanTier(planTier: PlanTier | string | null | undefined): b
   return devProUnlock || planTier === 'PRO'
 }
 
-async function loadPlanTier(req: AuthRequest): Promise<PlanTier | null> {
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: tenantId(req) },
-    select: { settings: { select: { planTier: true } } },
-  })
-  if (!restaurant) return null
-  return restaurant.settings?.planTier ?? PlanTier.BASE
+/** Premium €199/mo include tutti i moduli — abbonamento attivo = accesso completo. */
+export function hasFullFeatureAccess(settings: {
+  planTier?: PlanTier | null
+  hasActiveSubscription?: boolean | null
+} | null | undefined): boolean {
+  const devProUnlock =
+    process.env.NODE_ENV !== 'production'
+    && process.env.PRO_PLAN_DEV_UNLOCK === 'true'
+  if (devProUnlock) return true
+  if (settings?.hasActiveSubscription === true) return true
+  return isProPlanTier(settings?.planTier)
 }
 
-/** Richiede piano PRO per moduli avanzati (CRM, AI, marketing, fiscal…). */
+async function loadPlanSettings(req: AuthRequest) {
+  return prisma.restaurant.findUnique({
+    where: { id: tenantId(req) },
+    select: { settings: { select: { planTier: true, hasActiveSubscription: true } } },
+  })
+}
+
+/** Richiede abbonamento Premium attivo (tutti i moduli inclusi nel piano €199/mo). */
 export async function requireProPlan(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const planTier = await loadPlanTier(req)
-    if (planTier === null) {
+    const restaurant = await loadPlanSettings(req)
+    if (!restaurant) {
       tenantNotFound(res, 'Ristorante non trovato')
       return
     }
 
-    if (!isProPlanTier(planTier)) {
+    if (!hasFullFeatureAccess(restaurant.settings)) {
       if (req.freeTierPreview && isFreeTierApiPath(req.originalUrl)) {
         next()
         return
       }
       res.status(403).json({
-        error: 'Piano Pro richiesto per questa funzionalità.',
-        code: 'PRO_PLAN_REQUIRED',
+        error: 'Abbonamento Premium richiesto per questa funzionalità.',
+        code: 'PREMIUM_REQUIRED',
       })
       return
     }

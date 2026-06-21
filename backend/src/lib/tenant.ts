@@ -70,6 +70,6 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     timezone: restaurant.timezone ?? fiscal.timezone,
     hasActiveSubscription: devPremiumUnlock || dbSubscriptionActive,
     isSetupComplete: restaurant.isSetupComplete === true,
-    planTier: devProUnlock ? 'PRO' : dbPlanTier,
+    planTier: (devProUnlock || dbSubscriptionActive) ? 'PRO' : dbPlanTier,
   }
 }

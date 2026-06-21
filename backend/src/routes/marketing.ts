@@ -86,7 +86,7 @@ marketingRouter.post('/', requirePermission('marketing.manage'), async (req: Aut
   res.status(201).json(campaign)
 })
 
-marketingRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.put('/:id', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     name: z.string().min(1).optional(),
     type: z.enum(['EMAIL', 'SMS', 'BIRTHDAY', 'WIN_BACK', 'PROMOTION', 'NEWS']).optional(),
@@ -113,7 +113,7 @@ marketingRouter.put('/:id', async (req: AuthRequest, res: Response): Promise<voi
   res.json(campaign)
 })
 
-marketingRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.delete('/:id', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.campaign.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) { tenantNotFound(res, 'Campagna non trovata'); return }
   res.status(204).send()
@@ -121,7 +121,7 @@ marketingRouter.delete('/:id', async (req: AuthRequest, res: Response): Promise<
 
 // ── Preview destinatari ───────────────────────────────────────────────────────
 
-marketingRouter.post('/preview', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.post('/preview', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const { targetFilter } = req.body
 
@@ -166,7 +166,7 @@ marketingRouter.post('/:id/send', campaignSendLimiter, requirePermission('market
 
 // ── Automazioni compleanno ─────────────────────────────────────────────────────
 
-marketingRouter.get('/automations/birthdays', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.get('/automations/birthdays', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const today = new Date()
   const todayMonth = today.getMonth() + 1
   const todayDay = today.getDate()
@@ -198,7 +198,7 @@ marketingRouter.get('/automations/birthdays', async (req: AuthRequest, res: Resp
 
 // ── Stats overview ─────────────────────────────────────────────────────────────
 
-marketingRouter.get('/stats', async (req: AuthRequest, res: Response): Promise<void> => {
+marketingRouter.get('/stats', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const [total, sent, draft, scheduled] = await Promise.all([

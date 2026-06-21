@@ -1,7 +1,6 @@
 import { io } from '../index'
 import { completeGuestStripePayment } from './completePayment'
 import { markReservationDepositPaid } from './depositWebhook'
-import { activateProPlan, isProUpgradeSession } from './stripeProWebhook'
 import { activateRestaurantSubscription } from './stripeSubscriptionWebhook'
 
 export type CheckoutSessionWebhookPayload = {
@@ -15,7 +14,7 @@ export type CheckoutSessionWebhookPayload = {
   amount_total?: number | null
 }
 
-/** Gestisce checkout.session.completed per SaaS, Pro, ordini guest e caparre. */
+/** Gestisce checkout.session.completed per abbonamento SaaS, ordini guest e caparre. */
 export async function handleCheckoutSessionCompleted(
   session: CheckoutSessionWebhookPayload,
 ): Promise<void> {
@@ -49,14 +48,6 @@ export async function handleCheckoutSessionCompleted(
       }
     } else {
       console.warn('[stripe-webhook] Sessione guest non pagata, ordine non finalizzato:', orderId)
-    }
-    return
-  }
-
-  if (isProUpgradeSession(session)) {
-    const proResult = await activateProPlan(session)
-    if (proResult) {
-      console.info('[stripe-webhook] Piano Pro attivato', proResult.restaurantId)
     }
     return
   }

@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { AuthRequest, requireRole } from '../middleware/auth'
 import { requireProPlan } from '../middleware/planTier'
+import { requirePermission } from '../middleware/permissions'
 import {
   buildDateRange,
   buildMonthRange,
@@ -54,7 +55,7 @@ async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: D
 
 // ── P&L Mensile ───────────────────────────────────────────────────────────────
 
-reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query
   const restaurantId = req.restaurantId!
 
@@ -160,7 +161,7 @@ reportsRouter.get('/pl', async (req: AuthRequest, res: Response): Promise<void> 
 
 // ── Food Cost per Piatto ───────────────────────────────────────────────────────
 
-reportsRouter.get('/food-cost', async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/food-cost', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const menuItems = await prisma.menuItem.findMany({
@@ -218,7 +219,7 @@ reportsRouter.get('/food-cost', async (req: AuthRequest, res: Response): Promise
 
 // ── Analisi per categoria ──────────────────────────────────────────────────────
 
-reportsRouter.get('/categories', async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/categories', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { days = 30 } = req.query
   const restaurantId = req.restaurantId!
   const since = new Date()
@@ -255,7 +256,7 @@ reportsRouter.get('/categories', async (req: AuthRequest, res: Response): Promis
 
 // ── Trend mensili annuali ──────────────────────────────────────────────────────
 
-reportsRouter.get('/yearly', async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/yearly', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { year = new Date().getFullYear() } = req.query
   const restaurantId = req.restaurantId!
   const y = Number(year)

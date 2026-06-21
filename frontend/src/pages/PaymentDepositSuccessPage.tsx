@@ -14,6 +14,7 @@ interface DepositSessionData {
     covers: number
     date: string
     restaurantName: string
+    restaurantSlug?: string
   }
 }
 
@@ -43,13 +44,19 @@ export default function PaymentDepositSuccessPage() {
     )
   }
 
+  const backLink = data?.reservation?.restaurantSlug
+    ? `/menu/${data.reservation.restaurantSlug}`
+    : null
+
   if (error || !data) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
           <h2 className="text-xl font-bold text-slate-800 mb-2">{t('depositSuccess.errorTitle')}</h2>
           <p className="text-slate-500 mb-6">{t('depositSuccess.errorDesc')}</p>
-          <Link to="/" className="text-amber-600 font-semibold hover:underline">{t('depositSuccess.backHome')}</Link>
+          {backLink
+            ? <Link to={backLink} className="text-amber-600 font-semibold hover:underline">{t('depositSuccess.backToMenu')}</Link>
+            : <span className="text-slate-500 text-sm">{t('depositSuccess.contactRestaurant')}</span>}
         </div>
       </div>
     )
@@ -93,12 +100,16 @@ export default function PaymentDepositSuccessPage() {
       )}
 
       <div className="px-5 pb-8">
-        <Link
-          to="/"
-          className="flex items-center justify-center w-full py-3.5 border-2 border-slate-200 rounded-2xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
-        >
-          {t('depositSuccess.backHome')}
-        </Link>
+        {backLink ? (
+          <Link
+            to={backLink}
+            className="flex items-center justify-center w-full py-3.5 border-2 border-slate-200 rounded-2xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
+          >
+            {t('depositSuccess.backToMenu')}
+          </Link>
+        ) : (
+          <p className="text-center text-sm text-slate-500">{t('depositSuccess.contactRestaurant')}</p>
+        )}
       </div>
     </div>
   )

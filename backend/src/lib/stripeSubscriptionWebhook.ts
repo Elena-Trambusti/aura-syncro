@@ -65,7 +65,7 @@ export async function activateRestaurantSubscription(
       where: { restaurantId },
       data: {
         hasActiveSubscription: true,
-        planTier: 'BASE',
+        planTier: 'PRO',
         ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
       },
     })
@@ -74,7 +74,7 @@ export async function activateRestaurantSubscription(
       data: {
         restaurantId,
         hasActiveSubscription: true,
-        planTier: 'BASE',
+        planTier: 'PRO',
         stripeSubscriptionId: subscriptionId,
       },
     })
@@ -124,19 +124,22 @@ export async function syncRestaurantSubscriptionStatus(
 
   const proSettings = await prisma.restaurantSettings.findFirst({
     where: { stripeProSubscriptionId: subscription.id },
-    select: { restaurantId: true },
+    select: { restaurantId: true, hasActiveSubscription: true },
   })
 
   if (proSettings) {
     if (!hasActiveSubscription) {
       await prisma.restaurantSettings.update({
         where: { restaurantId: proSettings.restaurantId },
-        data: { planTier: 'BASE', stripeProSubscriptionId: null },
+        data: {
+          stripeProSubscriptionId: null,
+          ...(proSettings.hasActiveSubscription ? { planTier: 'PRO' as const } : { planTier: 'BASE' as const }),
+        },
       })
     }
     return {
       restaurantId: proSettings.restaurantId,
-      hasActiveSubscription,
+      hasActiveSubscription: proSettings.hasActiveSubscription,
       status: subscription.status,
     }
   }
@@ -160,7 +163,7 @@ export async function syncRestaurantSubscriptionStatus(
   const data = {
     hasActiveSubscription,
     stripeSubscriptionId: subscription.id,
-    ...(!hasActiveSubscription ? { planTier: 'BASE' as const, stripeProSubscriptionId: null } : {}),
+    ...(hasActiveSubscription ? { planTier: 'PRO' as const } : { planTier: 'BASE' as const, stripeProSubscriptionId: null }),
   }
 
   if (restaurant.settings) {
@@ -172,7 +175,6 @@ export async function syncRestaurantSubscriptionStatus(
     await prisma.restaurantSettings.create({
       data: {
         restaurantId,
-        planTier: 'BASE',
         ...data,
       },
     })

@@ -22,6 +22,8 @@ function isPremiumActive(settings: { hasActiveSubscription?: boolean | null } | 
 
 export function isFreeTierApiPath(originalUrl: string): boolean {
   const path = originalUrl.split('?')[0]
+  if (path.startsWith('/api/payments/overview')) return false
+  if (path.startsWith('/api/reports/fiscal')) return false
   return FREE_TIER_API_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 

@@ -57,14 +57,11 @@ aura-syncro/
 | Tier | Accesso |
 |---|---|
 | **Free (registrato)** | Dashboard, Ordini, Menu, Pagamenti, Report — anteprima senza abbonamento |
-| **Premium (Stripe)** | Setup concierge, moduli core sbloccati dopo onboarding |
-| **Base** | POS completo incluso nel Premium |
-| **Pro (add-on €79/mo)** | CRM, AI, marketing, fedeltà, report fiscale, analytics avanzate |
+| **Premium (Stripe €500 setup + €199/mo)** | Tutti i moduli inclusi: POS, CRM, AI, marketing, fedeltà, report fiscal, analytics |
 
 Flusso checkout:
-- `POST /api/checkout` → abbonamento Premium
-- `POST /api/checkout/pro` → upgrade Pro (richiede Premium attivo + piano Base)
-- Webhook `POST /api/webhooks/stripe` gestisce `metadata.plan=pro` e sync downgrade
+- `POST /api/checkout` → setup €500 + abbonamento €199/mo (tutto incluso)
+- Webhook `POST /api/webhooks/stripe` attiva abbonamento e sblocca tutti i moduli
 
 ---
 
@@ -159,11 +156,10 @@ POST   /api/orders/public          # menu QR (guest)
 GET    /api/tables
 GET    /api/staff/shifts
 GET    /api/waitlist
-POST   /api/checkout               # Premium
-POST   /api/checkout/pro           # Upgrade Pro
+POST   /api/checkout               # Premium (€500 setup + €199/mo, tutto incluso)
 POST   /api/webhooks/stripe
-GET    /api/reports/fiscal         # Pro
-GET    /api/ai/predictive          # Pro
+GET    /api/reports/fiscal         # Premium
+GET    /api/ai/predictive          # Premium
 ```
 
 ---
