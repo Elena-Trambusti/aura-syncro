@@ -176,7 +176,7 @@ export default function CrmPage() {
 
       <div className={`${ui.cardSm} overflow-hidden`}>
         <div className={ui.tableWrap}>
-          <table className="w-full min-w-[720px]">
+          <table className="w-full max-w-full">
             <thead>
               <tr className={ui.tableHeadBg}>
                 <th className={cn('text-left px-5 py-3', ui.tableHead)}>{t('crm.table.customer')}</th>
@@ -202,7 +202,7 @@ export default function CrmPage() {
                     <p className="text-xs text-slate-500">{customer.email || customer.phone || '—'}</p>
                   </td>
                   <td className="px-4 py-3.5">
-                    <div className="flex flex-wrap gap-1 max-w-[180px]">
+                    <div className="flex w-full max-w-full flex-wrap gap-1">
                       {customer.tags.slice(0, 3).map(tag => (
                         <span
                           key={tag}

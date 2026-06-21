@@ -29,6 +29,6 @@ export const ui = {
   badgeMuted: 'bg-slate-100 text-slate-600 border border-slate-200',
   btnPrimary: 'saas-btn-primary',
   pageHeader: 'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
-  tableWrap: 'overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0',
+  tableWrap: 'w-full max-w-full overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0',
   filterRow: 'flex gap-2 flex-wrap',
 } as const

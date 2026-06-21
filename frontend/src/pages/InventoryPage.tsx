@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { Plus, AlertTriangle, Package, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency } from '../lib/utils'
+import { ui } from '../lib/ui'
 import { useRole } from '../hooks/useRole'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -163,8 +164,9 @@ export default function InventoryPage() {
         ))}
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full">
+      <div className="glass-card w-full max-w-full overflow-hidden">
+        <div className={ui.tableWrap}>
+        <table className="w-full max-w-full">
           <thead>
             <tr className="border-b border-slate-200 glass-table-head">
               <th className="text-left text-xs font-semibold text-slate-500 uppercase px-5 py-3">Prodotto</th>
@@ -231,6 +233,7 @@ export default function InventoryPage() {
             })}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <div className="flex flex-col items-center py-12 text-slate-600">
             <Package className="w-10 h-10 mb-2 opacity-30" />

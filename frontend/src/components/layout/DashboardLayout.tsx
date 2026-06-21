@@ -45,7 +45,7 @@ export default function DashboardLayout() {
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar }}>
       <div className="pwa-app-shell">
         <Sidebar />
-        <div className="dashboard-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50">
+        <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden bg-slate-50">
           <Header />
           <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
             <PwaInstallHint />

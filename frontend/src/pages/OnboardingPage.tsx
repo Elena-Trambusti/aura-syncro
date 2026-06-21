@@ -134,7 +134,7 @@ export default function OnboardingPage() {
               ref={calendlyRef}
               className="calendly-inline-widget"
               data-url={CALENDLY_URL}
-              style={{ minWidth: '320px', height: '700px' }}
+              style={{ width: '100%', maxWidth: '100%', minWidth: 0, height: '700px' }}
             />
           </div>
         </section>

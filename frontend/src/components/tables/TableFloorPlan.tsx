@@ -91,9 +91,9 @@ export default function TableFloorPlan({
         className="relative mx-auto"
         style={{
           width: '100%',
-          maxWidth: bounds.width,
+          maxWidth: '100%',
+          minWidth: 0,
           aspectRatio: `${bounds.width} / ${bounds.height}`,
-          minWidth: 320,
           minHeight: 240,
         }}
       >

@@ -207,7 +207,7 @@ export default function ReportsPage() {
                   <Download className="w-3.5 h-3.5" /> Esporta CSV
                 </button>
               </div>
-              <div className="overflow-x-auto">
+              <div className="w-full max-w-full overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="glass-table-head">
                     <tr>
@@ -220,7 +220,7 @@ export default function ReportsPage() {
                     {foodCost.slice(0, 15).map(item => (
                       <tr key={item.id} className="hover:glass-table-head transition-colors">
                         <td className="px-4 py-3">
-                          <p className="font-medium text-slate-900 truncate max-w-[150px]">{item.name}</p>
+                          <p className="font-medium text-slate-900 truncate min-w-0 max-w-full">{item.name}</p>
                           <p className="text-xs text-slate-600">{item.category}</p>
                         </td>
                         <td className="px-4 py-3 text-slate-500">{formatCurrency(item.price)}</td>

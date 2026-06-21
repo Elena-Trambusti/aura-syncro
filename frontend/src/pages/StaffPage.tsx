@@ -129,8 +129,8 @@ export default function StaffPage() {
             <p className="text-sm">{t('staff.empty')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+          <div className="w-full max-w-full overflow-x-auto">
+            <table className="w-full max-w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="px-5 py-3">{t('staff.colName')}</th>

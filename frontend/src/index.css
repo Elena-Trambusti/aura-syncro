@@ -28,10 +28,14 @@
 
   * {
     box-sizing: border-box;
+    max-width: 100vw;
   }
 
   html {
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
   }
 
   body {
@@ -40,11 +44,16 @@
     color: #0f172a;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    width: 100%;
+    position: relative;
     margin: 0;
   }
 
   #root {
     min-height: 100dvh;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   ::-webkit-scrollbar {
@@ -245,7 +254,7 @@
   }
 
   .pwa-app-shell {
-    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 flex-row overflow-hidden;
+    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-[100vw] flex-row overflow-hidden overflow-x-hidden;
     background: linear-gradient(
       to bottom,
       #C9A227 0,
@@ -266,10 +275,11 @@
   .pwa-main-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+    @apply w-full max-w-full overflow-x-hidden;
   }
 
   .pwa-mobile-page {
-    @apply space-y-4 sm:space-y-6;
+    @apply w-full max-w-full space-y-4 sm:space-y-6;
   }
 
   .pwa-stat-grid {
@@ -297,11 +307,11 @@
   }
 
   .aura-table-wrap {
-    @apply overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0;
+    @apply w-full max-w-full overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0;
   }
 
   .aura-table-wrap table {
-    @apply min-w-[640px] w-full;
+    @apply w-full max-w-full;
   }
 
   .aura-filter-row {
@@ -310,7 +320,7 @@
 
   /* Area principale dashboard — alto contrasto */
   .dashboard-main {
-    @apply bg-slate-50 text-slate-900;
+    @apply w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900;
   }
 
   .dashboard-main .text-stone-100,

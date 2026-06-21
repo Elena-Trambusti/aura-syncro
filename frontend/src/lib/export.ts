@@ -56,14 +56,14 @@ export function printReceipt(order: {
   <title>Scontrino #${order.id.slice(-6).toUpperCase()}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Courier New', monospace; font-size: 12px; width: 300px; margin: 0 auto; padding: 16px; }
+    body { font-family: 'Courier New', monospace; font-size: 12px; width: 100%; max-width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; }
     .center { text-align: center; }
     .bold { font-weight: bold; }
     .separator { border-top: 1px dashed #000; margin: 8px 0; }
     .row { display: flex; justify-content: space-between; margin: 3px 0; }
     .total-row { font-size: 14px; font-weight: bold; }
     h1 { font-size: 16px; margin-bottom: 4px; }
-    @media print { body { width: 100%; } @page { margin: 5mm; } }
+    @media print { body { width: 300px; max-width: 300px; } @page { margin: 5mm; } }
   </style>
 </head>
 <body>

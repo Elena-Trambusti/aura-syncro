@@ -409,8 +409,8 @@ function ReportFiscalContent() {
                   <p className="text-xs">{t('reportFiscal.emptyHint')}</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[800px] border-separate border-spacing-y-3 text-sm">
+                <div className="w-full max-w-full overflow-x-auto">
+                  <table className="w-full max-w-full border-separate border-spacing-y-3 text-sm">
                     <thead>
                       <tr>
                         {tableHeaders.map(h => (
