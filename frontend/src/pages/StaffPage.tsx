@@ -5,8 +5,11 @@ import { api } from '../lib/api'
 import { getRoleLabel, getInitials, cn } from '../lib/utils'
 import { useRole } from '../hooks/useRole'
 import { type AppRole } from '../lib/rbac'
-import { Plus, UserCog, Loader2, X, UserMinus, UserCheck } from 'lucide-react'
+import { Plus, UserCog, Loader2, X, UserMinus, UserCheck, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
+import StaffShiftsTab from '../components/staff/StaffShiftsTab'
+
+type StaffTab = 'team' | 'shifts'
 
 interface StaffMember {
   id: string
@@ -28,6 +31,7 @@ export default function StaffPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { assignableStaffRoles } = useRole()
+  const [activeTab, setActiveTab] = useState<StaffTab>('team')
   const [showForm, setShowForm] = useState(false)
   const [newStaff, setNewStaff] = useState({
     name: '',
@@ -69,13 +73,48 @@ export default function StaffPage() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600"
+          className={cn(
+            'flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600',
+            activeTab !== 'team' && 'hidden',
+          )}
         >
           <Plus className="h-4 w-4" />
           {t('staff.addMember')}
         </button>
       </div>
 
+      <div className="flex gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab('team')}
+          className={cn(
+            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
+            activeTab === 'team'
+              ? 'border-amber-500 text-amber-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800',
+          )}
+        >
+          <UserCog className="h-4 w-4" />
+          {t('staff.tabTeam')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('shifts')}
+          className={cn(
+            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
+            activeTab === 'shifts'
+              ? 'border-amber-500 text-amber-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800',
+          )}
+        >
+          <CalendarDays className="h-4 w-4" />
+          {t('staff.shifts')}
+        </button>
+      </div>
+
+      {activeTab === 'shifts' ? (
+        <StaffShiftsTab />
+      ) : (
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -143,8 +182,9 @@ export default function StaffPage() {
           </div>
         )}
       </div>
+      )}
 
-      {showForm && (
+      {showForm && activeTab === 'team' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
           <div
             className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg"

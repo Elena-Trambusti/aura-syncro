@@ -6,6 +6,8 @@ export interface AuthRequest extends Request {
   userId?: string
   restaurantId?: string
   userRole?: string
+  /** true quando l'API è servita in anteprima free (senza abbonamento Premium) */
+  freeTierPreview?: boolean
   // Override Express 5 params type (string | string[]) to ensure plain strings for Prisma
   params: Record<string, string>
 }

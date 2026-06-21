@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
+import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const staffRouter = Router()
@@ -146,6 +147,7 @@ staffRouter.post('/shifts', requirePermission('staff.manage'), async (req: AuthR
     },
     include: { user: { select: { id: true, name: true, role: true } } },
   })
+  io.to(tenantId(req)).emit('shift:created', shift)
   res.status(201).json(shift)
 })
 
@@ -164,14 +166,16 @@ staffRouter.patch('/shifts/:id/clock', async (req: AuthRequest, res: Response): 
     return
   }
   const shift = await prisma.shift.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (shift) io.to(tenantId(req)).emit('shift:updated', shift)
   res.json(shift)
 })
 
-staffRouter.delete('/shifts/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.delete('/shifts/:id', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.shift.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Turno non trovato')
     return
   }
+  io.to(tenantId(req)).emit('shift:deleted', { id: req.params.id })
   res.status(204).send()
 })

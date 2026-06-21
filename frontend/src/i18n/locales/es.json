@@ -81,7 +81,7 @@
     "lockedOnboarding": "Completa el onboarding para desbloquear esta sección",
     "lockedPro": "Pasa a Pro para desbloquear esta función",
     "lockedAria": "bloqueado",
-    "previewUnsubscribed": "Explora las funciones — activa tu plan para usarlas",
+    "previewUnsubscribed": "Vista previa gratuita — activa Premium para desbloquear todo",
     "previewOnboarding": "Onboarding en curso — las funciones se desbloquean al completar el setup"
   },
   "auth": {
@@ -271,7 +271,31 @@
     "newReservation": "Nueva Reserva",
     "confirmed": "¡Reserva confirmada!",
     "guests": "comensales",
-    "noReservations": "Sin reservas"
+    "noReservations": "Sin reservas",
+    "tabBookings": "Reservas",
+    "tabWaitlist": "Lista de espera"
+  },
+  "waitlist": {
+    "subtitle": "{{count}} clientes en espera",
+    "addGuest": "Añadir a la lista",
+    "addToList": "Insertar en lista",
+    "guestName": "Nombre del cliente",
+    "covers": "Comensales",
+    "requestedTime": "Hora solicitada",
+    "notes": "Notas",
+    "empty": "Lista de espera vacía",
+    "emptyHint": "Añade clientes walk-in cuando la sala esté llena",
+    "statusWaiting": "En espera",
+    "notify": "Avisar cliente",
+    "confirm": "Confirmar llegada",
+    "cancel": "Eliminar",
+    "added": "Cliente añadido a la lista",
+    "addError": "No se pudo añadir a la lista",
+    "notified": "Cliente avisado",
+    "confirmed": "Llegada confirmada",
+    "removed": "Eliminado de la lista",
+    "waitMinutes": "{{count}} min de espera",
+    "waitHours": "{{count}} h de espera"
   },
   "crm": {
     "title": "CRM Clientes",
@@ -346,7 +370,33 @@
     "formEmail": "Email",
     "formPassword": "Contraseña temporal",
     "formRole": "Rol",
-    "formPhone": "Teléfono"
+    "formPhone": "Teléfono",
+    "tabTeam": "Equipo",
+    "addShift": "Añadir turno",
+    "addShiftTitle": "Nuevo turno",
+    "shiftAdded": "Turno añadido",
+    "shiftAddError": "No se pudo añadir el turno",
+    "shiftDeleted": "Turno eliminado",
+    "clockUpdated": "Fichaje registrado",
+    "prevWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "thisWeek": "Esta semana",
+    "today": "Hoy",
+    "noShiftsDay": "Sin turnos",
+    "clockIn": "Entrada",
+    "clockOut": "Salida",
+    "formMember": "Miembro del equipo",
+    "selectMember": "Seleccionar miembro",
+    "startTime": "Inicio",
+    "endTime": "Fin",
+    "formNotes": "Notas",
+    "notesPlaceholder": "Ej. servicio cena, terraza…",
+    "shiftStatus": {
+      "scheduled": "Programado",
+      "active": "En curso",
+      "completed": "Completado",
+      "absent": "Ausente"
+    }
   },
   "inventory": {
     "title": "Almacén",

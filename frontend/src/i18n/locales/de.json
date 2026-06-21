@@ -81,7 +81,7 @@
     "lockedOnboarding": "Schließen Sie das Onboarding ab, um diesen Bereich freizuschalten",
     "lockedPro": "Upgrade auf Pro, um diese Funktion freizuschalten",
     "lockedAria": "gesperrt",
-    "previewUnsubscribed": "Funktionen erkunden — aktivieren Sie Ihren Plan zur Nutzung",
+    "previewUnsubscribed": "Kostenlose Vorschau — Premium aktivieren für vollen Zugriff",
     "previewOnboarding": "Onboarding läuft — Funktionen werden nach Setup freigeschaltet"
   },
   "auth": {
@@ -256,7 +256,31 @@
     "newReservation": "Neue Reservierung",
     "confirmed": "Reservierung bestätigt!",
     "guests": "Gäste",
-    "noReservations": "Keine Reservierungen"
+    "noReservations": "Keine Reservierungen",
+    "tabBookings": "Reservierungen",
+    "tabWaitlist": "Warteliste"
+  },
+  "waitlist": {
+    "subtitle": "{{count}} Gäste warten",
+    "addGuest": "Zur Liste hinzufügen",
+    "addToList": "Auf Liste setzen",
+    "guestName": "Gastname",
+    "covers": "Gäste",
+    "requestedTime": "Gewünschte Uhrzeit",
+    "notes": "Notizen",
+    "empty": "Warteliste ist leer",
+    "emptyHint": "Walk-in-Gäste hinzufügen, wenn der Saal voll ist",
+    "statusWaiting": "Wartend",
+    "notify": "Gast benachrichtigen",
+    "confirm": "Ankunft bestätigen",
+    "cancel": "Entfernen",
+    "added": "Gast zur Warteliste hinzugefügt",
+    "addError": "Konnte nicht zur Warteliste hinzufügen",
+    "notified": "Gast benachrichtigt",
+    "confirmed": "Ankunft bestätigt",
+    "removed": "Von der Warteliste entfernt",
+    "waitMinutes": "{{count}} Min. Wartezeit",
+    "waitHours": "{{count}} Std. Wartezeit"
   },
   "crm": {
     "title": "Kunden-CRM",
@@ -331,7 +355,33 @@
     "formEmail": "E-Mail",
     "formPassword": "Temporäres Passwort",
     "formRole": "Rolle",
-    "formPhone": "Telefon"
+    "formPhone": "Telefon",
+    "tabTeam": "Team",
+    "addShift": "Schicht hinzufügen",
+    "addShiftTitle": "Neue Schicht",
+    "shiftAdded": "Schicht hinzugefügt",
+    "shiftAddError": "Schicht konnte nicht hinzugefügt werden",
+    "shiftDeleted": "Schicht gelöscht",
+    "clockUpdated": "Stempelung erfasst",
+    "prevWeek": "Vorherige Woche",
+    "nextWeek": "Nächste Woche",
+    "thisWeek": "Diese Woche",
+    "today": "Heute",
+    "noShiftsDay": "Keine Schichten",
+    "clockIn": "Einstempeln",
+    "clockOut": "Ausstempeln",
+    "formMember": "Teammitglied",
+    "selectMember": "Mitglied wählen",
+    "startTime": "Beginn",
+    "endTime": "Ende",
+    "formNotes": "Notizen",
+    "notesPlaceholder": "z. B. Abendservice, Terrasse…",
+    "shiftStatus": {
+      "scheduled": "Geplant",
+      "active": "Aktiv",
+      "completed": "Abgeschlossen",
+      "absent": "Abwesend"
+    }
   },
   "inventory": {
     "title": "Lager",

@@ -7,7 +7,7 @@ import { requirePermission } from '../middleware/permissions'
 import { canSetOrderStatus, canUpdateOrderItemStatus } from '../lib/permissions'
 import { io } from '../index'
 import { parseLocalDate } from '../lib/dates'
-import { computePaymentSplit, releaseTableIfEmpty } from '../lib/orderPayment'
+import { computePaymentSplit, decrementInventoryForOrder, releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxForRestaurant } from '../lib/orderTax'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
@@ -149,6 +149,8 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
       tenantNotFound(res, 'Tavolo non trovato')
       return
     }
+    const table = await prisma.table.findFirst({ where: { id: orderData.tableId, restaurantId: tenantId(req) } })
+    if (table) io.to(req.restaurantId!).emit('table:updated', table)
   }
 
   io.to(req.restaurantId!).emit('order:created', order)
@@ -221,12 +223,15 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     paymentData.tipAmount = split.tipAmount
     paymentData.total = split.total
 
-    await prisma.orderItem.updateMany({
-      where: {
-        orderId: req.params.id,
-        status: { notIn: ['CANCELLED', 'SERVED'] },
-      },
-      data: { status: 'SERVED' },
+    await prisma.$transaction(async tx => {
+      await tx.orderItem.updateMany({
+        where: {
+          orderId: req.params.id,
+          status: { notIn: ['CANCELLED', 'SERVED'] },
+        },
+        data: { status: 'SERVED' },
+      })
+      await decrementInventoryForOrder(tx, req.params.id, req.restaurantId!)
     })
   }
 
@@ -247,7 +252,8 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   })
 
   if (status === 'PAID' || status === 'CANCELLED') {
-    await releaseTableIfEmpty(order.tableId)
+    const releasedTable = await releaseTableIfEmpty(order.tableId)
+    if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
   }
 
   io.to(req.restaurantId!).emit('order:updated', order)

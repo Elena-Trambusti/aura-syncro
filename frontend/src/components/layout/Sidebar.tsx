@@ -16,7 +16,7 @@ import { getTenantTheme } from '../../lib/tenantTheme'
 import { BRAND } from '../../lib/brand'
 import BrandLogo from '../brand/BrandLogo'
 import { useDashboardLayout } from './DashboardLayout'
-import { BILLING_PATH, ONBOARDING_PATH } from '../../lib/accessTier'
+import { BILLING_PATH, ONBOARDING_PATH, isFreeTierNavItem } from '../../lib/accessTier'
 
 const navItems: Array<{
   to: string
@@ -99,7 +99,11 @@ export default function Sidebar() {
   }, [tier, canAccessAdminNav, canManageStaff, can])
 
   function isItemLocked(item: (typeof navItems)[number]): boolean {
-    if (tier === 'unsubscribed') return !item.billingOnly
+    if (tier === 'unsubscribed') {
+      if (item.billingOnly) return false
+      if (isFreeTierNavItem(item.to, item.exact)) return false
+      return true
+    }
     if (tier === 'onboarding') return !item.onboardingOnly
     if (item.proOnly && !hasProPlan) return true
     return false

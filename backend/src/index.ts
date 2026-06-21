@@ -31,7 +31,7 @@ import { publicRouter } from './routes/public'
 import { adminRouter } from './routes/admin'
 import { aiRouter } from './routes/ai'
 import { authenticate } from './middleware/auth'
-import { requireFullDashboardAccess } from './middleware/dashboardAccess'
+import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
 import { errorHandler } from './middleware/errorHandler'
 import { setupSocketHandlers } from './socket/handlers'
@@ -80,23 +80,23 @@ app.use('/api/admin', adminRouter)
 
 // Routes protette — sbarramento centralizzato su tier operativo
 app.use('/api/restaurant', authenticate, restaurantRouter)
-app.use('/api/tables', authenticate, requireFullDashboardAccess, tablesRouter)
-app.use('/api/menu', authenticate, requireFullDashboardAccess, menuRouter)
-app.use('/api/orders', authenticate, requireFullDashboardAccess, ordersRouter)
-app.use('/api/reservations', authenticate, requireFullDashboardAccess, reservationsRouter)
-app.use('/api/customers', authenticate, requireFullDashboardAccess, requireProPlan, customersRouter)
-app.use('/api/staff', authenticate, requireFullDashboardAccess, staffRouter)
-app.use('/api/inventory', authenticate, requireFullDashboardAccess, inventoryRouter)
-app.use('/api/analytics', authenticate, requireFullDashboardAccess, requireProPlan, analyticsRouter)
-app.use('/api/loyalty', authenticate, requireFullDashboardAccess, requireProPlan, loyaltyRouter)
-app.use('/api/marketing', authenticate, requireFullDashboardAccess, requireProPlan, marketingRouter)
-app.use('/api/reports', authenticate, requireFullDashboardAccess, reportsRouter)
-app.use('/api/waitlist', authenticate, requireFullDashboardAccess, waitlistRouter)
+app.use('/api/tables', authenticate, requireDashboardAccess, tablesRouter)
+app.use('/api/menu', authenticate, requireDashboardAccess, menuRouter)
+app.use('/api/orders', authenticate, requireDashboardAccess, ordersRouter)
+app.use('/api/reservations', authenticate, requireDashboardAccess, reservationsRouter)
+app.use('/api/customers', authenticate, requireDashboardAccess, requireProPlan, customersRouter)
+app.use('/api/staff', authenticate, requireDashboardAccess, staffRouter)
+app.use('/api/inventory', authenticate, requireDashboardAccess, inventoryRouter)
+app.use('/api/analytics', authenticate, requireDashboardAccess, requireProPlan, analyticsRouter)
+app.use('/api/loyalty', authenticate, requireDashboardAccess, requireProPlan, loyaltyRouter)
+app.use('/api/marketing', authenticate, requireDashboardAccess, requireProPlan, marketingRouter)
+app.use('/api/reports', authenticate, requireDashboardAccess, reportsRouter)
+app.use('/api/waitlist', authenticate, requireDashboardAccess, waitlistRouter)
 // Pagamenti: checkout e webhook sono pubblici, /overview è protetta
 app.use('/api/payments', paymentsRouter)
 app.use('/api/webhooks/stripe', stripeWebhookRouter)
 app.use('/api/checkout', authenticate, checkoutRouter)
-app.use('/api/ai', authenticate, requireFullDashboardAccess, requireProPlan, aiRouter)
+app.use('/api/ai', authenticate, requireDashboardAccess, requireProPlan, aiRouter)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

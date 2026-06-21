@@ -7,6 +7,7 @@ import { RefreshCw } from 'lucide-react'
 import OrderModal from '../components/orders/OrderModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import { cn } from '../lib/utils'
+import { useRealtimeTables } from '../hooks/useRealtimeInvalidation'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
@@ -25,6 +26,7 @@ const STAT_ACCENTS = [
 export default function TablesPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  useRealtimeTables()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const allAreasKey = t('common.allAreas')
@@ -33,7 +35,6 @@ export default function TablesPage() {
   const { data: tables = [], isLoading } = useQuery<Table[]>({
     queryKey: ['tables'],
     queryFn: () => api.get('/tables').then(r => r.data),
-    refetchInterval: 15_000,
   })
 
   const defaultArea = t('common.area')

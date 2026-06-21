@@ -3,9 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatTime, RESERVATION_STATUS_LABELS } from '../lib/utils'
-import { Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, Clock } from 'lucide-react'
+import { Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, Clock, ListOrdered } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRole } from '../hooks/useRole'
+import WaitlistPanel from '../components/reservations/WaitlistPanel'
+import { cn } from '../lib/utils'
+
+type ReservationTab = 'bookings' | 'waitlist'
 
 interface Reservation {
   id: string; guestName: string; guestPhone: string; guestEmail?: string
@@ -92,6 +96,7 @@ export default function ReservationsPage() {
   const queryClient = useQueryClient()
   const { can } = useRole()
   const canManageReservations = can('reservations.manage')
+  const [activeTab, setActiveTab] = useState<ReservationTab>('bookings')
   const [showForm, setShowForm] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
@@ -133,13 +138,42 @@ export default function ReservationsPage() {
           <h1 className="aura-page-title">{t('reservations.title')}</h1>
           <p className="aura-page-subtitle">{t('reservations.subtitle', { count: reservations.length, covers: totalCovers })}</p>
         </div>
-        {canManageReservations && (
+        {canManageReservations && activeTab === 'bookings' && (
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">
           <Plus className="w-4 h-4" />
           {t('reservations.newReservation')}
         </button>
         )}
+      </div>
+
+      <div className="flex gap-2 border-b border-slate-200/80">
+        <button
+          type="button"
+          onClick={() => setActiveTab('bookings')}
+          className={cn(
+            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
+            activeTab === 'bookings'
+              ? 'border-amber-500 text-amber-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800',
+          )}
+        >
+          <CalendarDays className="h-4 w-4" />
+          {t('reservations.tabBookings')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('waitlist')}
+          className={cn(
+            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
+            activeTab === 'waitlist'
+              ? 'border-amber-500 text-amber-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800',
+          )}
+        >
+          <ListOrdered className="h-4 w-4" />
+          {t('reservations.tabWaitlist')}
+        </button>
       </div>
 
       {/* Selettore data */}
@@ -161,6 +195,10 @@ export default function ReservationsPage() {
         </div>
       </div>
 
+      {activeTab === 'waitlist' ? (
+        <WaitlistPanel selectedDate={selectedDate} />
+      ) : (
+      <>
       {/* Lista prenotazioni */}
       <div className="space-y-3">
         {reservations.map(res => (
@@ -215,6 +253,8 @@ export default function ReservationsPage() {
           onSave={data => createReservation.mutate(data)}
           onCancel={() => setShowForm(false)}
         />
+      )}
+      </>
       )}
     </div>
   )

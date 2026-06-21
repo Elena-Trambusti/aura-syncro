@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, authenticate } from '../middleware/auth'
-import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
+import { requireDashboardAccess } from '../middleware/dashboardAccess'
 import { requirePermission } from '../middleware/permissions'
 import { requireProPlan } from '../middleware/planTier'
 import { io } from '../index'
@@ -74,7 +74,7 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
 }
 
 // ── Anteprima checkout (riepilogo pre-pagamento) ─────────────────────────────
-paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await loadOrderForCheckout(req.params.orderId, req.restaurantId!)
   if (!order) {
     res.status(404).json({ error: 'Ordine non trovato' })
@@ -99,7 +99,7 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireFullDashboardAcces
 })
 
 // ── Finalizza pagamento e chiusura conto ─────────────────────────────────────
-paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const parsed = finalizeSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
@@ -146,7 +146,9 @@ paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, requi
       include: posOrderInclude,
     })
 
-    await releaseTableIfEmpty(order.tableId)
+    await releaseTableIfEmpty(order.tableId).then(table => {
+      if (table) io.to(req.restaurantId!).emit('table:updated', table)
+    })
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: req.restaurantId! },
@@ -191,7 +193,7 @@ paymentsRouter.post('/finalize', authenticate, requireFullDashboardAccess, requi
 })
 
 // ── Checkout POS fisico (compat — delega a finalize) ─────────────────────────
-paymentsRouter.post('/pos-checkout', authenticate, requireFullDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     orderId: z.string(),
     tipAmount: z.number().min(0).optional().default(0),
@@ -220,7 +222,8 @@ paymentsRouter.post('/pos-checkout', authenticate, requireFullDashboardAccess, r
       include: posOrderInclude,
     })
 
-    await releaseTableIfEmpty(updatedOrder?.tableId)
+    const releasedTable = await releaseTableIfEmpty(updatedOrder?.tableId)
+    if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
 
     io.to(req.restaurantId!).emit('order:updated', updatedOrder)
 
@@ -457,7 +460,7 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
-paymentsRouter.get('/overview', authenticate, requirePermission('payments.overview'), requireFullDashboardAccess, requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.get('/overview', authenticate, requirePermission('payments.overview'), requireDashboardAccess, requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   if (!restaurantId) {
     res.status(401).json({ error: 'Tenant non autenticato' })

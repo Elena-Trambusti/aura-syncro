@@ -81,7 +81,7 @@
     "lockedOnboarding": "Terminez l'onboarding pour débloquer cette section",
     "lockedPro": "Passez à Pro pour débloquer cette fonction",
     "lockedAria": "verrouillé",
-    "previewUnsubscribed": "Explorez les fonctionnalités — activez votre plan pour les utiliser",
+    "previewUnsubscribed": "Aperçu gratuit — activez Premium pour tout débloquer",
     "previewOnboarding": "Onboarding en cours — les fonctions se débloquent à la fin du setup"
   },
   "auth": {
@@ -256,7 +256,31 @@
     "newReservation": "Nouvelle réservation",
     "confirmed": "Réservation confirmée !",
     "guests": "convives",
-    "noReservations": "Aucune réservation"
+    "noReservations": "Aucune réservation",
+    "tabBookings": "Réservations",
+    "tabWaitlist": "Liste d'attente"
+  },
+  "waitlist": {
+    "subtitle": "{{count}} clients en attente",
+    "addGuest": "Ajouter à la liste",
+    "addToList": "Inscrire sur la liste",
+    "guestName": "Nom du client",
+    "covers": "Couverts",
+    "requestedTime": "Heure souhaitée",
+    "notes": "Notes",
+    "empty": "Liste d'attente vide",
+    "emptyHint": "Ajoutez des walk-in quand la salle est complète",
+    "statusWaiting": "En attente",
+    "notify": "Prévenir le client",
+    "confirm": "Confirmer l'arrivée",
+    "cancel": "Retirer",
+    "added": "Client ajouté à la liste",
+    "addError": "Impossible d'ajouter à la liste",
+    "notified": "Client prévenu",
+    "confirmed": "Arrivée confirmée",
+    "removed": "Retiré de la liste",
+    "waitMinutes": "{{count}} min d'attente",
+    "waitHours": "{{count}} h d'attente"
   },
   "crm": {
     "title": "CRM Clients",
@@ -331,7 +355,33 @@
     "formEmail": "Email",
     "formPassword": "Mot de passe temporaire",
     "formRole": "Rôle",
-    "formPhone": "Téléphone"
+    "formPhone": "Téléphone",
+    "tabTeam": "Équipe",
+    "addShift": "Ajouter un shift",
+    "addShiftTitle": "Nouveau shift",
+    "shiftAdded": "Shift ajouté",
+    "shiftAddError": "Impossible d'ajouter le shift",
+    "shiftDeleted": "Shift supprimé",
+    "clockUpdated": "Pointage enregistré",
+    "prevWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante",
+    "thisWeek": "Cette semaine",
+    "today": "Aujourd'hui",
+    "noShiftsDay": "Aucun shift",
+    "clockIn": "Entrée",
+    "clockOut": "Sortie",
+    "formMember": "Membre de l'équipe",
+    "selectMember": "Sélectionner un membre",
+    "startTime": "Début",
+    "endTime": "Fin",
+    "formNotes": "Notes",
+    "notesPlaceholder": "Ex. service dîner, terrasse…",
+    "shiftStatus": {
+      "scheduled": "Planifié",
+      "active": "En cours",
+      "completed": "Terminé",
+      "absent": "Absent"
+    }
   },
   "inventory": {
     "title": "Stock",

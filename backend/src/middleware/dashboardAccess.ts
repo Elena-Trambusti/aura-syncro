@@ -3,11 +3,25 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from './auth'
 import { tenantId, tenantNotFound } from '../lib/tenant'
 
+/** API raggiungibili in anteprima free (tenant registrato, senza abbonamento) */
+export const FREE_TIER_API_PREFIXES = [
+  '/api/analytics',
+  '/api/orders',
+  '/api/menu',
+  '/api/reports',
+  '/api/payments',
+] as const
+
 function isPremiumActive(settings: { hasActiveSubscription?: boolean | null } | null | undefined): boolean {
   const devPremiumUnlock =
     process.env.NODE_ENV !== 'production'
     && process.env.PREMIUM_DEV_UNLOCK === 'true'
   return devPremiumUnlock || settings?.hasActiveSubscription === true
+}
+
+export function isFreeTierApiPath(originalUrl: string): boolean {
+  const path = originalUrl.split('?')[0]
+  return FREE_TIER_API_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 
 async function loadTenantAccess(req: AuthRequest) {
@@ -21,10 +35,11 @@ async function loadTenantAccess(req: AuthRequest) {
 }
 
 /**
- * SBARRAMENTO CENTRALE API — mirror dei 3 stati frontend.
- * Richiede abbonamento attivo E setup concierge completato.
+ * Accesso dashboard/API con supporto anteprima free tier.
+ * - operational: abbonamento attivo + setup completato
+ * - free preview: senza abbonamento, solo rotte FREE_TIER_API_PREFIXES
  */
-export async function requireFullDashboardAccess(
+export async function requireDashboardAccess(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
@@ -37,7 +52,21 @@ export async function requireFullDashboardAccess(
       return
     }
 
-    if (!isPremiumActive(restaurant.settings)) {
+    const premium = isPremiumActive(restaurant.settings)
+
+    if (premium && restaurant.isSetupComplete) {
+      req.freeTierPreview = false
+      next()
+      return
+    }
+
+    if (!premium && isFreeTierApiPath(req.originalUrl)) {
+      req.freeTierPreview = true
+      next()
+      return
+    }
+
+    if (!premium) {
       res.status(403).json({
         error: 'Abbonamento attivo richiesto. Attiva Aura Syncro Premium.',
         code: 'SUBSCRIPTION_REQUIRED',
@@ -58,3 +87,6 @@ export async function requireFullDashboardAccess(
     res.status(500).json({ error: 'Errore verifica accesso dashboard' })
   }
 }
+
+/** @deprecated Usare requireDashboardAccess */
+export const requireFullDashboardAccess = requireDashboardAccess

@@ -1,3 +1,4 @@
+import type { Prisma, Table } from '@prisma/client'
 import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
 
@@ -74,7 +75,7 @@ export async function finalizeOrderPayment(
       data: { status: 'SERVED' },
     })
 
-    return tx.order.update({
+    const paid = await tx.order.update({
       where: { id: order.id },
       data: {
         status: 'PAID',
@@ -89,6 +90,9 @@ export async function finalizeOrderPayment(
         items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
       },
     })
+
+    await decrementInventoryForOrder(tx, order.id, input.restaurantId)
+    return paid
   })
 
   const fiscalRow = buildFiscalTransactionRow(updatedOrder, paidAt)
@@ -104,8 +108,38 @@ export async function finalizeOrderPayment(
   }
 }
 
-export async function releaseTableIfEmpty(tableId: string | null | undefined): Promise<void> {
-  if (!tableId) return
+export async function decrementInventoryForOrder(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  restaurantId: string,
+): Promise<void> {
+  const orderItems = await tx.orderItem.findMany({
+    where: { orderId },
+    include: {
+      menuItem: { include: { inventoryLinks: true } },
+    },
+  })
+
+  const deductions = new Map<string, number>()
+  for (const item of orderItems) {
+    if (item.status === 'CANCELLED') continue
+    for (const link of item.menuItem.inventoryLinks) {
+      const amount = link.quantity * item.quantity
+      deductions.set(link.inventoryItemId, (deductions.get(link.inventoryItemId) ?? 0) + amount)
+    }
+  }
+
+  for (const [inventoryItemId, amount] of deductions) {
+    if (amount <= 0) continue
+    await tx.inventoryItem.updateMany({
+      where: { id: inventoryItemId, restaurantId },
+      data: { quantity: { decrement: amount } },
+    })
+  }
+}
+
+export async function releaseTableIfEmpty(tableId: string | null | undefined): Promise<Table | null> {
+  if (!tableId) return null
   const activeOrders = await prisma.order.count({
     where: {
       tableId,
@@ -113,11 +147,12 @@ export async function releaseTableIfEmpty(tableId: string | null | undefined): P
     },
   })
   if (activeOrders === 0) {
-    await prisma.table.update({
+    return prisma.table.update({
       where: { id: tableId },
       data: { status: 'CLEANING' },
     })
   }
+  return null
 }
 
 /** Calcola ripartizione split (solo presentazione — un solo incasso fiscale) */

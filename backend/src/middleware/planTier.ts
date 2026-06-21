@@ -3,6 +3,7 @@ import { PlanTier } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from './auth'
 import { tenantId, tenantNotFound } from '../lib/tenant'
+import { isFreeTierApiPath } from './dashboardAccess'
 
 export function isProPlanTier(planTier: PlanTier | string | null | undefined): boolean {
   const devProUnlock =
@@ -34,6 +35,10 @@ export async function requireProPlan(
     }
 
     if (!isProPlanTier(planTier)) {
+      if (req.freeTierPreview && isFreeTierApiPath(req.originalUrl)) {
+        next()
+        return
+      }
       res.status(403).json({
         error: 'Piano Pro richiesto per questa funzionalità.',
         code: 'PRO_PLAN_REQUIRED',

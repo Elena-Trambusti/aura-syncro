@@ -81,7 +81,7 @@
     "lockedOnboarding": "Completa l'onboarding per sbloccare questa sezione",
     "lockedPro": "Passa al piano Pro per sbloccare questa funzione",
     "lockedAria": "bloccato",
-    "previewUnsubscribed": "Esplora le funzioni — attiva il piano per usarle",
+    "previewUnsubscribed": "Anteprima gratuita — attiva Premium per sbloccare tutto",
     "previewOnboarding": "Onboarding in corso — le funzioni si sbloccano a setup completato"
   },
   "auth": {
@@ -271,7 +271,31 @@
     "newReservation": "Nuova Prenotazione",
     "confirmed": "Prenotazione confermata!",
     "guests": "ospiti",
-    "noReservations": "Nessuna prenotazione"
+    "noReservations": "Nessuna prenotazione",
+    "tabBookings": "Prenotazioni",
+    "tabWaitlist": "Lista d'attesa"
+  },
+  "waitlist": {
+    "subtitle": "{{count}} ospiti in attesa",
+    "addGuest": "Aggiungi in lista",
+    "addToList": "Inserisci in lista",
+    "guestName": "Nome ospite",
+    "covers": "Coperti",
+    "requestedTime": "Orario richiesto",
+    "notes": "Note",
+    "empty": "Lista d'attesa vuota",
+    "emptyHint": "Aggiungi ospiti walk-in quando la sala è al completo",
+    "statusWaiting": "In attesa",
+    "notify": "Avvisa ospite",
+    "confirm": "Conferma arrivo",
+    "cancel": "Rimuovi",
+    "added": "Ospite aggiunto alla lista",
+    "addError": "Impossibile aggiungere alla lista",
+    "notified": "Ospite avvisato",
+    "confirmed": "Arrivo confermato",
+    "removed": "Rimosso dalla lista",
+    "waitMinutes": "{{count}} min di attesa",
+    "waitHours": "{{count}} h di attesa"
   },
   "crm": {
     "title": "CRM Clienti",
@@ -346,7 +370,33 @@
     "formEmail": "Email",
     "formPassword": "Password temporanea",
     "formRole": "Ruolo",
-    "formPhone": "Telefono"
+    "formPhone": "Telefono",
+    "tabTeam": "Team",
+    "addShift": "Aggiungi turno",
+    "addShiftTitle": "Nuovo turno",
+    "shiftAdded": "Turno aggiunto",
+    "shiftAddError": "Impossibile aggiungere il turno",
+    "shiftDeleted": "Turno eliminato",
+    "clockUpdated": "Timbratura registrata",
+    "prevWeek": "Settimana precedente",
+    "nextWeek": "Settimana successiva",
+    "thisWeek": "Questa settimana",
+    "today": "Oggi",
+    "noShiftsDay": "Nessun turno",
+    "clockIn": "Entrata",
+    "clockOut": "Uscita",
+    "formMember": "Membro del team",
+    "selectMember": "Seleziona membro",
+    "startTime": "Inizio",
+    "endTime": "Fine",
+    "formNotes": "Note",
+    "notesPlaceholder": "Es. servizio cena, sala esterna…",
+    "shiftStatus": {
+      "scheduled": "Programmato",
+      "active": "In corso",
+      "completed": "Completato",
+      "absent": "Assente"
+    }
   },
   "inventory": {
     "title": "Magazzino",
