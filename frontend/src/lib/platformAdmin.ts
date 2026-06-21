@@ -15,6 +15,14 @@ export function clearStoredAdminKey(): void {
   sessionStorage.removeItem(ADMIN_KEY_STORAGE)
 }
 
+function adminBase() {
+  return getApiBaseUrl().replace(/\/api$/, '')
+}
+
+function adminHeaders(adminKey: string) {
+  return { 'X-Admin-Key': adminKey }
+}
+
 export interface PlatformRegistration {
   userId: string
   ownerName: string
@@ -38,14 +46,59 @@ export interface RegistrationsResponse {
   registrations: PlatformRegistration[]
 }
 
+export interface PendingSetupOwner {
+  name: string
+  email: string
+}
+
+export interface PendingSetupRestaurant {
+  id: string
+  name: string
+  slug: string
+  email: string | null
+  isSetupComplete: boolean
+  createdAt: string
+  settings: { hasActiveSubscription: boolean; planTier: string } | null
+  users: PendingSetupOwner[]
+}
+
+export interface PendingSetupResponse {
+  count: number
+  restaurants: PendingSetupRestaurant[]
+}
+
+export interface SetupCompleteResponse {
+  success: boolean
+  message: string
+  restaurant: PendingSetupRestaurant
+}
+
 export async function fetchRegistrations(
   adminKey: string,
   params: { today?: boolean; date?: string; limit?: number },
 ): Promise<RegistrationsResponse> {
-  const base = getApiBaseUrl().replace(/\/api$/, '')
-  const { data } = await axios.get<RegistrationsResponse>(`${base}/api/admin/registrations`, {
-    headers: { 'X-Admin-Key': adminKey },
+  const { data } = await axios.get<RegistrationsResponse>(`${adminBase()}/api/admin/registrations`, {
+    headers: adminHeaders(adminKey),
     params,
   })
+  return data
+}
+
+export async function fetchPendingSetup(adminKey: string): Promise<PendingSetupResponse> {
+  const { data } = await axios.get<PendingSetupResponse>(`${adminBase()}/api/admin/pending-setup`, {
+    headers: adminHeaders(adminKey),
+  })
+  return data
+}
+
+export async function completeSetup(
+  adminKey: string,
+  payload: { ownerEmail?: string; slug?: string; restaurantId?: string },
+): Promise<SetupCompleteResponse> {
+  const { data } = await axios.post<SetupCompleteResponse>(
+    `${adminBase()}/api/admin/setup-complete`,
+    payload,
+    { headers: { ...adminHeaders(adminKey), 'Content-Type': 'application/json' } },
+  )
   return data
 }

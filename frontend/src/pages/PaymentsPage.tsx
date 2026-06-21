@@ -7,6 +7,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { stripeApiKeysUrl, stripePaymentsUrl } from '../lib/stripeDashboard'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 
@@ -67,7 +68,7 @@ export default function PaymentsPage() {
           <p className="text-slate-500 text-sm mt-1">Incassi via Stripe dal menu QR</p>
         </div>
         <a
-          href="https://dashboard.stripe.com/test/payments"
+          href={stripePaymentsUrl()}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
@@ -87,7 +88,7 @@ export default function PaymentsPage() {
               Per attivare i pagamenti online, aggiungi le chiavi API nel file{' '}
               <code className="bg-amber-100 px-1 rounded text-xs">backend/.env</code>.{' '}
               Ottienile su{' '}
-              <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+              <a href={stripeApiKeysUrl()} target="_blank" rel="noopener noreferrer" className="underline font-medium">
                 dashboard.stripe.com
               </a>
             </p>

@@ -40,13 +40,15 @@ export default function OnboardingPage() {
     }
   }, [searchParams, setSearchParams, t, refreshRestaurant])
 
-  // Polling: rileva sblocco concierge senza logout manuale
+  // Polling: rileva sblocco concierge e attivazione abbonamento post-pagamento
   useEffect(() => {
+    const fast = searchParams.get('welcome') === 'true' || restaurant?.hasActiveSubscription === false
+    const ms = fast ? 5_000 : 30_000
     const interval = window.setInterval(() => {
       void refreshRestaurant()
-    }, 30_000)
+    }, ms)
     return () => window.clearInterval(interval)
-  }, [refreshRestaurant])
+  }, [refreshRestaurant, searchParams, restaurant?.hasActiveSubscription])
 
   useEffect(() => {
     void loadScript(TALLY_SCRIPT_SRC)

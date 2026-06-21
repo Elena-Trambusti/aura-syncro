@@ -1,52 +1,77 @@
-import { useEffect, useState } from 'react'
-import { Loader2, Shield, Users, RefreshCw, LogOut } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Loader2, Shield, Users, RefreshCw, LogOut, Unlock, Clock } from 'lucide-react'
 import {
   clearStoredAdminKey,
+  completeSetup,
+  fetchPendingSetup,
   fetchRegistrations,
   getStoredAdminKey,
   setStoredAdminKey,
+  type PendingSetupRestaurant,
   type PlatformRegistration,
 } from '../lib/platformAdmin'
 import { BRAND } from '../lib/brand'
 
 type FilterMode = 'today' | 'all'
+type ViewMode = 'registrations' | 'pending'
+
+function ownerEmailOf(r: PendingSetupRestaurant): string | undefined {
+  return r.users[0]?.email
+}
 
 export default function PlatformAdminPage() {
   const [adminKey, setAdminKey] = useState(getStoredAdminKey() ?? '')
   const [inputKey, setInputKey] = useState('')
   const [authenticated, setAuthenticated] = useState(!!getStoredAdminKey())
+  const [view, setView] = useState<ViewMode>('pending')
   const [filter, setFilter] = useState<FilterMode>('today')
   const [registrations, setRegistrations] = useState<PlatformRegistration[]>([])
+  const [pending, setPending] = useState<PendingSetupRestaurant[]>([])
   const [meta, setMeta] = useState<{ count: number; date?: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [unlockingId, setUnlockingId] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const load = async (key: string, mode: FilterMode) => {
+  const parseAdminError = useCallback((err: unknown): { msg: string; status?: number } => {
+    const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string }
+    const status = axiosErr.response?.status
+    const apiError = axiosErr.response?.data?.error
+    let msg = apiError ?? 'Operazione non riuscita.'
+    if (status === 401) {
+      msg = 'Chiave admin non valida. Usa la stessa ADMIN_API_KEY impostata su DigitalOcean.'
+    } else if (status === 404) {
+      msg = 'Endpoint non disponibile: avvia un Redeploy su DigitalOcean e riprova.'
+    } else if (status === 503) {
+      msg = 'ADMIN_API_KEY non configurata sul server DigitalOcean.'
+    } else if (!status) {
+      msg = 'Backend non raggiungibile.'
+    }
+    return { msg, status }
+  }, [])
+
+  const loadRegistrations = useCallback(async (key: string, mode: FilterMode) => {
+    const data = await fetchRegistrations(key, {
+      today: mode === 'today',
+      limit: mode === 'today' ? 100 : 50,
+    })
+    setRegistrations(data.registrations)
+    setMeta({ count: data.count, date: data.filter.date })
+  }, [])
+
+  const loadPending = useCallback(async (key: string) => {
+    const data = await fetchPendingSetup(key)
+    setPending(data.restaurants)
+  }, [])
+
+  const loadAll = useCallback(async (key: string, mode: FilterMode) => {
     setLoading(true)
     setError(null)
+    setSuccessMsg(null)
     try {
-      const data = await fetchRegistrations(key, {
-        today: mode === 'today',
-        limit: mode === 'today' ? 100 : 50,
-      })
-      setRegistrations(data.registrations)
-      setMeta({ count: data.count, date: data.filter.date })
+      await Promise.all([loadRegistrations(key, mode), loadPending(key)])
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string }
-      const status = axiosErr.response?.status
-      const apiError = axiosErr.response?.data?.error
-
-      let msg = apiError ?? 'Impossibile caricare le iscrizioni.'
-      if (status === 401) {
-        msg = 'Chiave admin non valida. Usa la stessa ADMIN_API_KEY impostata su DigitalOcean (non solo quella locale).'
-      } else if (status === 404) {
-        msg = 'Endpoint non disponibile sul backend: DigitalOcean non ha ancora il deploy più recente. Vai su DigitalOcean → Apps → aura-syncro → Activity e avvia un Redeploy, poi riprova tra qualche minuto.'
-      } else if (status === 503) {
-        msg = 'ADMIN_API_KEY non configurata sul server DigitalOcean.'
-      } else if (!status) {
-        msg = 'Backend non raggiungibile. Controlla che DigitalOcean sia online.'
-      }
-
+      const { msg, status } = parseAdminError(err)
       setError(msg)
       if (status === 401) {
         clearStoredAdminKey()
@@ -56,13 +81,13 @@ export default function PlatformAdminPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [loadPending, loadRegistrations, parseAdminError])
 
   useEffect(() => {
     if (authenticated && adminKey) {
-      void load(adminKey, filter)
+      void loadAll(adminKey, filter)
     }
-  }, [authenticated, adminKey, filter])
+  }, [authenticated, adminKey, filter, loadAll])
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,7 +104,36 @@ export default function PlatformAdminPage() {
     setAdminKey('')
     setInputKey('')
     setRegistrations([])
+    setPending([])
   }
+
+  const handleUnlock = async (restaurant: PendingSetupRestaurant | PlatformRegistration) => {
+    const isRegistration = 'userId' in restaurant
+    const email = isRegistration ? restaurant.email : ownerEmailOf(restaurant)
+    const id = isRegistration ? restaurant.restaurantId : restaurant.id
+
+    if (!email) {
+      setError('Email owner non disponibile per questo ristorante.')
+      return
+    }
+
+    setUnlockingId(id)
+    setError(null)
+    setSuccessMsg(null)
+    try {
+      const result = await completeSetup(adminKey, { ownerEmail: email })
+      setSuccessMsg(`Dashboard sbloccata per ${result.restaurant.name}`)
+      await loadAll(adminKey, filter)
+    } catch (err: unknown) {
+      const { msg } = parseAdminError(err)
+      setError(msg)
+    } finally {
+      setUnlockingId(null)
+    }
+  }
+
+  const canUnlock = (r: PlatformRegistration) =>
+    r.hasActiveSubscription && !r.isSetupComplete
 
   if (!authenticated) {
     return (
@@ -103,9 +157,6 @@ export default function PlatformAdminPage() {
                 placeholder="ADMIN_API_KEY"
                 autoComplete="off"
               />
-              <p className="text-xs text-stone-500 mt-2">
-                La trovi in <code className="text-stone-400">backend/.env</code> → <code className="text-stone-400">ADMIN_API_KEY</code>
-              </p>
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
@@ -127,14 +178,14 @@ export default function PlatformAdminPage() {
           <div className="flex items-center gap-3">
             <Users className="w-6 h-6 text-amber-400" />
             <div>
-              <h1 className="font-bold">Iscrizioni piattaforma</h1>
-              <p className="text-xs text-stone-400">Fuso orario: Europe/Rome</p>
+              <h1 className="font-bold">Admin piattaforma</h1>
+              <p className="text-xs text-stone-400">Iscrizioni e sblocco concierge</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => void load(adminKey, filter)}
+              onClick={() => void loadAll(adminKey, filter)}
               disabled={loading}
               className="p-2 rounded-lg border border-stone-700 hover:bg-stone-800 disabled:opacity-50"
               title="Aggiorna"
@@ -153,94 +204,187 @@ export default function PlatformAdminPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex flex-wrap gap-2 mb-6">
+      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setFilter('today')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              filter === 'today'
+            onClick={() => setView('pending')}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
+              view === 'pending'
                 ? 'bg-amber-500 text-stone-950'
                 : 'border border-stone-700 text-stone-300 hover:bg-stone-800'
             }`}
           >
-            Oggi
+            <Clock className="w-4 h-4" />
+            Da sbloccare ({pending.length})
           </button>
           <button
             type="button"
-            onClick={() => setFilter('all')}
+            onClick={() => setView('registrations')}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              filter === 'all'
+              view === 'registrations'
                 ? 'bg-amber-500 text-stone-950'
                 : 'border border-stone-700 text-stone-300 hover:bg-stone-800'
             }`}
           >
-            Ultime 50
+            Iscrizioni
           </button>
         </div>
 
-        {loading && registrations.length === 0 ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-          </div>
-        ) : error ? (
-          <p className="text-red-400 text-sm">{error}</p>
-        ) : (
-          <>
-            <p className="text-stone-400 text-sm mb-4">
-              {filter === 'today'
-                ? `${meta?.count ?? 0} iscrizioni oggi${meta?.date ? ` (${meta.date})` : ''}`
-                : `${meta?.count ?? 0} iscrizioni recenti`}
-            </p>
+        {successMsg && (
+          <p className="text-sm text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-xl px-4 py-3">
+            {successMsg}
+          </p>
+        )}
+        {error && (
+          <p className="text-sm text-red-400 bg-red-950/40 border border-red-800 rounded-xl px-4 py-3">
+            {error}
+          </p>
+        )}
 
-            {registrations.length === 0 ? (
+        {view === 'pending' && (
+          <section>
+            <p className="text-stone-400 text-sm mb-4">
+              Clienti che hanno pagato e aspettano il tuo sblocco dopo onboarding.
+            </p>
+            {loading && pending.length === 0 ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+              </div>
+            ) : pending.length === 0 ? (
+              <div className="rounded-xl border border-stone-800 bg-stone-900 p-8 text-center text-stone-400">
+                Nessun cliente in attesa di sblocco.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pending.map(r => {
+                  const owner = ownerEmailOf(r)
+                  return (
+                    <article key={r.id} className="rounded-xl border border-amber-900/50 bg-stone-900 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-white">{r.name}</p>
+                          <p className="text-sm text-amber-400/90">{owner ?? '—'}</p>
+                          <p className="text-xs text-stone-500 mt-1">
+                            Piano {r.settings?.planTier ?? 'BASE'} · slug: {r.slug}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={unlockingId === r.id || !owner}
+                          onClick={() => void handleUnlock(r)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          {unlockingId === r.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Unlock className="w-4 h-4" />
+                          )}
+                          Sblocca dashboard
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {view === 'registrations' && (
+          <section>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setFilter('today')}
+                className={`px-3 py-1.5 rounded-lg text-sm ${
+                  filter === 'today' ? 'bg-stone-700 text-white' : 'text-stone-400 hover:text-white'
+                }`}
+              >
+                Oggi
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm ${
+                  filter === 'all' ? 'bg-stone-700 text-white' : 'text-stone-400 hover:text-white'
+                }`}
+              >
+                Ultime 50
+              </button>
+            </div>
+
+            {loading && registrations.length === 0 ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+              </div>
+            ) : registrations.length === 0 ? (
               <div className="rounded-xl border border-stone-800 bg-stone-900 p-8 text-center text-stone-400">
                 {filter === 'today' ? 'Nessuna iscrizione oggi.' : 'Nessuna iscrizione trovata.'}
               </div>
             ) : (
-              <div className="space-y-3">
-                {registrations.map(r => (
-                  <article
-                    key={r.userId}
-                    className="rounded-xl border border-stone-800 bg-stone-900 p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                      <div>
-                        <p className="font-semibold text-white">{r.ownerName}</p>
-                        <p className="text-sm text-amber-400/90">{r.email}</p>
-                      </div>
-                      <time className="text-xs text-stone-500">{r.registeredAtRome}</time>
-                    </div>
-                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      <div>
-                        <dt className="text-stone-500 inline">Ristorante: </dt>
-                        <dd className="inline text-stone-200">{r.restaurantName}</dd>
-                      </div>
-                      {r.phone && (
+              <>
+                <p className="text-stone-400 text-sm mb-4">
+                  {filter === 'today'
+                    ? `${meta?.count ?? 0} iscrizioni oggi${meta?.date ? ` (${meta.date})` : ''}`
+                    : `${meta?.count ?? 0} iscrizioni recenti`}
+                </p>
+                <div className="space-y-3">
+                  {registrations.map(r => (
+                    <article key={r.userId} className="rounded-xl border border-stone-800 bg-stone-900 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                         <div>
-                          <dt className="text-stone-500 inline">Tel: </dt>
-                          <dd className="inline text-stone-200">{r.phone}</dd>
+                          <p className="font-semibold text-white">{r.ownerName}</p>
+                          <p className="text-sm text-amber-400/90">{r.email}</p>
                         </div>
+                        <time className="text-xs text-stone-500">{r.registeredAtRome}</time>
+                      </div>
+                      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm mb-3">
+                        <div>
+                          <dt className="text-stone-500 inline">Ristorante: </dt>
+                          <dd className="inline text-stone-200">{r.restaurantName}</dd>
+                        </div>
+                        {r.phone && (
+                          <div>
+                            <dt className="text-stone-500 inline">Tel: </dt>
+                            <dd className="inline text-stone-200">{r.phone}</dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt className="text-stone-500 inline">Piano: </dt>
+                          <dd className="inline text-stone-200">
+                            {r.planTier}
+                            {r.hasActiveSubscription ? ' · abbonato' : ' · free'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-stone-500 inline">Setup: </dt>
+                          <dd className="inline text-stone-200">
+                            {r.isSetupComplete ? 'completo' : 'in attesa'}
+                          </dd>
+                        </div>
+                      </dl>
+                      {canUnlock(r) && (
+                        <button
+                          type="button"
+                          disabled={unlockingId === r.restaurantId}
+                          onClick={() => void handleUnlock(r)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          {unlockingId === r.restaurantId ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Unlock className="w-4 h-4" />
+                          )}
+                          Sblocca dashboard
+                        </button>
                       )}
-                      <div>
-                        <dt className="text-stone-500 inline">Piano: </dt>
-                        <dd className="inline text-stone-200">
-                          {r.planTier}
-                          {r.hasActiveSubscription ? ' · abbonato' : ' · free'}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-stone-500 inline">Setup: </dt>
-                        <dd className="inline text-stone-200">
-                          {r.isSetupComplete ? 'completo' : 'in attesa'}
-                        </dd>
-                      </div>
-                    </dl>
-                  </article>
-                ))}
-              </div>
+                    </article>
+                  ))}
+                </div>
+              </>
             )}
-          </>
+          </section>
         )}
       </main>
     </div>
