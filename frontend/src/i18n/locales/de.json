@@ -870,6 +870,8 @@
     "pushEnabled": "Push-Benachrichtigungen aktiviert",
     "pushDenied": "Berechtigung verweigert. In den Browser-Einstellungen aktivieren.",
     "pushError": "Push-Benachrichtigungen konnten nicht aktiviert werden.",
+    "pushNoVapid": "VAPID-Schlüssel fehlt auf dem Server. VAPID_PUBLIC_KEY im Backend .env setzen.",
+    "pushNoSw": "Service Worker nicht aktiv. Seite neu laden (HTTPS oder localhost erforderlich).",
     "installHint": "Auf Android: Chrome-Menü → «App installieren» oder «Zum Startbildschirm hinzufügen»."
   },
   "export": {

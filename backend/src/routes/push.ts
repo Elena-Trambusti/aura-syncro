@@ -2,13 +2,8 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
-import { getVapidPublicKey } from '../lib/webPush'
 
 export const pushRouter = Router()
-
-pushRouter.get('/vapid-public-key', (_req, res: Response) => {
-  res.json({ publicKey: getVapidPublicKey() })
-})
 
 const subscribeSchema = z.object({
   endpoint: z.string().url(),

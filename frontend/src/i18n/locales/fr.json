@@ -870,6 +870,8 @@
     "pushEnabled": "Notifications push activées",
     "pushDenied": "Permission refusée. Activez-la dans les paramètres du navigateur.",
     "pushError": "Impossible d'activer les notifications push.",
+    "pushNoVapid": "Clé VAPID absente sur le serveur. Configurez VAPID_PUBLIC_KEY dans le backend.",
+    "pushNoSw": "Service Worker inactif. Rechargez la page (HTTPS ou localhost requis).",
     "installHint": "Sur Android : menu Chrome → « Installer l'application » ou « Ajouter à l'écran d'accueil »."
   },
   "export": {

@@ -13,8 +13,8 @@ let vapidConfigured = false
 
 function configureVapid(): boolean {
   if (vapidConfigured) return true
-  const publicKey = process.env.VAPID_PUBLIC_KEY?.trim()
-  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim()
+  const publicKey = getVapidPublicKey()
+  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim()?.replace(/^["']|["']$/g, '')
   const subject = process.env.VAPID_SUBJECT?.trim() || 'mailto:admin@aura-syncro.app'
   if (!publicKey || !privateKey) return false
   webpush.setVapidDetails(subject, publicKey, privateKey)
@@ -23,7 +23,9 @@ function configureVapid(): boolean {
 }
 
 export function getVapidPublicKey(): string | null {
-  return process.env.VAPID_PUBLIC_KEY?.trim() || null
+  const raw = process.env.VAPID_PUBLIC_KEY?.trim()
+  if (!raw) return null
+  return raw.replace(/^["']|["']$/g, '')
 }
 
 export async function sendPushToRestaurant(restaurantId: string, payload: PushPayload): Promise<void> {

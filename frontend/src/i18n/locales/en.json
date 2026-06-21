@@ -870,6 +870,8 @@
     "pushEnabled": "Push notifications enabled",
     "pushDenied": "Notification permission denied. Enable it in browser settings.",
     "pushError": "Could not enable push notifications.",
+    "pushNoVapid": "VAPID key missing on server. Set VAPID_PUBLIC_KEY in backend .env and restart.",
+    "pushNoSw": "Service Worker not active. Reload the page (HTTPS or localhost required).",
     "installHint": "For the best Android experience: Chrome menu → \"Install app\" or \"Add to Home screen\"."
   },
   "export": {

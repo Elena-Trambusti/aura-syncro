@@ -6,6 +6,7 @@ import './i18n'
 import App from './App'
 import './index.css'
 import { queryClient } from './lib/queryClient'
+import './lib/pwaRegister'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import {
   getPushPermission,
   isPushSupported,
+  PushSubscribeError,
   subscribeToPushNotifications,
 } from '../lib/pushNotifications'
 
@@ -24,10 +25,22 @@ export function usePushNotifications(enabled: boolean) {
       setPermission(next)
       setSubscribed(ok)
       if (ok) toast.success(t('pwa.pushEnabled'))
-      else if (next === 'denied') toast.error(t('pwa.pushDenied'))
       return ok
-    } catch {
-      toast.error(t('pwa.pushError'))
+    } catch (err) {
+      console.error('[push] enablePush error:', err)
+      if (err instanceof PushSubscribeError) {
+        if (err.code === 'denied') {
+          toast.error(t('pwa.pushDenied'))
+        } else if (err.code === 'no_vapid') {
+          toast.error(t('pwa.pushNoVapid'))
+        } else if (err.code === 'no_sw') {
+          toast.error(t('pwa.pushNoSw'))
+        } else {
+          toast.error(err.message)
+        }
+      } else {
+        toast.error(t('pwa.pushError'))
+      }
       return false
     }
   }, [t])
@@ -36,7 +49,10 @@ export function usePushNotifications(enabled: boolean) {
     if (!enabled || !isPushSupported() || permission !== 'granted') return
     void subscribeToPushNotifications()
       .then(ok => setSubscribed(ok))
-      .catch(() => setSubscribed(false))
+      .catch(err => {
+        console.warn('[push] auto-subscribe skipped:', err)
+        setSubscribed(false)
+      })
   }, [enabled, permission])
 
   return {

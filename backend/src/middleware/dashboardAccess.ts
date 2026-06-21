@@ -10,6 +10,7 @@ export const FREE_TIER_API_PREFIXES = [
   '/api/menu',
   '/api/reports',
   '/api/payments',
+  '/api/push',
 ] as const
 
 function isPremiumActive(settings: { hasActiveSubscription?: boolean | null } | null | undefined): boolean {

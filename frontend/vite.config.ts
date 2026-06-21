@@ -13,7 +13,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      injectRegister: 'auto',
+      injectRegister: false,
       includeAssets: pwaIncludeAssets,
       manifest: pwaManifest,
       devOptions: {

@@ -37,6 +37,7 @@ import { requireProPlan } from './middleware/planTier'
 import { errorHandler } from './middleware/errorHandler'
 import { setupSocketHandlers } from './socket/handlers'
 import { validateEnv } from './lib/env'
+import { getVapidPublicKey } from './lib/webPush'
 
 // In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
 // in locale carichiamo backend/.env tramite dotenv.
@@ -73,6 +74,11 @@ app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+/** Chiave VAPID pubblica — endpoint pubblico (necessaria prima della subscribe push) */
+app.get('/api/push/vapid-public-key', (_req, res) => {
+  res.json({ publicKey: getVapidPublicKey() })
+})
 
 // Routes pubbliche
 app.use('/api/auth', authRouter)
