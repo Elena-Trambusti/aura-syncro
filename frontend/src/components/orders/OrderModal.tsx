@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { useRole } from '../../hooks/useRole'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
+import ModalPortal from '../ModalPortal'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; soldOut?: boolean; orderable?: boolean; category: { name: string } }
 interface Category { id: string; name: string; items: MenuItem[] }
@@ -170,15 +171,15 @@ export default function OrderModal({
 
   if (!table) {
     return (
-      <div className="saas-overlay flex items-center justify-center p-4" onClick={onClose}>
+      <ModalPortal onClose={onClose} overlayClassName="items-center justify-center p-4">
         <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
-      </div>
+      </ModalPortal>
     )
   }
 
   if (table.status === 'CLEANING') {
     return (
-      <div className="saas-overlay flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <ModalPortal onClose={onClose}>
         <div
           className="saas-modal w-full sm:max-w-md flex flex-col overflow-hidden rounded-none sm:rounded-xl"
           onClick={e => e.stopPropagation()}
@@ -210,7 +211,7 @@ export default function OrderModal({
             </button>
           </div>
         </div>
-      </div>
+      </ModalPortal>
     )
   }
 
@@ -468,55 +469,40 @@ export default function OrderModal({
   )
 
   return (
-    <div
-      className="saas-overlay flex min-h-[100dvh] flex-col p-0 sm:items-center sm:justify-center sm:p-4"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose} overlayClassName="items-stretch justify-stretch p-0 sm:items-center sm:justify-center sm:p-4">
       <div
-        className="saas-modal flex min-h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white sm:min-h-0 sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
+        className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header — sempre visibile, non scrolla */}
-        <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white p-4 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-slate-900">{t('orderModal.title', { number: table.number })}</h2>
-            <p className="text-sm text-slate-500">{t('orderModal.seats', { count: table.seats })}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {canTransferOrder && activeOrder && onStartTransfer && (
-              <button
-                type="button"
-                onClick={() => onStartTransfer(tableId)}
-                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-800"
-              >
-                <ArrowRightLeft className="h-4 w-4" />
-                {t('orderModal.transferActionShort')}
+        {/* Header compatto: titolo + azioni + tab mobile in un solo blocco fisso */}
+        <div className="sticky top-0 z-10 shrink-0 border-b border-slate-200 bg-white">
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:gap-3 sm:px-4 sm:py-3 sm:pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-base font-bold text-slate-900 sm:text-lg">
+                {t('orderModal.title', { number: table.number })}
+              </h2>
+              <p className="text-xs text-slate-500 sm:text-sm">{t('orderModal.seats', { count: table.seats })}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              {canTransferOrder && activeOrder && onStartTransfer && (
+                <button
+                  type="button"
+                  onClick={() => onStartTransfer(tableId)}
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-800 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2.5 sm:text-sm"
+                >
+                  <ArrowRightLeft className="h-4 w-4 shrink-0" />
+                  {t('orderModal.transferActionShort')}
+                </button>
+              )}
+              {isDesktop && tabButtons()}
+              <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-slate-100" aria-label={t('common.close')}>
+                <X className="h-5 w-5 text-slate-500" />
               </button>
-            )}
-            {isDesktop && tabButtons()}
-            <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-slate-100" aria-label={t('common.close')}>
-              <X className="h-5 w-5 text-slate-500" />
-            </button>
+            </div>
           </div>
-        </div>
 
-        {canTransferOrder && activeOrder && onStartTransfer && !isDesktop && (
-          <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-3">
-            <button
-              type="button"
-              onClick={() => onStartTransfer(tableId)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-slate-800"
-            >
-              <ArrowRightLeft className="h-5 w-5" />
-              {t('orderModal.transferActionShort')}
-            </button>
-          </div>
-        )}
-
-        {/* Tab bar mobile — shrink-0, sotto header fisso */}
-        {!isDesktop && (
-          <div className="sticky top-0 z-10 shrink-0 border-b border-slate-200 bg-white px-3 py-2.5">
-            <div className="flex items-center gap-2">
+          {!isDesktop && (
+            <div className="flex items-center gap-2 border-t border-slate-100 px-3 py-2">
               {tab === 'order' ? (
                 <button
                   type="button"
@@ -525,15 +511,14 @@ export default function OrderModal({
                   aria-label={t('orderModal.backToMenu')}
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span className="sr-only sm:not-sr-only">{t('orderModal.backToMenu')}</span>
                 </button>
               ) : (
                 <span className="w-8 shrink-0" aria-hidden />
               )}
               {tabButtons(true)}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Body: solo questa area scrolla; header/tab restano fissi */}
         <div className="min-h-0 flex-1 overflow-hidden overscroll-contain">
@@ -549,6 +534,6 @@ export default function OrderModal({
           )}
         </div>
       </div>
-    </div>
+    </ModalPortal>
   )
 }
