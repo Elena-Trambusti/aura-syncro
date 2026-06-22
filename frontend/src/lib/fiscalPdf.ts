@@ -11,6 +11,7 @@ export interface FiscalRow {
   tipAmount: number
   total: number
   paymentMethod?: string | null
+  fiscalIntegrityHash?: string | null
 }
 
 export interface FiscalReportData {
@@ -97,6 +98,10 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
       if (labels.includePaymentMethod) {
         base.push(r.paymentMethod ?? '—')
       }
+      if (labels.includeIntegrityHash) {
+        const hash = r.fiscalIntegrityHash
+        base.push(hash ? `${hash.slice(0, 12)}…${hash.slice(-8)}` : '—')
+      }
       return base
     }),
     styles: { fontSize: 8, cellPadding: 2.5 },
@@ -113,7 +118,18 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
   })
 
   const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY: number } }
-  const finalY = docWithTable.lastAutoTable?.finalY ?? metaY + 6
+  let summaryStartY = docWithTable.lastAutoTable?.finalY ?? metaY + 6
+
+  if (labels.tipsSectionTitle && summary.electronicTipsTotal != null) {
+    summaryStartY += 6
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(30, 41, 59)
+    doc.text(labels.tipsSectionTitle, 14, summaryStartY)
+    summaryStartY += 4
+  }
+
+  const finalY = summaryStartY
 
   autoTable(doc, {
     startY: Math.min(finalY + 8, pageH - 48),
@@ -137,11 +153,17 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
 
   doc.setFontSize(7)
   doc.setTextColor(120)
-  doc.text(labels.footer(summary.transactionCount), pageW / 2, pageH - 14, { align: 'center' })
+  doc.text(labels.footer(summary.transactionCount), pageW / 2, pageH - 18, { align: 'center' })
+  if (labels.complianceNotice) {
+    doc.setFontSize(6)
+    doc.setTextColor(90)
+    const noticeLines = doc.splitTextToSize(labels.complianceNotice, pageW - 28)
+    doc.text(noticeLines, pageW / 2, pageH - 12, { align: 'center' })
+  }
   doc.setFontSize(6)
   doc.setTextColor(100)
   const disclaimerLines = doc.splitTextToSize(labels.legalDisclaimer, pageW - 28)
-  doc.text(disclaimerLines, pageW / 2, pageH - 8, { align: 'center' })
+  doc.text(disclaimerLines, pageW / 2, pageH - 6, { align: 'center' })
 
   doc.save(`${labels.filenamePrefix}-${fileDate(period.start)}.pdf`)
 }

@@ -87,6 +87,8 @@ export type FiscalTransactionRow = {
   tipAmount: number
   total: number
   paymentMethod?: string | null
+  fiscalIntegrityHash?: string | null
+  fiscalPrevHash?: string | null
 }
 
 export function buildFiscalTransactionRow(order: {
@@ -100,6 +102,8 @@ export function buildFiscalTransactionRow(order: {
   tipAmount?: number | null
   total: number
   paymentMethod?: string | null
+  fiscalIntegrityHash?: string | null
+  fiscalPrevHash?: string | null
 }, paidAt: Date): FiscalTransactionRow {
   const revenueAmount = roundMoney(resolveRevenueAmount(order))
   const tipAmount = roundMoney(resolveTipAmount(order.tipAmount))
@@ -113,6 +117,8 @@ export function buildFiscalTransactionRow(order: {
     tipAmount,
     total: roundMoney(resolveOrderTotal(order)),
     paymentMethod: order.paymentMethod ?? null,
+    fiscalIntegrityHash: order.fiscalIntegrityHash ?? null,
+    fiscalPrevHash: order.fiscalPrevHash ?? null,
   }
 }
 

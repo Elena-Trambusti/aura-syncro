@@ -6,7 +6,6 @@ import './i18n'
 import App from './App'
 import './index.css'
 import { queryClient } from './lib/queryClient'
-import './lib/pwaRegister'
 import ErrorBoundary from './components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(

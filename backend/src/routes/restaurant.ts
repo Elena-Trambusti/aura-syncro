@@ -1,6 +1,6 @@
 import { Router, Response } from 'express'
 import { z } from 'zod'
-import { CountryCode, TaxRegion } from '@prisma/client'
+import { CountryCode, FiscalRegion, TaxRegion } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { AuthRequest, authenticate, requireRole } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
@@ -15,6 +15,7 @@ const emptyToNull = (val: unknown) =>
 const settingsSchema = z.object({
   countryCode: z.nativeEnum(CountryCode).optional(),
   taxRegion: z.nativeEnum(TaxRegion).optional(),
+  fiscalRegion: z.nativeEnum(FiscalRegion).optional(),
   defaultLocale: z.string().min(2).max(5).optional(),
   taxRate: z.number().min(0).max(100).optional(),
   taxId: z.preprocess(emptyToNull, z.string().max(32).nullable().optional()),
@@ -80,11 +81,18 @@ restaurantRouter.put('/', requirePermission('settings.manage'), requireFullDashb
 
     await prisma.restaurantSettings.upsert({
       where: { restaurantId },
-      update: { ...settings, countryCode, taxRegion, taxRate: settings.taxRate ?? fiscal.taxRate },
+      update: {
+        ...settings,
+        countryCode,
+        taxRegion: fiscal.taxRegion,
+        fiscalRegion: fiscal.fiscalRegion,
+        taxRate: settings.taxRate ?? fiscal.taxRate,
+      },
       create: {
         restaurantId,
         countryCode,
-        taxRegion,
+        taxRegion: fiscal.taxRegion,
+        fiscalRegion: fiscal.fiscalRegion,
         taxRate: settings.taxRate ?? fiscal.taxRate,
         defaultLocale: settings.defaultLocale ?? fiscal.defaultLocale,
         taxId: settings.taxId ?? null,

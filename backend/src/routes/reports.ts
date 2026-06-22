@@ -12,6 +12,7 @@ import {
 } from '../lib/dates'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { buildFiscalSummary, buildFiscalTransactionRow } from '../lib/tipFiscal'
+import { verifyFiscalChainSequence } from '../lib/fiscal/fiscalIntegrityChain'
 
 export const reportsRouter = Router()
 
@@ -26,6 +27,9 @@ const fiscalOrderSelect = {
   tipAmount: true,
   total: true,
   paymentMethod: true,
+  fiscalIntegrityHash: true,
+  fiscalPrevHash: true,
+  fiscalClosedAt: true,
   invoice: { select: { documentNumber: true } },
 } as const
 
@@ -332,13 +336,31 @@ reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, as
       total: row.total,
       paymentMethod: row.paymentMethod,
       documentNumber: o.invoice?.documentNumber ?? null,
+      fiscalIntegrityHash: row.fiscalIntegrityHash ?? null,
+      fiscalPrevHash: row.fiscalPrevHash ?? null,
     }
   })
+
+  const chainAudit = verifyFiscalChainSequence(
+    orders.map(o => ({
+      id: o.id,
+      fiscalClosedAt: o.fiscalClosedAt,
+      total: o.total,
+      fiscalPrevHash: o.fiscalPrevHash,
+      fiscalIntegrityHash: o.fiscalIntegrityHash,
+      paidAt: o.paidAt,
+    })),
+  )
 
   const summary = buildFiscalSummary(rows, fiscal.taxRegion)
 
   res.json({
     fiscalRegime: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
+    compliance: {
+      fiscalRegion: fiscal.fiscalRegion,
+      integrityChainValid: chainAudit.valid,
+      brokenAtOrderId: chainAudit.brokenAtOrderId ?? null,
+    },
     restaurant: {
       name: restaurant.name,
       address: restaurant.address,

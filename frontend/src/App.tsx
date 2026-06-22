@@ -49,6 +49,7 @@ import RequireProPlan from './components/auth/RequireProPlan'
 import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
+import PwaRegistrar from './components/PwaRegistrar'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -138,6 +139,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PwaRegistrar />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

@@ -1026,6 +1026,9 @@
     "noResultsHint": "Try a different search term",
     "orderHint": "Select dishes and send your order to the kitchen",
     "waiterOrderHint": "Browse the menu here. To order, please ask your waiter.",
+    "atTableOrderHint": "You are at table {{number}}. Browse the menu — to order, ask your waiter.",
+    "browseBeforeVisitHint": "Browse our restaurant menu. Want to visit? Book a table below.",
+    "bookingFooterHint": "Not seated yet? Book before you arrive.",
     "browseOnlyHint": "Digital menu for browsing only — no phone orders.",
     "bookTable": "Book a table",
     "addToCart": "Add",
@@ -1074,7 +1077,7 @@
     "printHint": "PNG export 2048×2048 px — black and white, ready for print shops.",
     "tableNumberOptional": "Table number (optional)",
     "tableNumberPlaceholder": "e.g. 5 — leave empty for generic menu",
-    "tableNumberHint": "With the table in the QR, guests see which table they are at.",
+    "tableNumberHint": "With a table number in the QR, guests see the «already seated» experience (no booking link). Leave empty for generic menu + booking.",
     "slugMissing": "Restaurant slug missing. Configure it in Settings to generate QR codes.",
     "goToSettings": "Go to Settings"
   },
@@ -1129,7 +1132,9 @@
     "installHint": "For the best experience on Android: Chrome menu → \"Install app\". On iPhone: Share → \"Add to Home Screen\".",
     "installTitle": "Install Aura Syncro on your device",
     "installApp": "Install app",
-    "installSuccess": "App installed! Open it from your Home screen."
+    "installSuccess": "App installed! Open it from your Home screen.",
+    "updateAvailable": "A new version of the app is available.",
+    "updateRefresh": "Update now"
   },
   "export": {
     "receipt": "Receipt",

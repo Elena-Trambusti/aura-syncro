@@ -4,6 +4,7 @@ import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
 import { applyTenantCssVars } from '../lib/tenantTheme'
 import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
+import { clearAuthCache, readAuthCache, writeAuthCache } from '../lib/authCache'
 import { tenantIdentity, tenantIdentityKey } from '../lib/tenantSync'
 import type { CountryCode, FiscalRegime, TaxRegion } from '../lib/fiscalRegime'
 import { DEFAULT_FISCAL_REGIME, resolveFiscalRegime } from '../lib/fiscalRegime'
@@ -96,11 +97,21 @@ function applyActiveRestaurant(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
+  const cachedBoot = readAuthCache()
+  const hasStoredToken = !!localStorage.getItem('token')
+  if (hasStoredToken && cachedBoot) {
+    setTenantHeader(cachedBoot.restaurant.id)
+  }
+  const [user, setUser] = useState<User | null>(cachedBoot?.user ?? null)
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(cachedBoot?.restaurant ?? null)
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
-  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'))
-  const tenantKeyRef = useRef<string | null>(null)
+  const [isLoading, setIsLoading] = useState(() => {
+    const storedToken = localStorage.getItem('token')
+    return !!storedToken && !cachedBoot
+  })
+  const tenantKeyRef = useRef<string | null>(
+    cachedBoot ? tenantIdentityKey(tenantIdentity(cachedBoot.restaurant)) : null,
+  )
 
   const commitRestaurant = useCallback((normalized: Restaurant, invalidateCache = true) => {
     const previousKey = tenantKeyRef.current
@@ -116,12 +127,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(data.token)
     setUser(data.user)
     commitRestaurant(normalized, true)
+    writeAuthCache(data.user, normalized)
     applyRestaurantLocaleOnFirstVisit(normalized.defaultLocale)
     connectSocket(data.token)
   }, [commitRestaurant])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
+    clearAuthCache()
     setTenantHeader(null)
     setToken(null)
     setUser(null)
@@ -138,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const normalized = normalizeRestaurant(res.data.restaurant)
       setUser(res.data.user)
       commitRestaurant(normalized, true)
+      writeAuthCache(res.data.user, normalized)
     } catch {
       /* polling onboarding: ignora errori transitori; 401 gestito dall'interceptor */
     }
@@ -154,12 +168,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false)
       return
     }
+
+    const cached = readAuthCache()
+    if (cached) {
+      setTenantHeader(cached.restaurant.id)
+      applyTenantCssVars(cached.restaurant.colorTheme)
+      connectSocket(storedToken)
+    }
+
     api.get('/auth/me')
       .then(res => {
         setUser(res.data.user)
         const normalized = normalizeRestaurant(res.data.restaurant)
         commitRestaurant(normalized, false)
-        connectSocket(storedToken)
+        writeAuthCache(res.data.user, normalized)
+        if (!cached) connectSocket(storedToken)
       })
       .catch(() => logout())
       .finally(() => setIsLoading(false))

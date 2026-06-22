@@ -1,9 +1,29 @@
-import { CountryCode, TaxRegion } from '@prisma/client'
+import { CountryCode, FiscalRegion, TaxRegion } from '@prisma/client'
 import { prisma } from './prisma'
+import {
+  defaultTaxRateForFiscalRegion,
+  fiscalRegionToCountry,
+  fiscalRegionToTaxRegion,
+  resolveFiscalRegion,
+  resolveTenantFiscalIdentity,
+  resolveTaxRateForRegion,
+  validateTaxRateForRegion,
+  type TenantFiscalIdentity,
+} from './fiscal/fiscalRegion'
+
+export type { FiscalRegion, TenantFiscalIdentity }
+export {
+  resolveFiscalRegion,
+  resolveTenantFiscalIdentity,
+  resolveTaxRateForRegion,
+  validateTaxRateForRegion,
+  fiscalRegionToTaxRegion,
+}
 
 export interface FiscalConfig {
   countryCode: CountryCode
   taxRegion: TaxRegion
+  fiscalRegion: FiscalRegion
   taxRate: number
   taxName: string
   defaultLocale: string
@@ -36,34 +56,38 @@ export type RegimeOrderTaxResult = FoodTaxResult & {
 export interface RestaurantSettingsLike {
   countryCode?: CountryCode | null
   taxRegion?: TaxRegion | null
+  fiscalRegion?: FiscalRegion | null
   taxRate?: number | null
   defaultLocale?: string | null
   taxId?: string | null
 }
 
 const REGION_META: Record<
-  TaxRegion,
+  FiscalRegion,
   Omit<FiscalConfig, 'taxRate'> & { defaultTaxRate: number }
 > = {
-  IT_MAIN: {
+  ITALIA: {
     countryCode: 'IT',
     taxRegion: 'IT_MAIN',
+    fiscalRegion: 'ITALIA',
     taxName: 'IVA',
     defaultLocale: 'it',
     timezone: 'Europe/Rome',
     defaultTaxRate: 10,
   },
-  ES_CANARIAS: {
+  ISOLE_CANARIE: {
     countryCode: 'ES',
     taxRegion: 'ES_CANARIAS',
+    fiscalRegion: 'ISOLE_CANARIE',
     taxName: 'IGIC',
     defaultLocale: 'es',
     timezone: 'Atlantic/Canary',
     defaultTaxRate: 7,
   },
-  ES_PENINSULA: {
+  SPAGNA_PENINSULA: {
     countryCode: 'ES',
     taxRegion: 'ES_PENINSULA',
+    fiscalRegion: 'SPAGNA_PENINSULA',
     taxName: 'IVA',
     defaultLocale: 'es',
     timezone: 'Europe/Madrid',
@@ -75,24 +99,27 @@ export function resolveTaxRegion(
   countryCode: CountryCode,
   taxRegion?: TaxRegion | null,
 ): TaxRegion {
-  if (taxRegion && REGION_META[taxRegion]?.countryCode === countryCode) {
-    return taxRegion
-  }
-  return countryCode === 'ES' ? 'ES_PENINSULA' : 'IT_MAIN'
+  const identity = resolveTenantFiscalIdentity({ countryCode, taxRegion })
+  return identity.taxRegion
 }
 
 export function buildFiscalConfig(settings?: RestaurantSettingsLike | null): FiscalConfig {
-  const countryCode = settings?.countryCode ?? 'IT'
-  const taxRegion = resolveTaxRegion(countryCode, settings?.taxRegion ?? null)
-  const meta = REGION_META[taxRegion]
-  const taxRate =
+  const identity = resolveTenantFiscalIdentity({
+    countryCode: settings?.countryCode,
+    taxRegion: settings?.taxRegion,
+    fiscalRegion: settings?.fiscalRegion,
+  })
+  const meta = REGION_META[identity.fiscalRegion]
+  const rawRate =
     settings?.taxRate != null && settings.taxRate > 0
       ? settings.taxRate
       : meta.defaultTaxRate
+  const taxRate = resolveTaxRateForRegion(identity.fiscalRegion, rawRate)
 
   return {
     countryCode: meta.countryCode,
     taxRegion: meta.taxRegion,
+    fiscalRegion: identity.fiscalRegion,
     taxRate,
     taxName: meta.taxName,
     defaultLocale: settings?.defaultLocale ?? meta.defaultLocale,
@@ -126,6 +153,50 @@ export function getTipTaxTreatment(taxRegion: TaxRegion): TipTaxTreatment {
   return 'EXEMPT_IT'
 }
 
+export type OrderLineForTax = {
+  quantity: number
+  unitPrice: number
+  /** Aliquota piatto; se assente usa default locale */
+  taxRate?: number | null
+}
+
+/**
+ * Scorporo multi-aliquota per riga (IT 4/10/22%, ES 10/21%, Canarie IGIC 7%).
+ * Le mance NON entrano mai in questo calcolo.
+ */
+export function computeOrderTaxFromLines(
+  config: FiscalConfig,
+  lines: OrderLineForTax[],
+): FoodTaxResult {
+  if (lines.length === 0) {
+    return scorporoTaxFromGross(0, config.taxRate)
+  }
+
+  let subtotal = 0
+  let tax = 0
+  let total = 0
+  let dominantRate = config.taxRate
+  let maxGross = 0
+
+  for (const line of lines) {
+    const gross = roundMoney(line.quantity * line.unitPrice)
+    const rate = validateTaxRateForRegion(
+      config.fiscalRegion,
+      line.taxRate != null && line.taxRate > 0 ? line.taxRate : config.taxRate,
+    )
+    const part = scorporoTaxFromGross(gross, rate)
+    subtotal = roundMoney(subtotal + part.subtotal)
+    tax = roundMoney(tax + part.tax)
+    total = roundMoney(total + part.total)
+    if (gross > maxGross) {
+      maxGross = gross
+      dominantRate = rate
+    }
+  }
+
+  return { subtotal, tax, total, taxRateApplied: dominantRate }
+}
+
 /**
  * Calcolo fiscale per regime ristorante: scorporo sui soli piatti, mancia sempre esclusa.
  */
@@ -142,7 +213,7 @@ export function computeOrderTaxForRegime(
     tipTaxTreatment: getTipTaxTreatment(config.taxRegion),
     taxableGross: food.total,
     customerTotal: roundMoney(food.total + tip),
-    electronicTipTracked: config.taxRegion === 'IT_MAIN' && tip > 0,
+    electronicTipTracked: config.fiscalRegion === 'ITALIA' && tip > 0,
   }
 }
 
@@ -152,7 +223,9 @@ export function roundMoney(n: number): number {
 
 export function fiscalConfigPayload(config: FiscalConfig, taxId?: string | null) {
   return {
+    country: config.countryCode,
     countryCode: config.countryCode,
+    fiscalRegion: config.fiscalRegion,
     taxRegion: config.taxRegion,
     taxRate: config.taxRate,
     taxName: config.taxName,
@@ -163,11 +236,16 @@ export function fiscalConfigPayload(config: FiscalConfig, taxId?: string | null)
 }
 
 export function settingsForRegistration(countryCode: CountryCode, taxRegion?: TaxRegion | null) {
-  const resolvedRegion = resolveTaxRegion(countryCode, taxRegion)
-  const config = buildFiscalConfig({ countryCode, taxRegion: resolvedRegion })
+  const identity = resolveTenantFiscalIdentity({ countryCode, taxRegion })
+  const config = buildFiscalConfig({
+    countryCode: identity.country,
+    taxRegion: identity.taxRegion,
+    fiscalRegion: identity.fiscalRegion,
+  })
   return {
     countryCode: config.countryCode,
     taxRegion: config.taxRegion,
+    fiscalRegion: config.fiscalRegion,
     defaultLocale: config.defaultLocale,
     taxRate: config.taxRate,
   }

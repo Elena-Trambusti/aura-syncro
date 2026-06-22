@@ -18,11 +18,15 @@ export interface FiscalPdfLabels {
   summaryReconciliation: string
   footer: (count: number) => string
   legalDisclaimer: string
+  complianceNotice?: string
+  tipsSectionTitle?: string
   noDataExport: string
   filenamePrefix: string
   locale: string
   includePaymentMethod: boolean
+  includeIntegrityHash: boolean
   paymentMethodHeader?: string
+  integrityHashHeader?: string
 }
 
 export function buildFiscalPdfLabels(
@@ -33,6 +37,7 @@ export function buildFiscalPdfLabels(
 ): FiscalPdfLabels {
   const prefix = fiscalRegimePrefix(taxRegion)
   const includePaymentMethod = taxRegion === 'IT_MAIN'
+  const includeIntegrityHash = taxRegion !== 'IT_MAIN'
   return {
     title: (restaurant: string) => t(`${prefix}.pdf.title`, { restaurant }),
     taxId: t(`${prefix}.pdf.taxId`),
@@ -52,18 +57,29 @@ export function buildFiscalPdfLabels(
       t(`${prefix}.table.tip`),
       t(`${prefix}.table.collectedTotal`),
       ...(includePaymentMethod ? [t(`${prefix}.table.paymentMethod`)] : []),
+      ...(includeIntegrityHash ? [t(`${prefix}.pdf.integrityHash`, { defaultValue: 'Hash VeriFactu' })] : []),
     ],
     summaryNet: t(`${prefix}.pdf.summaryNet`),
     summaryTips: t(`${prefix}.pdf.summaryTips`),
     summaryElectronicTips: t(`${prefix}.pdf.summaryElectronicTips`, { defaultValue: '' }) || undefined,
     summaryReconciliation: t(`${prefix}.pdf.summaryReconciliation`),
     footer: (count: number) => t(`${prefix}.pdf.footer`, { count }),
-    legalDisclaimer: t('reportFiscal.legalDisclaimer'),
+    legalDisclaimer: t(`${prefix}.pdf.legalDisclaimer`, {
+      defaultValue: t('reportFiscal.legalDisclaimer'),
+    }),
+    complianceNotice: t(`${prefix}.pdf.complianceNotice`, { defaultValue: '' }) || undefined,
+    tipsSectionTitle: taxRegion === 'IT_MAIN'
+      ? (t(`${prefix}.pdf.tipsSectionTitle`, { defaultValue: '' }) || undefined)
+      : undefined,
     noDataExport: t('reportFiscal.noData'),
     filenamePrefix: t(`${prefix}.pdf.filenamePrefix`),
     locale: getFiscalIntlLocale(defaultLocale),
     includePaymentMethod,
+    includeIntegrityHash,
     paymentMethodHeader: includePaymentMethod ? t(`${prefix}.table.paymentMethod`) : undefined,
+    integrityHashHeader: includeIntegrityHash
+      ? t(`${prefix}.pdf.integrityHash`, { defaultValue: 'Hash VeriFactu' })
+      : undefined,
   }
 }
 

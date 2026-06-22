@@ -2,6 +2,7 @@ import type { Prisma, Table } from '@prisma/client'
 import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
 import { loadRestaurantFiscalConfig } from './taxEngine'
+import { appendFiscalChainLink } from './fiscal/fiscalIntegrityChain'
 import { applyPostPaymentEffects } from './postPayment'
 import { issueInvoiceForOrder, snapshotOrderBillingFromCustomer } from './fiscalInvoice'
 import { decrementInventoryForUnpaidItems } from './inventoryDeduction'
@@ -53,7 +54,7 @@ export async function finalizeOrderPayment(
 ): Promise<FinalizePaymentResult> {
   const order = await prisma.order.findFirst({
     where: { id: input.orderId, restaurantId: input.restaurantId },
-    include: { items: true },
+    include: { items: { include: { menuItem: true } } },
   })
 
   if (!order) {
@@ -80,6 +81,12 @@ export async function finalizeOrderPayment(
       data: { status: 'SERVED' },
     })
 
+    const chainLink = await appendFiscalChainLink(tx, input.restaurantId, {
+      orderId: order.id,
+      closedAt: paidAt,
+      customerTotal: split.total,
+    })
+
     const paid = await tx.order.update({
       where: { id: order.id },
       data: {
@@ -89,6 +96,11 @@ export async function finalizeOrderPayment(
         revenueAmount: split.revenueAmount,
         tipAmount: split.tipAmount,
         total: split.total,
+        taxRateApplied: order.taxRateApplied ?? fiscal.taxRate,
+        fiscalRegionSnapshot: fiscal.fiscalRegion,
+        fiscalIntegrityHash: chainLink.integrityHash,
+        fiscalPrevHash: chainLink.prevHash,
+        fiscalClosedAt: chainLink.closedAt,
       },
       include: {
         table: true,

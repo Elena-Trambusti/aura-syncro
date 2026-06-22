@@ -683,7 +683,10 @@
           "summaryElectronicTips": "Mance Elettroniche Tracciate — Registro imposta sostitutiva 5%",
           "summaryReconciliation": "Totale Conciliazione Bancaria POS",
           "footer": "Documento generato automaticamente · {{count}} transazioni · Mance esenti da IVA (normativa italiana).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "tipsSectionTitle": "Mance Elettroniche Tracciate (Esenti IVA — Soggette a imposta sostitutiva)",
+          "legalDisclaimer": "Documento ad uso gestionale interno. Non sostituisce lo scontrino del Registratore Telematico né l'invio allo SDI/FatturaPA.",
+          "complianceNotice": "Catena di integrità crittografica attiva su ogni chiusura conto (predisposizione AgID)."
         }
       },
       "ES_CANARIAS": {
@@ -711,7 +714,10 @@
           "summaryTips": "Total Propinas Personal (Exento de IGIC)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
           "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IGIC (normativa Canarias).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       },
       "ES_PENINSULA": {
@@ -739,7 +745,10 @@
           "summaryTips": "Total Propinas Personal (Exento de IVA)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
           "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IVA (normativa española).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       }
     }
@@ -1027,6 +1036,9 @@
     "noResultsHint": "Prova con un altro termine di ricerca",
     "orderHint": "Seleziona i piatti e invia l'ordine dalla cucina",
     "waiterOrderHint": "Consulta il menu qui. Per ordinare, rivolgiti al cameriere.",
+    "atTableOrderHint": "Sei al tavolo {{number}}. Consulta il menu — per ordinare chiedi al cameriere.",
+    "browseBeforeVisitHint": "Consulta il menu del ristorante. Se vuoi venire, prenota un tavolo qui sotto.",
+    "bookingFooterHint": "Non sei ancora in sala? Prenota prima di arrivare.",
     "browseOnlyHint": "Menu digitale in sola consultazione — nessun ordine dal telefono.",
     "bookTable": "Prenota un tavolo",
     "addToCart": "Aggiungi",
@@ -1075,7 +1087,7 @@
     "printHint": "Esportazione PNG 2048×2048 px — bianco e nero, pronto per tipografia.",
     "tableNumberOptional": "Numero tavolo (opzionale)",
     "tableNumberPlaceholder": "Es. 5 — lascia vuoto per menu generico",
-    "tableNumberHint": "Con il tavolo nel QR, il cliente vede subito a quale tavolo è seduto.",
+    "tableNumberHint": "Con il numero tavolo nel QR, il cliente vede l’esperienza «sono già seduto» (senza link prenotazione). Lascia vuoto per menu generico + prenotazione.",
     "slugMissing": "Slug del ristorante mancante. Configuralo in Impostazioni per generare i QR.",
     "goToSettings": "Vai alle Impostazioni"
   },
@@ -1130,7 +1142,9 @@
     "installHint": "Per un'esperienza migliore su Android: menu Chrome → «Installa app» o «Aggiungi a schermata Home». Su iPhone: Condividi → «Aggiungi a Home».",
     "installTitle": "Installa Aura Syncro sul dispositivo",
     "installApp": "Installa app",
-    "installSuccess": "App installata! Aprila dalla schermata Home."
+    "installSuccess": "App installata! Aprila dalla schermata Home.",
+    "updateAvailable": "È disponibile una nuova versione dell'app.",
+    "updateRefresh": "Aggiorna ora"
   },
   "export": {
     "receipt": "Scontrino",

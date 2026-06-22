@@ -20,6 +20,13 @@ enum TaxRegion {
   ES_PENINSULA
 }
 
+/** Regime fiscale normalizzato (AgID IT / Ley Antifraude ES) */
+enum FiscalRegion {
+  ITALIA
+  SPAGNA_PENINSULA
+  ISOLE_CANARIE
+}
+
 enum PlanTier {
   BASE
   PRO
@@ -61,6 +68,7 @@ model Restaurant {
   waitlist       WaitlistEntry[]
   invoices       Invoice[]
   fiscalSequences FiscalSequence[]
+  fiscalChainState FiscalChainState?
 }
 
 model RestaurantSettings {
@@ -73,6 +81,8 @@ model RestaurantSettings {
   reservationSlotMinutes Int @default(90)
   countryCode      CountryCode @default(IT)
   taxRegion        TaxRegion   @default(IT_MAIN)
+  /** Regime fiscale unificato (IT / ES penisola / Canarie) */
+  fiscalRegion     FiscalRegion @default(ITALIA)
   defaultLocale    String      @default("it")
   taxRate          Float       @default(10.0)
   serviceCharge    Float       @default(0.0)
@@ -210,6 +220,8 @@ model MenuItem {
   name         String
   description  String?
   price        Float
+  /** Aliquota IVA/IGIC applicata al piatto (es. 4, 10, 22 IT). Null = default locale. */
+  taxRate      Float?
   image        String?
   allergens    String?
   calories     Int?
@@ -256,6 +268,14 @@ model Order {
   billingFiscalCode  String?
   billingSdiCode     String?
   billingPec         String?
+  /** Snapshot regime fiscale alla chiusura (immutabile) */
+  fiscalRegionSnapshot FiscalRegion?
+  /** Hash SHA-256 catena VeriFactu / anti-frode (immutabile dopo PAID) */
+  fiscalIntegrityHash  String?   @unique
+  /** Hash ordine precedente nella catena del locale */
+  fiscalPrevHash       String?
+  /** Timestamp certificato di chiusura conto */
+  fiscalClosedAt       DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -561,6 +581,15 @@ model InventoryItemLink {
 // ===== FATTURAZIONE (preparazione SDI / Registratori Telematici) =====
 
 /** Contatore progressivo annuale per ristorante (thread-safe via transazione). */
+/** Stato testa catena crittografica VeriFactu / anti-frode per tenant */
+model FiscalChainState {
+  restaurantId String     @id
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  lastHash     String     @default("GENESIS")
+  lastOrderId  String?
+  updatedAt    DateTime   @updatedAt
+}
+
 model FiscalSequence {
   id           String     @id @default(cuid())
   restaurantId String

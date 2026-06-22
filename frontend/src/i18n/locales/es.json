@@ -1087,6 +1087,12 @@
     "noResults": "No se encontraron platos",
     "noResultsHint": "Prueba con otro término de búsqueda",
     "orderHint": "Selecciona los platos y envía el pedido a cocina",
+    "waiterOrderHint": "Consulta el menú aquí. Para pedir, pide al camarero.",
+    "atTableOrderHint": "Estás en la mesa {{number}}. Consulta el menú — para pedir, pide al camarero.",
+    "browseBeforeVisitHint": "Consulta el menú del restaurante. ¿Quieres venir? Reserva una mesa abajo.",
+    "bookingFooterHint": "¿Aún no estás en sala? Reserva antes de llegar.",
+    "browseOnlyHint": "Menú digital solo consulta — sin pedidos desde el móvil.",
+    "bookTable": "Reservar mesa",
     "addToCart": "Añadir",
     "cart": "Tu pedido",
     "cartEmpty": "El carrito está vacío",
@@ -1128,7 +1134,7 @@
     "printHint": "Exportación PNG 2048×2048 px — blanco y negro, listo para imprenta.",
     "tableNumberOptional": "Número de mesa (opcional)",
     "tableNumberPlaceholder": "ej. 5 — dejar vacío para menú genérico",
-    "tableNumberHint": "Con la mesa en el QR, el cliente no tendrá que introducirla.",
+    "tableNumberHint": "Con el número de mesa en el QR, el cliente ve la experiencia «ya sentado» (sin enlace de reserva). Déjalo vacío para menú genérico + reserva.",
     "slugMissing": "Falta el slug del restaurante. Configúralo en Ajustes para generar códigos QR.",
     "goToSettings": "Ir a Ajustes"
   },
@@ -1161,7 +1167,9 @@
     "installHint": "En Android: menú Chrome → «Instalar aplicación». En iPhone: Compartir → «Añadir a pantalla de inicio».",
     "installTitle": "Instala Aura Syncro en el dispositivo",
     "installApp": "Instalar app",
-    "installSuccess": "¡App instalada! Ábrela desde la pantalla de inicio."
+    "installSuccess": "¡App instalada! Ábrela desde la pantalla de inicio.",
+    "updateAvailable": "Hay una nueva versión de la app disponible.",
+    "updateRefresh": "Actualizar ahora"
   },
   "export": {
     "receipt": "Ticket",

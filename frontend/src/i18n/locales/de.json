@@ -1087,6 +1087,12 @@
     "noResults": "Keine Gerichte gefunden",
     "noResultsHint": "Versuchen Sie einen anderen Suchbegriff",
     "orderHint": "Gerichte auswählen und Bestellung an die Küche senden",
+    "waiterOrderHint": "Speisekarte hier ansehen. Zum Bestellen wenden Sie sich an den Kellner.",
+    "atTableOrderHint": "Sie sitzen an Tisch {{number}}. Speisekarte ansehen — zum Bestellen fragen Sie den Kellner.",
+    "browseBeforeVisitHint": "Sehen Sie sich unsere Speisekarte an. Möchten Sie vorbeikommen? Reservieren Sie unten einen Tisch.",
+    "bookingFooterHint": "Noch nicht im Restaurant? Reservieren Sie vor Ihrer Ankunft.",
+    "browseOnlyHint": "Digitale Speisekarte nur zur Ansicht — keine Bestellung per Handy.",
+    "bookTable": "Tisch reservieren",
     "addToCart": "Hinzufügen",
     "cart": "Ihre Bestellung",
     "cartEmpty": "Der Warenkorb ist leer",
@@ -1128,7 +1134,7 @@
     "printHint": "PNG-Export 2048×2048 px — Schwarz-Weiß, bereit für die Druckerei.",
     "tableNumberOptional": "Tischnummer (optional)",
     "tableNumberPlaceholder": "z. B. 5 — leer lassen für allgemeines Menü",
-    "tableNumberHint": "Mit Tisch im QR muss der Gast die Nummer nicht manuell eingeben.",
+    "tableNumberHint": "Mit Tischnummer im QR sieht der Gast die «bereits am Tisch»-Ansicht (ohne Reservierungslink). Leer lassen für allgemeines Menü + Reservierung.",
     "slugMissing": "Restaurant-Slug fehlt. Konfigurieren Sie ihn in den Einstellungen, um QR-Codes zu generieren.",
     "goToSettings": "Zu den Einstellungen"
   },
@@ -1161,7 +1167,9 @@
     "installHint": "Android: Chrome-Menü → «App installieren». iPhone: Teilen → «Zum Home-Bildschirm».",
     "installTitle": "Aura Syncro auf dem Gerät installieren",
     "installApp": "App installieren",
-    "installSuccess": "App installiert! Öffne sie über den Startbildschirm."
+    "installSuccess": "App installiert! Öffne sie über den Startbildschirm.",
+    "updateAvailable": "Eine neue Version der App ist verfügbar.",
+    "updateRefresh": "Jetzt aktualisieren"
   },
   "export": {
     "receipt": "Beleg",

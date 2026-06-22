@@ -219,7 +219,11 @@ export default function PublicMenuPage() {
         <div className="border-t border-slate-100 bg-amber-50 px-4 py-3">
           <div className="flex items-start gap-2.5">
             <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
-            <p className="text-sm font-medium text-amber-900">{t('publicMenu.waiterOrderHint')}</p>
+            <p className="text-sm font-medium text-amber-900">
+              {tableNumber != null
+                ? t('publicMenu.atTableOrderHint', { number: tableNumber })
+                : t('publicMenu.browseBeforeVisitHint')}
+            </p>
           </div>
         </div>
 
@@ -294,14 +298,20 @@ export default function PublicMenuPage() {
         )}
 
         <div className="mt-8 space-y-3">
-          <p className="text-center text-xs text-slate-400">{t('publicMenu.browseOnlyHint')}</p>
-          <Link
-            to={`/prenota/${slug}`}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
-          >
-            <CalendarDays className="h-4 w-4 text-amber-600" />
-            {t('publicMenu.bookTable')}
-          </Link>
+          {tableNumber != null ? (
+            <p className="text-center text-xs text-slate-400">{t('publicMenu.browseOnlyHint')}</p>
+          ) : (
+            <>
+              <Link
+                to={`/prenota/${slug}`}
+                className="flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-100"
+              >
+                <CalendarDays className="h-4 w-4 text-amber-700" />
+                {t('publicMenu.bookTable')}
+              </Link>
+              <p className="text-center text-xs text-slate-400">{t('publicMenu.bookingFooterHint')}</p>
+            </>
+          )}
         </div>
       </main>
     </div>

@@ -1,5 +1,4 @@
 /// <reference lib="webworker" />
-import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 
 declare let self: ServiceWorkerGlobalScope
@@ -8,9 +7,6 @@ const ORDERS_PATH = '/ordini'
 
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
-
-self.skipWaiting()
-clientsClaim()
 
 interface PushPayload {
   title?: string

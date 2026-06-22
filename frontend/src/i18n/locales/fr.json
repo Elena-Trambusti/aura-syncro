@@ -1087,6 +1087,12 @@
     "noResults": "Aucun plat trouvé",
     "noResultsHint": "Essayez un autre terme de recherche",
     "orderHint": "Sélectionnez vos plats et envoyez la commande en cuisine",
+    "waiterOrderHint": "Consultez le menu ici. Pour commander, demandez au serveur.",
+    "atTableOrderHint": "Vous êtes à la table {{number}}. Consultez le menu — pour commander, demandez au serveur.",
+    "browseBeforeVisitHint": "Consultez le menu du restaurant. Vous voulez venir ? Réservez une table ci-dessous.",
+    "bookingFooterHint": "Pas encore en salle ? Réservez avant d'arriver.",
+    "browseOnlyHint": "Menu numérique en consultation seule — pas de commande depuis le téléphone.",
+    "bookTable": "Réserver une table",
     "addToCart": "Ajouter",
     "cart": "Votre commande",
     "cartEmpty": "Le panier est vide",
@@ -1128,7 +1134,7 @@
     "printHint": "Export PNG 2048×2048 px — noir et blanc, prêt pour imprimerie.",
     "tableNumberOptional": "Numéro de table (optionnel)",
     "tableNumberPlaceholder": "ex. 5 — laisser vide pour menu générique",
-    "tableNumberHint": "Avec la table dans le QR, le client n'aura pas à la saisir.",
+    "tableNumberHint": "Avec le numéro de table dans le QR, le client voit l'expérience « déjà assis » (sans lien de réservation). Laissez vide pour menu générique + réservation.",
     "slugMissing": "Slug du restaurant manquant. Configurez-le dans Paramètres pour générer les QR.",
     "goToSettings": "Aller aux Paramètres"
   },
@@ -1161,7 +1167,9 @@
     "installHint": "Android : menu Chrome → « Installer l'application ». iPhone : Partager → « Sur l'écran d'accueil ».",
     "installTitle": "Installer Aura Syncro sur l'appareil",
     "installApp": "Installer l'app",
-    "installSuccess": "Application installée ! Ouvrez-la depuis l'écran d'accueil."
+    "installSuccess": "Application installée ! Ouvrez-la depuis l'écran d'accueil.",
+    "updateAvailable": "Une nouvelle version de l'application est disponible.",
+    "updateRefresh": "Mettre à jour"
   },
   "export": {
     "receipt": "Ticket",

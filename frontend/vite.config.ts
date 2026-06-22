@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
@@ -18,7 +18,7 @@ export default defineConfig({
       includeAssets: pwaIncludeAssets,
       manifest: pwaManifest,
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
       },
     }),
