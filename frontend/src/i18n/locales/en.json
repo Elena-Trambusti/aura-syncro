@@ -210,7 +210,7 @@
     "markFree": "Mark Free",
     "tableReady": "Table {{number}} ready",
     "needsCleaning": "Needs cleaning",
-    "startCleaningHint": "After payment the table moves to cleaning. Mark it free when ready.",
+    "startCleaningHint": "After payment the table moves to cleaning. Tap it on the map to mark it free.",
     "manageSection": "Table management",
     "newTable": "New table",
     "editTable": "Edit table",

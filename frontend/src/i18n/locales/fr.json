@@ -210,7 +210,7 @@
     "markFree": "Marquer libre",
     "tableReady": "Table {{number}} prête",
     "needsCleaning": "À nettoyer",
-    "startCleaningHint": "Après le paiement, la table passe en nettoyage. Marquez-la libre quand elle est prête.",
+    "startCleaningHint": "Après le paiement, la table passe en nettoyage. Touchez-la sur le plan pour la marquer libre.",
     "manageSection": "Gestion des tables",
     "newTable": "Nouvelle table",
     "editTable": "Modifier la table",

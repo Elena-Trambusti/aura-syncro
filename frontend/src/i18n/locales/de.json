@@ -210,7 +210,7 @@
     "markFree": "Als frei markieren",
     "tableReady": "Tisch {{number}} bereit",
     "needsCleaning": "Zu reinigen",
-    "startCleaningHint": "Nach der Zahlung wechselt der Tisch in Reinigung. Markieren Sie ihn frei, wenn er bereit ist.",
+    "startCleaningHint": "Nach der Zahlung wechselt der Tisch in Reinigung. Tippen Sie ihn auf der Karte an, um ihn frei zu markieren.",
     "manageSection": "Tischverwaltung",
     "newTable": "Neuer Tisch",
     "editTable": "Tisch bearbeiten",

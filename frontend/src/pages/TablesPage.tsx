@@ -152,6 +152,15 @@ export default function TablesPage() {
     },
   })
 
+  const markTableFree = useMutation({
+    mutationFn: (id: string) => api.patch(`/tables/${id}/status`, { status: 'FREE' }),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      const table = tables.find(tbl => tbl.id === id)
+      toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
+    },
+  })
+
   const transferOrder = useMutation({
     mutationFn: ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
       api.post(`/tables/${sourceId}/transfer`, { targetTableId: targetId }),
@@ -216,6 +225,10 @@ export default function TablesPage() {
 
   const handleTableClick = (table: FloorTable) => {
     if (transferSourceId) return
+    if (table.status === 'CLEANING') {
+      markTableFree.mutate(table.id)
+      return
+    }
     setSelectedTableId(table.id)
     setShowOrderModal(true)
   }
@@ -416,10 +429,8 @@ export default function TablesPage() {
               <button
                 key={table.id}
                 type="button"
-                onClick={() => {
-                  setSelectedTableId(table.id)
-                  setShowOrderModal(true)
-                }}
+                onClick={() => markTableFree.mutate(table.id)}
+                disabled={markTableFree.isPending}
                 className="saas-chip px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
               >
                 T{table.number} — {t('tables.markFree')}

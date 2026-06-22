@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
-import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt, ArrowRightLeft } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, ArrowLeft, Receipt, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRole } from '../../hooks/useRole'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
@@ -118,15 +118,6 @@ export default function OrderModal({
     },
   })
 
-  const markFree = useMutation({
-    mutationFn: () => api.patch(`/tables/${tableId}/status`, { status: 'FREE' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-      toast.success(t('orderModal.tableReady', { number: table?.number ?? '' }))
-      onClose()
-    },
-  })
-
   const addToCart = (item: MenuItem) => {
     if (item.soldOut || item.orderable === false) {
       toast.error(t('orderModal.soldOutToast'))
@@ -173,44 +164,6 @@ export default function OrderModal({
     return (
       <ModalPortal onClose={onClose} overlayClassName="items-center justify-center p-4">
         <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
-      </ModalPortal>
-    )
-  }
-
-  if (table.status === 'CLEANING') {
-    return (
-      <ModalPortal onClose={onClose}>
-        <div
-          className="saas-modal w-full sm:max-w-md flex flex-col overflow-hidden rounded-none sm:rounded-xl"
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">{t('orderModal.title', { number: table.number })}</h2>
-              <p className="text-sm text-slate-500">{t('orderModal.seats', { count: table.seats })}</p>
-            </div>
-            <button type="button" onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg" aria-label={t('common.close')}>
-              <X className="w-5 h-5 text-slate-500" />
-            </button>
-          </div>
-          <div className="p-6 text-center space-y-5 bg-white">
-            <div className="mx-auto w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
-              <Sparkles className="w-7 h-7 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">{t('orderModal.cleaningTitle')}</h3>
-              <p className="text-sm text-slate-500 mt-2">{t('orderModal.cleaningDescription')}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => markFree.mutate()}
-              disabled={markFree.isPending}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-60"
-            >
-              {t('orderModal.markFree')}
-            </button>
-          </div>
-        </div>
       </ModalPortal>
     )
   }

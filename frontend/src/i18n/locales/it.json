@@ -210,7 +210,7 @@
     "markFree": "Segna Libero",
     "tableReady": "Tavolo {{number}} pronto",
     "needsCleaning": "Da pulire",
-    "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Segnalo libero quando è pronto.",
+    "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Toccalo sulla mappa per segnarlo libero.",
     "manageSection": "Gestione tavoli",
     "newTable": "Nuovo tavolo",
     "editTable": "Modifica tavolo",

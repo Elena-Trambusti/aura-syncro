@@ -210,7 +210,7 @@
     "markFree": "Marcar Libre",
     "tableReady": "Mesa {{number}} lista",
     "needsCleaning": "Por limpiar",
-    "startCleaningHint": "Tras el pago la mesa pasa a limpieza. Márcala libre cuando esté lista.",
+    "startCleaningHint": "Tras el pago la mesa pasa a limpieza. Tócala en el mapa para marcarla libre.",
     "manageSection": "Gestión de mesas",
     "newTable": "Nueva mesa",
     "editTable": "Editar mesa",
