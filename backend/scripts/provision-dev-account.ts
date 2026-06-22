@@ -60,10 +60,20 @@ async function main() {
     created = true
     console.log('Account creato.')
   } else {
+    const resetPassword = process.argv.includes('--reset-password')
+    const userUpdateData: { email: string; name: string; password?: string } = {
+      email: EMAIL,
+      name: NAME,
+    }
+    if (resetPassword) {
+      userUpdateData.password = await bcrypt.hash(TEMP_PASSWORD, 12)
+      console.log('Password reimpostata alla temporanea.')
+    }
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { email: EMAIL, name: NAME },
+        data: userUpdateData,
       }),
       prisma.restaurant.update({
         where: { id: user.restaurantId },
@@ -112,7 +122,9 @@ async function main() {
   console.log(JSON.stringify(summary, null, 2))
   console.log('\nLogin su https://aurasyncro.com')
   console.log('Email:', EMAIL)
-  console.log(created ? `Password temporanea: ${TEMP_PASSWORD}` : 'Password: usa quella già impostata')
+  console.log(created || process.argv.includes('--reset-password')
+    ? `Password temporanea: ${TEMP_PASSWORD}`
+    : 'Password: usa quella già impostata (oppure riesegui con --reset-password)')
   console.log('\n⚠️  Cambia la password dopo il primo accesso.')
 }
 

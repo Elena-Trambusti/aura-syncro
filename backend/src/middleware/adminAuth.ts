@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
 
 export function requireAdminKey(req: Request, res: Response, next: NextFunction): void {
+  // Il browser invia OPTIONS senza X-Admin-Key: non bloccare il preflight CORS.
+  if (req.method === 'OPTIONS') {
+    next()
+    return
+  }
+
   const adminKey = process.env.ADMIN_API_KEY?.trim()
 
   if (!adminKey || adminKey.includes('inserisci')) {
