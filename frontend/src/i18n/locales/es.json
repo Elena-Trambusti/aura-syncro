@@ -123,6 +123,7 @@
     "taxRegion": "Región fiscal",
     "taxRegionCanarias": "Islas Canarias (IGIC)",
     "taxRegionPeninsula": "España peninsular (IVA)",
+    "fiscalLocationHint": "Canarias tiene un régimen IGIC distinto del IVA peninsular.",
     "forgotPassword": "¿Olvidaste la contraseña?",
     "forgotPasswordTitle": "Recuperar contraseña",
     "forgotPasswordSubtitle": "Introduce tu email y te enviaremos un enlace para restablecer la contraseña.",
@@ -940,7 +941,17 @@
     "paymentRegistered": "¡Pago registrado!",
     "paymentError": "Error durante el pago",
     "notes": "Notas",
-    "quantity": "Cant."
+    "quantity": "Cant.",
+    "transferAction": "Mover mesa",
+    "transferTargetLabel": "Elige la mesa de destino",
+    "transferTargetPlaceholder": "Selecciona una mesa libre",
+    "transferTargetOption": "Mesa {{number}} • {{seats}} plazas",
+    "transferConfirm": "Confirmar traslado",
+    "transferNoTargets": "No hay mesas libres disponibles",
+    "transferSuccess": "Comensales movidos correctamente",
+    "transferTargetUnavailable": "La mesa de destino no está disponible",
+    "transferNoActiveOrder": "No hay pedido activo para mover",
+    "transferError": "Error al mover la mesa"
   },
   "checkout": {
     "title": "Cierre de cuenta",

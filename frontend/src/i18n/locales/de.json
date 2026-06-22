@@ -123,6 +123,7 @@
     "taxRegion": "Steuerregion",
     "taxRegionCanarias": "Kanarische Inseln (IGIC)",
     "taxRegionPeninsula": "Festlandspanien (MwSt.)",
+    "fiscalLocationHint": "Die Kanaren haben ein IGIC-Regime, das von der spanischen Festland-MwSt. getrennt ist.",
     "forgotPassword": "Passwort vergessen?",
     "forgotPasswordTitle": "Passwort zurücksetzen",
     "forgotPasswordSubtitle": "Geben Sie Ihre E-Mail ein — wir senden Ihnen einen Reset-Link.",
@@ -940,7 +941,17 @@
     "paymentRegistered": "Zahlung registriert!",
     "paymentError": "Fehler bei der Zahlung",
     "notes": "Notizen",
-    "quantity": "Menge"
+    "quantity": "Menge",
+    "transferAction": "Tisch verschieben",
+    "transferTargetLabel": "Zieltisch auswählen",
+    "transferTargetPlaceholder": "Freien Tisch auswählen",
+    "transferTargetOption": "Tisch {{number}} • {{seats}} Plätze",
+    "transferConfirm": "Verschieben bestätigen",
+    "transferNoTargets": "Keine freien Tische verfügbar",
+    "transferSuccess": "Gaeste erfolgreich verschoben",
+    "transferTargetUnavailable": "Der Zieltisch ist nicht verfuegbar",
+    "transferNoActiveOrder": "Keine aktive Bestellung zum Verschieben",
+    "transferError": "Fehler beim Tischwechsel"
   },
   "checkout": {
     "title": "Rechnung abschließen",

@@ -44,6 +44,11 @@ export function defaultTaxRateForRegion(taxRegion: TaxRegion): number {
   return REGION_DEFAULT_TAX_RATE[taxRegion]
 }
 
+/** Paese DB associato a una regione fiscale (registrazione / impostazioni). */
+export function countryCodeFromTaxRegion(taxRegion: TaxRegion): CountryCode {
+  return taxRegion.startsWith('ES_') ? 'ES' : 'IT'
+}
+
 export function resolveFiscalRegime(
   source?: Partial<FiscalRegime> | null,
 ): FiscalRegime {

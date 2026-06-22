@@ -123,6 +123,7 @@
     "taxRegion": "Tax region",
     "taxRegionCanarias": "Canary Islands (IGIC)",
     "taxRegionPeninsula": "Mainland Spain (VAT)",
+    "fiscalLocationHint": "The Canary Islands use IGIC, separate from mainland Spanish VAT.",
     "forgotPassword": "Forgot password?",
     "forgotPasswordTitle": "Reset password",
     "forgotPasswordSubtitle": "Enter your email and we'll send you a reset link.",
@@ -878,7 +879,17 @@
     "paymentRegistered": "Payment registered!",
     "paymentError": "Payment error",
     "notes": "Notes",
-    "quantity": "Qty"
+    "quantity": "Qty",
+    "transferAction": "Move table",
+    "transferTargetLabel": "Choose destination table",
+    "transferTargetPlaceholder": "Select a free table",
+    "transferTargetOption": "Table {{number}} • {{seats}} seats",
+    "transferConfirm": "Confirm move",
+    "transferNoTargets": "No free tables available",
+    "transferSuccess": "Guests moved successfully",
+    "transferTargetUnavailable": "Destination table is not available",
+    "transferNoActiveOrder": "No active order to move",
+    "transferError": "Error while moving table"
   },
   "checkout": {
     "title": "Checkout",

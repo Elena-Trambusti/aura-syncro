@@ -123,6 +123,7 @@
     "taxRegion": "Région fiscale",
     "taxRegionCanarias": "Îles Canaries (IGIC)",
     "taxRegionPeninsula": "Espagne continentale (TVA)",
+    "fiscalLocationHint": "Les Canaries ont un régime IGIC distinct de la TVA continentale.",
     "forgotPassword": "Mot de passe oublié ?",
     "forgotPasswordTitle": "Réinitialiser le mot de passe",
     "forgotPasswordSubtitle": "Entrez votre email pour recevoir un lien de réinitialisation.",
@@ -940,7 +941,17 @@
     "paymentRegistered": "Paiement enregistré !",
     "paymentError": "Erreur lors du paiement",
     "notes": "Notes",
-    "quantity": "Qté"
+    "quantity": "Qté",
+    "transferAction": "Déplacer la table",
+    "transferTargetLabel": "Choisissez la table de destination",
+    "transferTargetPlaceholder": "Sélectionnez une table libre",
+    "transferTargetOption": "Table {{number}} • {{seats}} couverts",
+    "transferConfirm": "Confirmer le déplacement",
+    "transferNoTargets": "Aucune table libre disponible",
+    "transferSuccess": "Convives déplacés avec succès",
+    "transferTargetUnavailable": "La table de destination n'est pas disponible",
+    "transferNoActiveOrder": "Aucune commande active à déplacer",
+    "transferError": "Erreur pendant le déplacement de table"
   },
   "checkout": {
     "title": "Clôture de l'addition",

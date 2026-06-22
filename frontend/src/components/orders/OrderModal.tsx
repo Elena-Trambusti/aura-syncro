@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
-import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, Sparkles, ArrowLeft, Receipt, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRole } from '../../hooks/useRole'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
@@ -45,11 +45,14 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const { can } = useRole()
   const tk = useTenantQueryKey()
   const canPayOrder = can('orders.pay')
+  const canTransferOrder = can('orders.items')
   const isDesktop = useIsDesktop()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [tab, setTab] = useState<'menu' | 'order'>('menu')
   const [cartPulse, setCartPulse] = useState(false)
+  const [showTransferPanel, setShowTransferPanel] = useState(false)
+  const [targetTableId, setTargetTableId] = useState('')
 
   const { data: tables = [] } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
@@ -59,6 +62,9 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
 
   const table = tables.find(tbl => tbl.id === tableId)
   const activeOrder = table?.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
+  const transferTargets = tables
+    .filter(tbl => tbl.id !== tableId && tbl.status === 'FREE')
+    .sort((a, b) => a.number - b.number)
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
@@ -117,6 +123,31 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     },
   })
 
+  const transferOrder = useMutation({
+    mutationFn: (targetId: string) => api.post(`/tables/${tableId}/transfer`, { targetTableId: targetId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
+      toast.success(t('orderModal.transferSuccess'))
+      setShowTransferPanel(false)
+      setTargetTableId('')
+      onClose()
+    },
+    onError: (err: { response?: { data?: { code?: string } } }) => {
+      const code = err.response?.data?.code
+      if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
+        toast.error(t('orderModal.transferTargetUnavailable'))
+        return
+      }
+      if (code === 'TABLE_TRANSFER_NO_ACTIVE_ORDER') {
+        toast.error(t('orderModal.transferNoActiveOrder'))
+        return
+      }
+      toast.error(t('orderModal.transferError'))
+    },
+  })
+
   const addToCart = (item: MenuItem) => {
     if (item.soldOut || item.orderable === false) {
       toast.error(t('orderModal.soldOutToast'))
@@ -158,6 +189,16 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
       createOrder.mutate({ tableId: table.id, items: cart })
     }
   }
+
+  const handleTransferOrder = () => {
+    if (!activeOrder || !targetTableId) return
+    transferOrder.mutate(targetTableId)
+  }
+
+  useEffect(() => {
+    setShowTransferPanel(false)
+    setTargetTableId('')
+  }, [tableId])
 
   if (!table) {
     return (
@@ -425,6 +466,53 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             <Receipt className="h-5 w-5" />
             {t('orderModal.goToPayment')}
           </button>
+          )}
+
+          {canTransferOrder && (
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <button
+                type="button"
+                onClick={() => setShowTransferPanel(v => !v)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                {t('orderModal.transferAction')}
+              </button>
+
+              {showTransferPanel && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-slate-600">{t('orderModal.transferTargetLabel')}</p>
+                  {transferTargets.length === 0 ? (
+                    <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+                      {t('orderModal.transferNoTargets')}
+                    </p>
+                  ) : (
+                    <>
+                      <select
+                        value={targetTableId}
+                        onChange={e => setTargetTableId(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                      >
+                        <option value="">{t('orderModal.transferTargetPlaceholder')}</option>
+                        {transferTargets.map(target => (
+                          <option key={target.id} value={target.id}>
+                            {t('orderModal.transferTargetOption', { number: target.number, seats: target.seats })}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleTransferOrder}
+                        disabled={!targetTableId || transferOrder.isPending}
+                        className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+                      >
+                        {t('orderModal.transferConfirm')}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <button

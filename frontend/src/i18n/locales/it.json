@@ -123,6 +123,7 @@
     "taxRegion": "Regione fiscale",
     "taxRegionCanarias": "Isole Canarie (IGIC)",
     "taxRegionPeninsula": "Spagna peninsulare (IVA)",
+    "fiscalLocationHint": "Le Canarie hanno un regime IGIC distinto dalla Spagna peninsulare.",
     "forgotPassword": "Password dimenticata?",
     "forgotPasswordTitle": "Recupera password",
     "forgotPasswordSubtitle": "Inserisci la tua email: ti invieremo un link per reimpostare la password.",
@@ -879,7 +880,17 @@
     "paymentRegistered": "Pagamento registrato!",
     "paymentError": "Errore durante il pagamento",
     "notes": "Note",
-    "quantity": "Qtà"
+    "quantity": "Qtà",
+    "transferAction": "Sposta tavolo",
+    "transferTargetLabel": "Scegli il tavolo di destinazione",
+    "transferTargetPlaceholder": "Seleziona un tavolo libero",
+    "transferTargetOption": "Tavolo {{number}} • {{seats}} posti",
+    "transferConfirm": "Conferma spostamento",
+    "transferNoTargets": "Nessun tavolo libero disponibile",
+    "transferSuccess": "Commensali spostati con successo",
+    "transferTargetUnavailable": "Il tavolo di destinazione non è disponibile",
+    "transferNoActiveOrder": "Nessun ordine attivo da spostare",
+    "transferError": "Errore durante lo spostamento tavolo"
   },
   "checkout": {
     "title": "Chiusura conto",

@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { transferOrderBetweenTables } from '../lib/transferTable'
 
 export const tablesRouter = Router()
 
@@ -89,6 +90,55 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
   io.to(tenantId(req)).emit('table:updated', table)
   res.json(table)
 })
+
+tablesRouter.post(
+  '/:sourceTableId/transfer',
+  requirePermission('orders.items'),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const schema = z.object({
+      targetTableId: z.string().min(1),
+    })
+    const result = schema.safeParse(req.body)
+    if (!result.success) {
+      res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
+      return
+    }
+
+    try {
+      const moved = await transferOrderBetweenTables(
+        tenantId(req),
+        req.params.sourceTableId,
+        result.data.targetTableId,
+      )
+
+      io.to(tenantId(req)).emit('table:updated', moved.sourceTable)
+      io.to(tenantId(req)).emit('table:updated', moved.targetTable)
+      io.to(tenantId(req)).emit('order:updated', moved.order)
+
+      res.json(moved)
+      return
+    } catch (err) {
+      const code = (err as { code?: string }).code
+      if (code === 'TABLE_TRANSFER_SAME_TABLE') {
+        res.status(400).json({ error: 'Seleziona un tavolo diverso', code })
+        return
+      }
+      if (code === 'TABLE_TRANSFER_NO_ACTIVE_ORDER') {
+        res.status(400).json({ error: 'Nessun ordine attivo sul tavolo selezionato', code })
+        return
+      }
+      if (code === 'TABLE_TRANSFER_SOURCE_NOT_FOUND' || code === 'TABLE_TRANSFER_TARGET_NOT_FOUND') {
+        tenantNotFound(res, 'Tavolo non trovato')
+        return
+      }
+      if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
+        res.status(409).json({ error: 'Il tavolo di destinazione non e disponibile', code })
+        return
+      }
+      throw err
+    }
+  },
+)
 
 tablesRouter.delete('/:id', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.table.deleteMany({ where: scopedWhere(req, req.params.id) })

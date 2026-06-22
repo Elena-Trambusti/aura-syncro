@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
+import { countryCodeFromTaxRegion, type TaxRegion } from '../lib/fiscalRegime'
 import { BRAND } from '../lib/brand'
 import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
@@ -20,7 +20,6 @@ export default function RegisterPage() {
     email: '',
     password: '',
     phone: '',
-    countryCode: 'IT' as CountryCode,
     taxRegion: 'IT_MAIN' as TaxRegion,
   })
 
@@ -28,7 +27,10 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await register(form)
+      await register({
+        ...form,
+        countryCode: countryCodeFromTaxRegion(form.taxRegion),
+      })
       toast.success(t('auth.welcome'))
     } catch (err: unknown) {
       toast.error(formatApiError(err))
@@ -39,16 +41,7 @@ export default function RegisterPage() {
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }))
 
-  const onCountryChange = (countryCode: CountryCode) => {
-    const taxRegion: TaxRegion = countryCode === 'ES' ? 'ES_PENINSULA' : 'IT_MAIN'
-    setForm(f => ({
-      ...f,
-      countryCode,
-      taxRegion,
-    }))
-  }
-
-  const onTaxRegionChange = (taxRegion: TaxRegion) => {
+  const onFiscalLocationChange = (taxRegion: TaxRegion) => {
     setForm(f => ({ ...f, taxRegion }))
   }
 
@@ -74,27 +67,16 @@ export default function RegisterPage() {
             <div>
               <label className={ui.label}>{t('auth.country')}</label>
               <select
-                value={form.countryCode}
-                onChange={e => onCountryChange(e.target.value as CountryCode)}
+                value={form.taxRegion}
+                onChange={e => onFiscalLocationChange(e.target.value as TaxRegion)}
                 className={ui.input}
               >
-                <option value="IT">{t('auth.countryIT')}</option>
-                <option value="ES">{t('auth.countryES')}</option>
+                <option value="IT_MAIN">{t('auth.countryIT')}</option>
+                <option value="ES_PENINSULA">{t('auth.taxRegionPeninsula')}</option>
+                <option value="ES_CANARIAS">{t('auth.taxRegionCanarias')}</option>
               </select>
+              <p className="mt-1.5 text-xs text-slate-500">{t('auth.fiscalLocationHint')}</p>
             </div>
-            {form.countryCode === 'ES' && (
-              <div>
-                <label className={ui.label}>{t('auth.taxRegion')}</label>
-                <select
-                  value={form.taxRegion}
-                  onChange={e => onTaxRegionChange(e.target.value as TaxRegion)}
-                  className={ui.input}
-                >
-                  <option value="ES_CANARIAS">{t('auth.taxRegionCanarias')}</option>
-                  <option value="ES_PENINSULA">{t('auth.taxRegionPeninsula')}</option>
-                </select>
-              </div>
-            )}
             <div>
               <label className={ui.label}>{t('auth.yourName')}</label>
               <input type="text" value={form.name} onChange={e => update('name', e.target.value)} className={ui.input} placeholder={t('auth.yourNamePlaceholder')} required />
