@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { validateReservationSlot, ReservationValidationError, requiresDeposit } from '../lib/reservationRules'
+import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const reservationsRouter = Router()
@@ -30,6 +31,33 @@ reservationsRouter.get('/', requirePermission('reservations.read'), async (req: 
     orderBy: { date: 'asc' },
   })
   res.json(reservations)
+})
+
+reservationsRouter.post('/:id/deposit-checkout', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const reservation = await prisma.reservation.findFirst({
+    where: scopedWhere(req, req.params.id),
+    include: { restaurant: { select: { slug: true } } },
+  })
+  if (!reservation) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+
+  try {
+    const session = await createDepositCheckoutSession(reservation.id, reservation.restaurant.slug)
+    res.json(session)
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'ALREADY_PAID') {
+      res.status(400).json({ error: 'Caparra già pagata' })
+      return
+    }
+    if (code === 'PAYMENTS_DISABLED') {
+      res.status(503).json({ error: 'Pagamenti online non configurati' })
+      return
+    }
+    res.status(500).json({ error: 'Errore creazione checkout caparra' })
+  }
 })
 
 reservationsRouter.get('/:id', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {

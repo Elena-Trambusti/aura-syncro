@@ -37,3 +37,27 @@ export const campaignSendLimiter = rateLimit({
   },
   message: message('Limite invii campagne raggiunto. Riprova tra un\'ora.'),
 })
+
+export const publicOrderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste. Riprova tra qualche minuto.'),
+})
+
+export const publicCheckoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste di pagamento. Riprova tra qualche minuto.'),
+})
+
+export const depositLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste di caparra. Riprova tra qualche minuto.'),
+})

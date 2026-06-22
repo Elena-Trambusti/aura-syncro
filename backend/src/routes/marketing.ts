@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { ensureMarketingAutomations } from '../lib/marketingAutomations'
+import { getTargetCustomers } from '../lib/marketingTargets'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { AutomationType } from '@prisma/client'
 
@@ -216,25 +217,3 @@ marketingRouter.get('/stats', requirePermission('marketing.manage'), async (req:
   res.json({ total, sent, draft, scheduled, totalRecipients: totalRecipients._sum.recipientCount || 0 })
 })
 
-// ── Helper ─────────────────────────────────────────────────────────────────────
-
-async function getTargetCustomers(restaurantId: string, filterJson: string | null) {
-  type Filter = { minSpent?: number; minVisits?: number; tierId?: string; inactiveDays?: number }
-  let filter: Filter = {}
-  try { if (filterJson) filter = JSON.parse(filterJson) } catch { /* usa filtro vuoto */ }
-
-  const where: Record<string, unknown> = { restaurantId }
-  if (filter.minSpent) where.totalSpent = { gte: filter.minSpent }
-  if (filter.minVisits) where.totalVisits = { gte: filter.minVisits }
-  if (filter.tierId) where.loyaltyTierId = filter.tierId
-  if (filter.inactiveDays) {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - filter.inactiveDays)
-    where.lastVisit = { lte: cutoff }
-  }
-
-  return prisma.customer.findMany({
-    where,
-    select: { id: true, name: true, email: true, phone: true },
-  })
-}

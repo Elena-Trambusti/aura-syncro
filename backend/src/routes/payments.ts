@@ -12,9 +12,10 @@ import {
 } from '../lib/orderPayment'
 import { completeOrderPayment } from '../lib/completePayment'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
-import { handleCheckoutSessionCompleted } from '../lib/stripeCheckoutWebhook'
 import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
 import { PublicOrderError } from '../lib/publicOrder'
+import { createDepositCheckoutSession } from '../lib/depositCheckout'
+import { depositLimiter } from '../middleware/rateLimit'
 
 export const paymentsRouter = Router()
 
@@ -355,44 +356,8 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
   }
 })
 
-// ── Webhook Stripe (richiede raw body — gestito in index.ts) ──────────────────
-paymentsRouter.post('/webhook', async (req: Request, res: Response): Promise<void> => {
-  const sig = req.headers['stripe-signature']
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-  const isProduction = process.env.NODE_ENV === 'production'
-  const secretConfigured = webhookSecret && !webhookSecret.includes('inserisci')
-
-  let event
-
-  try {
-    if (secretConfigured && sig) {
-      event = stripe.webhooks.constructEvent(req.body as Buffer, sig as string, webhookSecret!)
-    } else if (!isProduction) {
-      event = JSON.parse((req.body as Buffer).toString())
-    } else {
-      res.status(400).json({ error: 'Firma webhook obbligatoria in produzione' })
-      return
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Webhook error'
-    res.status(400).json({ error: msg })
-    return
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    await handleCheckoutSessionCompleted(event.data.object)
-  }
-
-  res.json({ received: true })
-})
-
-// ── Deposito caparra prenotazione ─────────────────────────────────────────────
-paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<void> => {
-  if (!STRIPE_ENABLED) {
-    res.status(503).json({ error: 'Pagamenti online non configurati' })
-    return
-  }
-
+// ── Deposito caparra (legacy pubblico — preferire POST /api/reservations/:id/deposit-checkout) ──
+paymentsRouter.post('/deposit', depositLimiter, async (req: Request, res: Response): Promise<void> => {
   const schema = z.object({
     reservationId: z.string(),
     slug: z.string(),
@@ -404,72 +369,25 @@ paymentsRouter.post('/deposit', async (req: Request, res: Response): Promise<voi
     return
   }
 
-  const reservation = await prisma.reservation.findUnique({
-    where: { id: result.data.reservationId },
-    include: { restaurant: true },
-  })
-
-  if (!reservation || reservation.restaurant.slug !== result.data.slug) {
-    res.status(404).json({ error: 'Prenotazione non trovata' })
-    return
-  }
-
-  if (reservation.depositPaid) {
-    res.status(400).json({ error: 'Caparra già pagata' })
-    return
-  }
-
-  if (reservation.depositStripeSessionId) {
-    try {
-      const existing = await stripe.checkout.sessions.retrieve(reservation.depositStripeSessionId)
-      if (existing.status === 'open' && existing.url) {
-        res.json({ checkoutUrl: existing.url, sessionId: existing.id })
-        return
-      }
-      if (existing.payment_status === 'paid') {
-        res.status(400).json({ error: 'Caparra già pagata' })
-        return
-      }
-    } catch {
-      // Sessione scaduta o invalida — ne creiamo una nuova
+  try {
+    const session = await createDepositCheckoutSession(result.data.reservationId, result.data.slug)
+    res.json(session)
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'NOT_FOUND') {
+      res.status(404).json({ error: 'Prenotazione non trovata' })
+      return
     }
+    if (code === 'ALREADY_PAID') {
+      res.status(400).json({ error: 'Caparra già pagata' })
+      return
+    }
+    if (code === 'PAYMENTS_DISABLED') {
+      res.status(503).json({ error: 'Pagamenti online non configurati' })
+      return
+    }
+    res.status(500).json({ error: 'Errore creazione checkout caparra' })
   }
-
-  const settings = await prisma.restaurantSettings.findUnique({
-    where: { restaurantId: reservation.restaurantId },
-  })
-
-  const depositAmount = settings?.depositAmount || 10
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    customer_email: reservation.guestEmail || undefined,
-    metadata: {
-      reservationId: reservation.id,
-      restaurantId: reservation.restaurantId,
-    },
-    line_items: [{
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: `Caparra prenotazione — ${reservation.restaurant.name}`,
-          description: `${reservation.covers} persone · ${new Date(reservation.date).toLocaleDateString('it-IT')}`,
-        },
-        unit_amount: Math.round(depositAmount * 100),
-      },
-      quantity: 1,
-    }],
-    success_url: `${frontendUrl}/payment/deposit-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${frontendUrl.split(',')[0].trim().replace(/\/$/, '')}/payment/cancel?reason=deposit`,
-  })
-
-  await prisma.reservation.update({
-    where: { id: reservation.id },
-    data: { depositStripeSessionId: session.id },
-  })
-
-  res.json({ checkoutUrl: session.url, sessionId: session.id })
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────

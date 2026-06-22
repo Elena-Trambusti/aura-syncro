@@ -10,6 +10,7 @@ import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ModalPortal from '../components/ModalPortal'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 
 interface MenuItem {
   id: string; name: string; description?: string; price: number
@@ -118,7 +119,7 @@ export default function MenuPage() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string } | null>(null)
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], isError } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
     queryFn: () => api.get('/menu/categories').then(r => r.data),
   })
@@ -239,6 +240,9 @@ export default function MenuPage() {
         </div>
       </div>
 
+      {isError ? (
+        <QueryErrorBanner />
+      ) : (
       <div className={`${ui.card} overflow-hidden`}>
         <div className={ui.tableWrap}>
         <table className="w-full">
@@ -312,6 +316,7 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+      )}
 
       {showForm && (
         <ItemForm

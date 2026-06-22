@@ -97,7 +97,7 @@ staffRouter.put('/:id', requirePermission('staff.manage'), async (req: AuthReque
   res.json(user)
 })
 
-staffRouter.get('/shifts', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.get('/shifts', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { week } = req.query
   const startDate = week ? new Date(week as string) : (() => {
     const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d
@@ -151,7 +151,7 @@ staffRouter.post('/shifts', requirePermission('staff.manage'), async (req: AuthR
   res.status(201).json(shift)
 })
 
-staffRouter.patch('/shifts/:id/clock', async (req: AuthRequest, res: Response): Promise<void> => {
+staffRouter.patch('/shifts/:id/clock', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { action } = req.body
   const data = action === 'in'
     ? { clockIn: new Date(), status: 'ACTIVE' as const }

@@ -35,8 +35,9 @@ import { AuthRequest, authenticate } from './middleware/auth'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
 import { buildDashboardSummary } from './lib/analyticsSummary'
-import { processScheduledCampaigns } from './lib/marketingSend'
+import { runAllMarketingJobs } from './lib/marketingSend'
 import { errorHandler } from './middleware/errorHandler'
+import { requirePermission } from './middleware/permissions'
 import { setupSocketHandlers } from './socket/handlers'
 import { validateEnv } from './lib/env'
 import { getVapidPublicKey } from './lib/webPush'
@@ -70,8 +71,7 @@ export const io = new Server(httpServer, {
 
 app.use(cors(corsOptions))
 
-// Webhook Stripe: body grezzo (raw) prima di express.json()
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
+// Webhook Stripe canonico: body grezzo prima di express.json()
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
 
 app.use(express.json())
@@ -87,7 +87,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/admin', adminRouter)
 
-app.get('/api/analytics/summary', authenticate, requireDashboardAccess, async (req, res) => {
+app.get('/api/analytics/summary', authenticate, requireDashboardAccess, requireProPlan, requirePermission('analytics.read'), async (req, res) => {
   try {
     const restaurantId = (req as AuthRequest).restaurantId
     if (!restaurantId) {
@@ -139,10 +139,12 @@ httpServer.listen(PORT, () => {
   const schedulerMs = Number(process.env.MARKETING_SCHEDULER_MS || 3600_000)
   setInterval(async () => {
     try {
-      const campaigns = await processScheduledCampaigns()
-      if (campaigns > 0) console.info('[scheduler] Campagne inviate:', campaigns)
+      const result = await runAllMarketingJobs()
+      if (result.campaigns > 0 || result.automations > 0) {
+        console.info('[scheduler] Marketing:', result.campaigns, 'campagne,', result.automations, 'automazioni')
+      }
     } catch (err) {
-      console.error('[scheduler] Errore campagne:', err)
+      console.error('[scheduler] Errore marketing:', err)
     }
   }, schedulerMs)
 })

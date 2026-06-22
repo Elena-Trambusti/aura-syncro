@@ -10,6 +10,7 @@ import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
 import toast from 'react-hot-toast'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 
 interface OrderItem {
   id: string
@@ -52,7 +53,7 @@ export default function OrdersPage() {
 
   useRealtimeOrders()
 
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
+  const { data: orders = [], isLoading, isError } = useQuery<Order[]>({
     queryKey: tq(tk, 'orders', filter),
     queryFn: () => {
       if (filter === 'active') return api.get('/orders/active').then(r => r.data)
@@ -138,6 +139,8 @@ export default function OrdersPage() {
         <div className="flex justify-center py-12">
           <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
         </div>
+      ) : isError ? (
+        <QueryErrorBanner />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {orders.map(order => (

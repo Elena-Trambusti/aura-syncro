@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import StaffShiftsTab from '../components/staff/StaffShiftsTab'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 
 type StaffTab = 'team' | 'shifts'
 
@@ -44,7 +45,7 @@ export default function StaffPage() {
     phone: '',
   })
 
-  const { data: staff = [], isLoading } = useQuery<StaffMember[]>({
+  const { data: staff = [], isLoading, isError } = useQuery<StaffMember[]>({
     queryKey: tq(tk, 'staff'),
     queryFn: () => api.get('/staff').then(r => r.data),
   })
@@ -122,6 +123,10 @@ export default function StaffPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+          </div>
+        ) : isError ? (
+          <div className="p-6">
+            <QueryErrorBanner />
           </div>
         ) : staff.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-slate-500">

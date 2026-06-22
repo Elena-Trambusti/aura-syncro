@@ -115,7 +115,7 @@ export default function Sidebar() {
     } else if (tier === 'onboarding') {
       toast(t('nav.lockedOnboarding'), { icon: '⏳' })
     } else {
-      toast(t('nav.lockedPro'), { icon: '🔒' })
+      toast(t('nav.lockedPremium'), { icon: '🔒' })
     }
   }
 
@@ -215,7 +215,7 @@ export default function Sidebar() {
                       {t(item.labelKey)}
                       {isProLocked && (
                         <span className="ml-auto rounded bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-violet-300">
-                          Pro
+                          Premium
                         </span>
                       )}
                     </NavLink>

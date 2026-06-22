@@ -121,6 +121,13 @@ export default function RegisterPage() {
               {t('auth.login')}
             </Link>
           </p>
+          <p className="mt-3 text-center text-xs text-slate-500">
+            <Link to="/prezzi" className="text-amber-700 hover:underline">Prezzi</Link>
+            {' · '}
+            <Link to="/privacy" className="text-amber-700 hover:underline">Privacy</Link>
+            {' · '}
+            <Link to="/termini" className="text-amber-700 hover:underline">Termini</Link>
+          </p>
         </div>
       </div>
     </div>

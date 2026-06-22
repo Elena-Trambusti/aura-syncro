@@ -6,6 +6,7 @@ import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicChe
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { STRIPE_ENABLED } from '../lib/stripe'
 import { io } from '../index'
+import { publicCheckoutLimiter, publicOrderLimiter } from '../middleware/rateLimit'
 
 export const publicRouter = Router()
 
@@ -53,7 +54,7 @@ publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<voi
 })
 
 /** POST /api/public/orders — Ordine guest dal menu QR (senza autenticazione) */
-publicRouter.post('/orders', async (req: Request, res: Response): Promise<void> => {
+publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Response): Promise<void> => {
   const parsed = publicOrderSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
@@ -82,7 +83,7 @@ publicRouter.post('/orders', async (req: Request, res: Response): Promise<void> 
 })
 
 /** POST /api/public/checkout — Ordine guest + redirect Stripe Checkout */
-publicRouter.post('/checkout', async (req: Request, res: Response): Promise<void> => {
+publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: Response): Promise<void> => {
   const parsed = guestCheckoutSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })

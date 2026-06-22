@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { sendEmail, renderTemplate } from './email'
 import { splitCustomerName } from './crmCustomer'
+import { getTargetCustomers } from './marketingTargets'
 
 export async function sendCampaignEmails(
   restaurantId: string,
@@ -48,6 +49,7 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
 
   let sentCount = 0
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   for (const auto of automations) {
     if (auto.type === 'BIRTHDAY') {
@@ -57,10 +59,8 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
       for (const c of customers) {
         if (!c.birthdate || !c.email) continue
         const bd = new Date(c.birthdate)
-        const diffDays = Math.ceil(
-          (new Date(today.getFullYear(), bd.getMonth(), bd.getDate()).getTime() - today.getTime())
-          / 86_400_000,
-        )
+        const birthdayThisYear = new Date(today.getFullYear(), bd.getMonth(), bd.getDate())
+        const diffDays = Math.round((birthdayThisYear.getTime() - today.getTime()) / 86_400_000)
         if (diffDays !== 3) continue
         const { firstName } = splitCustomerName(c.name)
         const body = renderTemplate(auto.messageTemplate, {
@@ -68,19 +68,25 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
           name: c.name,
           restaurantName: restaurant?.name ?? '',
         })
-        const r = await sendEmail({ to: c.email, subject: 'Auguri da ' + (restaurant?.name ?? ''), text: body })
+        const r = await sendEmail({ to: c.email, subject: `Auguri da ${restaurant?.name ?? ''}`, text: body })
         if (r.sent) sentCount += 1
       }
     }
 
     if (auto.type === 'WIN_BACK') {
-      const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() - 60)
+      const minCutoff = new Date(today)
+      minCutoff.setDate(minCutoff.getDate() - 67)
+      const maxCutoff = new Date(today)
+      maxCutoff.setDate(maxCutoff.getDate() - 60)
+
       const customers = await prisma.customer.findMany({
         where: {
           restaurantId,
           email: { not: null },
-          OR: [{ lastVisit: { lte: cutoff } }, { lastVisit: null }],
+          OR: [
+            { lastVisit: { gte: minCutoff, lte: maxCutoff } },
+            { lastVisit: null, createdAt: { lte: maxCutoff } },
+          ],
         },
       })
       for (const c of customers) {
@@ -106,10 +112,7 @@ export async function processScheduledCampaigns(): Promise<number> {
 
   let processed = 0
   for (const campaign of due) {
-    const recipients = await prisma.customer.findMany({
-      where: { restaurantId: campaign.restaurantId, email: { not: null } },
-      select: { email: true, name: true },
-    })
+    const recipients = await getTargetCustomers(campaign.restaurantId, campaign.targetFilter ?? null)
     const { sent } = await sendCampaignEmails(campaign.restaurantId, campaign, recipients)
     await prisma.campaign.update({
       where: { id: campaign.id },
@@ -118,4 +121,24 @@ export async function processScheduledCampaigns(): Promise<number> {
     processed += 1
   }
   return processed
+}
+
+export async function runAllMarketingJobs(): Promise<{ campaigns: number; automations: number }> {
+  const campaigns = await processScheduledCampaigns()
+
+  const restaurants = await prisma.restaurant.findMany({
+    where: { settings: { hasActiveSubscription: true } },
+    select: { id: true },
+  })
+
+  let automations = 0
+  for (const { id } of restaurants) {
+    try {
+      automations += await runMarketingAutomations(id)
+    } catch (err) {
+      console.error('[scheduler] Automazioni marketing fallite:', id, err)
+    }
+  }
+
+  return { campaigns, automations }
 }

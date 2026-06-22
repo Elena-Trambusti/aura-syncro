@@ -15,6 +15,15 @@ export function validateEnv(): void {
     console.error('❌ JWT_SECRET troppo corto (minimo 16 caratteri)')
     process.exit(1)
   }
+
+  if (isProduction()) {
+    const requiredProd = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'ADMIN_API_KEY'] as const
+    const missingProd = requiredProd.filter(key => !process.env[key]?.trim() || process.env[key]?.includes('inserisci'))
+    if (missingProd.length > 0) {
+      console.error(`❌ Variabili produzione mancanti: ${missingProd.join(', ')}`)
+      process.exit(1)
+    }
+  }
 }
 
 export function isProduction(): boolean {

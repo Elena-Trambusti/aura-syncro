@@ -256,7 +256,7 @@ const planDowngradeSchema = z.object({
 
 /**
  * POST /api/admin/plan-downgrade
- * Downgrade manuale PRO → BASE (non cancella l'abbonamento Stripe Pro).
+ * Downgrade manuale: disattiva abbonamento e accesso completo.
  */
 adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise<void> => {
   const parsed = planDowngradeSchema.safeParse(req.body)
@@ -290,6 +290,8 @@ adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise
     where: { restaurantId },
     data: {
       planTier: 'BASE',
+      hasActiveSubscription: false,
+      stripeSubscriptionId: null,
       stripeProSubscriptionId: null,
     },
   })
@@ -303,7 +305,7 @@ adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise
 
   res.json({
     success: true,
-    message: 'Piano impostato su Base. Ricorda di annullare l\'abbonamento Pro su Stripe se necessario.',
+    message: 'Abbonamento disattivato e piano impostato su Base.',
     restaurant,
   })
 })

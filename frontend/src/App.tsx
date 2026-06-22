@@ -11,6 +11,9 @@ import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import RegisterPage from './pages/RegisterPage'
+import PricingPage from './pages/PricingPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import TablesPage from './pages/TablesPage'
@@ -64,6 +67,9 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/prezzi" element={<PricingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/termini" element={<TermsPage />} />
       <Route path="/platform-admin" element={<PlatformAdminPage />} />
       {/* Pagine pubbliche senza auth */}
       <Route path="/menu/:slug" element={<PublicMenuPage />} />
@@ -76,7 +82,9 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardAccessGate>
-              <KitchenDisplayPage />
+              <RequirePermission permissions={['orders.read']}>
+                <KitchenDisplayPage />
+              </RequirePermission>
             </DashboardAccessGate>
           </ProtectedRoute>
         }
@@ -94,9 +102,9 @@ function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="tavoli" element={<RequirePermission permissions={['tables.read']}><TablesPage /></RequirePermission>} />
         <Route path="checkout/:orderId" element={<RequirePermission permissions={['orders.pay']}><CheckoutPage /></RequirePermission>} />
-        <Route path="ordini" element={<OrdersPage />} />
-        <Route path="menu" element={<MenuPage />} />
-        <Route path="prenotazioni" element={<ReservationsPage />} />
+        <Route path="ordini" element={<RequirePermission permissions={['orders.read']}><OrdersPage /></RequirePermission>} />
+        <Route path="menu" element={<RequirePermission permissions={['menu.read']}><MenuPage /></RequirePermission>} />
+        <Route path="prenotazioni" element={<RequirePermission permissions={['reservations.read']}><ReservationsPage /></RequirePermission>} />
         <Route path="crm" element={<RequireProPlan><CrmPage /></RequireProPlan>} />
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
@@ -108,7 +116,7 @@ function AppRoutes() {
         <Route path="fedelta" element={<RequireProPlan><LoyaltyPage /></RequireProPlan>} />
         <Route path="marketing" element={<RequireProPlan><MarketingPage /></RequireProPlan>} />
         <Route path="report" element={<Outlet />}>
-          <Route index element={<ReportsPage />} />
+          <Route index element={<RequirePermission permissions={['reports.read']}><ReportsPage /></RequirePermission>} />
           <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />
         </Route>
         <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><PaymentsPage /></RequireProPlan></RequireRole>} />

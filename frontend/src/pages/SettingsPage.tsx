@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
 import toast from 'react-hot-toast'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 
 interface RestaurantSettings {
   countryCode?: CountryCode
@@ -65,7 +66,7 @@ export default function SettingsPage() {
   const tk = useTenantQueryKey()
   const queryClient = useQueryClient()
 
-  const { data: restaurantData } = useQuery<RestaurantData>({
+  const { data: restaurantData, isError } = useQuery<RestaurantData>({
     queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
   })
@@ -134,6 +135,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {isError && <QueryErrorBanner />}
       <div>
         <h1 className="aura-page-title">{t('settings.title')}</h1>
         <p className="aura-page-subtitle">{t('settings.subtitle')}</p>

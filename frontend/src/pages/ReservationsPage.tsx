@@ -8,9 +8,10 @@ import toast from 'react-hot-toast'
 import { useRole } from '../hooks/useRole'
 import WaitlistPanel from '../components/reservations/WaitlistPanel'
 import { cn } from '../lib/utils'
-import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 
 type ReservationTab = 'bookings' | 'waitlist'
 
@@ -112,7 +113,6 @@ export default function ReservationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
-  const { restaurant } = useAuth()
   const { can } = useRole()
   const canManageReservations = can('reservations.manage')
   useRealtimeReservations()
@@ -127,7 +127,7 @@ export default function ReservationsPage() {
 
   const depositPolicyActive = requiresDepositFromSettings(restaurantProfile?.settings)
 
-  const { data: reservations = [] } = useQuery<Reservation[]>({
+  const { data: reservations = [], isError: reservationsError } = useQuery<Reservation[]>({
     queryKey: tq(tk, 'reservations', selectedDate),
     queryFn: () => api.get(`/reservations?date=${selectedDate}`).then(r => r.data),
   })
@@ -152,7 +152,7 @@ export default function ReservationsPage() {
 
   const payDeposit = useMutation({
     mutationFn: (reservationId: string) =>
-      api.post('/payments/deposit', { reservationId, slug: restaurant!.slug }),
+      api.post(`/reservations/${reservationId}/deposit-checkout`),
     onSuccess: (res) => {
       const url = res.data?.checkoutUrl
       if (url) window.location.href = url
@@ -240,6 +240,8 @@ export default function ReservationsPage() {
 
       {activeTab === 'waitlist' ? (
         <WaitlistPanel selectedDate={selectedDate} />
+      ) : reservationsError ? (
+        <QueryErrorBanner />
       ) : (
       <>
       <div className="space-y-3">
@@ -277,7 +279,7 @@ export default function ReservationsPage() {
               {res.notes && <p className="text-xs text-slate-600 mt-1 italic">&quot;{res.notes}&quot;</p>}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {needsDeposit(res) && restaurant?.slug && (
+              {needsDeposit(res) && (
                 <button
                   type="button"
                   onClick={() => payDeposit.mutate(res.id)}
@@ -323,3 +325,4 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
