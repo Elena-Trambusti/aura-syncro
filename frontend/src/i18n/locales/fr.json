@@ -219,7 +219,12 @@
     "deleted": "Table supprimée",
     "emptyTitle": "Aucune table configurée",
     "emptyHint": "Ajoutez les tables de votre établissement pour utiliser le plan et le POS.",
-    "emptyAction": "Ajouter la première table"
+    "emptyAction": "Ajouter la première table",
+    "transferModeBanner": "Déplacer la commande de la Table {{number}}",
+    "transferModeHint": "Touchez une table libre sur le plan",
+    "transferCancel": "Annuler le déplacement",
+    "transferFromHere": "D'ici",
+    "transferTapHere": "Toucher"
   },
   "orders": {
     "title": "Commandes",
@@ -943,6 +948,7 @@
     "notes": "Notes",
     "quantity": "Qté",
     "transferAction": "Déplacer la table",
+    "transferActionShort": "Déplacer",
     "transferTargetLabel": "Choisissez la table de destination",
     "transferTargetPlaceholder": "Sélectionnez une table libre",
     "transferTargetOption": "Table {{number}} • {{seats}} couverts",

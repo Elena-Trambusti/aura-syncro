@@ -49,12 +49,28 @@ function computeBounds(tables: FloorTable[]) {
   }
 }
 
+export type TableTransferRole = 'source' | 'target' | 'disabled'
+
+export function getTableTransferRole(
+  table: FloorTable,
+  sourceTableId: string | null | undefined,
+): TableTransferRole | null {
+  if (!sourceTableId) return null
+  if (table.id === sourceTableId) return 'source'
+  if (table.status === 'FREE') return 'target'
+  return 'disabled'
+}
+
 interface TableFloorPlanProps {
   tables: FloorTable[]
   statusLabel: (status: TableStatus) => string
   seatsLabel: (n: number) => string
   onTableClick: (table: FloorTable) => void
   activeOrderTotal?: (tableId: string) => string | null
+  transferSourceId?: string | null
+  onTransferTargetClick?: (table: FloorTable) => void
+  transferSourceLabel?: string
+  transferTargetLabel?: string
 }
 
 export default function TableFloorPlan({
@@ -63,7 +79,21 @@ export default function TableFloorPlan({
   seatsLabel,
   onTableClick,
   activeOrderTotal,
+  transferSourceId,
+  onTransferTargetClick,
+  transferSourceLabel,
+  transferTargetLabel,
 }: TableFloorPlanProps) {
+  const inTransferMode = Boolean(transferSourceId)
+
+  const handleTileClick = (table: FloorTable) => {
+    if (inTransferMode && transferSourceId) {
+      const role = getTableTransferRole(table, transferSourceId)
+      if (role === 'target') onTransferTargetClick?.(table)
+      return
+    }
+    onTableClick(table)
+  }
   const bounds = computeBounds(tables)
   const hasLayout = tables.some(t => t.posX > 0 || t.posY > 0)
 
@@ -77,7 +107,15 @@ export default function TableFloorPlan({
             statusLabel={statusLabel}
             seatsLabel={seatsLabel}
             orderTotal={activeOrderTotal?.(table.id) ?? null}
-            onClick={() => onTableClick(table)}
+            transferRole={getTableTransferRole(table, transferSourceId)}
+            transferHint={
+              getTableTransferRole(table, transferSourceId) === 'source'
+                ? transferSourceLabel
+                : getTableTransferRole(table, transferSourceId) === 'target'
+                  ? transferTargetLabel
+                  : undefined
+            }
+            onClick={() => handleTileClick(table)}
             className="table-tile--static"
           />
         ))}
@@ -107,7 +145,15 @@ export default function TableFloorPlan({
               statusLabel={statusLabel}
               seatsLabel={seatsLabel}
               orderTotal={activeOrderTotal?.(table.id) ?? null}
-              onClick={() => onTableClick(table)}
+              transferRole={getTableTransferRole(table, transferSourceId)}
+              transferHint={
+                getTableTransferRole(table, transferSourceId) === 'source'
+                  ? transferSourceLabel
+                  : getTableTransferRole(table, transferSourceId) === 'target'
+                    ? transferTargetLabel
+                    : undefined
+              }
+              onClick={() => handleTileClick(table)}
               style={{ left: `${left}%`, top: `${top}%` }}
             />
           )
@@ -122,6 +168,8 @@ function TableTile({
   statusLabel,
   seatsLabel,
   orderTotal,
+  transferRole,
+  transferHint,
   onClick,
   style,
   className,
@@ -130,6 +178,8 @@ function TableTile({
   statusLabel: (status: TableStatus) => string
   seatsLabel: (n: number) => string
   orderTotal: string | null
+  transferRole?: TableTransferRole | null
+  transferHint?: string
   onClick: () => void
   style?: React.CSSProperties
   className?: string
@@ -137,15 +187,21 @@ function TableTile({
   const shape = (table.shape || 'SQUARE') as TableShape
   const { w, h } = tableSize(table.seats, shape)
 
+  const isDisabledInTransfer = transferRole === 'disabled'
+
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={isDisabledInTransfer}
       style={{ width: w, height: h, ...style }}
       className={cn(
         'table-tile',
         STATUS_CLASS[table.status],
         shape === 'ROUND' && 'rounded-full',
+        transferRole === 'source' && 'table-tile--transfer-source',
+        transferRole === 'target' && 'table-tile--transfer-target',
+        transferRole === 'disabled' && 'table-tile--transfer-disabled',
         className,
       )}
       aria-label={`Tavolo ${table.number}, ${seatsLabel(table.seats)}, ${statusLabel(table.status)}`}
@@ -162,8 +218,13 @@ function TableTile({
           {statusLabel(table.status as TableStatus)}
         </span>
       )}
-      {orderTotal && (
+      {orderTotal && transferRole !== 'target' && (
         <span className="text-[10px] font-semibold leading-none mt-0.5">{orderTotal}</span>
+      )}
+      {transferHint && (
+        <span className="text-[9px] font-bold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full bg-slate-900 text-white">
+          {transferHint}
+        </span>
       )}
     </button>
   )

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
-import { RefreshCw, Plus, Edit2, Trash2, Settings2 } from 'lucide-react'
+import { RefreshCw, Plus, Edit2, Trash2, Settings2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import OrderModal from '../components/orders/OrderModal'
 import ModalPortal from '../components/ModalPortal'
@@ -109,9 +109,11 @@ export default function TablesPage() {
   const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManageTables = can('tables.manage')
+  const canTransferOrder = can('orders.items')
   useRealtimeTables()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [transferSourceId, setTransferSourceId] = useState<string | null>(null)
   const [showManage, setShowManage] = useState(false)
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const allAreasKey = t('common.allAreas')
@@ -150,6 +152,26 @@ export default function TablesPage() {
     },
   })
 
+  const transferOrder = useMutation({
+    mutationFn: ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
+      api.post(`/tables/${sourceId}/transfer`, { targetTableId: targetId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
+      setTransferSourceId(null)
+      toast.success(t('orderModal.transferSuccess'))
+    },
+    onError: (err: { response?: { data?: { code?: string } } }) => {
+      const code = err.response?.data?.code
+      if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
+        toast.error(t('orderModal.transferTargetUnavailable'))
+        return
+      }
+      toast.error(t('orderModal.transferError'))
+    },
+  })
+
   const areas = [allAreasKey, ...Array.from(new Set(tables.map(tbl => tbl.area || defaultArea).filter(Boolean)))]
   const filtered = filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)
 
@@ -169,7 +191,31 @@ export default function TablesPage() {
 
   const getActiveOrder = (table: Table) => table.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
 
+  const transferSourceTable = transferSourceId
+    ? tables.find(tbl => tbl.id === transferSourceId)
+    : undefined
+
+  const floorPlanTables = transferSourceId ? tables : filtered
+
+  const handleStartTransfer = (sourceId: string) => {
+    const hasFreeTarget = tables.some(tbl => tbl.id !== sourceId && tbl.status === 'FREE')
+    if (!hasFreeTarget) {
+      toast.error(t('orderModal.transferNoTargets'))
+      return
+    }
+    setShowOrderModal(false)
+    setSelectedTableId(null)
+    setTransferSourceId(sourceId)
+    setFilterArea(allAreasKey)
+  }
+
+  const handleTransferTarget = (target: FloorTable) => {
+    if (!transferSourceId || target.status !== 'FREE' || target.id === transferSourceId) return
+    transferOrder.mutate({ sourceId: transferSourceId, targetId: target.id })
+  }
+
   const handleTableClick = (table: FloorTable) => {
+    if (transferSourceId) return
     setSelectedTableId(table.id)
     setShowOrderModal(true)
   }
@@ -274,17 +320,23 @@ export default function TablesPage() {
           )}
         </div>
       ) : (
+        <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
         <TableFloorPlan
-          tables={filtered}
+          tables={floorPlanTables}
           statusLabel={status => TABLE_STATUS_LABELS[status]}
           seatsLabel={n => `${n} ${t('common.seats')}`}
           onTableClick={handleTableClick}
+          transferSourceId={transferSourceId}
+          onTransferTargetClick={handleTransferTarget}
+          transferSourceLabel={t('tables.transferFromHere')}
+          transferTargetLabel={t('tables.transferTapHere')}
           activeOrderTotal={id => {
             const table = tables.find(tbl => tbl.id === id)
             const order = table ? getActiveOrder(table) : null
             return order ? formatCurrency(order.total) : null
           }}
         />
+        </div>
       )}
 
       {canManageTables && showManage && (
@@ -390,7 +442,28 @@ export default function TablesPage() {
         <OrderModal
           tableId={selectedTableId}
           onClose={() => { setShowOrderModal(false); setSelectedTableId(null) }}
+          onStartTransfer={canTransferOrder ? handleStartTransfer : undefined}
         />
+      )}
+
+      {transferSourceId && transferSourceTable && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-amber-400 bg-amber-500 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
+          <p className="text-center text-sm font-semibold text-white leading-snug">
+            {t('tables.transferModeBanner', { number: transferSourceTable.number })}
+          </p>
+          <p className="text-center text-xs text-amber-100 mt-1">
+            {t('tables.transferModeHint')}
+          </p>
+          <button
+            type="button"
+            onClick={() => setTransferSourceId(null)}
+            disabled={transferOrder.isPending}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-60"
+          >
+            <X className="h-4 w-4" />
+            {t('tables.transferCancel')}
+          </button>
+        </div>
       )}
     </div>
   )

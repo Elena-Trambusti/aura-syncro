@@ -38,7 +38,15 @@ function useIsDesktop() {
   return isDesktop
 }
 
-export default function OrderModal({ tableId, onClose }: { tableId: string; onClose: () => void }) {
+export default function OrderModal({
+  tableId,
+  onClose,
+  onStartTransfer,
+}: {
+  tableId: string
+  onClose: () => void
+  onStartTransfer?: (tableId: string) => void
+}) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -51,8 +59,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [tab, setTab] = useState<'menu' | 'order'>('menu')
   const [cartPulse, setCartPulse] = useState(false)
-  const [showTransferPanel, setShowTransferPanel] = useState(false)
-  const [targetTableId, setTargetTableId] = useState('')
 
   const { data: tables = [] } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
@@ -62,9 +68,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
 
   const table = tables.find(tbl => tbl.id === tableId)
   const activeOrder = table?.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
-  const transferTargets = tables
-    .filter(tbl => tbl.id !== tableId && tbl.status === 'FREE')
-    .sort((a, b) => a.number - b.number)
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
@@ -123,31 +126,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     },
   })
 
-  const transferOrder = useMutation({
-    mutationFn: (targetId: string) => api.post(`/tables/${tableId}/transfer`, { targetTableId: targetId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
-      toast.success(t('orderModal.transferSuccess'))
-      setShowTransferPanel(false)
-      setTargetTableId('')
-      onClose()
-    },
-    onError: (err: { response?: { data?: { code?: string } } }) => {
-      const code = err.response?.data?.code
-      if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
-        toast.error(t('orderModal.transferTargetUnavailable'))
-        return
-      }
-      if (code === 'TABLE_TRANSFER_NO_ACTIVE_ORDER') {
-        toast.error(t('orderModal.transferNoActiveOrder'))
-        return
-      }
-      toast.error(t('orderModal.transferError'))
-    },
-  })
-
   const addToCart = (item: MenuItem) => {
     if (item.soldOut || item.orderable === false) {
       toast.error(t('orderModal.soldOutToast'))
@@ -189,16 +167,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
       createOrder.mutate({ tableId: table.id, items: cart })
     }
   }
-
-  const handleTransferOrder = () => {
-    if (!activeOrder || !targetTableId) return
-    transferOrder.mutate(targetTableId)
-  }
-
-  useEffect(() => {
-    setShowTransferPanel(false)
-    setTargetTableId('')
-  }, [tableId])
 
   if (!table) {
     return (
@@ -250,7 +218,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     ? categories.find(c => c.id === selectedCategory)
     : categories[0]
 
-  const showCheckout = tab === 'order' && activeOrder && cart.length === 0
+  const showCheckout = Boolean(activeOrder && cart.length === 0 && (isDesktop || tab === 'order'))
   const showCart = cart.length > 0 && !showCheckout
 
   const tabButtons = (fullWidth = false) => (
@@ -468,53 +436,6 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
           </button>
           )}
 
-          {canTransferOrder && (
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <button
-                type="button"
-                onClick={() => setShowTransferPanel(v => !v)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                <ArrowRightLeft className="h-4 w-4" />
-                {t('orderModal.transferAction')}
-              </button>
-
-              {showTransferPanel && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-slate-600">{t('orderModal.transferTargetLabel')}</p>
-                  {transferTargets.length === 0 ? (
-                    <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
-                      {t('orderModal.transferNoTargets')}
-                    </p>
-                  ) : (
-                    <>
-                      <select
-                        value={targetTableId}
-                        onChange={e => setTargetTableId(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
-                      >
-                        <option value="">{t('orderModal.transferTargetPlaceholder')}</option>
-                        {transferTargets.map(target => (
-                          <option key={target.id} value={target.id}>
-                            {t('orderModal.transferTargetOption', { number: target.number, seats: target.seats })}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={handleTransferOrder}
-                        disabled={!targetTableId || transferOrder.isPending}
-                        className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
-                      >
-                        {t('orderModal.transferConfirm')}
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => setTab('menu')}
@@ -527,7 +448,7 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
     </>
   ) : null
 
-  const orderEmptyContent = tab === 'order' && !showCart && !showCheckout ? (
+  const orderEmptyContent = !showCart && !showCheckout && (isDesktop || tab === 'order') ? (
     <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
       <ShoppingCart className="mb-3 h-12 w-12 text-slate-400" />
       <p className="font-medium text-slate-700">{t('orderModal.noOpenOrder')}</p>
@@ -562,12 +483,35 @@ export default function OrderModal({ tableId, onClose }: { tableId: string; onCl
             <p className="text-sm text-slate-500">{t('orderModal.seats', { count: table.seats })}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {canTransferOrder && activeOrder && onStartTransfer && (
+              <button
+                type="button"
+                onClick={() => onStartTransfer(tableId)}
+                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-800"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                {t('orderModal.transferActionShort')}
+              </button>
+            )}
             {isDesktop && tabButtons()}
             <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-slate-100" aria-label={t('common.close')}>
               <X className="h-5 w-5 text-slate-500" />
             </button>
           </div>
         </div>
+
+        {canTransferOrder && activeOrder && onStartTransfer && !isDesktop && (
+          <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => onStartTransfer(tableId)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-slate-800"
+            >
+              <ArrowRightLeft className="h-5 w-5" />
+              {t('orderModal.transferActionShort')}
+            </button>
+          </div>
+        )}
 
         {/* Tab bar mobile — shrink-0, sotto header fisso */}
         {!isDesktop && (

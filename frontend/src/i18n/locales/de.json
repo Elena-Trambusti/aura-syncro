@@ -219,7 +219,12 @@
     "deleted": "Tisch gelöscht",
     "emptyTitle": "Keine Tische konfiguriert",
     "emptyHint": "Fügen Sie die Tische Ihres Lokals hinzu, um Plan und POS zu nutzen.",
-    "emptyAction": "Ersten Tisch hinzufügen"
+    "emptyAction": "Ersten Tisch hinzufügen",
+    "transferModeBanner": "Bestellung von Tisch {{number}} verschieben",
+    "transferModeHint": "Freien Tisch auf der Karte antippen",
+    "transferCancel": "Verschieben abbrechen",
+    "transferFromHere": "Von hier",
+    "transferTapHere": "Tippen"
   },
   "orders": {
     "title": "Bestellungen",
@@ -943,6 +948,7 @@
     "notes": "Notizen",
     "quantity": "Menge",
     "transferAction": "Tisch verschieben",
+    "transferActionShort": "Verschieben",
     "transferTargetLabel": "Zieltisch auswählen",
     "transferTargetPlaceholder": "Freien Tisch auswählen",
     "transferTargetOption": "Tisch {{number}} • {{seats}} Plätze",

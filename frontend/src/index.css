@@ -184,6 +184,54 @@
     @apply border-2 border-blue-400 text-blue-700;
   }
 
+  .table-tile--transfer-source {
+    @apply border-[3px] border-amber-500 ring-4 ring-amber-200 z-20;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  .table-tile--transfer-source:hover {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  .table-tile--transfer-target {
+    @apply border-[3px] border-emerald-500 ring-4 ring-emerald-200 z-10 animate-pulse;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+
+  .table-tile--transfer-target:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    @apply ring-emerald-300 shadow-lg;
+  }
+
+  .table-tile--static.table-tile--transfer-source {
+    transform: scale(1.06);
+  }
+
+  .table-tile--static.table-tile--transfer-source:hover {
+    transform: scale(1.06);
+  }
+
+  .table-tile--static.table-tile--transfer-target {
+    transform: scale(1.04);
+  }
+
+  .table-tile--static.table-tile--transfer-target:hover {
+    transform: scale(1.08);
+  }
+
+  .table-tile--transfer-disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  .table-tile--transfer-disabled:hover {
+    transform: translate(-50%, -50%);
+    @apply shadow-sm;
+  }
+
+  .table-tile--static.table-tile--transfer-disabled:hover {
+    transform: none;
+  }
+
   /* Alias retrocompatibilità (vecchie classi glass → SaaS) */
   .glass-panel,
   .glass-card,

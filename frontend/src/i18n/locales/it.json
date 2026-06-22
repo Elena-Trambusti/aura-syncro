@@ -219,7 +219,12 @@
     "deleted": "Tavolo eliminato",
     "emptyTitle": "Nessun tavolo configurato",
     "emptyHint": "Aggiungi i tavoli del locale per usare la mappa e il POS.",
-    "emptyAction": "Aggiungi primo tavolo"
+    "emptyAction": "Aggiungi primo tavolo",
+    "transferModeBanner": "Sposta la comanda dal Tavolo {{number}}",
+    "transferModeHint": "Tocca un tavolo libero sulla mappa",
+    "transferCancel": "Annulla spostamento",
+    "transferFromHere": "Da qui",
+    "transferTapHere": "Tocca"
   },
   "orders": {
     "title": "Ordini",
@@ -882,6 +887,7 @@
     "notes": "Note",
     "quantity": "Qtà",
     "transferAction": "Sposta tavolo",
+    "transferActionShort": "Sposta",
     "transferTargetLabel": "Scegli il tavolo di destinazione",
     "transferTargetPlaceholder": "Seleziona un tavolo libero",
     "transferTargetOption": "Tavolo {{number}} • {{seats}} posti",

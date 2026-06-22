@@ -219,7 +219,12 @@
     "deleted": "Table deleted",
     "emptyTitle": "No tables configured",
     "emptyHint": "Add your venue tables to use the floor plan and POS.",
-    "emptyAction": "Add first table"
+    "emptyAction": "Add first table",
+    "transferModeBanner": "Move order from Table {{number}}",
+    "transferModeHint": "Tap a free table on the map",
+    "transferCancel": "Cancel move",
+    "transferFromHere": "From here",
+    "transferTapHere": "Tap"
   },
   "orders": {
     "title": "Orders",
@@ -881,6 +886,7 @@
     "notes": "Notes",
     "quantity": "Qty",
     "transferAction": "Move table",
+    "transferActionShort": "Move",
     "transferTargetLabel": "Choose destination table",
     "transferTargetPlaceholder": "Select a free table",
     "transferTargetOption": "Table {{number}} • {{seats}} seats",

@@ -219,7 +219,12 @@
     "deleted": "Mesa eliminada",
     "emptyTitle": "No hay mesas configuradas",
     "emptyHint": "Añade las mesas del local para usar el plano y el POS.",
-    "emptyAction": "Añadir primera mesa"
+    "emptyAction": "Añadir primera mesa",
+    "transferModeBanner": "Mover pedido de la Mesa {{number}}",
+    "transferModeHint": "Toca una mesa libre en el mapa",
+    "transferCancel": "Cancelar traslado",
+    "transferFromHere": "Desde aquí",
+    "transferTapHere": "Toca"
   },
   "orders": {
     "title": "Pedidos",
@@ -943,6 +948,7 @@
     "notes": "Notas",
     "quantity": "Cant.",
     "transferAction": "Mover mesa",
+    "transferActionShort": "Mover",
     "transferTargetLabel": "Elige la mesa de destino",
     "transferTargetPlaceholder": "Selecciona una mesa libre",
     "transferTargetOption": "Mesa {{number}} • {{seats}} plazas",
