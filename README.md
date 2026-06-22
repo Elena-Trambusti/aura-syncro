@@ -117,7 +117,7 @@ Su Windows: `.\avvia-app.ps1` avvia backend + frontend insieme.
 | `DATABASE_URL` | PostgreSQL (connection pooler) |
 | `DIRECT_URL` | PostgreSQL direct (migrations) |
 | `JWT_SECRET` | Secret firma JWT |
-| `FRONTEND_URL` | Origini CORS (comma-separated) |
+| `FRONTEND_URL` | Origini CORS (comma-separated). Produzione: `https://aurasyncro.com,https://www.aurasyncro.com` |
 | `STRIPE_SECRET_KEY` | Chiave segreta Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Verifica webhook |
 | `ADMIN_API_KEY` | Endpoint admin (setup concierge, downgrade piano) |

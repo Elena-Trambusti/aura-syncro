@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED } from './stripe'
+import { resolvePrimaryFrontendUrl } from './frontendUrl'
 
 export async function createDepositCheckoutSession(
   reservationId: string,
@@ -42,7 +43,7 @@ export async function createDepositCheckoutSession(
   })
 
   const depositAmount = settings?.depositAmount || 10
-  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim().replace(/\/$/, '')
+  const frontendUrl = resolvePrimaryFrontendUrl()
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',

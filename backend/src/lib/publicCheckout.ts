@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { computeTaxForRestaurant } from './orderTax'
 import { PublicOrderError } from './publicOrder'
+import { resolvePrimaryFrontendUrl } from './frontendUrl'
 
 export const guestCheckoutSchema = z.object({
   slug: z.string().min(1),
@@ -26,15 +27,11 @@ export interface GuestCheckoutResult {
   orderId: string
 }
 
-function resolveFrontendUrl(): string {
-  const raw = process.env.FRONTEND_URL || 'http://localhost:5173'
-  return raw.split(',')[0].trim().replace(/\/$/, '')
-}
-
 /** Crea ordine PENDING + sessione Stripe Checkout per guest dal menu QR */
 export async function createGuestStripeCheckout(
   input: GuestCheckoutInput,
 ): Promise<GuestCheckoutResult> {
+  const frontendUrl = resolvePrimaryFrontendUrl()
   if (!STRIPE_ENABLED) {
     throw new PublicOrderError('Pagamenti online non configurati', 503)
   }
@@ -103,8 +100,6 @@ export async function createGuestStripeCheckout(
   if (tableId) {
     await prisma.table.update({ where: { id: tableId }, data: { status: 'OCCUPIED' } })
   }
-
-  const frontendUrl = resolveFrontendUrl()
 
   const lineItems = itemsWithPrice.map(item => ({
     price_data: {

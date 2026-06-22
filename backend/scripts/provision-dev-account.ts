@@ -110,7 +110,7 @@ async function main() {
 
   console.log('\n✅ Accesso sviluppatore attivo:')
   console.log(JSON.stringify(summary, null, 2))
-  console.log('\nLogin su https://aura-syncro.vercel.app')
+  console.log('\nLogin su https://aurasyncro.com')
   console.log('Email:', EMAIL)
   console.log(created ? `Password temporanea: ${TEMP_PASSWORD}` : 'Password: usa quella già impostata')
   console.log('\n⚠️  Cambia la password dopo il primo accesso.')

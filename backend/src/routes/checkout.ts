@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, requireRole } from '../middleware/auth'
+import { resolvePrimaryFrontendUrl } from '../lib/frontendUrl'
 
 export const checkoutRouter = Router()
 
@@ -10,11 +11,6 @@ function resolveStripePriceIds(): { setup: string; subscription: string } | null
   const subscription = process.env.STRIPE_PRICE_SUBSCRIPTION?.trim()
   if (!setup || !subscription) return null
   return { setup, subscription }
-}
-
-function resolveFrontendUrl(): string {
-  const raw = process.env.FRONTEND_URL || 'http://localhost:5173'
-  return raw.split(',')[0].trim().replace(/\/$/, '')
 }
 
 /** POST /api/checkout — Stripe Checkout Session (setup €500 + abbonamento €199/mo, tutto incluso) */
@@ -49,7 +45,7 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
     return
   }
 
-  const frontendUrl = resolveFrontendUrl()
+  const frontendUrl = resolvePrimaryFrontendUrl()
 
   try {
     const session = await stripe.checkout.sessions.create({

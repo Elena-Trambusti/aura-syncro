@@ -8,6 +8,7 @@ import { restaurantPayload } from '../lib/tenant'
 import { getPermissionsForRole } from '../lib/permissions'
 import { settingsForRegistration } from '../lib/taxEngine'
 import { sendEmail } from '../lib/email'
+import { resolvePrimaryFrontendUrl } from '../lib/frontendUrl'
 import { ensureDefaultTables } from '../lib/defaultTables'
 import {
   authForgotPasswordLimiter,
@@ -184,7 +185,7 @@ authRouter.post('/forgot-password', authForgotPasswordLimiter, async (req: Reque
       process.env.JWT_SECRET!,
       { expiresIn: '1h' },
     )
-    const frontend = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0]
+    const frontend = resolvePrimaryFrontendUrl()
     await sendEmail({
       to: user.email,
       subject: 'Reimposta password — Aura Syncro',
