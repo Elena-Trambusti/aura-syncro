@@ -273,6 +273,8 @@
     "added": "Dish added!",
     "updated": "Dish updated!",
     "deleted": "Dish deleted",
+    "archived": "Dish removed from menu (order history kept)",
+    "deleteError": "Could not delete dish",
     "newCategory": "New category",
     "editCategory": "Edit category",
     "categoryName": "Category name",
@@ -386,7 +388,14 @@
     "confirmWithTable": "Confirm booking",
     "tableAssigned": "Booking confirmed and table assigned",
     "tableAssignError": "Could not assign table",
-    "noTablesAvailable": "No free tables for this time and party size"
+    "noTablesAvailable": "No free tables for this time and party size",
+    "statActive": "Active bookings",
+    "statCovers": "Expected covers",
+    "statDepositPending": "Deposit pending",
+    "showArchived": "Show cancelled and completed ({{count}})",
+    "hideArchived": "Hide archive",
+    "activeEmptyTitle": "No active bookings",
+    "activeEmptyHint": "Cancelled or completed bookings are in the archive."
   },
   "waitlist": {
     "subtitle": "{{count}} guests waiting",

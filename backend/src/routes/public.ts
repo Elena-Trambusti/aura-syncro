@@ -24,7 +24,7 @@ publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<voi
         where: { active: true },
         include: {
           items: {
-            where: { available: true },
+            where: { available: true, archived: false },
             orderBy: { sortOrder: 'asc' },
           },
         },

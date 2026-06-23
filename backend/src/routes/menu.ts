@@ -1,5 +1,6 @@
 import { Router, Response } from 'express'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
@@ -36,11 +37,27 @@ async function assertCategoryBelongsToTenant(req: AuthRequest, categoryId: strin
   })
 }
 
+const activeMenuItemWhere = { archived: false } as const
+
+async function removeMenuItem(tx: Prisma.TransactionClient, itemId: string): Promise<'deleted' | 'archived'> {
+  await tx.inventoryItemLink.deleteMany({ where: { menuItemId: itemId } })
+  const orderCount = await tx.orderItem.count({ where: { menuItemId: itemId } })
+  if (orderCount > 0) {
+    await tx.menuItem.update({
+      where: { id: itemId },
+      data: { archived: true, available: false },
+    })
+    return 'archived'
+  }
+  await tx.menuItem.delete({ where: { id: itemId } })
+  return 'deleted'
+}
+
 // Categorie
 menuRouter.get('/categories', requirePermission('menu.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const categories = await prisma.menuCategory.findMany({
     where: tenantWhere(req),
-    include: { items: { orderBy: { sortOrder: 'asc' } } },
+    include: { items: { where: activeMenuItemWhere, orderBy: { sortOrder: 'asc' } } },
     orderBy: { sortOrder: 'asc' },
   })
   const enriched = await enrichCategoriesWithStock(categories, tenantId(req))
@@ -78,18 +95,45 @@ menuRouter.put('/categories/:id', requirePermission('menu.manage'), async (req: 
 })
 
 menuRouter.delete('/categories/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await prisma.menuCategory.deleteMany({ where: scopedWhere(req, req.params.id) })
-  if (deleted.count === 0) {
+  const category = await prisma.menuCategory.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!category) {
     tenantNotFound(res, 'Categoria non trovata')
     return
   }
+
+  const items = await prisma.menuItem.findMany({
+    where: { categoryId: category.id, restaurantId: tenantId(req), ...activeMenuItemWhere },
+    select: { id: true },
+  })
+
+  if (items.length > 0) {
+    const orderedCount = await prisma.orderItem.count({
+      where: { menuItemId: { in: items.map(item => item.id) } },
+    })
+    if (orderedCount > 0) {
+      res.status(409).json({
+        error: 'Impossibile eliminare la categoria: contiene piatti già ordinati. Rimuovili singolarmente dal menu.',
+        code: 'CATEGORY_HAS_ORDER_HISTORY',
+      })
+      return
+    }
+  }
+
+  await prisma.$transaction(async tx => {
+    for (const item of items) {
+      await tx.inventoryItemLink.deleteMany({ where: { menuItemId: item.id } })
+      await tx.menuItem.delete({ where: { id: item.id } })
+    }
+    await tx.menuCategory.delete({ where: { id: category.id } })
+  })
+
   res.status(204).send()
 })
 
 // Piatti
 menuRouter.get('/items', requirePermission('menu.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const items = await prisma.menuItem.findMany({
-    where: tenantWhere(req),
+    where: { ...tenantWhere(req), ...activeMenuItemWhere },
     include: { category: true },
     orderBy: [{ category: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
   })
@@ -157,9 +201,15 @@ menuRouter.patch('/items/:id/availability', requirePermission('menu.availability
 })
 
 menuRouter.delete('/items/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await prisma.menuItem.deleteMany({ where: scopedWhere(req, req.params.id) })
-  if (deleted.count === 0) {
+  const item = await prisma.menuItem.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!item) {
     tenantNotFound(res, 'Piatto non trovato')
+    return
+  }
+
+  const outcome = await prisma.$transaction(tx => removeMenuItem(tx, item.id))
+  if (outcome === 'archived') {
+    res.json({ archived: true })
     return
   }
   res.status(204).send()

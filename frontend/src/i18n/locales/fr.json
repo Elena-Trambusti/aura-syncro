@@ -273,6 +273,8 @@
     "added": "Plat ajouté !",
     "updated": "Plat mis à jour !",
     "deleted": "Plat supprimé",
+    "archived": "Plat retiré du menu (historique des commandes conservé)",
+    "deleteError": "Impossible de supprimer le plat",
     "newCategory": "Nouvelle catégorie",
     "editCategory": "Modifier la catégorie",
     "categoryName": "Nom de la catégorie",
@@ -384,7 +386,14 @@
     "confirmWithTable": "Confirmer la réservation",
     "tableAssigned": "Réservation confirmée et table assignée",
     "tableAssignError": "Impossible d'assigner la table",
-    "noTablesAvailable": "Aucune table libre pour cet horaire et ce nombre de couverts"
+    "noTablesAvailable": "Aucune table libre pour cet horaire et ce nombre de couverts",
+    "statActive": "Réservations actives",
+    "statCovers": "Couverts prévus",
+    "statDepositPending": "Acompte en attente",
+    "showArchived": "Afficher annulées et terminées ({{count}})",
+    "hideArchived": "Masquer l'archive",
+    "activeEmptyTitle": "Aucune réservation active",
+    "activeEmptyHint": "Les réservations annulées ou terminées sont dans l'archive."
   },
   "waitlist": {
     "subtitle": "{{count}} clients en attente",

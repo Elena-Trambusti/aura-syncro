@@ -273,6 +273,8 @@
     "added": "Gericht hinzugefügt!",
     "updated": "Gericht aktualisiert!",
     "deleted": "Gericht gelöscht",
+    "archived": "Gericht aus der Karte entfernt (Bestellhistorie bleibt erhalten)",
+    "deleteError": "Gericht konnte nicht gelöscht werden",
     "newCategory": "Neue Kategorie",
     "editCategory": "Kategorie bearbeiten",
     "categoryName": "Kategoriename",
@@ -384,7 +386,14 @@
     "confirmWithTable": "Reservierung bestätigen",
     "tableAssigned": "Reservierung bestätigt und Tisch zugewiesen",
     "tableAssignError": "Tisch konnte nicht zugewiesen werden",
-    "noTablesAvailable": "Keine freien Tische für diese Uhrzeit und Gästeanzahl"
+    "noTablesAvailable": "Keine freien Tische für diese Uhrzeit und Gästeanzahl",
+    "statActive": "Aktive Reservierungen",
+    "statCovers": "Erwartete Gäste",
+    "statDepositPending": "Anzahlung ausstehend",
+    "showArchived": "Stornierte und abgeschlossene anzeigen ({{count}})",
+    "hideArchived": "Archiv ausblenden",
+    "activeEmptyTitle": "Keine aktiven Reservierungen",
+    "activeEmptyHint": "Stornierte oder abgeschlossene Reservierungen sind im Archiv."
   },
   "waitlist": {
     "subtitle": "{{count}} Gäste warten",

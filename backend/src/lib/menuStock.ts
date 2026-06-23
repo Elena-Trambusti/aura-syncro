@@ -93,9 +93,12 @@ export async function enrichCategoriesWithStock<T extends { items: Array<{ id: s
 }
 
 export function assertMenuItemOrderable(
-  menuItem: { available: boolean; inventoryLinks: StockLink[] },
+  menuItem: { available: boolean; archived?: boolean; inventoryLinks: StockLink[] },
   quantity: number,
 ): void {
+  if (menuItem.archived) {
+    throw Object.assign(new Error('archived'), { code: 'MENU_ITEM_ARCHIVED' })
+  }
   if (!menuItem.available) {
     throw Object.assign(new Error('unavailable'), { code: 'MENU_ITEM_UNAVAILABLE' })
   }

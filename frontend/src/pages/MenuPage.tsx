@@ -136,7 +136,13 @@ export default function MenuPage() {
   })
   const deleteItem = useMutation({
     mutationFn: (id: string) => api.delete(`/menu/items/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); toast.success(t('menu.deleted')) },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      toast.success(res.data?.archived ? t('menu.archived') : t('menu.deleted'))
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error || t('menu.deleteError'))
+    },
   })
   const toggleAvail = useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) => api.patch(`/menu/items/${id}/availability`, { available }),
@@ -170,7 +176,9 @@ export default function MenuPage() {
       if (selectedCat) setSelectedCat(null)
       toast.success(t('menu.categoryDeleted'))
     },
-    onError: () => toast.error(t('menu.categorySaveError')),
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error || t('menu.categorySaveError'))
+    },
   })
 
   const allItems = categories.flatMap(c =>

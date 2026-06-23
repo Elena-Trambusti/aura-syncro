@@ -40,6 +40,7 @@ function serializeCustomer(customer: {
     firstName,
     lastName,
     name: buildCustomerName(firstName, lastName) || customer.name,
+    tags: customer.tags ?? [],
     birthDate: customer.birthdate,
   }
 }
@@ -52,9 +53,10 @@ customersRouter.get('/stats', requirePermission('customers.read'), async (req: A
   })
 
   const total = customers.length
-  const vipCount = customers.filter(c =>
-    c.tags.includes('VIP') || c.totalVisits >= 10 || c.totalSpent >= 500,
-  ).length
+  const vipCount = customers.filter(c => {
+    const tags = c.tags ?? []
+    return tags.includes('VIP') || c.totalVisits >= 10 || c.totalSpent >= 500
+  }).length
   const avgSpent = total
     ? customers.reduce((sum, c) => sum + c.totalSpent, 0) / total
     : 0

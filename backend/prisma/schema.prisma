@@ -228,6 +228,8 @@ model MenuItem {
   preparationTime Int?
   available    Boolean    @default(true)
   featured     Boolean    @default(false)
+  /** true = rimosso dal menu ma conservato per storico ordini */
+  archived     Boolean    @default(false)
   sortOrder    Int        @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

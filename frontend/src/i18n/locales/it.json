@@ -273,6 +273,8 @@
     "added": "Piatto aggiunto!",
     "updated": "Piatto aggiornato!",
     "deleted": "Piatto eliminato",
+    "archived": "Piatto rimosso dal menu (storico ordini conservato)",
+    "deleteError": "Impossibile eliminare il piatto",
     "newCategory": "Nuova categoria",
     "editCategory": "Modifica categoria",
     "categoryName": "Nome categoria",
@@ -386,7 +388,14 @@
     "confirmWithTable": "Conferma prenotazione",
     "tableAssigned": "Prenotazione confermata e tavolo assegnato",
     "tableAssignError": "Impossibile assegnare il tavolo",
-    "noTablesAvailable": "Nessun tavolo libero per questo orario e numero di coperti"
+    "noTablesAvailable": "Nessun tavolo libero per questo orario e numero di coperti",
+    "statActive": "Prenotazioni attive",
+    "statCovers": "Coperti previsti",
+    "statDepositPending": "Caparra in attesa",
+    "showArchived": "Mostra annullate e completate ({{count}})",
+    "hideArchived": "Nascondi archivio",
+    "activeEmptyTitle": "Nessuna prenotazione attiva",
+    "activeEmptyHint": "Le prenotazioni annullate o completate sono nell'archivio."
   },
   "waitlist": {
     "subtitle": "{{count}} ospiti in attesa",
