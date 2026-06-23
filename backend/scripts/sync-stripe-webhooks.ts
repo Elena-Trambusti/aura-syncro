@@ -13,6 +13,7 @@ const EVENTS = [
   'customer.subscription.updated',
   'customer.subscription.deleted',
   'invoice.paid',
+  'invoice.payment_succeeded',
   'invoice.payment_failed',
 ] as const
 

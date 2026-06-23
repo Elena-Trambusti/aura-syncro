@@ -76,12 +76,12 @@ async function dispatchStripeEvent(event: StripeEventPayload): Promise<void> {
     return
   }
 
-  if (event.type === 'invoice.paid') {
+  if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
     const invoice = event.data.object as StripeInvoicePayload
     const result = await handleStripeInvoicePaid(invoice, event.id)
 
     if (result.processed) {
-      console.info('[stripe-webhook] invoice.paid elaborato', {
+      console.info(`[stripe-webhook] ${event.type} elaborato`, {
         invoiceId: result.stripeInvoiceId,
         status: result.status,
       })

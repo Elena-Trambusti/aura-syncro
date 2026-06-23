@@ -105,7 +105,8 @@ async function persistInvoiceRecord(params: {
 }
 
 /**
- * Gestisce invoice.paid: estrae dati fiscali, mappa regime IT/Canarie, invia XML ad Aruba.
+ * Gestisce invoice.paid / invoice.payment_succeeded:
+ * estrae dati fiscali, mappa regime forfettario IT / export, invia XML ad Aruba.
  */
 export async function handleStripeInvoicePaid(
   invoice: StripeInvoicePayload,
@@ -179,13 +180,16 @@ export async function handleStripeInvoicePaid(
         address: { line1: '', city: '', postalCode: '', country: 'IT' },
       },
       mapped: {
-        regime: 'IT_DOMESTIC',
+        regime: 'IT_FORFETTARIO',
         netAmount: 0,
         taxAmount: 0,
         grossAmount: (invoice.amount_paid ?? 0) / 100,
         taxRate: 0,
+        vatNature: 'N2.2',
         sdiRecipientCode: '0000000',
         recipientCodeType: 'SDI',
+        virtualStampRequired: false,
+        virtualStampAmount: 0,
       },
       status: 'failed',
       arubaErrorMessage: message,

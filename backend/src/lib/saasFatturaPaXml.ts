@@ -1,3 +1,4 @@
+import { AURA_SYNCRO_ISSUER } from '../config/fiscal'
 import type { SaasBillingAddress, SaasCustomerFiscalProfile, SaasMappedInvoice } from './saasFiscalMapping'
 
 export type SaasIssuerProfile = {
@@ -5,8 +6,10 @@ export type SaasIssuerProfile = {
   legalName: string
   fiscalCode?: string
   address: SaasBillingAddress
-  regimeFiscale: string
+  /** Sempre RF19 per emittente Aura Syncro */
+  regimeFiscale: typeof AURA_SYNCRO_ISSUER.fiscalRegimeCode
   email?: string
+  vatExemptionClause: string
 }
 
 export type SaasFatturaPaInput = {
@@ -55,7 +58,7 @@ function buildAliquotaIva(mapped: SaasMappedInvoice): string {
         </DatiRiepilogo>`
   }
 
-  const natura = mapped.vatNature ?? 'N2.1'
+  const natura = mapped.vatNature ?? AURA_SYNCRO_ISSUER.vatNatureForfettario
   return `
         <DettaglioLinee>
           <NumeroLinea>1</NumeroLinea>
@@ -75,6 +78,13 @@ function buildAliquotaIva(mapped: SaasMappedInvoice): string {
         </DatiRiepilogo>`
 }
 
+function buildBolloBlock(mapped: SaasMappedInvoice): string {
+  if (!mapped.virtualStampRequired) return ''
+  return `
+        <BolloVirtuale>SI</BolloVirtuale>
+        <ImportoBollo>${formatAmount(mapped.virtualStampAmount)}</ImportoBollo>`
+}
+
 /**
  * Genera XML FatturaPA 1.2 (formato SDI) per fattura SaaS verso ristorante.
  * Il file viene inviato ad Aruba non firmato (POST /services/invoice/upload).
@@ -89,6 +99,9 @@ export function buildSaasFatturaPaXml(input: SaasFatturaPaInput): string {
     : ''
   const provinciaEmittente = issuer.address.province
     ? `<Provincia>${escapeXml(issuer.address.province)}</Provincia>`
+    : ''
+  const codiceFiscaleEmittente = issuer.fiscalCode
+    ? `<CodiceFiscale>${escapeXml(issuer.fiscalCode)}</CodiceFiscale>`
     : ''
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -110,10 +123,11 @@ export function buildSaasFatturaPaXml(input: SaasFatturaPaInput): string {
           <IdPaese>IT</IdPaese>
           <IdCodice>${escapeXml(issuer.vatNumber.replace(/^IT/i, ''))}</IdCodice>
         </IdFiscaleIVA>
+        ${codiceFiscaleEmittente}
         <Anagrafica>
           <Denominazione>${escapeXml(issuer.legalName)}</Denominazione>
         </Anagrafica>
-        <RegimeFiscale>${escapeXml(issuer.regimeFiscale)}</RegimeFiscale>
+        <RegimeFiscale>${escapeXml(AURA_SYNCRO_ISSUER.fiscalRegimeCode)}</RegimeFiscale>
       </DatiAnagrafici>
       <Sede>
         <Indirizzo>${escapeXml(issuer.address.line1)}</Indirizzo>
@@ -149,8 +163,9 @@ export function buildSaasFatturaPaXml(input: SaasFatturaPaInput): string {
         <Divisa>${escapeXml(currency)}</Divisa>
         <Data>${formatDate(invoiceDate)}</Data>
         <Numero>${escapeXml(invoiceNumber)}</Numero>
-        <ImportoTotaleDocumento>${formatAmount(mapped.grossAmount)}</ImportoTotaleDocumento>
+        <ImportoTotaleDocumento>${formatAmount(mapped.grossAmount)}</ImportoTotaleDocumento>${buildBolloBlock(mapped)}
         <Causale>${escapeXml(description)}</Causale>
+        <Causale>${escapeXml(issuer.vatExemptionClause)}</Causale>
       </DatiGeneraliDocumento>
     </DatiGenerali>
     <DatiBeniServizi>
@@ -168,24 +183,35 @@ export function buildSaasFatturaPaXml(input: SaasFatturaPaInput): string {
 </p:FatturaElettronica>`
 }
 
+/**
+ * Profilo emittente: identità fissa da config/fiscal.ts (RF19, P.IVA).
+ * Sede e codice fiscale completabili via env per deploy.
+ */
 export function loadSaasIssuerProfile(): SaasIssuerProfile {
-  const vatNumber = process.env.ARUBA_FE_ISSUER_VAT?.trim()
-  const legalName = process.env.ARUBA_FE_ISSUER_LEGAL_NAME?.trim()
+  const vatNumber = (process.env.ARUBA_FE_ISSUER_VAT?.trim() || AURA_SYNCRO_ISSUER.vatNumber).replace(/\s+/g, '')
+  const legalName = process.env.ARUBA_FE_ISSUER_LEGAL_NAME?.trim() || AURA_SYNCRO_ISSUER.legalName
 
-  if (!vatNumber || !legalName) {
-    throw new Error('ARUBA_FE_ISSUER_VAT e ARUBA_FE_ISSUER_LEGAL_NAME sono obbligatori')
+  const line1 = process.env.ARUBA_FE_ISSUER_STREET?.trim() || ''
+  const city = process.env.ARUBA_FE_ISSUER_CITY?.trim() || ''
+  const postalCode = process.env.ARUBA_FE_ISSUER_ZIP?.trim() || ''
+
+  if (!line1 || !city || !postalCode) {
+    throw new Error(
+      'Sede emittente incompleta: configurare ARUBA_FE_ISSUER_STREET, ARUBA_FE_ISSUER_CITY e ARUBA_FE_ISSUER_ZIP',
+    )
   }
 
   return {
-    vatNumber: vatNumber.replace(/\s+/g, ''),
+    vatNumber,
     legalName,
     fiscalCode: process.env.ARUBA_FE_ISSUER_FISCAL_CODE?.trim(),
-    regimeFiscale: process.env.ARUBA_FE_ISSUER_REGIME?.trim() || 'RF01',
+    regimeFiscale: AURA_SYNCRO_ISSUER.fiscalRegimeCode,
     email: process.env.ARUBA_FE_ISSUER_EMAIL?.trim(),
+    vatExemptionClause: AURA_SYNCRO_ISSUER.vatExemptionClause,
     address: {
-      line1: process.env.ARUBA_FE_ISSUER_STREET?.trim() || '',
-      city: process.env.ARUBA_FE_ISSUER_CITY?.trim() || '',
-      postalCode: process.env.ARUBA_FE_ISSUER_ZIP?.trim() || '',
+      line1,
+      city,
+      postalCode,
       province: process.env.ARUBA_FE_ISSUER_PROVINCE?.trim(),
       country: (process.env.ARUBA_FE_ISSUER_COUNTRY?.trim() || 'IT').toUpperCase(),
     },

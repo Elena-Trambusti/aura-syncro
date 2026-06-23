@@ -1,9 +1,11 @@
+import { AURA_SYNCRO_ISSUER } from '../config/fiscal'
 import type { StripeCustomerPayload, StripeInvoicePayload } from './stripeTypes'
 
-/** Natura IVA per operazioni non soggette / export (modificabile via env) */
+/** Natura IVA per export estero / Canarie (modificabile via env) */
 export const SAAS_VAT_NATURE_EXPORT = process.env.ARUBA_FE_VAT_NATURE_EXPORT?.trim() || 'N2.1'
 export const SAAS_VAT_NATURE_CANARY = process.env.ARUBA_FE_VAT_NATURE_CANARY?.trim() || 'N3.2'
-export const SAAS_IT_VAT_RATE = 0.22
+/** Natura IVA fissa per abbonamenti SaaS in regime forfettario (emittente RF19) */
+export const SAAS_VAT_NATURE_FORFETTARIO = AURA_SYNCRO_ISSUER.vatNatureForfettario
 export const SAAS_CANARY_SDI_CODE = 'XXXXXXX'
 
 export type SaasBillingAddress = {
@@ -25,7 +27,7 @@ export type SaasCustomerFiscalProfile = {
   email?: string
 }
 
-export type SaasFiscalRegime = 'IT_DOMESTIC' | 'ES_CANARY_EXPORT' | 'FOREIGN_EXPORT'
+export type SaasFiscalRegime = 'IT_FORFETTARIO' | 'ES_CANARY_EXPORT' | 'FOREIGN_EXPORT'
 
 export type SaasMappedInvoice = {
   regime: SaasFiscalRegime
@@ -37,6 +39,9 @@ export type SaasMappedInvoice = {
   sdiRecipientCode: string
   pec?: string
   recipientCodeType: 'SDI' | 'PEC'
+  /** Bollo virtuale €2 se imponibile > soglia legale */
+  virtualStampRequired: boolean
+  virtualStampAmount: number
 }
 
 export class SaasFiscalDataError extends Error {
@@ -172,67 +177,68 @@ export function validateSaasCustomerFiscalProfile(profile: SaasCustomerFiscalPro
   }
 }
 
+function stampFields(grossAmount: number): Pick<SaasMappedInvoice, 'virtualStampRequired' | 'virtualStampAmount'> {
+  const required = grossAmount > AURA_SYNCRO_ISSUER.virtualStampThreshold
+  return {
+    virtualStampRequired: required,
+    virtualStampAmount: required ? AURA_SYNCRO_ISSUER.virtualStampAmount : 0,
+  }
+}
+
 /**
- * Branching fiscale Italia vs Canarie vs estero.
- * Canarie: IVA 0%, Natura export, SDI = XXXXXXX.
+ * Branching fiscale per fatture SaaS Aura Syncro.
+ * Emittente in RF19: clienti IT → IVA 0% + N2.2 (non soggette forfettario).
+ * Canarie / estero → export con nature dedicate.
  */
 export function mapSaasInvoiceFiscalData(
   profile: SaasCustomerFiscalProfile,
   invoice: StripeInvoicePayload,
 ): SaasMappedInvoice {
-  const grossAmount = (invoice.amount_paid ?? invoice.total ?? 0) / 100
-  const stripeTax = (invoice.tax ?? 0) / 100
-  const stripeSubtotal = (invoice.subtotal_excluding_tax ?? invoice.subtotal ?? 0) / 100
+  const grossAmount = roundMoney((invoice.amount_paid ?? invoice.total ?? 0) / 100)
+  const stamp = stampFields(grossAmount)
 
   if (profile.address.country === 'IT') {
-    let netAmount: number
-    let taxAmount: number
-
-    if (stripeTax > 0) {
-      netAmount = stripeSubtotal
-      taxAmount = stripeTax
-    } else {
-      netAmount = grossAmount / (1 + SAAS_IT_VAT_RATE)
-      taxAmount = grossAmount - netAmount
-    }
-
     const sdi = profile.sdiRecipientCode?.toUpperCase()
     const usePec = !sdi && !!profile.pec
 
     return {
-      regime: 'IT_DOMESTIC',
-      netAmount: roundMoney(netAmount),
-      taxAmount: roundMoney(taxAmount),
-      grossAmount: roundMoney(grossAmount),
-      taxRate: SAAS_IT_VAT_RATE,
+      regime: 'IT_FORFETTARIO',
+      netAmount: grossAmount,
+      taxAmount: 0,
+      grossAmount,
+      taxRate: 0,
+      vatNature: SAAS_VAT_NATURE_FORFETTARIO,
       sdiRecipientCode: sdi ?? profile.pec ?? '0000000',
       pec: usePec ? profile.pec : undefined,
       recipientCodeType: usePec ? 'PEC' : 'SDI',
+      ...stamp,
     }
   }
 
   if (isCanaryIslands(profile)) {
     return {
       regime: 'ES_CANARY_EXPORT',
-      netAmount: roundMoney(grossAmount),
+      netAmount: grossAmount,
       taxAmount: 0,
-      grossAmount: roundMoney(grossAmount),
+      grossAmount,
       taxRate: 0,
       vatNature: SAAS_VAT_NATURE_CANARY,
       sdiRecipientCode: SAAS_CANARY_SDI_CODE,
       recipientCodeType: 'SDI',
+      ...stamp,
     }
   }
 
   return {
     regime: 'FOREIGN_EXPORT',
-    netAmount: roundMoney(grossAmount),
+    netAmount: grossAmount,
     taxAmount: 0,
-    grossAmount: roundMoney(grossAmount),
+    grossAmount,
     taxRate: 0,
     vatNature: SAAS_VAT_NATURE_EXPORT,
     sdiRecipientCode: SAAS_CANARY_SDI_CODE,
     recipientCodeType: 'SDI',
+    ...stamp,
   }
 }
 
