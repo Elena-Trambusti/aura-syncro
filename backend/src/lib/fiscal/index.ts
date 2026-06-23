@@ -1,4 +1,5 @@
 export * from './fiscalRegion'
 export * from './fiscalIntegrityChain'
 export * from './arubaFiducialService'
+export { ArubaInvoiceService } from '../arubaInvoiceService'
 export { withOrderIntegrityGuard } from './orderIntegrityGuard'

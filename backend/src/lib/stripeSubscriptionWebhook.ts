@@ -4,6 +4,7 @@ export type CheckoutSessionPayload = {
   metadata?: Record<string, string> | null
   client_reference_id?: string | null
   subscription?: string | { id: string } | null
+  customer?: string | { id: string } | null
   mode?: string | null
 }
 
@@ -50,6 +51,11 @@ export async function activateRestaurantSubscription(
       ? session.subscription
       : session.subscription?.id ?? null
 
+  const stripeCustomerId =
+    typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id ?? null
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     select: { id: true, settings: { select: { id: true } } },
@@ -67,6 +73,7 @@ export async function activateRestaurantSubscription(
         hasActiveSubscription: true,
         planTier: 'PRO',
         ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+        ...(stripeCustomerId ? { stripeCustomerId } : {}),
       },
     })
   } else {
@@ -76,6 +83,7 @@ export async function activateRestaurantSubscription(
         hasActiveSubscription: true,
         planTier: 'PRO',
         stripeSubscriptionId: subscriptionId,
+        stripeCustomerId,
       },
     })
   }

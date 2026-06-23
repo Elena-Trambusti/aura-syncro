@@ -69,6 +69,8 @@ model Restaurant {
   invoices       Invoice[]
   fiscalSequences FiscalSequence[]
   fiscalChainState FiscalChainState?
+  stripeWebhookEvents StripeWebhookEvent[]
+  saasElectronicInvoices SaasElectronicInvoice[]
 }
 
 model RestaurantSettings {
@@ -107,6 +109,8 @@ model RestaurantSettings {
   invoicePrefix    String      @default("FATT")
   /** Abbonamento SaaS Aura Syncro Premium */
   hasActiveSubscription Boolean  @default(false)
+  /** Cliente Stripe collegato al tenant (fatturazione SaaS) */
+  stripeCustomerId      String?
   stripeSubscriptionId  String?
   /** Abbonamento add-on piano Pro (CRM, AI, marketing…) */
   stripeProSubscriptionId String?
@@ -622,4 +626,68 @@ model Invoice {
   @@unique([restaurantId, fiscalYear, sequence])
   @@unique([restaurantId, documentNumber])
   @@index([restaurantId, issuedAt])
+}
+
+// ===== FATTURAZIONE ELETTRONICA SAAS (Aura Syncro → ristoranti) =====
+
+enum StripeWebhookStatus {
+  processing
+  succeeded
+  failed
+}
+
+enum SaasElectronicInvoiceStatus {
+  pending
+  sent
+  failed
+}
+
+/** Ledger idempotenza eventi Stripe (evt_xxx) */
+model StripeWebhookEvent {
+  id            String              @id @default(cuid())
+  stripeEventId String              @unique
+  type          String
+  livemode      Boolean             @default(false)
+  status        StripeWebhookStatus @default(processing)
+  restaurantId  String?
+  restaurant    Restaurant?         @relation(fields: [restaurantId], references: [id])
+  metadata      Json?
+  errorMessage  String?
+  processedAt   DateTime?
+  createdAt     DateTime            @default(now())
+
+  @@index([type, createdAt])
+  @@index([restaurantId])
+}
+
+/** Fattura elettronica emessa ad Aruba/SDI per pagamento abbonamento SaaS */
+model SaasElectronicInvoice {
+  id                  String                      @id @default(cuid())
+  restaurantId        String?
+  restaurant          Restaurant?                 @relation(fields: [restaurantId], references: [id])
+  stripeInvoiceId     String                      @unique
+  stripeCustomerId    String?
+  stripeEventId       String?
+  status              SaasElectronicInvoiceStatus @default(pending)
+  fiscalRegime        String
+  legalName           String
+  vatNumber           String
+  sdiRecipientCode    String?
+  pec                 String?
+  billingAddress      Json
+  netAmount           Float
+  taxAmount           Float
+  grossAmount         Float
+  taxRate             Float
+  vatNature           String?
+  currency            String                      @default("EUR")
+  arubaUploadFileName String?
+  arubaErrorCode      String?
+  arubaErrorMessage   String?
+  sentAt              DateTime?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  @@index([restaurantId, createdAt])
+  @@index([status])
 }

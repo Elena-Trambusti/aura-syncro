@@ -1,4 +1,5 @@
-﻿import { useQuery } from '@tanstack/react-query'
+﻿import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, formatLongDate, getIntlLocale } from '../lib/utils'
@@ -59,6 +60,86 @@ function ChartError({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center py-12 text-slate-500">
       <AlertCircle className="w-8 h-8 mb-2 text-red-400" />
       <p className="text-sm text-red-600">{message}</p>
+    </div>
+  )
+}
+
+function RevenueTooltip({
+  active,
+  payload,
+  label,
+  locale,
+}: {
+  active?: boolean
+  payload?: Array<{ value?: number }>
+  label?: string
+  locale: string
+}) {
+  if (!active || !payload?.length) return null
+
+  const dateLabel = label
+    ? new Date(label).toLocaleDateString(locale, {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      })
+    : ''
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-md">
+      <p className="text-xs font-medium text-slate-500">{dateLabel}</p>
+      <p className="mt-0.5 text-sm font-bold tabular-nums text-slate-900">
+        {formatCurrency(Number(payload[0]?.value) || 0)}
+      </p>
+    </div>
+  )
+}
+
+function TopDishRow({
+  rank,
+  name,
+  quantity,
+  maxQuantity,
+  barColor,
+  piecesLabel,
+}: {
+  rank: number
+  name: string
+  quantity: number
+  maxQuantity: number
+  barColor: string
+  piecesLabel: string
+}) {
+  const [animated, setAnimated] = useState(false)
+  const pct = Math.min(100, (quantity / maxQuantity) * 100)
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAnimated(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  return (
+    <div className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors duration-200 hover:bg-slate-50">
+      <span className="w-4 text-xs font-bold text-slate-400 transition-colors group-hover:text-amber-500">
+        {rank}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-slate-900">{name}</p>
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-1.5 rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: animated ? `${pct}%` : '0%',
+              backgroundColor: barColor,
+              transitionDelay: `${rank * 80}ms`,
+            }}
+          />
+        </div>
+      </div>
+      <span className="text-xs font-semibold tabular-nums text-slate-500 transition-colors group-hover:text-slate-700">
+        {quantity} {piecesLabel}
+      </span>
     </div>
   )
 }
@@ -161,14 +242,14 @@ export default function DashboardPage() {
               <ChartError message={t('common.loadError')} />
             ) : (
               <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={revenueData || []}>
+                <AreaChart data={revenueData || []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={theme.color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={theme.color} stopOpacity={0} />
+                      <stop offset="0%" stopColor={BRAND.gold} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={BRAND.amber} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={d => new Date(d).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })}
@@ -181,19 +262,30 @@ export default function DashboardPage() {
                     tick={{ fontSize: 12, fill: '#64748b' }}
                     axisLine={false}
                     tickLine={false}
+                    width={48}
                   />
                   <Tooltip
-                    formatter={(v) => [formatCurrency(Number(v) || 0), t('dashboard.revenueLabel')]}
-                    labelFormatter={d => new Date(d).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit' })}
-                    contentStyle={{
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
+                    cursor={{ stroke: BRAND.gold, strokeWidth: 1, strokeDasharray: '4 4' }}
+                    content={({ active, payload, label }) => (
+                      <RevenueTooltip
+                        active={active}
+                        payload={payload?.map(entry => ({ value: Number(entry.value) || 0 }))}
+                        label={typeof label === 'string' ? label : String(label ?? '')}
+                        locale={locale}
+                      />
+                    )}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke={theme.color} strokeWidth={2.5} fill="url(#revenueGradient)" />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke={BRAND.gold}
+                    strokeWidth={2.5}
+                    fill="url(#revenueGradient)"
+                    isAnimationActive
+                    animationDuration={1200}
+                    animationEasing="ease-out"
+                    activeDot={{ r: 5, fill: BRAND.gold, stroke: '#fff', strokeWidth: 2 }}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -204,24 +296,17 @@ export default function DashboardPage() {
             {topItemsError ? (
               <ChartError message={t('common.loadError')} />
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (
-                  <div key={item.menuItemId} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-400 w-4">{idx + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{item.name}</p>
-                      <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
-                        <div
-                          className="h-1.5 rounded-full"
-                          style={{
-                            width: `${Math.min(100, (item.quantity / ((topItems?.[0]?.quantity || 1))) * 100)}%`,
-                            backgroundColor: theme.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-500">{item.quantity} {t('common.pieces')}</span>
-                  </div>
+                  <TopDishRow
+                    key={item.menuItemId}
+                    rank={idx + 1}
+                    name={item.name}
+                    quantity={item.quantity}
+                    maxQuantity={topItems?.[0]?.quantity || 1}
+                    barColor={theme.color}
+                    piecesLabel={t('common.pieces')}
+                  />
                 ))}
                 {(!topItems || topItems.length === 0) && (
                   <p className="text-sm text-slate-500 text-center py-4">{t('common.noData')}</p>

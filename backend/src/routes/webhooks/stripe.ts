@@ -2,13 +2,100 @@ import { Router, Request, Response } from 'express'
 import { stripe } from '../../lib/stripe'
 import { handleCheckoutSessionCompleted } from '../../lib/stripeCheckoutWebhook'
 import { syncRestaurantSubscriptionStatus } from '../../lib/stripeSubscriptionWebhook'
+import { handleStripeInvoicePaid } from '../../lib/stripeInvoiceWebhook'
+import {
+  claimStripeWebhookEvent,
+  markStripeWebhookFailed,
+  markStripeWebhookSucceeded,
+} from '../../lib/stripeWebhookIdempotency'
+import type {
+  StripeCheckoutSessionPayload,
+  StripeEventPayload,
+  StripeInvoicePayload,
+  StripeSubscriptionPayload,
+} from '../../lib/stripeTypes'
 import { asyncHandler } from '../../lib/asyncHandler'
 
 export const stripeWebhookRouter = Router()
 
+async function resolveRestaurantIdFromEvent(event: StripeEventPayload): Promise<string | null> {
+  const obj = event.data.object
+  const metadata = obj.metadata as Record<string, string> | undefined
+
+  if (metadata?.restaurantId) return metadata.restaurantId
+  if (typeof obj.client_reference_id === 'string') return obj.client_reference_id
+
+  return null
+}
+
+async function dispatchStripeEvent(event: StripeEventPayload): Promise<void> {
+  if (event.type === 'checkout.session.completed') {
+    await handleCheckoutSessionCompleted(event.data.object as StripeCheckoutSessionPayload)
+    return
+  }
+
+  if (
+    event.type === 'customer.subscription.updated'
+    || event.type === 'customer.subscription.deleted'
+  ) {
+    const subscription = event.data.object as StripeSubscriptionPayload
+    const result = await syncRestaurantSubscriptionStatus(subscription)
+
+    if (result) {
+      console.info(
+        '[stripe-webhook] Abbonamento sincronizzato',
+        result.restaurantId,
+        result.status,
+        result.hasActiveSubscription ? 'attivo' : 'disattivato',
+      )
+    }
+    return
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as StripeInvoicePayload
+    const subId = typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription?.id
+
+    if (subId) {
+      const subscription = await stripe.subscriptions.retrieve(subId)
+      const result = await syncRestaurantSubscriptionStatus({
+        id: subscription.id,
+        status: subscription.status,
+        metadata: subscription.metadata as Record<string, string>,
+      })
+      if (result) {
+        console.warn(
+          '[stripe-webhook] Pagamento abbonamento fallito',
+          result.restaurantId,
+          subscription.status,
+        )
+      }
+    }
+    return
+  }
+
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object as StripeInvoicePayload
+    const result = await handleStripeInvoicePaid(invoice, event.id)
+
+    if (result.processed) {
+      console.info('[stripe-webhook] invoice.paid elaborato', {
+        invoiceId: result.stripeInvoiceId,
+        status: result.status,
+      })
+    }
+
+    if (result.processed && result.status === 'failed' && result.retryable) {
+      throw new Error(`Invio fattura elettronica fallito (retry): ${result.stripeInvoiceId}`)
+    }
+  }
+}
+
 /**
  * POST /api/webhooks/stripe
- * Notifiche Stripe: abbonamento SaaS, Pro, ordini guest e caparre.
+ * Notifiche Stripe: abbonamento SaaS, fatturazione elettronica, ordini guest e caparre.
  * Richiede body raw — vedi index.ts.
  */
 stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -25,14 +112,14 @@ stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): 
     return
   }
 
-  let event
+  let event: StripeEventPayload
 
   try {
     event = stripe.webhooks.constructEvent(
       req.body as Buffer,
       sig,
       webhookSecret,
-    )
+    ) as unknown as StripeEventPayload
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Firma non valida'
     console.error('[stripe-webhook] Verifica firma fallita:', message)
@@ -40,53 +127,22 @@ stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): 
     return
   }
 
+  const restaurantId = await resolveRestaurantIdFromEvent(event)
+  const claim = await claimStripeWebhookEvent(event, restaurantId)
+
+  if (claim.duplicate) {
+    console.info('[stripe-webhook] Evento duplicato ignorato:', event.id, claim.status)
+    res.status(200).json({ received: true, duplicate: true, status: claim.status })
+    return
+  }
+
   try {
-    if (event.type === 'checkout.session.completed') {
-      await handleCheckoutSessionCompleted(event.data.object)
-    }
-
-    if (
-      event.type === 'customer.subscription.updated'
-      || event.type === 'customer.subscription.deleted'
-    ) {
-      const subscription = event.data.object as { id: string; status: string; metadata?: Record<string, string> }
-      const result = await syncRestaurantSubscriptionStatus(subscription)
-
-      if (result) {
-        console.info(
-          '[stripe-webhook] Abbonamento sincronizzato',
-          result.restaurantId,
-          result.status,
-          result.hasActiveSubscription ? 'attivo' : 'disattivato',
-        )
-      }
-    }
-
-    if (event.type === 'invoice.payment_failed') {
-      const invoice = event.data.object as { subscription?: string | { id: string } | null }
-      const subId = typeof invoice.subscription === 'string'
-        ? invoice.subscription
-        : invoice.subscription?.id
-      if (subId) {
-        const subscription = await stripe.subscriptions.retrieve(subId)
-        const result = await syncRestaurantSubscriptionStatus({
-          id: subscription.id,
-          status: subscription.status,
-          metadata: subscription.metadata as Record<string, string>,
-        })
-        if (result) {
-          console.warn(
-            '[stripe-webhook] Pagamento abbonamento fallito',
-            result.restaurantId,
-            subscription.status,
-          )
-        }
-      }
-    }
-
+    await dispatchStripeEvent(event)
+    await markStripeWebhookSucceeded(event.id)
     res.status(200).json({ received: true })
   } catch (err) {
-    console.error('[stripe-webhook] Errore elaborazione evento:', err)
+    console.error('[stripe-webhook] Errore elaborazione evento:', event.type, event.id, err)
+    await markStripeWebhookFailed(event.id, err)
     res.status(500).json({ error: 'Errore interno webhook' })
   }
 }))

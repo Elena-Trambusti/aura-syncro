@@ -12,6 +12,8 @@ const REQUIRED_EVENTS = [
   'checkout.session.completed',
   'customer.subscription.updated',
   'customer.subscription.deleted',
+  'invoice.paid',
+  'invoice.payment_failed',
 ] as const
 
 function fail(msg: string): never {
