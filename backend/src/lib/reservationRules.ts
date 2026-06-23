@@ -25,7 +25,7 @@ export async function validateReservationSlot(
   })
 
   const maxCovers = settings?.maxCoversPerSlot ?? 999
-  const autoConfirm = settings?.autoConfirmReservations ?? false
+  const autoConfirm = settings?.autoConfirmReservations ?? true
 
   if (input.covers > maxCovers) {
     throw new ReservationValidationError(

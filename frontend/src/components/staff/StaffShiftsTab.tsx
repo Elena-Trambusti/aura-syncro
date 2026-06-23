@@ -5,7 +5,7 @@ import { api } from '../../lib/api'
 import { getRoleLabel, cn } from '../../lib/utils'
 import { useRealtimeQuery } from '../../hooks/useRealtimeInvalidation'
 import {
-  ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X,
+  ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X, Info,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
@@ -15,6 +15,7 @@ interface StaffMember {
   id: string
   name: string
   role: string
+  active?: boolean
 }
 
 interface Shift {
@@ -38,10 +39,13 @@ const STATUS_STYLE: Record<Shift['status'], string> = {
   ABSENT: 'bg-red-100 text-red-700',
 }
 
+/** Lunedì come primo giorno della settimana (IT/EU). */
 function getWeekStart(date = new Date()): Date {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() - d.getDay())
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
   return d
 }
 
@@ -52,10 +56,17 @@ function addDays(date: Date, days: number): Date {
 }
 
 function toDateInput(d: Date): string {
-  return d.toISOString().split('T')[0]
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
-export default function StaffShiftsTab() {
+interface StaffShiftsTabProps {
+  onGoToTeam?: () => void
+}
+
+export default function StaffShiftsTab({ onGoToTeam }: StaffShiftsTabProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
@@ -64,24 +75,26 @@ export default function StaffShiftsTab() {
   const [form, setForm] = useState({
     userId: '',
     date: toDateInput(new Date()),
-    startTime: '09:00',
-    endTime: '17:00',
+    startTime: '18:00',
+    endTime: '23:00',
     notes: '',
   })
 
   useRealtimeQuery(['shift:created', 'shift:updated', 'shift:deleted'], 'staff-shifts')
 
-  const weekIso = weekStart.toISOString()
+  const weekKey = toDateInput(weekStart)
 
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
-    queryKey: tq(tk, 'staff-shifts', weekIso),
-    queryFn: () => api.get(`/staff/shifts?week=${weekIso}`).then(r => r.data),
+    queryKey: tq(tk, 'staff-shifts', weekKey),
+    queryFn: () => api.get(`/staff/shifts?week=${weekKey}`).then(r => r.data),
   })
 
   const { data: staff = [] } = useQuery<StaffMember[]>({
     queryKey: tq(tk, 'staff'),
     queryFn: () => api.get('/staff').then(r => r.data),
   })
+
+  const assignableStaff = staff.filter(m => m.role !== 'OWNER' && m.active !== false)
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -99,14 +112,24 @@ export default function StaffShiftsTab() {
     for (const shift of shifts) {
       const key = toDateInput(new Date(shift.date))
       if (map.has(key)) map.get(key)!.push(shift)
+      else {
+        const existing = map.get(key) ?? []
+        existing.push(shift)
+        map.set(key, existing)
+      }
     }
     return map
   }, [shifts, weekDays])
 
+  const openFormForDate = (dateStr: string) => {
+    setForm(f => ({ ...f, date: dateStr }))
+    setShowForm(true)
+  }
+
   const createShift = useMutation({
     mutationFn: () => api.post('/staff/shifts', {
       userId: form.userId,
-      date: new Date(`${form.date}T00:00:00`).toISOString(),
+      date: new Date(`${form.date}T12:00:00`).toISOString(),
       startTime: form.startTime,
       endTime: form.endTime,
       notes: form.notes || undefined,
@@ -126,6 +149,7 @@ export default function StaffShiftsTab() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       toast.success(t('staff.clockUpdated'))
     },
+    onError: () => toast.error(t('staff.shiftAddError')),
   })
 
   const deleteShift = useMutation({
@@ -140,6 +164,36 @@ export default function StaffShiftsTab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-2 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">{t('staff.shiftsHowItWorksTitle')}</p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>{t('staff.shiftsHowItWorksPlan')}</li>
+              <li>{t('staff.shiftsHowItWorksClock')}</li>
+              <li>{t('staff.shiftsHowItWorksClick')}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {assignableStaff.length === 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">{t('staff.shiftsNeedTeamTitle')}</p>
+          <p className="mt-1 text-amber-800">{t('staff.shiftsNeedTeamHint')}</p>
+          {onGoToTeam && (
+            <button
+              type="button"
+              onClick={onGoToTeam}
+              className="mt-3 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-600"
+            >
+              {t('staff.shiftsGoToTeam')}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -169,8 +223,9 @@ export default function StaffShiftsTab() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
+          onClick={() => openFormForDate(toDateInput(new Date()))}
+          disabled={assignableStaff.length === 0}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           {t('staff.addShift')}
@@ -182,33 +237,44 @@ export default function StaffShiftsTab() {
           <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {weekDays.map(day => {
             const key = toDateInput(day)
             const dayShifts = shiftsByDay.get(key) ?? []
             const isToday = key === toDateInput(new Date())
 
             return (
-              <div
+              <button
                 key={key}
+                type="button"
+                onClick={() => assignableStaff.length > 0 && openFormForDate(key)}
                 className={cn(
-                  'rounded-xl border bg-white p-4 shadow-sm',
+                  'rounded-xl border bg-white p-4 shadow-sm text-left transition-colors',
                   isToday ? 'border-amber-300 ring-1 ring-amber-200' : 'border-slate-200',
+                  assignableStaff.length > 0 && 'hover:border-amber-300 hover:bg-amber-50/30 cursor-pointer',
+                  assignableStaff.length === 0 && 'cursor-default',
                 )}
               >
-                <p className="mb-3 text-sm font-semibold text-slate-900">
-                  {day.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}
-                  {isToday && (
-                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
-                      {t('staff.today')}
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {day.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}
+                    {isToday && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                        {t('staff.today')}
+                      </span>
+                    )}
+                  </p>
+                  {assignableStaff.length > 0 && (
+                    <span className="rounded-lg border border-slate-200 p-1 text-slate-400">
+                      <Plus className="h-3.5 w-3.5" />
                     </span>
                   )}
-                </p>
+                </div>
 
                 {dayShifts.length === 0 ? (
-                  <p className="text-xs text-slate-400">{t('staff.noShiftsDay')}</p>
+                  <p className="text-xs text-slate-400">{t('staff.noShiftsDayClick')}</p>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="space-y-2" onClick={e => e.stopPropagation()}>
                     {dayShifts.map(shift => (
                       <li
                         key={shift.id}
@@ -260,7 +326,7 @@ export default function StaffShiftsTab() {
                     ))}
                   </ul>
                 )}
-              </div>
+              </button>
             )
           })}
         </div>
@@ -287,7 +353,7 @@ export default function StaffShiftsTab() {
                   className="saas-input mt-1 w-full py-2.5 text-sm"
                 >
                   <option value="">{t('staff.selectMember')}</option>
-                  {staff.filter(m => m.role !== 'OWNER').map(m => (
+                  {assignableStaff.map(m => (
                     <option key={m.id} value={m.id}>{m.name} ({getRoleLabel(m.role)})</option>
                   ))}
                 </select>

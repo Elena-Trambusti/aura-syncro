@@ -224,7 +224,10 @@
     "transferModeHint": "Toca una mesa libre en el mapa",
     "transferCancel": "Cancelar traslado",
     "transferFromHere": "Desde aquí",
-    "transferTapHere": "Toca"
+    "transferTapHere": "Toca",
+    "reservedTitle": "Mesa {{number}} — Reservada",
+    "seatAndOpenOrder": "Sentar y abrir pedido",
+    "reservationSeated": "Comensales en mesa — puedes tomar el pedido"
   },
   "orders": {
     "title": "Pedidos",
@@ -361,7 +364,27 @@
     "depositPaid": "Depósito pagado",
     "payDeposit": "Pagar depósito",
     "depositRequiredNotice": "Reserva confirmada — se requiere el pago del depósito",
-    "depositPayError": "No se pudo iniciar el pago del depósito"
+    "depositPayError": "No se pudo iniciar el pago del depósito",
+    "howItWorksTitle": "Cómo funciona esta sección",
+    "howItWorksBookings": "Reservas: reservas con fecha y hora (teléfono, manual o enlace público). Flujo: Confirmar + asignar mesa → En mesa → Completada.",
+    "howItWorksWaitlist": "Lista de espera: clientes sin reserva cuando la sala está llena — no es lo mismo que las reservas.",
+    "howItWorksPublic": "Enlace público: comparte el enlace de abajo (o el QR en Ajustes) para que los clientes reserven online.",
+    "workflowHint": "Usa los botones de cada fila para avanzar el estado durante el servicio.",
+    "publicBookingLink": "Enlace de reservas online",
+    "openPublicBooking": "Vista previa",
+    "markConfirm": "Confirmar",
+    "markSeated": "Marcar en mesa",
+    "markCompleted": "Completada",
+    "markNoShow": "No presentado",
+    "copyDepositLink": "Copiar enlace depósito",
+    "depositLinkCopied": "Enlace del depósito copiado — envíalo al cliente por WhatsApp o SMS",
+    "noReservationsHint": "Crea una reserva manual o comparte el enlace público con los clientes.",
+    "assignTable": "Confirmar y asignar mesa",
+    "assignTableTitle": "Elige la mesa",
+    "confirmWithTable": "Confirmar reserva",
+    "tableAssigned": "Reserva confirmada y mesa asignada",
+    "tableAssignError": "No se pudo asignar la mesa",
+    "noTablesAvailable": "No hay mesas libres para esta hora y número de comensales"
   },
   "waitlist": {
     "subtitle": "{{count}} clientes en espera",
@@ -492,7 +515,15 @@
       "active": "En curso",
       "completed": "Completado",
       "absent": "Ausente"
-    }
+    },
+    "shiftsHowItWorksTitle": "Cómo funcionan los turnos",
+    "shiftsHowItWorksPlan": "Planifica quién trabaja cada día (camareros, chefs, managers) con hora de inicio y fin.",
+    "shiftsHowItWorksClock": "El día del servicio, usa Entrada/Salida para fichar el turno.",
+    "shiftsHowItWorksClick": "Haz clic en un día vacío para añadir un turno, o usa el botón de arriba.",
+    "shiftsNeedTeamTitle": "Añade personal primero",
+    "shiftsNeedTeamHint": "Los turnos se asignan a camareros, chefs o managers. El titular no aparece — añade al menos un miembro en la pestaña Equipo.",
+    "shiftsGoToTeam": "Ir al tab Equipo",
+    "noShiftsDayClick": "Sin turnos — clic para añadir uno"
   },
   "inventory": {
     "title": "Almacén",
@@ -538,6 +569,9 @@
   "loyalty": {
     "title": "Programa de Fidelización",
     "subtitle": "Puntos y niveles de clientes",
+    "subtitleAuto": "Puntos y niveles asignados automáticamente en cada pago",
+    "autoManagedBadge": "Gestionado por Aura Syncro",
+    "autoManagedHint": "Bronze, Silver y Gold se activan solos. Los puntos se acreditan al cerrar la cuenta con cliente vinculado (email o teléfono en el pedido). Los niveles suben según los puntos acumulados.",
     "heroHint": "Niveles VIP, puntos y recompensas para tus clientes",
     "newTier": "Nuevo Nivel",
     "stats": {

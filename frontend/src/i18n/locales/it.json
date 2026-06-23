@@ -224,7 +224,10 @@
     "transferModeHint": "Tocca un tavolo libero sulla mappa",
     "transferCancel": "Annulla spostamento",
     "transferFromHere": "Da qui",
-    "transferTapHere": "Tocca"
+    "transferTapHere": "Tocca",
+    "reservedTitle": "Tavolo {{number}} — Prenotato",
+    "seatAndOpenOrder": "Segna al tavolo e apri ordine",
+    "reservationSeated": "Ospiti al tavolo — puoi prendere la comanda"
   },
   "orders": {
     "title": "Ordini",
@@ -363,7 +366,27 @@
     "depositPaid": "Caparra pagata",
     "payDeposit": "Paga caparra",
     "depositRequiredNotice": "Prenotazione confermata — è richiesto il pagamento della caparra",
-    "depositPayError": "Impossibile avviare il pagamento della caparra"
+    "depositPayError": "Impossibile avviare il pagamento della caparra",
+    "howItWorksTitle": "Come funziona questa sezione",
+    "howItWorksBookings": "Prenotazioni: prenotazioni con data e ora (telefono, manuale o dal link pubblico). Flusso: Conferma + assegna tavolo → Al tavolo → Completata.",
+    "howItWorksWaitlist": "Lista d'attesa: ospiti walk-in senza prenotazione quando la sala è piena — non è la stessa cosa delle prenotazioni.",
+    "howItWorksPublic": "Link pubblico: condividi il link sotto (o il QR in Impostazioni) così i clienti prenotano da soli online.",
+    "workflowHint": "Usa i pulsanti su ogni riga per avanzare lo stato durante il servizio.",
+    "publicBookingLink": "Link prenotazioni online",
+    "openPublicBooking": "Anteprima",
+    "markConfirm": "Conferma",
+    "markSeated": "Segna al tavolo",
+    "markCompleted": "Completata",
+    "markNoShow": "Non presentato",
+    "copyDepositLink": "Copia link caparra",
+    "depositLinkCopied": "Link caparra copiato — invialo al cliente via WhatsApp o SMS",
+    "noReservationsHint": "Crea una prenotazione manuale o condividi il link pubblico con i clienti.",
+    "assignTable": "Conferma e assegna tavolo",
+    "assignTableTitle": "Scegli il tavolo",
+    "confirmWithTable": "Conferma prenotazione",
+    "tableAssigned": "Prenotazione confermata e tavolo assegnato",
+    "tableAssignError": "Impossibile assegnare il tavolo",
+    "noTablesAvailable": "Nessun tavolo libero per questo orario e numero di coperti"
   },
   "waitlist": {
     "subtitle": "{{count}} ospiti in attesa",
@@ -494,7 +517,15 @@
       "active": "In corso",
       "completed": "Completato",
       "absent": "Assente"
-    }
+    },
+    "shiftsHowItWorksTitle": "Come funzionano i turni",
+    "shiftsHowItWorksPlan": "Pianifica chi lavora ogni giorno (camerieri, chef, manager) con orario di inizio e fine.",
+    "shiftsHowItWorksClock": "Il giorno del servizio, usa Entrata/Uscita per timbrare il turno.",
+    "shiftsHowItWorksClick": "Clicca su un giorno vuoto per aggiungere un turno, oppure usa il pulsante in alto.",
+    "shiftsNeedTeamTitle": "Aggiungi prima il personale",
+    "shiftsNeedTeamHint": "I turni si assegnano a camerieri, chef o manager. Il titolare non compare nell'elenco — aggiungi almeno un membro nel tab Team.",
+    "shiftsGoToTeam": "Vai al tab Team",
+    "noShiftsDayClick": "Nessun turno — clicca per aggiungerne uno"
   },
   "inventory": {
     "title": "Magazzino",
@@ -540,6 +571,9 @@
   "loyalty": {
     "title": "Programma Fedeltà",
     "subtitle": "Punti e livelli clienti",
+    "subtitleAuto": "Punti e livelli assegnati automaticamente ad ogni pagamento",
+    "autoManagedBadge": "Gestito da Aura Syncro",
+    "autoManagedHint": "Bronze, Silver e Gold si attivano da soli. I punti vengono accreditati quando chiudi un conto con cliente collegato (email o telefono in comanda). I livelli salgono in base ai punti accumulati.",
     "heroHint": "Livelli VIP, punti e premi per i tuoi clienti",
     "newTier": "Nuovo Livello",
     "stats": {

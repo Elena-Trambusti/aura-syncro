@@ -224,7 +224,10 @@
     "transferModeHint": "Freien Tisch auf der Karte antippen",
     "transferCancel": "Verschieben abbrechen",
     "transferFromHere": "Von hier",
-    "transferTapHere": "Tippen"
+    "transferTapHere": "Tippen",
+    "reservedTitle": "Tisch {{number}} — Reserviert",
+    "seatAndOpenOrder": "Platzieren und Bestellung öffnen",
+    "reservationSeated": "Gäste am Tisch — Bestellung aufnehmen"
   },
   "orders": {
     "title": "Bestellungen",
@@ -361,7 +364,27 @@
     "depositPaid": "Anzahlung bezahlt",
     "payDeposit": "Anzahlung bezahlen",
     "depositRequiredNotice": "Reservierung bestätigt — Anzahlung erforderlich",
-    "depositPayError": "Anzahlungszahlung konnte nicht gestartet werden"
+    "depositPayError": "Anzahlungszahlung konnte nicht gestartet werden",
+    "howItWorksTitle": "So funktioniert dieser Bereich",
+    "howItWorksBookings": "Reservierungen: Buchungen mit Datum und Uhrzeit (Telefon, manuell oder öffentlicher Link). Ablauf: Bestätigen + Tisch zuweisen → Am Tisch → Abgeschlossen.",
+    "howItWorksWaitlist": "Warteliste: Laufkundschaft ohne Reservierung bei vollem Saal — nicht dasselbe wie Reservierungen.",
+    "howItWorksPublic": "Öffentlicher Link: Teilen Sie den Link unten (oder QR in Einstellungen), damit Gäste online buchen können.",
+    "workflowHint": "Nutzen Sie die Schaltflächen in jeder Zeile, um den Status während des Service fortzuschreiten.",
+    "publicBookingLink": "Online-Buchungslink",
+    "openPublicBooking": "Vorschau",
+    "markConfirm": "Bestätigen",
+    "markSeated": "Am Tisch",
+    "markCompleted": "Abgeschlossen",
+    "markNoShow": "Nicht erschienen",
+    "copyDepositLink": "Anzahlungslink kopieren",
+    "depositLinkCopied": "Anzahlungslink kopiert — an den Gast per WhatsApp oder SMS senden",
+    "noReservationsHint": "Manuelle Reservierung anlegen oder öffentlichen Link mit Gästen teilen.",
+    "assignTable": "Bestätigen & Tisch zuweisen",
+    "assignTableTitle": "Tisch wählen",
+    "confirmWithTable": "Reservierung bestätigen",
+    "tableAssigned": "Reservierung bestätigt und Tisch zugewiesen",
+    "tableAssignError": "Tisch konnte nicht zugewiesen werden",
+    "noTablesAvailable": "Keine freien Tische für diese Uhrzeit und Gästeanzahl"
   },
   "waitlist": {
     "subtitle": "{{count}} Gäste warten",
@@ -492,7 +515,15 @@
       "active": "Aktiv",
       "completed": "Abgeschlossen",
       "absent": "Abwesend"
-    }
+    },
+    "shiftsHowItWorksTitle": "So funktionieren Schichten",
+    "shiftsHowItWorksPlan": "Planen Sie, wer an welchem Tag arbeitet (Kellner, Köche, Manager) mit Start- und Endzeit.",
+    "shiftsHowItWorksClock": "Am Servicetag Ein-/Ausstempeln für die Schicht nutzen.",
+    "shiftsHowItWorksClick": "Klicken Sie auf einen leeren Tag, um eine Schicht hinzuzufügen, oder nutzen Sie die Schaltfläche oben.",
+    "shiftsNeedTeamTitle": "Zuerst Personal hinzufügen",
+    "shiftsNeedTeamHint": "Schichten werden Kellnern, Köchen oder Managern zugewiesen. Der Inhaber erscheint nicht — fügen Sie mindestens ein Teammitglied im Tab Team hinzu.",
+    "shiftsGoToTeam": "Zum Tab Team",
+    "noShiftsDayClick": "Keine Schichten — klicken zum Hinzufügen"
   },
   "inventory": {
     "title": "Lager",
@@ -538,6 +569,9 @@
   "loyalty": {
     "title": "Treueprogramm",
     "subtitle": "Kundenpunkte und Stufen",
+    "subtitleAuto": "Punkte und Stufen werden bei jeder Zahlung automatisch vergeben",
+    "autoManagedBadge": "Verwaltet von Aura Syncro",
+    "autoManagedHint": "Bronze, Silver und Gold aktivieren sich automatisch. Punkte werden gutgeschrieben, wenn Sie eine Rechnung mit verknüpftem Gast schließen (E-Mail oder Telefon in der Bestellung). Stufen steigen mit den gesammelten Punkten.",
     "heroHint": "VIP-Stufen, Punkte und Belohnungen für Ihre Gäste",
     "newTier": "Neue Stufe",
     "stats": {

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
-import { updateCustomerTier } from '../lib/loyaltyHelpers'
+import { updateCustomerTier, bootstrapLoyaltyProgram } from '../lib/loyaltyHelpers'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const loyaltyRouter = Router()
@@ -178,6 +178,8 @@ loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: A
 loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
+  await bootstrapLoyaltyProgram(restaurantId)
+
   const [tiers, totalMembers, activeThisMonth, topCustomers] = await Promise.all([
     prisma.loyaltyTier.findMany({
       where: { restaurantId },
@@ -208,6 +210,7 @@ loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: 
   })
 
   res.json({
+    autoManaged: true,
     tiers,
     stats: {
       totalMembers,

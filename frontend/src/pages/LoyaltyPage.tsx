@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
-import { Star, Plus, Edit2, Trash2, Gift, TrendingUp, Users, Award, ChevronRight } from 'lucide-react'
+import { Star, Gift, TrendingUp, Users, ChevronRight, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -21,24 +21,20 @@ interface Customer {
   totalSpent: number; loyaltyTier?: { name: string; color: string }
 }
 interface Overview {
+  autoManaged?: boolean
   tiers: LoyaltyTier[]
   stats: { totalMembers: number; activeThisMonth: number; totalPointsIssued: number }
   topCustomers: Customer[]
 }
 
-const TIER_COLORS = ['#94a3b8', '#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2']
-
 export default function LoyaltyPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const tk = useTenantQueryKey()
-  const [showTierModal, setShowTierModal] = useState(false)
-  const [editTier, setEditTier] = useState<LoyaltyTier | null>(null)
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [adjustPoints, setAdjustPoints] = useState(0)
   const [adjustNote, setAdjustNote] = useState('')
-  const [tierForm, setTierForm] = useState({ name: '', minPoints: 0, color: '#94a3b8', discountPct: 0, cashbackPct: 0, pointsPerEuro: 1, benefits: '', sortOrder: 0 })
 
   const { data: overview, isError: overviewError } = useQuery<Overview>({
     queryKey: tq(tk, 'loyalty', 'overview'),
@@ -48,22 +44,6 @@ export default function LoyaltyPage() {
   const { data: customers = [], isError: customersError } = useQuery<Customer[]>({
     queryKey: tq(tk, 'loyalty', 'customers'),
     queryFn: () => api.get('/customers').then(r => r.data),
-  })
-
-  const saveTier = useMutation({
-    mutationFn: (data: typeof tierForm) => editTier
-      ? api.put(`/loyalty/tiers/${editTier.id}`, data)
-      : api.post('/loyalty/tiers', data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: tq(tk, 'loyalty') })
-      setShowTierModal(false); setEditTier(null)
-      toast.success(editTier ? t('loyalty.tierUpdated') : t('loyalty.tierCreated'))
-    },
-  })
-
-  const deleteTier = useMutation({
-    mutationFn: (id: string) => api.delete(`/loyalty/tiers/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: tq(tk, 'loyalty') }); toast.success(t('loyalty.tierDeleted')) },
   })
 
   const adjustMutation = useMutation({
@@ -80,33 +60,27 @@ export default function LoyaltyPage() {
     },
   })
 
-  const openTierModal = (tier?: LoyaltyTier) => {
-    if (tier) {
-      setEditTier(tier)
-      setTierForm({ name: tier.name, minPoints: tier.minPoints, color: tier.color, discountPct: tier.discountPct, cashbackPct: tier.cashbackPct, pointsPerEuro: tier.pointsPerEuro, benefits: tier.benefits || '', sortOrder: tier.sortOrder })
-    } else {
-      setEditTier(null)
-      setTierForm({ name: '', minPoints: 0, color: '#94a3b8', discountPct: 0, cashbackPct: 0, pointsPerEuro: 1, benefits: '', sortOrder: 0 })
-    }
-    setShowTierModal(true)
-  }
-
   const tiers = overview?.tiers || []
   const stats = overview?.stats
   const topCustomers = overview?.topCustomers || []
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="aura-page-title">{t('loyalty.title')}</h1>
-          <p className="aura-page-subtitle">{t('loyalty.subtitle')}</p>
-          <p className="text-slate-500 text-sm mt-1">{t('loyalty.heroHint')}</p>
+          <p className="aura-page-subtitle">{t('loyalty.subtitleAuto')}</p>
         </div>
-        <button onClick={() => openTierModal()} className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-          <Plus className="w-4 h-4" /> {t('loyalty.newTier')}
-        </button>
+        {overview?.autoManaged !== false && (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900 shrink-0">
+            <Sparkles className="h-4 w-4 text-amber-600" aria-hidden />
+            {t('loyalty.autoManagedBadge')}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-sm text-slate-600">{t('loyalty.autoManagedHint')}</p>
       </div>
 
       {(overviewError || customersError) && <QueryErrorBanner />}
@@ -130,49 +104,35 @@ export default function LoyaltyPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Livelli VIP */}
         <div className="xl:col-span-2 space-y-4">
           <h2 className="text-base font-semibold text-slate-700">{t('loyalty.vipLevels')}</h2>
-          {tiers.length === 0 ? (
-            <div className="glass-card p-10 text-center">
-              <Award className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium">{t('loyalty.noTiers')}</p>
-              <button onClick={() => openTierModal()} className="mt-3 text-amber-600 text-sm font-medium hover:underline">{t('loyalty.createFirstTier')}</button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {tiers.map(tier => (
-                <div key={tier.id} className="glass-card p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: tier.color + '22', border: `2px solid ${tier.color}` }}>
-                        <Star className="w-5 h-5" style={{ color: tier.color }} />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-900">{tier.name}</p>
-                        <p className="text-xs text-slate-500">{t('loyalty.tierFromPoints', { points: tier.minPoints.toLocaleString(), count: tier._count.customers })}</p>
-                      </div>
+          <div className="space-y-3">
+            {tiers.map(tier => (
+              <div key={tier.id} className="glass-card p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: tier.color + '22', border: `2px solid ${tier.color}` }}>
+                      <Star className="w-5 h-5" style={{ color: tier.color }} />
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                        <p className="text-xs text-slate-500">{t('loyalty.tierRates', { pts: tier.pointsPerEuro, discount: tier.discountPct, cashback: tier.cashbackPct })}</p>
-                      </div>
-                      <button onClick={() => openTierModal(tier)} className="p-2 hover:bg-slate-100 rounded-lg"><Edit2 className="w-4 h-4 text-slate-500" /></button>
-                      <button onClick={() => { if (confirm(t('loyalty.confirmDeleteTier'))) deleteTier.mutate(tier.id) }} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-600" /></button>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">{tier.name}</p>
+                      <p className="text-xs text-slate-500">{t('loyalty.tierFromPoints', { points: tier.minPoints.toLocaleString(), count: tier._count.customers })}</p>
                     </div>
                   </div>
-                  {tier.benefits && (
-                    <div className="mt-3 pt-3 border-t border-slate-200">
-                      <p className="text-xs text-slate-500">{tier.benefits}</p>
-                    </div>
-                  )}
+                  <div className="text-right hidden sm:block shrink-0">
+                    <p className="text-xs text-slate-500">{t('loyalty.tierRates', { pts: tier.pointsPerEuro, discount: tier.discountPct, cashback: tier.cashbackPct })}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+                {tier.benefits && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-500">{tier.benefits}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Top clienti */}
         <div className="space-y-4">
           <h2 className="text-base font-semibold text-slate-700">{t('loyalty.topCustomers')}</h2>
           <div className="glass-card overflow-hidden">
@@ -204,7 +164,6 @@ export default function LoyaltyPage() {
         </div>
       </div>
 
-      {/* Clienti con punti */}
       <div>
         <h2 className="text-base font-semibold text-slate-700 mb-3">{t('loyalty.allCustomers')}</h2>
         <div className="glass-card overflow-hidden">
@@ -212,7 +171,7 @@ export default function LoyaltyPage() {
             <thead className="glass-table-head">
               <tr>
                 {[t('loyalty.tableCustomer'), t('loyalty.tableLevel'), t('loyalty.tablePoints'), t('loyalty.tableSpent'), ''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
+                  <th key={h || 'actions'} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -231,7 +190,7 @@ export default function LoyaltyPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-500">{formatCurrency(c.totalSpent)}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => { setSelectedCustomer(c); setShowAdjustModal(true) }} className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
+                    <button type="button" onClick={() => { setSelectedCustomer(c); setShowAdjustModal(true) }} className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
                       <Gift className="w-3.5 h-3.5" /> {t('loyalty.adjust')} <ChevronRight className="w-3 h-3" />
                     </button>
                   </td>
@@ -242,57 +201,6 @@ export default function LoyaltyPage() {
         </div>
       </div>
 
-      {/* Modal Livello */}
-      {showTierModal && (
-        <div className={ui.modalOverlay}>
-          <div className={`${ui.modal} max-w-lg space-y-4`} onClick={e => e.stopPropagation()}>
-            <h3 className={ui.modalTitle}>{editTier ? t('loyalty.editTier') : t('loyalty.newTierModal')}</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className={ui.label}>{t('loyalty.tierName')}</label>
-                <input value={tierForm.name} onChange={e => setTierForm(p => ({ ...p, name: e.target.value }))} className={ui.input} placeholder={t('loyalty.tierNamePlaceholder')} />
-              </div>
-              <div>
-                <label className={ui.label}>{t('loyalty.minPoints')}</label>
-                <input type="number" value={tierForm.minPoints} onChange={e => setTierForm(p => ({ ...p, minPoints: +e.target.value }))} className={ui.input} />
-              </div>
-              <div>
-                <label className={ui.label}>{t('loyalty.color')}</label>
-                <div className="flex items-center gap-2">
-                  <input type="color" value={tierForm.color} onChange={e => setTierForm(p => ({ ...p, color: e.target.value }))} className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer" />
-                  <div className="flex-1 flex gap-1.5 flex-wrap">
-                    {TIER_COLORS.map(c => <button key={c} type="button" onClick={() => setTierForm(p => ({ ...p, color: c }))} className="w-6 h-6 rounded-full border-2 border-slate-200 shadow-sm" style={{ backgroundColor: c }} />)}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className={ui.label}>{t('loyalty.pointsPerEuro')}</label>
-                <input type="number" step="0.5" value={tierForm.pointsPerEuro} onChange={e => setTierForm(p => ({ ...p, pointsPerEuro: +e.target.value }))} className={ui.input} />
-              </div>
-              <div>
-                <label className={ui.label}>{t('loyalty.discountPct')}</label>
-                <input type="number" step="0.5" value={tierForm.discountPct} onChange={e => setTierForm(p => ({ ...p, discountPct: +e.target.value }))} className={ui.input} />
-              </div>
-              <div>
-                <label className={ui.label}>{t('loyalty.cashbackPct')}</label>
-                <input type="number" step="0.5" value={tierForm.cashbackPct} onChange={e => setTierForm(p => ({ ...p, cashbackPct: +e.target.value }))} className={ui.input} />
-              </div>
-              <div className="col-span-2">
-                <label className={ui.label}>{t('loyalty.benefits')}</label>
-                <textarea value={tierForm.benefits} onChange={e => setTierForm(p => ({ ...p, benefits: e.target.value }))} rows={2} className={ui.textarea} placeholder={t('loyalty.benefitsPlaceholder')} />
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowTierModal(false)} className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>{t('common.cancel')}</button>
-              <button onClick={() => saveTier.mutate(tierForm)} disabled={saveTier.isPending} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-60`}>
-                {saveTier.isPending ? t('common.saving') : t('common.save')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Aggiusta Punti */}
       {showAdjustModal && selectedCustomer && (
         <div className={ui.modalOverlay}>
           <div className={`${ui.modal} max-w-sm space-y-4`} onClick={e => e.stopPropagation()}>
@@ -307,8 +215,8 @@ export default function LoyaltyPage() {
               <input value={adjustNote} onChange={e => setAdjustNote(e.target.value)} className={ui.input} placeholder={t('loyalty.adjustNotePlaceholder')} />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowAdjustModal(false)} className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>{t('common.cancel')}</button>
-              <button onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending || adjustPoints === 0} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-60`}>
+              <button type="button" onClick={() => setShowAdjustModal(false)} className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>{t('common.cancel')}</button>
+              <button type="button" onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending || adjustPoints === 0} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-60`}>
                 {t('loyalty.confirm')}
               </button>
             </div>

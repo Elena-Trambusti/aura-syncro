@@ -224,7 +224,10 @@
     "transferModeHint": "Touchez une table libre sur le plan",
     "transferCancel": "Annuler le déplacement",
     "transferFromHere": "D'ici",
-    "transferTapHere": "Toucher"
+    "transferTapHere": "Toucher",
+    "reservedTitle": "Table {{number}} — Réservée",
+    "seatAndOpenOrder": "Installer et ouvrir la commande",
+    "reservationSeated": "Clients à table — vous pouvez prendre la commande"
   },
   "orders": {
     "title": "Commandes",
@@ -361,7 +364,27 @@
     "depositPaid": "Acompte payé",
     "payDeposit": "Payer l'acompte",
     "depositRequiredNotice": "Réservation confirmée — le paiement de l'acompte est requis",
-    "depositPayError": "Impossible de démarrer le paiement de l'acompte"
+    "depositPayError": "Impossible de démarrer le paiement de l'acompte",
+    "howItWorksTitle": "Comment fonctionne cette section",
+    "howItWorksBookings": "Réservations : réservations avec date et heure (téléphone, manuel ou lien public). Flux : Confirmer + assigner table → À table → Terminée.",
+    "howItWorksWaitlist": "Liste d'attente : clients sans réservation quand la salle est pleine — ce n'est pas la même chose que les réservations.",
+    "howItWorksPublic": "Lien public : partagez le lien ci-dessous (ou le QR dans Paramètres) pour que les clients réservent en ligne.",
+    "workflowHint": "Utilisez les boutons sur chaque ligne pour faire avancer le statut pendant le service.",
+    "publicBookingLink": "Lien de réservation en ligne",
+    "openPublicBooking": "Aperçu",
+    "markConfirm": "Confirmer",
+    "markSeated": "Marquer à table",
+    "markCompleted": "Terminée",
+    "markNoShow": "Absent",
+    "copyDepositLink": "Copier lien acompte",
+    "depositLinkCopied": "Lien acompte copié — envoyez-le au client par WhatsApp ou SMS",
+    "noReservationsHint": "Créez une réservation manuelle ou partagez le lien public avec vos clients.",
+    "assignTable": "Confirmer et assigner une table",
+    "assignTableTitle": "Choisir la table",
+    "confirmWithTable": "Confirmer la réservation",
+    "tableAssigned": "Réservation confirmée et table assignée",
+    "tableAssignError": "Impossible d'assigner la table",
+    "noTablesAvailable": "Aucune table libre pour cet horaire et ce nombre de couverts"
   },
   "waitlist": {
     "subtitle": "{{count}} clients en attente",
@@ -492,7 +515,15 @@
       "active": "En cours",
       "completed": "Terminé",
       "absent": "Absent"
-    }
+    },
+    "shiftsHowItWorksTitle": "Comment fonctionnent les shifts",
+    "shiftsHowItWorksPlan": "Planifiez qui travaille chaque jour (serveurs, chefs, managers) avec heures de début et fin.",
+    "shiftsHowItWorksClock": "Le jour du service, utilisez Entrée/Sortie pour pointer le shift.",
+    "shiftsHowItWorksClick": "Cliquez sur un jour vide pour ajouter un shift, ou utilisez le bouton en haut.",
+    "shiftsNeedTeamTitle": "Ajoutez du personnel d'abord",
+    "shiftsNeedTeamHint": "Les shifts sont assignés aux serveurs, chefs ou managers. Le titulaire n'apparaît pas — ajoutez au moins un membre dans l'onglet Équipe.",
+    "shiftsGoToTeam": "Aller à l'onglet Équipe",
+    "noShiftsDayClick": "Aucun shift — cliquez pour en ajouter un"
   },
   "inventory": {
     "title": "Stock",
@@ -538,6 +569,9 @@
   "loyalty": {
     "title": "Programme de fidélité",
     "subtitle": "Points et niveaux clients",
+    "subtitleAuto": "Points et niveaux attribués automatiquement à chaque paiement",
+    "autoManagedBadge": "Géré par Aura Syncro",
+    "autoManagedHint": "Bronze, Silver et Gold s'activent automatiquement. Les points sont crédités à la clôture du compte avec un client lié (e-mail ou téléphone sur la commande). Les niveaux évoluent selon les points accumulés.",
     "heroHint": "Niveaux VIP, points et récompenses pour vos clients",
     "newTier": "Nouveau Niveau",
     "stats": {

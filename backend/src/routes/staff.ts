@@ -6,6 +6,7 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { weekBoundsInTimezone } from '../lib/romeDate'
 
 export const staffRouter = Router()
 
@@ -106,16 +107,30 @@ staffRouter.put('/:id', requirePermission('staff.manage'), async (req: AuthReque
 
 staffRouter.get('/shifts', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { week } = req.query
-  const startDate = week ? new Date(week as string) : (() => {
-    const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d
-  })()
-  const endDate = new Date(startDate)
-  endDate.setDate(endDate.getDate() + 7)
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: tenantId(req) },
+    select: { timezone: true },
+  })
+  const timeZone = restaurant?.timezone ?? 'Europe/Rome'
+
+  let weekStartStr: string
+  if (week && typeof week === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(week)) {
+    weekStartStr = week
+  } else {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    const monday = new Date(now)
+    monday.setDate(monday.getDate() + diff)
+    weekStartStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+  }
+
+  const { gte, lt } = weekBoundsInTimezone(weekStartStr, timeZone)
 
   const shifts = await prisma.shift.findMany({
     where: {
       restaurantId: tenantId(req),
-      date: { gte: startDate, lt: endDate },
+      date: { gte, lt },
     },
     include: { user: { select: { id: true, name: true, role: true } } },
     orderBy: [{ date: 'asc' }, { startTime: 'asc' }],

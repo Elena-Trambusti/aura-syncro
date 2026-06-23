@@ -224,7 +224,10 @@
     "transferModeHint": "Tap a free table on the map",
     "transferCancel": "Cancel move",
     "transferFromHere": "From here",
-    "transferTapHere": "Tap"
+    "transferTapHere": "Tap",
+    "reservedTitle": "Table {{number}} — Reserved",
+    "seatAndOpenOrder": "Seat guests and open order",
+    "reservationSeated": "Guests seated — you can take the order"
   },
   "orders": {
     "title": "Orders",
@@ -363,7 +366,27 @@
     "depositPaid": "Deposit paid",
     "payDeposit": "Pay deposit",
     "depositRequiredNotice": "Reservation confirmed — deposit payment required",
-    "depositPayError": "Could not start deposit payment"
+    "depositPayError": "Could not start deposit payment",
+    "howItWorksTitle": "How this section works",
+    "howItWorksBookings": "Bookings: reservations with date and time (phone, manual, or public link). Flow: Confirm + assign table → Seated → Completed.",
+    "howItWorksWaitlist": "Waitlist: walk-in guests without a reservation when the dining room is full — not the same as bookings.",
+    "howItWorksPublic": "Public link: share the link below (or QR in Settings) so guests can book online themselves.",
+    "workflowHint": "Use the buttons on each row to advance status during service.",
+    "publicBookingLink": "Online booking link",
+    "openPublicBooking": "Preview",
+    "markConfirm": "Confirm",
+    "markSeated": "Mark seated",
+    "markCompleted": "Completed",
+    "markNoShow": "No-show",
+    "copyDepositLink": "Copy deposit link",
+    "depositLinkCopied": "Deposit link copied — send it to the guest via WhatsApp or SMS",
+    "noReservationsHint": "Create a manual booking or share the public link with guests.",
+    "assignTable": "Confirm & assign table",
+    "assignTableTitle": "Choose a table",
+    "confirmWithTable": "Confirm booking",
+    "tableAssigned": "Booking confirmed and table assigned",
+    "tableAssignError": "Could not assign table",
+    "noTablesAvailable": "No free tables for this time and party size"
   },
   "waitlist": {
     "subtitle": "{{count}} guests waiting",
@@ -494,7 +517,15 @@
       "active": "Active",
       "completed": "Completed",
       "absent": "Absent"
-    }
+    },
+    "shiftsHowItWorksTitle": "How shifts work",
+    "shiftsHowItWorksPlan": "Plan who works each day (waiters, chefs, managers) with start and end times.",
+    "shiftsHowItWorksClock": "On service day, use Clock in/out to record the shift.",
+    "shiftsHowItWorksClick": "Click an empty day to add a shift, or use the button above.",
+    "shiftsNeedTeamTitle": "Add staff first",
+    "shiftsNeedTeamHint": "Shifts are assigned to waiters, chefs, or managers. The owner is not listed — add at least one team member in the Team tab.",
+    "shiftsGoToTeam": "Go to Team tab",
+    "noShiftsDayClick": "No shifts — click to add one"
   },
   "inventory": {
     "title": "Inventory",
@@ -540,6 +571,9 @@
   "loyalty": {
     "title": "Loyalty Programme",
     "subtitle": "Customer points and tiers",
+    "subtitleAuto": "Points and tiers assigned automatically on every payment",
+    "autoManagedBadge": "Managed by Aura Syncro",
+    "autoManagedHint": "Bronze, Silver and Gold activate automatically. Points are credited when you close a bill with a linked customer (email or phone on the order). Tiers upgrade based on accumulated points.",
     "heroHint": "VIP tiers, points and rewards for your customers",
     "newTier": "New Tier",
     "stats": {

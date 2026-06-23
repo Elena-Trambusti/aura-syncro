@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { buildCustomerName, splitCustomerName } from '../lib/crmCustomer'
+import { ensureDefaultLoyaltyTiers, ensureLoyaltyEnrollment } from '../lib/loyaltyHelpers'
 import { scopedWhere, tenantNotFound } from '../lib/tenant'
 
 export const customersRouter = Router()
@@ -77,9 +78,10 @@ customersRouter.get('/', requirePermission('customers.read'), async (req: AuthRe
         ],
       } : {}),
     },
+    include: { loyaltyTier: { select: { name: true, color: true } } },
     orderBy: { totalVisits: 'desc' },
   })
-  res.json(customers.map(serializeCustomer))
+  res.json(customers.map(c => serializeCustomer(c)))
 })
 
 customersRouter.get('/:id', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -173,6 +175,8 @@ customersRouter.post('/', requirePermission('customers.manage'), async (req: Aut
         ...(result.data.birthDate ? { birthdate: new Date(result.data.birthDate) } : {}),
       },
     })
+    await ensureDefaultLoyaltyTiers(req.restaurantId!)
+    await ensureLoyaltyEnrollment(req.restaurantId!, customer.id)
     res.status(201).json(serializeCustomer(customer))
   } catch (err: unknown) {
     if (typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002') {

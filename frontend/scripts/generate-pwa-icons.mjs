@@ -1,12 +1,14 @@
 import sharp from 'sharp'
-import { mkdir, readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
-const svgPath = join(root, 'public', 'brand', 'aura-syncro-icon.svg')
-const outDir = join(root, 'public', 'pwa')
+const publicDir = join(root, 'public')
+const svgPath = join(publicDir, 'brand', 'aura-syncro-icon.svg')
+const logoTallyPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.svg')
+const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
 
 /** Densità Android + PWA (px lato icona quadrata) */
@@ -108,4 +110,89 @@ console.log('Generating Android adaptive icons…')
 for (const { name, size } of ADAPTIVE_DENSITIES) {
   await writeAdaptivePair(size, name)
 }
+
+/** ICO multi-risoluzione (PNG embedded, supporto Vista+) */
+function createIcoFromPngBuffers(images) {
+  const count = images.length
+  const header = Buffer.alloc(6)
+  header.writeUInt16LE(0, 0)
+  header.writeUInt16LE(1, 2)
+  header.writeUInt16LE(count, 4)
+
+  let offset = 6 + count * 16
+  const entries = []
+  const bodies = []
+
+  for (const { width, height, png } of images) {
+    const entry = Buffer.alloc(16)
+    entry[0] = width >= 256 ? 0 : width
+    entry[1] = height >= 256 ? 0 : height
+    entry.writeUInt16LE(1, 4)
+    entry.writeUInt16LE(32, 6)
+    entry.writeUInt32LE(png.length, 8)
+    entry.writeUInt32LE(offset, 12)
+    entries.push(entry)
+    bodies.push(png)
+    offset += png.length
+  }
+
+  return Buffer.concat([header, ...entries, ...bodies])
+}
+
+console.log('Generating favicon.ico + favicon.png…')
+const faviconSizes = [16, 32, 48]
+const faviconPngs = []
+for (const size of faviconSizes) {
+  const png = await sharp(svg).resize(size, size).png().toBuffer()
+  faviconPngs.push({ width: size, height: size, png })
+}
+await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
+console.log('  favicon.ico')
+
+await sharp(svg).resize(192, 192).png().toFile(join(publicDir, 'favicon.png'))
+console.log('  favicon.png')
+
+console.log('Generating og-image.jpg…')
+const ogWidth = 1200
+const ogHeight = 630
+const logoWidth = 560
+const logoBuffer = await sharp(logoTallyPath).resize(logoWidth).png().toBuffer()
+const logoMeta = await sharp(logoBuffer).metadata()
+const logoHeight = logoMeta.height ?? Math.round(logoWidth * 0.27)
+const logoTop = Math.round((ogHeight - logoHeight) / 2 - 50)
+
+const ogSubtitleSvg = Buffer.from(`
+<svg width="${ogWidth}" height="${ogHeight}" xmlns="http://www.w3.org/2000/svg">
+  <text x="600" y="430" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="34" font-weight="600" fill="#475569">
+    Gestionale cloud per ristoranti — Italia, Spagna e Canarie
+  </text>
+  <text x="600" y="478" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8">
+    Prenotazioni · Tavoli · POS · Menu QR · Report fiscale IVA/IGIC
+  </text>
+</svg>`)
+
+await sharp({
+  create: { width: ogWidth, height: ogHeight, channels: 3, background: '#f8fafc' },
+})
+  .composite([
+    {
+      input: await sharp({
+        create: { width: ogWidth - 96, height: ogHeight - 96, channels: 3, background: '#ffffff' },
+      })
+        .png()
+        .toBuffer(),
+      top: 48,
+      left: 48,
+    },
+    {
+      input: logoBuffer,
+      top: logoTop,
+      left: Math.round((ogWidth - logoWidth) / 2),
+    },
+    { input: ogSubtitleSvg, top: 0, left: 0 },
+  ])
+  .jpeg({ quality: 90, mozjpeg: true })
+  .toFile(join(publicDir, 'og-image.jpg'))
+console.log('  og-image.jpg')
+
 console.log('Done.')

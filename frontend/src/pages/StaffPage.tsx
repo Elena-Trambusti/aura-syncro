@@ -117,7 +117,7 @@ export default function StaffPage() {
       </div>
 
       {activeTab === 'shifts' ? (
-        <StaffShiftsTab />
+        <StaffShiftsTab onGoToTeam={() => setActiveTab('team')} />
       ) : (
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isLoading ? (

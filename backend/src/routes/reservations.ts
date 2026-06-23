@@ -4,10 +4,16 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
-import { ReservationValidationError } from '../lib/reservationRules'
+import { ReservationValidationError, requiresDeposit } from '../lib/reservationRules'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { createReservation } from '../lib/createReservation'
+import { dayBoundsInTimezone } from '../lib/romeDate'
+import {
+  confirmReservationWithTable,
+  getAvailableTablesForReservation,
+  syncTableOnReservationStatus,
+} from '../lib/reservationTableSync'
 
 export const reservationsRouter = Router()
 
@@ -15,23 +21,31 @@ reservationsRouter.get('/', requirePermission('reservations.read'), async (req: 
   const { date, status } = req.query
   const where: Record<string, unknown> = { ...tenantWhere(req) }
 
+  let timeZone = 'Europe/Rome'
   if (date) {
-    const d = new Date(date as string)
-    const next = new Date(d)
-    next.setDate(next.getDate() + 1)
-    where.date = { gte: d, lt: next }
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: tenantId(req) },
+      select: { timezone: true },
+    })
+    timeZone = restaurant?.timezone ?? 'Europe/Rome'
+    const { gte, lt } = dayBoundsInTimezone(date as string, timeZone)
+    where.date = { gte, lt }
   }
   if (status) where.status = status
 
-  const reservations = await prisma.reservation.findMany({
-    where,
-    include: {
-      table: true,
-      customer: { select: { id: true, name: true, phone: true, totalVisits: true } },
-    },
-    orderBy: { date: 'asc' },
-  })
-  res.json(reservations)
+  const [reservations, settings] = await Promise.all([
+    prisma.reservation.findMany({
+      where,
+      include: {
+        table: true,
+        customer: { select: { id: true, name: true, phone: true, totalVisits: true } },
+      },
+      orderBy: { date: 'asc' },
+    }),
+    prisma.restaurantSettings.findUnique({ where: { restaurantId: tenantId(req) } }),
+  ])
+  const depositRequired = requiresDeposit(settings)
+  res.json(reservations.map(r => ({ ...r, depositRequired })))
 })
 
 reservationsRouter.post('/:id/deposit-checkout', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -58,6 +72,46 @@ reservationsRouter.post('/:id/deposit-checkout', requirePermission('reservations
       return
     }
     res.status(500).json({ error: 'Errore creazione checkout caparra' })
+  }
+})
+
+reservationsRouter.get('/:id/available-tables', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const tables = await getAvailableTablesForReservation(tenantId(req), req.params.id)
+    res.json(tables)
+  } catch (err) {
+    if (err instanceof ReservationValidationError) {
+      res.status(404).json({ error: err.message, code: err.code })
+      return
+    }
+    throw err
+  }
+})
+
+reservationsRouter.post('/:id/confirm', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({ tableId: z.string().min(1) })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Seleziona un tavolo' })
+    return
+  }
+
+  try {
+    const reservation = await confirmReservationWithTable(
+      tenantId(req),
+      req.params.id,
+      result.data.tableId,
+    )
+    const table = await prisma.table.findUnique({ where: { id: result.data.tableId } })
+    io.to(tenantId(req)).emit('reservation:updated', reservation)
+    if (table) io.to(tenantId(req)).emit('table:updated', table)
+    res.json(reservation)
+  } catch (err) {
+    if (err instanceof ReservationValidationError) {
+      res.status(409).json({ error: err.message, code: err.code })
+      return
+    }
+    throw err
   }
 })
 
@@ -118,6 +172,13 @@ reservationsRouter.post('/', requirePermission('reservations.manage'), async (re
     })
 
     io.to(tenantId(req)).emit('reservation:created', reservation)
+    if (reservation.tableId && reservation.status === 'CONFIRMED') {
+      await prisma.table.update({
+        where: { id: reservation.tableId },
+        data: { status: 'RESERVED' },
+      })
+      io.to(tenantId(req)).emit('table:updated', await prisma.table.findUnique({ where: { id: reservation.tableId } }))
+    }
     res.status(201).json({ ...reservation, depositRequired })
   } catch (err) {
     if (err instanceof ReservationValidationError) {
@@ -179,18 +240,30 @@ reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (
 
 reservationsRouter.patch('/:id/status', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body
-  const updated = await prisma.reservation.updateMany({
+  const existing = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
-    data: { status },
+    select: { id: true, tableId: true, status: true },
   })
-  if (updated.count === 0) {
+  if (!existing) {
     tenantNotFound(res, 'Prenotazione non trovata')
     return
   }
+
+  await prisma.reservation.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data: { status },
+  })
+
+  await syncTableOnReservationStatus(tenantId(req), req.params.id, status)
+
   const reservation = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
     include: { table: true },
   })
+  if (reservation?.tableId) {
+    const table = await prisma.table.findUnique({ where: { id: reservation.tableId } })
+    if (table) io.to(tenantId(req)).emit('table:updated', table)
+  }
   io.to(tenantId(req)).emit('reservation:updated', reservation)
   res.json(reservation)
 })

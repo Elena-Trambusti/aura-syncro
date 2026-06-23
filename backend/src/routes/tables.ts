@@ -6,16 +6,41 @@ import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { transferOrderBetweenTables } from '../lib/transferTable'
+import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
 
 export const tablesRouter = Router()
 
 tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: tenantId(req) },
+    select: { timezone: true },
+  })
+  const timeZone = restaurant?.timezone ?? 'Europe/Rome'
+  const today = formatRomeDate(new Date())
+  const { gte, lt } = dayBoundsInTimezone(today, timeZone)
+
   const tables = await prisma.table.findMany({
     where: tenantWhere(req),
     include: {
       orders: {
         where: { status: { notIn: ['PAID', 'CANCELLED'] } },
         include: { items: { include: { menuItem: true } } },
+      },
+      reservations: {
+        where: {
+          status: { in: ['PENDING', 'CONFIRMED', 'SEATED'] },
+          date: { gte, lt },
+        },
+        select: {
+          id: true,
+          guestName: true,
+          covers: true,
+          date: true,
+          duration: true,
+          status: true,
+        },
+        orderBy: { date: 'asc' },
+        take: 1,
       },
     },
     orderBy: { number: 'asc' },

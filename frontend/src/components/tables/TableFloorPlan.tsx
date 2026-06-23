@@ -3,6 +3,14 @@ import { cn } from '../../lib/utils'
 export type TableStatus = 'FREE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING'
 export type TableShape = 'SQUARE' | 'ROUND' | 'RECTANGLE'
 
+export interface TableReservationPreview {
+  id: string
+  guestName: string
+  covers: number
+  date: string
+  status: string
+}
+
 export interface FloorTable {
   id: string
   number: number
@@ -13,6 +21,7 @@ export interface FloorTable {
   posY: number
   shape: string
   area?: string
+  upcomingReservation?: TableReservationPreview | null
 }
 
 const STATUS_CLASS: Record<TableStatus, string> = {
@@ -67,6 +76,7 @@ interface TableFloorPlanProps {
   seatsLabel: (n: number) => string
   onTableClick: (table: FloorTable) => void
   activeOrderTotal?: (tableId: string) => string | null
+  reservationLabel?: (table: FloorTable) => string | null
   transferSourceId?: string | null
   onTransferTargetClick?: (table: FloorTable) => void
   transferSourceLabel?: string
@@ -79,6 +89,7 @@ export default function TableFloorPlan({
   seatsLabel,
   onTableClick,
   activeOrderTotal,
+  reservationLabel,
   transferSourceId,
   onTransferTargetClick,
   transferSourceLabel,
@@ -107,6 +118,7 @@ export default function TableFloorPlan({
             statusLabel={statusLabel}
             seatsLabel={seatsLabel}
             orderTotal={activeOrderTotal?.(table.id) ?? null}
+            reservationHint={reservationLabel?.(table) ?? null}
             transferRole={getTableTransferRole(table, transferSourceId)}
             transferHint={
               getTableTransferRole(table, transferSourceId) === 'source'
@@ -145,6 +157,7 @@ export default function TableFloorPlan({
               statusLabel={statusLabel}
               seatsLabel={seatsLabel}
               orderTotal={activeOrderTotal?.(table.id) ?? null}
+              reservationHint={reservationLabel?.(table) ?? null}
               transferRole={getTableTransferRole(table, transferSourceId)}
               transferHint={
                 getTableTransferRole(table, transferSourceId) === 'source'
@@ -168,6 +181,7 @@ function TableTile({
   statusLabel,
   seatsLabel,
   orderTotal,
+  reservationHint,
   transferRole,
   transferHint,
   onClick,
@@ -178,6 +192,7 @@ function TableTile({
   statusLabel: (status: TableStatus) => string
   seatsLabel: (n: number) => string
   orderTotal: string | null
+  reservationHint?: string | null
   transferRole?: TableTransferRole | null
   transferHint?: string
   onClick: () => void
@@ -220,6 +235,9 @@ function TableTile({
       )}
       {orderTotal && transferRole !== 'target' && (
         <span className="text-[10px] font-semibold leading-none mt-0.5">{orderTotal}</span>
+      )}
+      {reservationHint && !orderTotal && transferRole !== 'target' && (
+        <span className="text-[9px] font-medium leading-tight mt-0.5 text-center px-1 line-clamp-2">{reservationHint}</span>
       )}
       {transferHint && (
         <span className="text-[9px] font-bold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full bg-slate-900 text-white">

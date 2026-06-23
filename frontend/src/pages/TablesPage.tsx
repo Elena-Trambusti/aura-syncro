@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { TABLE_STATUS_LABELS, formatCurrency } from '../lib/utils'
+import { TABLE_STATUS_LABELS, formatCurrency, formatTime } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { RefreshCw, Plus, Edit2, Trash2, Settings2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -18,9 +18,18 @@ import QueryErrorBanner from '../components/QueryErrorBanner'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
+interface TableReservation {
+  id: string
+  guestName: string
+  covers: number
+  date: string
+  duration: number
+  status: string
+}
 interface Order { id: string; status: string; total: number; subtotal: number; tax: number; items: OrderItem[]; createdAt: string }
 interface Table extends FloorTable {
   orders: Order[]
+  reservations?: TableReservation[]
 }
 
 type TableFormData = { number: number; seats: number; area: string }
@@ -118,6 +127,7 @@ export default function TablesPage() {
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
+  const [reservedTable, setReservedTable] = useState<Table | null>(null)
 
   const { data: tables = [], isLoading, isError } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
@@ -149,6 +159,21 @@ export default function TablesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       toast.success(t('tables.deleted'))
+    },
+  })
+
+  const seatReservation = useMutation({
+    mutationFn: (reservationId: string) => api.patch(`/reservations/${reservationId}/status`, { status: 'SEATED' }),
+    onSuccess: (_data, reservationId) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
+      const table = reservedTable ?? tables.find(tbl => tbl.reservations?.some(r => r.id === reservationId))
+      setReservedTable(null)
+      if (table) {
+        setSelectedTableId(table.id)
+        setShowOrderModal(true)
+      }
+      toast.success(t('tables.reservationSeated'))
     },
   })
 
@@ -204,7 +229,16 @@ export default function TablesPage() {
     ? tables.find(tbl => tbl.id === transferSourceId)
     : undefined
 
-  const floorPlanTables = transferSourceId ? tables : filtered
+  const floorPlanTables = (transferSourceId ? tables : filtered).map(tbl => ({
+    ...tbl,
+    upcomingReservation: tbl.reservations?.[0] ?? null,
+  }))
+
+  const getReservationLabel = (table: FloorTable) => {
+    const res = table.upcomingReservation
+    if (!res) return null
+    return `${res.guestName} · ${formatTime(res.date)}`
+  }
 
   const handleStartTransfer = (sourceId: string) => {
     const hasFreeTarget = tables.some(tbl => tbl.id !== sourceId && tbl.status === 'FREE')
@@ -227,6 +261,11 @@ export default function TablesPage() {
     if (transferSourceId) return
     if (table.status === 'CLEANING') {
       markTableFree.mutate(table.id)
+      return
+    }
+    const fullTable = tables.find(tbl => tbl.id === table.id)
+    if (table.status === 'RESERVED' && fullTable?.reservations?.[0]) {
+      setReservedTable(fullTable)
       return
     }
     setSelectedTableId(table.id)
@@ -348,6 +387,7 @@ export default function TablesPage() {
             const order = table ? getActiveOrder(table) : null
             return order ? formatCurrency(order.total) : null
           }}
+          reservationLabel={getReservationLabel}
         />
         </div>
       )}
@@ -447,6 +487,31 @@ export default function TablesPage() {
           onSave={handleSaveTable}
           onCancel={() => setEditingTable(null)}
         />
+      )}
+
+      {reservedTable?.reservations?.[0] && (
+        <ModalPortal onClose={() => setReservedTable(null)}>
+          <div className={ui.modal} onClick={e => e.stopPropagation()}>
+            <h3 className={ui.modalTitle}>{t('tables.reservedTitle', { number: reservedTable.number })}</h3>
+            <div className="space-y-3 text-sm text-slate-600">
+              <p className="text-base font-semibold text-slate-900">{reservedTable.reservations[0].guestName}</p>
+              <p>{formatTime(reservedTable.reservations[0].date)} · {reservedTable.reservations[0].covers} {t('common.seats')}</p>
+            </div>
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => seatReservation.mutate(reservedTable.reservations![0].id)}
+                disabled={seatReservation.isPending}
+                className={`w-full py-2.5 ${ui.btnPrimary} text-sm`}
+              >
+                {t('tables.seatAndOpenOrder')}
+              </button>
+              <button type="button" onClick={() => setReservedTable(null)} className={`w-full py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </ModalPortal>
       )}
 
       {showOrderModal && selectedTableId && (
