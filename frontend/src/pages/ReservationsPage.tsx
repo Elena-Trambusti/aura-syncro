@@ -4,14 +4,16 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatTime, getReservationStatusLabel } from '../lib/utils'
 import {
-  Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, Clock, ListOrdered,
-  CreditCard, Copy, ExternalLink, Info, UserCheck, LogOut,
+  Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, ListOrdered,
+  CreditCard, Copy, ExternalLink, UserCheck, LogOut, Link2, ChevronDown,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRole } from '../hooks/useRole'
 import WaitlistPanel from '../components/reservations/WaitlistPanel'
 import AssignTableModal from '../components/reservations/AssignTableModal'
+import ReservationsHelpTooltip from '../components/reservations/ReservationsHelpTooltip'
 import { cn } from '../lib/utils'
+import { ui } from '../lib/ui'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
@@ -122,6 +124,28 @@ function localDateStr(offsetDays = 0): string {
   return `${y}-${m}-${day}`
 }
 
+function isArchivedStatus(status: string): boolean {
+  return ['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(status)
+}
+
+const STATUS_ACCENT: Record<string, string> = {
+  PENDING: 'border-l-amber-400',
+  CONFIRMED: 'border-l-blue-500',
+  SEATED: 'border-l-emerald-500',
+  COMPLETED: 'border-l-slate-300',
+  CANCELLED: 'border-l-red-300',
+  NO_SHOW: 'border-l-slate-300',
+}
+
+const STATUS_BADGE: Record<string, string> = {
+  PENDING: 'bg-amber-50 text-amber-800 border-amber-200',
+  CONFIRMED: 'bg-blue-50 text-blue-800 border-blue-200',
+  SEATED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  COMPLETED: 'bg-slate-50 text-slate-600 border-slate-200',
+  CANCELLED: 'bg-red-50 text-red-700 border-red-200',
+  NO_SHOW: 'bg-slate-50 text-slate-500 border-slate-200',
+}
+
 export default function ReservationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -134,6 +158,7 @@ export default function ReservationsPage() {
   const [showForm, setShowForm] = useState(false)
   const [selectedDate, setSelectedDate] = useState(localDateStr())
   const [assigningReservation, setAssigningReservation] = useState<Reservation | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   const bookingUrl = restaurant?.slug
     ? `${window.location.origin}/prenota/${restaurant.slug}`
@@ -193,117 +218,114 @@ export default function ReservationsPage() {
     toast.success(t('common.linkCopied'))
   }
 
-  const totalCovers = reservations.filter(r => !['CANCELLED', 'NO_SHOW'].includes(r.status)).reduce((s, r) => s + r.covers, 0)
-
-  const statusColor: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    CONFIRMED: 'bg-blue-100 text-blue-800',
-    SEATED: 'bg-emerald-100 text-emerald-800',
-    COMPLETED: 'bg-slate-100 text-slate-500',
-    CANCELLED: 'bg-red-100 text-red-600',
-    NO_SHOW: 'bg-gray-100 text-gray-500',
-  }
+  const totalCovers = reservations.filter(r => !isArchivedStatus(r.status)).reduce((s, r) => s + r.covers, 0)
 
   const needsDeposit = (res: Reservation) =>
-    (res.depositRequired ?? depositPolicyActive) && !res.depositPaid && !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(res.status)
+    (res.depositRequired ?? depositPolicyActive) && !res.depositPaid && !isArchivedStatus(res.status)
 
-  const activeReservations = reservations.filter(r => !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(r.status))
+  const activeReservations = reservations.filter(r => !isArchivedStatus(r.status))
+  const archivedReservations = reservations.filter(r => isArchivedStatus(r.status))
+  const displayedReservations = showArchived ? reservations : activeReservations
+
+  const canSeatReservation = (res: Reservation) =>
+    res.status === 'PENDING' || res.status === 'CONFIRMED'
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="aura-page-title">{t('reservations.title')}</h1>
-          <p className="aura-page-subtitle">{t('reservations.subtitle', { count: reservations.length, covers: totalCovers })}</p>
+    <div className="space-y-4">
+      <div className={ui.pageHeader}>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="aura-page-title">{t('reservations.title')}</h1>
+            <ReservationsHelpTooltip />
+          </div>
+          <p className="aura-page-subtitle">{t('reservations.subtitle', { count: activeReservations.length, covers: totalCovers })}</p>
+          {bookingUrl && activeTab === 'bookings' && (
+            <div className="mt-2 flex max-w-xl items-center gap-1.5 text-xs text-slate-500">
+              <Link2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <span className="truncate">{bookingUrl.replace(/^https?:\/\//, '')}</span>
+              <button
+                type="button"
+                onClick={copyBookingLink}
+                className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                title={t('common.copyLink')}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => window.open(bookingUrl, '_blank')}
+                className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                title={t('reservations.openPublicBooking')}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         {canManageReservations && activeTab === 'bookings' && (
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">
+          <button onClick={() => setShowForm(true)} className={`flex shrink-0 items-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm`}>
             <Plus className="w-4 h-4" />
             {t('reservations.newReservation')}
           </button>
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-2 text-sm text-slate-600">
-            <p className="font-semibold text-slate-900">{t('reservations.howItWorksTitle')}</p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>{t('reservations.howItWorksBookings')}</li>
-              <li>{t('reservations.howItWorksWaitlist')}</li>
-              <li>{t('reservations.howItWorksPublic')}</li>
-            </ul>
-            <p className="text-xs text-slate-500">{t('reservations.workflowHint')}</p>
-          </div>
-        </div>
-        {bookingUrl && (
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs font-medium text-slate-500 mb-2">{t('reservations.publicBookingLink')}</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <code className="flex-1 min-w-0 text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 break-all">{bookingUrl}</code>
-              <button type="button" onClick={copyBookingLink}
-                className="shrink-0 rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label={t('common.copyLink')}>
-                <Copy className="w-4 h-4" />
+      <div className={`${ui.card} px-4 py-3`}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('bookings')}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  activeTab === 'bookings' ? ui.tabActive : ui.tabInactive,
+                )}
+              >
+                <CalendarDays className="h-4 w-4" />
+                {t('reservations.tabBookings')}
+                {activeReservations.length > 0 && (
+                  <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">{activeReservations.length}</span>
+                )}
               </button>
-              <button type="button" onClick={() => window.open(bookingUrl, '_blank')}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50">
-                <ExternalLink className="w-3.5 h-3.5" />
-                {t('reservations.openPublicBooking')}
+              <button
+                type="button"
+                onClick={() => setActiveTab('waitlist')}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  activeTab === 'waitlist' ? ui.tabActive : ui.tabInactive,
+                )}
+              >
+                <ListOrdered className="h-4 w-4" />
+                {t('reservations.tabWaitlist')}
               </button>
             </div>
+
+            <div className={ui.filterRow}>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className={`${ui.input} w-auto rounded-xl py-2`}
+              />
+              {[-1, 0, 1].map(offset => {
+                const dateStr = localDateStr(offset)
+                const labels = [t('common.yesterday', 'Ieri'), t('common.today', 'Oggi'), t('common.tomorrow', 'Domani')]
+                return (
+                  <button
+                    key={offset}
+                    type="button"
+                    onClick={() => setSelectedDate(dateStr)}
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                      selectedDate === dateStr ? ui.tabActive : ui.chipInactive,
+                    )}
+                  >
+                    {labels[offset + 1]}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        )}
-      </div>
-
-      <div className="flex gap-2 border-b border-slate-200">
-        <button
-          type="button"
-          onClick={() => setActiveTab('bookings')}
-          className={cn(
-            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
-            activeTab === 'bookings'
-              ? 'border-amber-500 text-amber-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800',
-          )}
-        >
-          <CalendarDays className="h-4 w-4" />
-          {t('reservations.tabBookings')}
-          {activeReservations.length > 0 && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{activeReservations.length}</span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('waitlist')}
-          className={cn(
-            'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
-            activeTab === 'waitlist'
-              ? 'border-amber-500 text-amber-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800',
-          )}
-        >
-          <ListOrdered className="h-4 w-4" />
-          {t('reservations.tabWaitlist')}
-        </button>
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-          className="saas-input rounded-xl px-4 py-2 text-slate-900" />
-        <div className="flex gap-2">
-          {[-1, 0, 1].map(offset => {
-            const dateStr = localDateStr(offset)
-            const labels = [t('common.yesterday', 'Ieri'), t('common.today', 'Oggi'), t('common.tomorrow', 'Domani')]
-            return (
-              <button key={offset} onClick={() => setSelectedDate(dateStr)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedDate === dateStr ? 'bg-amber-600 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-                {labels[offset + 1]}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
       {activeTab === 'waitlist' ? (
@@ -312,102 +334,145 @@ export default function ReservationsPage() {
         <QueryErrorBanner />
       ) : (
       <>
-      <div className="space-y-3">
-        {reservations.map(res => (
-          <div key={res.id} className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-4 ${['CANCELLED', 'NO_SHOW'].includes(res.status) ? 'opacity-60' : ''}`}>
-            <div className="w-14 h-14 rounded-xl bg-amber-50 border border-amber-100 flex flex-col items-center justify-center shrink-0">
-              <span className="text-lg font-bold text-amber-700">{formatTime(res.date)}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-slate-900">{res.guestName}</p>
-                {res.customer && res.customer.totalVisits > 3 && (
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">VIP</span>
-                )}
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[res.status]}`}>
-                  {getReservationStatusLabel(res.status)}
-                </span>
-                {res.depositPaid && (
-                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
-                    {t('reservations.depositPaid')}
-                  </span>
-                )}
-                {needsDeposit(res) && (
-                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-                    {t('reservations.depositRequired')}
-                  </span>
-                )}
+      <div className="space-y-2">
+        {displayedReservations.map(res => (
+          <div
+            key={res.id}
+            className={cn(
+              'rounded-xl border border-slate-200 border-l-4 bg-white p-4 shadow-sm transition-colors hover:border-slate-300',
+              STATUS_ACCENT[res.status] ?? 'border-l-slate-300',
+              isArchivedStatus(res.status) && 'opacity-75',
+            )}
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-lg font-bold leading-none text-slate-900">{formatTime(res.date)}</span>
+                  <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">{res.duration}′</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-base font-semibold text-slate-900">{res.guestName}</p>
+                    {res.customer && res.customer.totalVisits > 3 && (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700">VIP</span>
+                    )}
+                    <span className={cn('rounded-full border px-2 py-0.5 text-xs font-medium', STATUS_BADGE[res.status])}>
+                      {getReservationStatusLabel(res.status)}
+                    </span>
+                    {res.depositPaid && (
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        {t('reservations.depositPaid')}
+                      </span>
+                    )}
+                    {needsDeposit(res) && (
+                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        {t('reservations.depositRequired')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{res.covers} {t('reservations.guests')}</span>
+                    <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{res.guestPhone}</span>
+                    {res.table && (
+                      <span className="inline-flex items-center gap-1 font-medium text-amber-700">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        T{res.table.number}
+                      </span>
+                    )}
+                  </div>
+                  {res.notes && <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">{res.notes}</p>}
+                </div>
               </div>
-              <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 flex-wrap">
-                <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{res.covers} {t('reservations.guests')}</span>
-                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{res.duration} {t('common.minutes')}</span>
-                <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{res.guestPhone}</span>
-                {res.table && <span className="text-amber-700 font-medium">T{res.table.number}</span>}
-              </div>
-              {res.notes && <p className="text-xs text-slate-600 mt-1 italic">&quot;{res.notes}&quot;</p>}
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-              {needsDeposit(res) && canManageReservations && (
-                <button
-                  type="button"
-                  onClick={() => copyDepositLink.mutate(res.id)}
-                  disabled={copyDepositLink.isPending}
-                  className="flex items-center gap-1.5 px-3 py-2 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-semibold disabled:opacity-50"
-                  title={t('reservations.copyDepositLink')}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('reservations.copyDepositLink')}</span>
-                </button>
-              )}
-              {canManageReservations && (res.status === 'PENDING' || (res.status === 'CONFIRMED' && !res.table)) && (
-                <button
-                  onClick={() => setAssigningReservation(res)}
-                  className="flex items-center gap-1 px-2.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors"
-                  title={t('reservations.assignTable')}>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('reservations.assignTable')}</span>
-                </button>
-              )}
-              {canManageReservations && res.status === 'CONFIRMED' && res.table && (
-                <>
-                  <button onClick={() => updateStatus.mutate({ id: res.id, status: 'SEATED' })}
-                    className="flex items-center gap-1 px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors"
-                    title={t('reservations.markSeated')}>
-                    <UserCheck className="w-4 h-4" />
-                    <span className="hidden sm:inline">{t('reservations.markSeated')}</span>
+
+              {canManageReservations && !isArchivedStatus(res.status) && (
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 sm:border-t-0 sm:pt-0 sm:pl-2">
+                  {needsDeposit(res) && (
+                    <button
+                      type="button"
+                      onClick={() => copyDepositLink.mutate(res.id)}
+                      disabled={copyDepositLink.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                      title={t('reservations.copyDepositLink')}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span className="hidden md:inline">{t('reservations.copyDepositLink')}</span>
+                    </button>
+                  )}
+                  {canSeatReservation(res) && (
+                    <button
+                      type="button"
+                      onClick={() => setAssigningReservation(res)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                      title={t('reservations.assignTable')}
+                    >
+                      <UserCheck className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t('reservations.assignTable')}</span>
+                    </button>
+                  )}
+                  {res.status === 'CONFIRMED' && (
+                    <button
+                      type="button"
+                      onClick={() => updateStatus.mutate({ id: res.id, status: 'NO_SHOW' })}
+                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      title={t('reservations.markNoShow')}
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+                  )}
+                  {res.status === 'SEATED' && (
+                    <button
+                      type="button"
+                      onClick={() => updateStatus.mutate({ id: res.id, status: 'COMPLETED' })}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      title={t('reservations.markCompleted')}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t('reservations.markCompleted')}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
+                    className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    title={t('common.cancel')}
+                  >
+                    <XCircle className="h-4 w-4" />
                   </button>
-                  <button onClick={() => updateStatus.mutate({ id: res.id, status: 'NO_SHOW' })}
-                    className="p-2 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg transition-colors"
-                    title={t('reservations.markNoShow')}>
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-              {canManageReservations && res.status === 'SEATED' && (
-                <button onClick={() => updateStatus.mutate({ id: res.id, status: 'COMPLETED' })}
-                  className="flex items-center gap-1 px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
-                  title={t('reservations.markCompleted')}>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('reservations.markCompleted')}</span>
-                </button>
-              )}
-              {canManageReservations && !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(res.status) && (
-                <button onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
-                  className="p-2 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-lg transition-colors" title={t('common.cancel')}>
-                  <XCircle className="w-4 h-4" />
-                </button>
+                </div>
               )}
             </div>
           </div>
         ))}
-        {reservations.length === 0 && (
-          <div className="flex flex-col items-center py-16 text-slate-600 rounded-xl border border-dashed border-slate-200 bg-white">
-            <CalendarDays className="w-12 h-12 mb-3 opacity-30" />
-            <p className="font-medium">{t('reservations.noReservations')}</p>
-            <p className="text-sm text-slate-500 mt-1 max-w-md text-center">{t('reservations.noReservationsHint')}</p>
+
+        {displayedReservations.length === 0 && (
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
+            <CalendarDays className="mb-3 h-12 w-12 text-slate-300" />
+            <p className="font-semibold text-slate-900">
+              {showArchived || archivedReservations.length === 0
+                ? t('reservations.noReservations')
+                : t('reservations.activeEmptyTitle')}
+            </p>
+            <p className="mt-1 max-w-md text-sm text-slate-500">
+              {showArchived || archivedReservations.length === 0
+                ? t('reservations.noReservationsHint')
+                : t('reservations.activeEmptyHint')}
+            </p>
           </div>
         )}
       </div>
+
+      {archivedReservations.length > 0 && activeTab === 'bookings' && (
+        <button
+          type="button"
+          onClick={() => setShowArchived(v => !v)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+        >
+          <ChevronDown className={cn('h-4 w-4 transition-transform', showArchived && 'rotate-180')} />
+          {showArchived
+            ? t('reservations.hideArchived')
+            : t('reservations.showArchived', { count: archivedReservations.length })}
+        </button>
+      )}
 
       {showForm && (
         <ReservationForm

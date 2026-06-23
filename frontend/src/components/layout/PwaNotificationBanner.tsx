@@ -11,9 +11,12 @@ interface PwaNotificationBannerProps {
 
 export default function PwaNotificationBanner({ enabled }: PwaNotificationBannerProps) {
   const { t } = useTranslation()
-  const { supported, permission, subscribed, enablePush } = usePushNotifications(enabled)
+  const { supported, permission, subscribed, ready, enablePush } = usePushNotifications(enabled)
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('pwa-push-banner-dismissed') === '1',
+  )
 
-  if (!enabled || !supported || permission === 'denied' || subscribed) return null
+  if (!enabled || !ready || !supported || permission === 'denied' || subscribed || dismissed) return null
 
   return (
     <div className="pwa-notification-banner mx-0 mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -26,13 +29,26 @@ export default function PwaNotificationBanner({ enabled }: PwaNotificationBanner
           <p className="text-xs text-slate-600 mt-0.5">{t('pwa.pushBannerDesc')}</p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => void enablePush()}
-        className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
-      >
-        {t('pwa.enablePush')}
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void enablePush()}
+          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
+        >
+          {t('pwa.enablePush')}
+        </button>
+        <button
+          type="button"
+          aria-label={t('common.close')}
+          onClick={() => {
+            localStorage.setItem('pwa-push-banner-dismissed', '1')
+            setDismissed(true)
+          }}
+          className="rounded-lg p-2 text-slate-400 hover:bg-amber-100 hover:text-slate-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   )
 }

@@ -61,6 +61,7 @@ export default function AssignTableModal({ reservation, onSuccess, onCancel }: A
             <p className="mt-1 text-sm text-slate-500">
               {reservation.guestName} · {formatTime(reservation.date)} · {reservation.covers} {t('reservations.guests')}
             </p>
+            <p className="mt-0.5 text-xs text-slate-400">{t('reservations.freeTablesHint')}</p>
           </div>
           <button type="button" onClick={onCancel} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">
             <X className="h-5 w-5" />
@@ -111,7 +112,7 @@ export default function AssignTableModal({ reservation, onSuccess, onCancel }: A
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
           >
             {confirm.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {t('reservations.confirmWithTable')}
+            {t('reservations.confirmSeat')}
           </button>
         </div>
       </div>

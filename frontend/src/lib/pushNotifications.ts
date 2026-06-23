@@ -74,6 +74,18 @@ export async function getPushPermission(): Promise<NotificationPermission> {
   return Notification.permission
 }
 
+/** Verifica subscription esistente senza richiedere permessi */
+export async function hasActivePushSubscription(): Promise<boolean> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return false
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    const sub = await reg?.pushManager.getSubscription()
+    return !!sub
+  } catch {
+    return false
+  }
+}
+
 /** Attende il Service Worker con timeout (evita hang silenzioso) */
 export async function waitForServiceWorker(timeoutMs = 20_000): Promise<ServiceWorkerRegistration> {
   if (!('serviceWorker' in navigator)) {

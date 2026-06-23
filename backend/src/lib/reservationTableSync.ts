@@ -78,15 +78,18 @@ export async function getAvailableTablesForReservation(
 
   return tables
     .filter(t => t.seats >= reservation.covers)
-    .filter(t => !overlappingTableIds.has(t.id))
-    .filter(t => t.status === 'FREE' || t.status === 'RESERVED' || t.id === reservation.tableId)
+    .filter(t => t.status === 'FREE' || t.id === reservation.tableId)
+    .filter(t => !overlappingTableIds.has(t.id) || t.id === reservation.tableId)
     .map(t => ({
       id: t.id,
       number: t.number,
       seats: t.seats,
       area: t.area,
       status: t.status,
-      suitable: t.seats >= reservation.covers && !overlappingTableIds.has(t.id),
+      suitable:
+        t.seats >= reservation.covers
+        && (t.status === 'FREE' || t.id === reservation.tableId)
+        && !overlappingTableIds.has(t.id),
     }))
 }
 
@@ -103,7 +106,7 @@ export async function confirmReservationWithTable(
   }
   if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
     throw new ReservationValidationError(
-      'Solo prenotazioni in attesa o confermate possono ricevere un tavolo',
+      'Solo prenotazioni in attesa o confermate possono essere accomodate',
       'INVALID_STATUS',
     )
   }
@@ -123,8 +126,11 @@ export async function confirmReservationWithTable(
       'TABLE_TOO_SMALL',
     )
   }
-  if (table.status === 'OCCUPIED' || table.status === 'CLEANING') {
+  if (table.status === 'OCCUPIED' && table.id !== reservation.tableId) {
     throw new ReservationValidationError('Tavolo non disponibile', 'TABLE_UNAVAILABLE')
+  }
+  if (table.status === 'CLEANING') {
+    throw new ReservationValidationError('Tavolo in pulizia', 'TABLE_UNAVAILABLE')
   }
   if (table.orders.length > 0) {
     throw new ReservationValidationError('Tavolo con ordine attivo', 'TABLE_HAS_ORDER')
@@ -142,13 +148,13 @@ export async function confirmReservationWithTable(
 
   const updated = await prisma.reservation.update({
     where: { id: reservationId },
-    data: { status: 'CONFIRMED', tableId },
+    data: { status: 'SEATED', tableId },
     include: { table: true, customer: true },
   })
 
   await prisma.table.update({
     where: { id: tableId },
-    data: { status: 'RESERVED' },
+    data: { status: 'OCCUPIED' },
   })
 
   if (previousTableId && previousTableId !== tableId) {

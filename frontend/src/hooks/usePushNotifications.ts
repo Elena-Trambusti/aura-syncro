@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import {
   getPushPermission,
+  hasActivePushSubscription,
   isPushSupported,
   PushSubscribeError,
   subscribeToPushNotifications,
@@ -12,10 +13,21 @@ export function usePushNotifications(enabled: boolean) {
   const { t } = useTranslation()
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [subscribed, setSubscribed] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (!enabled || !isPushSupported()) return
-    void getPushPermission().then(setPermission)
+    if (!enabled || !isPushSupported()) {
+      setReady(true)
+      return
+    }
+    void (async () => {
+      const perm = await getPushPermission()
+      setPermission(perm)
+      if (perm === 'granted') {
+        setSubscribed(await hasActivePushSubscription())
+      }
+      setReady(true)
+    })()
   }, [enabled])
 
   const enablePush = useCallback(async () => {
@@ -46,19 +58,20 @@ export function usePushNotifications(enabled: boolean) {
   }, [t])
 
   useEffect(() => {
-    if (!enabled || !isPushSupported() || permission !== 'granted') return
+    if (!enabled || !ready || !isPushSupported() || permission !== 'granted' || subscribed) return
     void subscribeToPushNotifications()
       .then(ok => setSubscribed(ok))
       .catch(err => {
         console.warn('[push] auto-subscribe skipped:', err)
         setSubscribed(false)
       })
-  }, [enabled, permission])
+  }, [enabled, ready, permission, subscribed])
 
   return {
     supported: isPushSupported(),
     permission,
     subscribed,
+    ready,
     enablePush,
   }
 }
