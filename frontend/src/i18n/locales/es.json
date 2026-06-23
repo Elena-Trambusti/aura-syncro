@@ -214,6 +214,8 @@
     "manageSection": "Gestión de mesas",
     "newTable": "Nueva mesa",
     "editTable": "Editar mesa",
+    "tableNumber": "Número de mesa",
+    "tableNumberPlaceholder": "Ej. 1",
     "confirmDelete": "¿Eliminar esta mesa?",
     "saved": "Mesa guardada",
     "deleted": "Mesa eliminada",
@@ -499,6 +501,7 @@
     "formName": "Nombre completo",
     "formEmail": "Email",
     "formPassword": "Contraseña temporal",
+    "formPasswordHint": "Mínimo {{min}} caracteres — el miembro podrá cambiarla en el primer acceso",
     "formRole": "Rol",
     "formPhone": "Teléfono",
     "tabTeam": "Equipo",
@@ -534,7 +537,12 @@
     "shiftsNeedTeamTitle": "Añade personal primero",
     "shiftsNeedTeamHint": "Los turnos se asignan a camareros, chefs o managers. El titular no aparece — añade al menos un miembro en la pestaña Equipo.",
     "shiftsGoToTeam": "Ir al tab Equipo",
-    "noShiftsDayClick": "Sin turnos — clic para añadir uno"
+    "shiftsGoToTeamAdd": "Añadir miembro ahora",
+    "addFirstMember": "Añadir el primer miembro",
+    "teamOnlyOwnerTitle": "Solo el titular en el equipo",
+    "teamOnlyOwnerHint": "Para planificar turnos necesitas al menos un camarero, chef o manager. El titular no puede asignarse a turnos.",
+    "noShiftsDayClick": "Sin turnos — clic para añadir uno",
+    "noShiftsDayLocked": "Sin turnos — añade primero un miembro del equipo"
   },
   "inventory": {
     "title": "Almacén",

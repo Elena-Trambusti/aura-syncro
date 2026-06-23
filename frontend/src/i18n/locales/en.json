@@ -214,6 +214,8 @@
     "manageSection": "Table management",
     "newTable": "New table",
     "editTable": "Edit table",
+    "tableNumber": "Table number",
+    "tableNumberPlaceholder": "e.g. 1",
     "confirmDelete": "Delete this table?",
     "saved": "Table saved",
     "deleted": "Table deleted",
@@ -501,6 +503,7 @@
     "formName": "Full name",
     "formEmail": "Email",
     "formPassword": "Temporary password",
+    "formPasswordHint": "At least {{min}} characters — the member can change it on first login",
     "formRole": "Role",
     "formPhone": "Phone",
     "tabTeam": "Team",
@@ -536,7 +539,12 @@
     "shiftsNeedTeamTitle": "Add staff first",
     "shiftsNeedTeamHint": "Shifts are assigned to waiters, chefs, or managers. The owner is not listed — add at least one team member in the Team tab.",
     "shiftsGoToTeam": "Go to Team tab",
-    "noShiftsDayClick": "No shifts — click to add one"
+    "shiftsGoToTeamAdd": "Add member now",
+    "addFirstMember": "Add first team member",
+    "teamOnlyOwnerTitle": "Only the owner on the team",
+    "teamOnlyOwnerHint": "To plan shifts you need at least one waiter, chef or manager. The owner cannot be assigned to shifts.",
+    "noShiftsDayClick": "No shifts — click to add one",
+    "noShiftsDayLocked": "No shifts — add a team member first"
   },
   "inventory": {
     "title": "Inventory",

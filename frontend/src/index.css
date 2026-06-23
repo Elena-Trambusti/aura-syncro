@@ -242,7 +242,7 @@
   }
 
   .saas-input {
-    @apply rounded-xl border border-white/10 bg-navy text-pietra placeholder:text-fumo transition-all;
+    @apply rounded-xl border border-white/10 bg-navy text-pietra placeholder:text-fumo transition-all px-3 py-2.5;
   }
 
   .saas-input:focus {
@@ -332,7 +332,7 @@
   }
 
   .aura-brand-capsule {
-    @apply inline-flex items-center gap-3 rounded-full border border-aura-gold/25 bg-navy-surface/80 px-3 py-2;
+    @apply inline-flex items-center justify-center gap-3 rounded-full border border-aura-gold/25 bg-navy-surface/80 px-3 py-2;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
@@ -591,6 +591,10 @@
 
   .aura-trend-badge--down {
     @apply border-rose-500/25 bg-rose-500/[0.08] text-rose-300;
+  }
+
+  .aura-trend-badge--sm {
+    @apply px-2 py-0.5 text-[9px] tracking-wide;
   }
 
   .pwa-app-shell {

@@ -214,6 +214,8 @@
     "manageSection": "Gestion des tables",
     "newTable": "Nouvelle table",
     "editTable": "Modifier la table",
+    "tableNumber": "Numéro de table",
+    "tableNumberPlaceholder": "Ex. 1",
     "confirmDelete": "Supprimer cette table ?",
     "saved": "Table enregistrée",
     "deleted": "Table supprimée",
@@ -499,6 +501,7 @@
     "formName": "Nom complet",
     "formEmail": "Email",
     "formPassword": "Mot de passe temporaire",
+    "formPasswordHint": "Minimum {{min}} caractères — le membre pourra le changer à la première connexion",
     "formRole": "Rôle",
     "formPhone": "Téléphone",
     "tabTeam": "Équipe",
@@ -534,7 +537,12 @@
     "shiftsNeedTeamTitle": "Ajoutez du personnel d'abord",
     "shiftsNeedTeamHint": "Les shifts sont assignés aux serveurs, chefs ou managers. Le titulaire n'apparaît pas — ajoutez au moins un membre dans l'onglet Équipe.",
     "shiftsGoToTeam": "Aller à l'onglet Équipe",
-    "noShiftsDayClick": "Aucun shift — cliquez pour en ajouter un"
+    "shiftsGoToTeamAdd": "Ajouter un membre maintenant",
+    "addFirstMember": "Ajouter le premier membre",
+    "teamOnlyOwnerTitle": "Seul le titulaire dans l'équipe",
+    "teamOnlyOwnerHint": "Pour planifier les shifts, il faut au moins un serveur, chef ou manager. Le titulaire ne peut pas être assigné aux shifts.",
+    "noShiftsDayClick": "Aucun shift — cliquez pour en ajouter un",
+    "noShiftsDayLocked": "Aucun shift — ajoutez d'abord un membre de l'équipe"
   },
   "inventory": {
     "title": "Stock",

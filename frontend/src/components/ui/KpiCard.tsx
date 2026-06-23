@@ -71,7 +71,7 @@ export default function KpiCard({
       <div className="relative z-[1] flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="aura-kpi-label">{title}</p>
-          <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+          <div className="mt-2">
             <p
               className={cn(
                 'aura-kpi-value',
@@ -82,7 +82,13 @@ export default function KpiCard({
               {value}
             </p>
             {trend !== undefined && trendLabel && (
-              <TrendBadge value={trend} label={trendLabel(Math.abs(trend))} className="mb-1" />
+              <div className="mt-2.5">
+                <TrendBadge
+                  value={trend}
+                  label={trendLabel(Math.abs(trend))}
+                  size="sm"
+                />
+              </div>
             )}
           </div>
         </div>

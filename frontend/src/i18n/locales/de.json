@@ -214,6 +214,8 @@
     "manageSection": "Tischverwaltung",
     "newTable": "Neuer Tisch",
     "editTable": "Tisch bearbeiten",
+    "tableNumber": "Tischnummer",
+    "tableNumberPlaceholder": "z. B. 1",
     "confirmDelete": "Diesen Tisch löschen?",
     "saved": "Tisch gespeichert",
     "deleted": "Tisch gelöscht",
@@ -499,6 +501,7 @@
     "formName": "Vollständiger Name",
     "formEmail": "E-Mail",
     "formPassword": "Temporäres Passwort",
+    "formPasswordHint": "Mindestens {{min}} Zeichen — das Mitglied kann es beim ersten Login ändern",
     "formRole": "Rolle",
     "formPhone": "Telefon",
     "tabTeam": "Team",
@@ -534,7 +537,12 @@
     "shiftsNeedTeamTitle": "Zuerst Personal hinzufügen",
     "shiftsNeedTeamHint": "Schichten werden Kellnern, Köchen oder Managern zugewiesen. Der Inhaber erscheint nicht — fügen Sie mindestens ein Teammitglied im Tab Team hinzu.",
     "shiftsGoToTeam": "Zum Tab Team",
-    "noShiftsDayClick": "Keine Schichten — klicken zum Hinzufügen"
+    "shiftsGoToTeamAdd": "Mitglied jetzt hinzufügen",
+    "addFirstMember": "Erstes Mitglied hinzufügen",
+    "teamOnlyOwnerTitle": "Nur der Inhaber im Team",
+    "teamOnlyOwnerHint": "Für Schichtplanung brauchst du mindestens einen Kellner, Koch oder Manager. Der Inhaber kann keinen Schichten zugewiesen werden.",
+    "noShiftsDayClick": "Keine Schichten — klicken zum Hinzufügen",
+    "noShiftsDayLocked": "Keine Schichten — zuerst ein Teammitglied hinzufügen"
   },
   "inventory": {
     "title": "Lager",

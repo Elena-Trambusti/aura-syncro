@@ -15,6 +15,7 @@ import { tq } from '../lib/queryKeys'
 import { useRealtimeTables } from '../hooks/useRealtimeInvalidation'
 import { useRole } from '../hooks/useRole'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
@@ -33,6 +34,7 @@ interface Table extends FloorTable {
 }
 
 type TableFormData = { number: number; seats: number; area: string }
+type TableFormState = { number: NumericField; seats: NumericField; area: string }
 
 const STAT_ACCENTS = [
   { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'saas-stat-accent-emerald' },
@@ -53,11 +55,23 @@ function TableFormModal({
   onCancel: () => void
 }) {
   const { t } = useTranslation()
-  const [form, setForm] = useState<TableFormData>({
-    number: table?.number ?? 1,
-    seats: table?.seats ?? 4,
+  const [form, setForm] = useState<TableFormState>({
+    number: numericFieldFrom(table?.number, ''),
+    seats: numericFieldFrom(table?.seats, ''),
     area: table?.area || defaultArea,
   })
+
+  const handleSave = () => {
+    const number = numericToNumber(form.number, 0)
+    const seats = numericToNumber(form.seats, 0)
+    if (number < 1 || seats < 1) {
+      return
+    }
+    onSave({ number, seats, area: form.area })
+  }
+
+  const canSave =
+    numericToNumber(form.number, 0) >= 1 && numericToNumber(form.seats, 0) >= 1
 
   return (
     <ModalPortal onClose={onCancel}>
@@ -65,24 +79,20 @@ function TableFormModal({
         <h3 className={ui.modalTitle}>{table ? t('tables.editTable') : t('tables.newTable')}</h3>
         <div className="space-y-4">
           <div>
-            <label className={ui.label}>{t('guestMenu.tableNumber')} *</label>
+            <label className={ui.label}>{t('tables.tableNumber')} *</label>
             <input
-              type="number"
+              {...numericInputProps(form.number, v => setForm(f => ({ ...f, number: v })), 'int')}
               min={1}
-              value={form.number}
-              onChange={e => setForm(f => ({ ...f, number: parseInt(e.target.value, 10) || 1 }))}
               className={ui.input}
-              placeholder={t('guestMenu.tableNumberPlaceholder')}
+              placeholder={t('tables.tableNumberPlaceholder')}
             />
           </div>
           <div>
             <label className={ui.label}>{t('common.seats')} *</label>
             <input
-              type="number"
+              {...numericInputProps(form.seats, v => setForm(f => ({ ...f, seats: v })), 'int')}
               min={1}
               max={20}
-              value={form.seats}
-              onChange={e => setForm(f => ({ ...f, seats: parseInt(e.target.value, 10) || 4 }))}
               className={ui.input}
             />
           </div>
@@ -101,8 +111,9 @@ function TableFormModal({
           </button>
           <button
             type="button"
-            onClick={() => onSave(form)}
-            className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm`}
+            onClick={handleSave}
+            disabled={!canSave}
+            className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {t('common.save')}
           </button>
@@ -347,7 +358,7 @@ export default function TablesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className={ui.tableHeadBg}>
-                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('guestMenu.tableNumber')}</th>
+                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('tables.tableNumber')}</th>
                   <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.seats')}</th>
                   <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.area')}</th>
                   <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.status')}</th>

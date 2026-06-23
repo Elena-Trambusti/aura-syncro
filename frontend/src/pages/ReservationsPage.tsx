@@ -18,6 +18,7 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ModalPortal from '../components/ModalPortal'
 
 type ReservationTab = 'bookings' | 'waitlist'
 
@@ -44,70 +45,89 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
   const [form, setForm] = useState({
     guestName: '', guestPhone: '', guestEmail: '',
     covers: 2, date: tomorrow.toISOString().slice(0, 16),
-    duration: 90, notes: '',
+    notes: '',
   })
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
-      <div className="w-full max-w-md rounded-xl premium-card p-6 shadow-lg" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold text-pietra mb-5">{t('reservations.formTitle')}</h3>
+    <ModalPortal onClose={onCancel}>
+      <div className={cn(ui.modal, 'max-w-md')} onClick={e => e.stopPropagation()}>
+        <h3 className={ui.modalTitle}>{t('reservations.formTitle')}</h3>
         <div className="space-y-4">
+          <div>
+            <label className={ui.label}>{t('reservations.formGuestName')}</label>
+            <input
+              value={form.guestName}
+              onChange={e => update('guestName', e.target.value)}
+              className={ui.input}
+              placeholder={t('reservations.formGuestNamePlaceholder')}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-fumo mb-1">{t('reservations.formGuestName')}</label>
-              <input value={form.guestName} onChange={e => update('guestName', e.target.value)}
-                className="saas-input w-full py-2.5"
-                placeholder={t('reservations.formGuestNamePlaceholder')} />
+            <div>
+              <label className={ui.label}>{t('reservations.formPhone')}</label>
+              <input
+                value={form.guestPhone}
+                onChange={e => update('guestPhone', e.target.value)}
+                className={ui.input}
+                placeholder={t('reservations.formPhonePlaceholder')}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-fumo mb-1">{t('reservations.formPhone')}</label>
-              <input value={form.guestPhone} onChange={e => update('guestPhone', e.target.value)}
-                className="saas-input w-full py-2.5"
-                placeholder={t('reservations.formPhonePlaceholder')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-fumo mb-1">{t('reservations.formCovers')}</label>
-              <input type="number" min={1} max={20} value={form.covers} onChange={e => update('covers', parseInt(e.target.value))}
-                className="saas-input w-full py-2.5" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-fumo mb-1">{t('reservations.formDateTime')}</label>
-              <input type="datetime-local" value={form.date} onChange={e => update('date', e.target.value)}
-                className="saas-input w-full py-2.5" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-fumo mb-1">{t('common.email')}</label>
-              <input type="email" value={form.guestEmail} onChange={e => update('guestEmail', e.target.value)}
-                className="saas-input w-full py-2.5" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-fumo mb-1">{t('reservations.formDuration')}</label>
-              <select value={form.duration} onChange={e => update('duration', parseInt(e.target.value))}
-                className="saas-input w-full py-2.5">
-                <option value={60}>{t('reservations.formDuration1h')}</option>
-                <option value={90}>{t('reservations.formDuration1h30')}</option>
-                <option value={120}>{t('reservations.formDuration2h')}</option>
-                <option value={150}>{t('reservations.formDuration2h30')}</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-fumo mb-1">{t('waitlist.notes')}</label>
-              <textarea value={form.notes} onChange={e => update('notes', e.target.value)}
-                className="saas-input w-full py-2.5 resize-none"
-                rows={2} placeholder={t('reservations.formNotesPlaceholder')} />
+              <label className={ui.label}>{t('reservations.formCovers')}</label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={form.covers}
+                onChange={e => update('covers', parseInt(e.target.value))}
+                className={ui.input}
+              />
             </div>
           </div>
+          <div>
+            <label className={ui.label}>{t('reservations.formDateTime')}</label>
+            <input
+              type="datetime-local"
+              value={form.date}
+              onChange={e => update('date', e.target.value)}
+              className={ui.input}
+            />
+          </div>
+          <div>
+            <label className={ui.label}>{t('common.email')}</label>
+            <input
+              type="email"
+              value={form.guestEmail}
+              onChange={e => update('guestEmail', e.target.value)}
+              className={ui.input}
+            />
+          </div>
+          <div>
+            <label className={ui.label}>{t('waitlist.notes')}</label>
+            <textarea
+              value={form.notes}
+              onChange={e => update('notes', e.target.value)}
+              className={ui.textarea}
+              rows={2}
+              placeholder={t('reservations.formNotesPlaceholder')}
+            />
+          </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-white/[0.1] rounded-xl text-sm font-medium">{t('common.cancel')}</button>
-          <button onClick={() => onSave({ ...form, date: new Date(form.date).toISOString() })}
-            className="flex-1 py-2.5 bg-aura-gold hover:bg-aura-gold text-navy font-semibold rounded-xl text-sm font-semibold">
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={onCancel} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium', ui.chipInactive)}>
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => onSave({ ...form, date: new Date(form.date).toISOString() })}
+            className="flex-1 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-navy hover:bg-aura-gold-light"
+          >
             {t('reservations.formConfirm')}
           </button>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   )
 }
 

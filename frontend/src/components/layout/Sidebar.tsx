@@ -145,7 +145,7 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="aura-sidebar-brand">
+        <div className="aura-sidebar-brand flex flex-col items-center text-center">
           <button
             type="button"
             onClick={closeSidebar}
@@ -155,8 +155,8 @@ export default function Sidebar() {
             <X className="w-5 h-5" />
           </button>
 
-          <div className="aura-brand-capsule mb-4 w-fit max-w-full">
-            <BrandLogo size="sm" showName layout="horizontal" />
+          <div className="aura-brand-capsule mb-4 mx-auto w-fit max-w-full justify-center">
+            <BrandLogo size="sm" showName layout="horizontal" className="justify-center" />
           </div>
 
           <div className="aura-tenant-chip">

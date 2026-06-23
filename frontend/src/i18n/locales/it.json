@@ -235,6 +235,8 @@
     "refreshed": "Tavoli aggiornati",
     "newTable": "Nuovo tavolo",
     "editTable": "Modifica tavolo",
+    "tableNumber": "Numero tavolo",
+    "tableNumberPlaceholder": "Es. 1",
     "confirmDelete": "Eliminare questo tavolo?",
     "saved": "Tavolo salvato",
     "deleted": "Tavolo eliminato",
@@ -532,6 +534,7 @@
     "formName": "Nome completo",
     "formEmail": "Email",
     "formPassword": "Password temporanea",
+    "formPasswordHint": "Minimo {{min}} caratteri — il membro potrà cambiarla al primo accesso",
     "formRole": "Ruolo",
     "formPhone": "Telefono",
     "tabTeam": "Team",
@@ -567,7 +570,12 @@
     "shiftsNeedTeamTitle": "Aggiungi prima il personale",
     "shiftsNeedTeamHint": "I turni si assegnano a camerieri, chef o manager. Il titolare non compare nell'elenco — aggiungi almeno un membro nel tab Team.",
     "shiftsGoToTeam": "Vai al tab Team",
-    "noShiftsDayClick": "Nessun turno — clicca per aggiungerne uno"
+    "shiftsGoToTeamAdd": "Aggiungi membro ora",
+    "addFirstMember": "Aggiungi il primo membro",
+    "teamOnlyOwnerTitle": "Solo il titolare nel team",
+    "teamOnlyOwnerHint": "Per pianificare i turni serve almeno un cameriere, chef o manager. Il titolare non può essere assegnato ai turni.",
+    "noShiftsDayClick": "Nessun turno — clicca per aggiungerne uno",
+    "noShiftsDayLocked": "Nessun turno — aggiungi prima un membro del team"
   },
   "inventory": {
     "title": "Magazzino",
