@@ -7,7 +7,11 @@ import { formatCurrency } from '../lib/utils'
 import { downloadCSV } from '../lib/export'
 import { ui } from '../lib/ui'
 import KpiCard from '../components/ui/KpiCard'
-import { Download, AlertCircle, TrendingUp, ShoppingBag, Receipt, Loader2, Clock } from 'lucide-react'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import FilterPills from '../components/ui/FilterPills'
+import { Download, AlertCircle, TrendingUp, ShoppingBag, Receipt, Clock } from 'lucide-react'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import {
@@ -74,23 +78,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="aura-page-title">{t('analytics.title')}</h1>
-          <p className="aura-page-subtitle">{t('analytics.subtitle')}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(['7d', '30d', '90d'] as Period[]).map(p => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${period === p ? 'bg-aura-gold text-navy font-semibold' : 'glass-chip'}`}
-            >
-              {periodLabels[p]}
-            </button>
-          ))}
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('analytics.title')}
+        subtitle={t('analytics.subtitle')}
+        actions={(
           <button
             type="button"
             disabled={!revenue?.length}
@@ -111,8 +103,14 @@ export default function AnalyticsPage() {
             <Download className="w-4 h-4" />
             {t('analytics.exportRevenue')}
           </button>
-        </div>
-      </div>
+        )}
+      />
+
+      <FilterPills
+        filters={(['7d', '30d', '90d'] as Period[]).map(p => ({ key: p, label: periodLabels[p] }))}
+        active={period}
+        onChange={key => setPeriod(key as Period)}
+      />
 
       {hasError && (
         <div className="rounded-xl border border-red-500/25 bg-red-500/10 p-4 flex gap-3">
@@ -122,9 +120,7 @@ export default function AnalyticsPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-aura-gold" />
-        </div>
+        <PageSkeleton variant="kpi" count={3} />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -263,6 +259,6 @@ export default function AnalyticsPage() {
           </div>
         </>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

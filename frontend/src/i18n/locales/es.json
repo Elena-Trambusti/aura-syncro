@@ -86,6 +86,14 @@
     "previewUnsubscribed": "Vista previa gratuita — activa Premium para desbloquear todo",
     "previewOnboarding": "Onboarding en curso — las funciones se desbloquean al completar el setup"
   },
+  "commandPalette": {
+    "title": "Navegación rápida",
+    "placeholder": "Buscar secciones, mesas, pedidos…",
+    "shortPlaceholder": "Buscar sección…",
+    "noResults": "Sin resultados",
+    "navigate": "navegar",
+    "open": "abrir"
+  },
   "auth": {
     "loginTitle": "Acceder al panel",
     "login": "Acceder",
@@ -198,7 +206,20 @@
     "vsLastMonth": "{{value}}% vs mes anterior",
     "revenueChart": "Evolución Facturación — Últimos 7 días",
     "revenueLabel": "Facturación",
-    "topDishes": "Platos Top — Últimos 30 días"
+    "topDishes": "Platos Top — Últimos 30 días",
+    "liveCommandTitle": "Centro de mando",
+    "liveCommandSubtitle": "Panorama operativo en vivo del servicio",
+    "tableStatus": "Estado sala",
+    "viewFloor": "Abrir mapa mesas",
+    "upcomingReservations": "Próximas reservas",
+    "noUpcomingReservations": "Sin reservas próximas hoy",
+    "viewReservations": "Gestionar reservas",
+    "kitchenQueue": "Cola cocina",
+    "kitchenPending": "Pendiente",
+    "kitchenPreparing": "En preparación",
+    "openKitchen": "Abrir pantalla cocina",
+    "quickNav": "Acceso rápido",
+    "secondaryMetrics": "Métricas secundarias"
   },
   "tables": {
     "title": "Mesas y TPV",

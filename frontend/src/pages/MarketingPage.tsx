@@ -11,6 +11,10 @@ import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
 
 type AutomationType = 'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS'
 type MarketingTab = 'automations' | 'campaigns'
@@ -231,11 +235,11 @@ export default function MarketingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className={ui.pageTitle}>{t('marketing.title')}</h1>
-        <p className={ui.pageSubtitle}>{t('marketing.subtitle')}</p>
-      </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('marketing.title')}
+        subtitle={t('marketing.subtitle')}
+      />
 
       <div className="flex gap-2 border-b border-white/[0.08]">
         <button
@@ -272,9 +276,7 @@ export default function MarketingPage() {
           </div>
 
           {isLoading ? (
-            <div className={`${ui.cardSm} p-8 text-center text-sm text-fumo`}>
-              {t('common.loading')}
-            </div>
+            <PageSkeleton variant="cards" count={3} />
           ) : automationsError ? (
             <QueryErrorBanner />
           ) : (
@@ -328,15 +330,11 @@ export default function MarketingPage() {
           </div>
 
           {campaignsLoading ? (
-            <div className={`${ui.cardSm} p-8 text-center text-sm text-fumo`}>
-              {t('common.loading')}
-            </div>
+            <PageSkeleton variant="list" count={4} />
           ) : campaignsError ? (
             <QueryErrorBanner />
           ) : campaigns.length === 0 ? (
-            <div className={`${ui.cardSm} p-8 text-center text-sm text-fumo`}>
-              {t('common.noData')}
-            </div>
+            <EmptyState icon={Send} title={t('common.noData')} />
           ) : (
             <div className="space-y-3">
               {campaigns.map(campaign => (
@@ -394,6 +392,6 @@ export default function MarketingPage() {
           onCancel={() => setShowCampaignForm(false)}
         />
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

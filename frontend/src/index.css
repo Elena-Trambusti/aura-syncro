@@ -685,6 +685,283 @@
     @apply rounded-2xl border border-white/[0.08] bg-navy-elevated p-6 shadow-lg sm:p-8;
     box-shadow: var(--shadow-premium-lg);
   }
+
+  /* ── Executive redesign v3 ── */
+
+  .aura-kpi--command {
+    border-color: rgba(212, 175, 55, 0.14);
+    box-shadow: var(--shadow-premium-xl), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  .aura-kpi--command::before {
+    opacity: 1;
+    width: 3px;
+  }
+
+  .aura-hero-kpi-grid--executive {
+    @apply xl:grid-cols-12;
+  }
+
+  .aura-section-eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-[0.22em] text-fumo/75;
+  }
+
+  .aura-secondary-metrics {
+    @apply grid grid-cols-2 gap-3 sm:gap-4;
+  }
+
+  .aura-nav-icon {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-navy-surface/60 text-fumo transition-all;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .aura-nav-icon--active {
+    @apply border-aura-gold/30 bg-aura-gold/10 text-aura-gold;
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .aura-nav-icon--muted {
+    @apply opacity-50;
+  }
+
+  .aura-sidebar-user {
+    @apply flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-navy-surface/70 p-3;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .premium-avatar--lg {
+    @apply h-10 w-10 text-sm;
+  }
+
+  .aura-live-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300;
+  }
+
+  .aura-live-pill__dot {
+    @apply h-1.5 w-1.5 rounded-full bg-emerald-400;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+    animation: aura-live-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes aura-live-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.65; transform: scale(0.92); }
+  }
+
+  .aura-topbar-quick {
+    @apply items-center gap-0.5 rounded-xl border border-white/[0.07] bg-navy-surface/40 p-1;
+  }
+
+  .aura-topbar-quick__link {
+    @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-pietra;
+  }
+
+  .aura-topbar-quick__link--active {
+    @apply bg-aura-gold/10 text-aura-gold;
+  }
+
+  .aura-topbar-profile {
+    @apply flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-navy-surface/50 py-1 pl-1 pr-1.5 sm:gap-2 sm:pl-1.5 sm:pr-2;
+  }
+
+  .aura-command-center {
+    @apply rounded-2xl border border-white/[0.08] bg-navy-elevated p-4 sm:p-5 lg:p-6;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 0% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 55%),
+      linear-gradient(165deg, rgba(255,255,255,0.04) 0%, transparent 50%);
+    box-shadow: var(--shadow-premium-lg);
+  }
+
+  .aura-command-center__header {
+    @apply mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5;
+  }
+
+  .aura-command-center__grid {
+    @apply grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3;
+  }
+
+  .aura-command-center__grid--2 {
+    @apply xl:grid-cols-2;
+  }
+
+  .aura-command-module {
+    @apply flex flex-col rounded-xl border border-white/[0.07] bg-navy-surface/40;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .aura-command-module__head {
+    @apply flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-3;
+  }
+
+  .aura-command-module__icon {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border;
+  }
+
+  .aura-command-module__icon--gold {
+    @apply border-aura-gold/25 bg-aura-gold/10 text-aura-gold;
+  }
+
+  .aura-command-module__icon--blue {
+    @apply border-blue-500/25 bg-blue-500/10 text-blue-400;
+  }
+
+  .aura-command-module__icon--emerald {
+    @apply border-emerald-500/25 bg-emerald-500/10 text-emerald-400;
+  }
+
+  .aura-command-module__title {
+    @apply text-sm font-semibold text-pietra;
+  }
+
+  .aura-command-module__body {
+    @apply flex-1 px-4 py-3;
+  }
+
+  .aura-command-module__cta {
+    @apply flex items-center justify-center gap-1.5 border-t border-white/[0.06] px-4 py-2.5 text-xs font-semibold text-aura-gold transition-colors hover:bg-aura-gold/[0.06];
+  }
+
+  .aura-table-status-grid {
+    @apply grid grid-cols-2 gap-2;
+  }
+
+  .aura-table-status-cell {
+    @apply flex flex-col items-center rounded-lg border border-white/[0.06] bg-navy-mid/80 px-2 py-3 text-center;
+  }
+
+  .aura-table-status-cell__value {
+    @apply text-xl font-display font-semibold tabular-nums text-pietra;
+  }
+
+  .aura-table-status-cell__label {
+    @apply mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-fumo;
+  }
+
+  .aura-table-status-cell--free .aura-table-status-cell__value { @apply text-emerald-400; }
+  .aura-table-status-cell--occupied .aura-table-status-cell__value { @apply text-aura-gold; }
+  .aura-table-status-cell--reserved .aura-table-status-cell__value { @apply text-blue-400; }
+  .aura-table-status-cell--cleaning .aura-table-status-cell__value { @apply text-fumo; }
+
+  .aura-upcoming-row {
+    @apply flex items-center gap-3 rounded-lg border border-white/[0.05] bg-navy-mid/60 px-3 py-2.5;
+  }
+
+  .aura-upcoming-covers {
+    @apply inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-navy-surface px-2 py-0.5 text-xs font-semibold tabular-nums text-fumo;
+  }
+
+  .aura-kitchen-stat {
+    @apply flex flex-col items-center rounded-lg border border-white/[0.06] bg-navy-mid/80 px-2 py-3 text-center;
+  }
+
+  .aura-kitchen-stat--active {
+    @apply border-emerald-500/25 bg-emerald-500/[0.06];
+  }
+
+  .aura-kitchen-stat__value {
+    @apply text-xl font-display font-semibold tabular-nums text-pietra;
+  }
+
+  .aura-kitchen-stat--active .aura-kitchen-stat__value {
+    @apply text-emerald-400;
+  }
+
+  .aura-kitchen-stat__label {
+    @apply mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-fumo;
+  }
+
+  /* ── Page system v3 — shell, empty, skeleton, filters ── */
+
+  .aura-page-enter {
+    animation: aura-page-enter 0.45s ease-out both;
+  }
+
+  @keyframes aura-page-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .aura-empty-state {
+    @apply flex flex-col items-center rounded-2xl border border-dashed border-white/[0.1] bg-navy-surface/30 px-6 py-12 text-center;
+  }
+
+  .aura-empty-state__icon {
+    @apply mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-navy-elevated text-fumo;
+  }
+
+  .aura-empty-state__title {
+    @apply text-sm font-semibold text-pietra;
+  }
+
+  .aura-empty-state__desc {
+    @apply mt-1 max-w-sm text-xs leading-relaxed text-fumo;
+  }
+
+  .aura-skeleton {
+    @apply rounded-xl border border-white/[0.06] bg-navy-surface/60;
+    animation: aura-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .aura-skeleton--kpi { @apply h-28; }
+  .aura-skeleton--card { @apply min-h-[8rem]; }
+  .aura-skeleton--row { @apply rounded-lg; }
+
+  @keyframes aura-skeleton-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 0.85; }
+  }
+
+  .aura-stat-card {
+    @apply flex items-start justify-between gap-3 rounded-2xl border border-white/[0.08] bg-navy-elevated p-4 sm:p-5;
+    background-image: var(--aura-surface-card);
+    box-shadow: var(--shadow-premium-sm);
+  }
+
+  .aura-stat-card__value {
+    @apply mt-2 text-2xl font-display font-semibold tabular-nums text-pietra sm:text-3xl;
+  }
+
+  .aura-filter-pill {
+    @apply inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-navy-surface/60 px-3.5 py-2 text-sm font-medium text-fumo transition-all hover:bg-white/[0.04] hover:text-pietra;
+  }
+
+  .aura-filter-pill--active {
+    @apply border-aura-gold/30 bg-aura-gold/15 font-semibold text-aura-gold;
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.1);
+  }
+
+  .aura-filter-pill__count {
+    @apply rounded-full bg-navy-surface px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-fumo;
+  }
+
+  .aura-filter-pill__count--active {
+    @apply bg-aura-gold/20 text-aura-gold;
+  }
+
+  .aura-command-palette {
+    @apply overflow-hidden rounded-2xl border border-white/[0.1] bg-navy-elevated shadow-2xl;
+    box-shadow: var(--shadow-premium-xl);
+  }
+
+  .aura-topbar-search-btn {
+    @apply w-full max-w-sm items-center gap-2 rounded-xl border border-white/[0.08] bg-navy-surface/60 px-4 py-2.5 text-sm text-fumo/60 transition-colors hover:border-white/[0.12] hover:bg-navy-surface/80;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .aura-kbd {
+    @apply rounded border border-white/[0.12] bg-navy-mid px-1.5 py-0.5 text-[10px] font-medium text-fumo/70;
+  }
+
+  .aura-order-card {
+    @apply rounded-2xl border border-white/[0.08] bg-navy-elevated p-4 sm:p-5 transition-all;
+    background-image: var(--aura-surface-card);
+    box-shadow: var(--shadow-premium-sm);
+  }
+
+  .aura-order-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-premium-md);
+  }
 }
 
 h1, h2, h3, h4, .font-display {

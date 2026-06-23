@@ -10,6 +10,11 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import toast from 'react-hot-toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import FilterPills from '../components/ui/FilterPills'
+import ModuleFrame from '../components/ui/ModuleFrame'
 import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface InventoryItem {
@@ -137,21 +142,23 @@ export default function InventoryPage() {
   const totalValue = items.reduce((s, i) => s + i.quantity * i.cost, 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="aura-page-title">{t('inventory.title')}</h1>
-          <p className="aura-page-subtitle">{t('inventory.subtitle')}</p>
-          <p className="text-fumo text-sm mt-1">{t('inventory.summary', { count: items.length, value: formatCurrency(totalValue) })}</p>
-        </div>
-        {canManageInventory && (
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2.5 rounded-xl text-sm font-semibold">
-          <Plus className="w-4 h-4" />
-          {t('inventory.newProduct')}
-        </button>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('inventory.title')}
+        subtitle={(
+          <>
+            <p>{t('inventory.subtitle')}</p>
+            <p className="text-fumo text-sm mt-1">{t('inventory.summary', { count: items.length, value: formatCurrency(totalValue) })}</p>
+          </>
         )}
-      </div>
+        actions={canManageInventory ? (
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2.5 rounded-xl text-sm font-semibold">
+            <Plus className="w-4 h-4" />
+            {t('inventory.newProduct')}
+          </button>
+        ) : undefined}
+      />
 
       {isError && <QueryErrorBanner />}
 
@@ -179,17 +186,13 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Filtri */}
-      <div className="flex gap-2 flex-wrap">
-        {categories.map(cat => (
-          <button key={cat} onClick={() => setFilterCategory(cat)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCategory === cat ? 'bg-aura-gold text-navy font-semibold' : 'glass-chip'}`}>
-            {cat}
-          </button>
-        ))}
-      </div>
+      <FilterPills
+        filters={categories.map(cat => ({ key: cat, label: cat }))}
+        active={filterCategory}
+        onChange={setFilterCategory}
+      />
 
-      <div className="glass-card w-full max-w-full overflow-hidden">
+      <ModuleFrame bodyClassName="p-0">
         <div className={ui.tableWrap}>
         <table className="w-full max-w-full">
           <thead>
@@ -260,15 +263,12 @@ export default function InventoryPage() {
         </table>
         </div>
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center py-12 text-fumo">
-            <Package className="w-10 h-10 mb-2 opacity-30" />
-            <p>{t('inventory.noProductsFound')}</p>
-          </div>
+          <EmptyState icon={Package} title={t('inventory.noProductsFound')} />
         )}
-      </div>
+      </ModuleFrame>
 
       {showForm && <ItemForm onSave={d => create.mutate(d)} onCancel={() => setShowForm(false)} />}
       {editingItem && <ItemForm item={editingItem} onSave={d => update.mutate({ id: editingItem.id, data: d })} onCancel={() => setEditingItem(null)} />}
-    </div>
+    </ExecutivePageShell>
   )
 }

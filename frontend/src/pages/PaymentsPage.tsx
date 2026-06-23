@@ -12,6 +12,12 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import { ui } from '../lib/ui'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import KpiStatCard from '../components/ui/KpiStatCard'
+import ModuleFrame from '../components/ui/ModuleFrame'
 
 interface PaymentOrder {
   id: string
@@ -42,17 +48,16 @@ export default function PaymentsPage() {
   const errorMessage = apiError?.response?.data?.error
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-    </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader title={t('payments.title')} subtitle={t('payments.subtitle')} />
+      <PageSkeleton variant="kpi" count={3} />
+      <PageSkeleton variant="table" count={5} />
+    </ExecutivePageShell>
   )
 
   if (isError) return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="aura-page-title">{t('payments.title')}</h1>
-        <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
-      </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader title={t('payments.title')} subtitle={t('payments.subtitle')} />
       <QueryErrorBanner message={errorMessage ?? t('common.loadError')} />
       <button
         type="button"
@@ -61,7 +66,7 @@ export default function PaymentsPage() {
       >
         {t('common.refresh')}
       </button>
-    </div>
+    </ExecutivePageShell>
   )
 
   if (!data) return null
@@ -69,23 +74,27 @@ export default function PaymentsPage() {
   const avgOrder = data.mese.count > 0 ? data.mese.amount / data.mese.count : 0
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="aura-page-title">{t('payments.title')}</h1>
-          <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
-          <p className="text-fumo text-sm mt-1">{t('payments.heroHint')}</p>
-        </div>
-        <a
-          href={stripePaymentsUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
-        >
-          <ExternalLink className="w-4 h-4" />
-          {t('payments.stripeDashboard')}
-        </a>
-      </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('payments.title')}
+        subtitle={(
+          <>
+            <p>{t('payments.subtitle')}</p>
+            <p className="text-fumo text-sm mt-1">{t('payments.heroHint')}</p>
+          </>
+        )}
+        actions={(
+          <a
+            href={stripePaymentsUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+          >
+            <ExternalLink className="w-4 h-4" />
+            {t('payments.stripeDashboard')}
+          </a>
+        )}
+      />
 
       {!data.stripeEnabled && (
         <div className="bg-aura-gold/10 border border-aura-gold/25 rounded-2xl p-4 flex gap-3">
@@ -103,42 +112,27 @@ export default function PaymentsPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-fumo">{t('payments.monthRevenue')}</p>
-            <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-pietra">{formatCurrency(data.mese.amount)}</p>
-          <p className="text-xs text-fumo mt-1">{t('payments.transactions', { count: data.mese.count })}</p>
-        </div>
-
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-fumo">{t('payments.avgTicket')}</p>
-            <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
-              <CreditCard className="w-4.5 h-4.5 text-blue-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-pietra">{formatCurrency(avgOrder)}</p>
-          <p className="text-xs text-fumo mt-1">{t('payments.perStripeOrder')}</p>
-        </div>
-
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-fumo">{t('payments.lifetimeTotal')}</p>
-            <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
-              <ShoppingBag className="w-4.5 h-4.5 text-purple-600" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-pietra">{formatCurrency(data.totale.amount)}</p>
-          <p className="text-xs text-fumo mt-1">{t('payments.totalOrders', { count: data.totale.count })}</p>
-        </div>
+        <KpiStatCard
+          label={t('payments.monthRevenue')}
+          value={formatCurrency(data.mese.amount)}
+          icon={TrendingUp}
+          accent="emerald"
+        />
+        <KpiStatCard
+          label={t('payments.avgTicket')}
+          value={formatCurrency(avgOrder)}
+          icon={CreditCard}
+          accent="blue"
+        />
+        <KpiStatCard
+          label={t('payments.lifetimeTotal')}
+          value={formatCurrency(data.totale.amount)}
+          icon={ShoppingBag}
+          accent="gold"
+        />
       </div>
 
-      <div className="glass-card p-5">
-        <h2 className="text-sm font-bold text-fumo mb-4">{t('payments.monthlyChart', { year: new Date().getFullYear() })}</h2>
+      <ModuleFrame title={t('payments.monthlyChart', { year: new Date().getFullYear() })}>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={data.mensile} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
             <defs>
@@ -157,18 +151,15 @@ export default function PaymentsPage() {
             <Area type="monotone" dataKey="amount" stroke="#635BFF" strokeWidth={2} fill="url(#stripeGrad)" />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </ModuleFrame>
 
-      <div className="glass-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/[0.08]">
-          <h2 className="text-sm font-bold text-fumo">{t('payments.recentPayments')}</h2>
-        </div>
+      <ModuleFrame title={t('payments.recentPayments')} bodyClassName="p-0">
         {data.recentPayments.length === 0 ? (
-          <div className="flex flex-col items-center py-12 text-fumo">
-            <CreditCard className="w-10 h-10 mb-2 opacity-30" />
-            <p className="text-sm">{t('payments.noPaymentsYet')}</p>
-            <p className="text-xs mt-1">{t('payments.noPaymentsHint')}</p>
-          </div>
+          <EmptyState
+            icon={CreditCard}
+            title={t('payments.noPaymentsYet')}
+            description={t('payments.noPaymentsHint')}
+          />
         ) : (
           <div className="divide-y divide-white/[0.06]">
             {data.recentPayments.map(order => (
@@ -194,7 +185,7 @@ export default function PaymentsPage() {
             ))}
           </div>
         )}
-      </div>
+      </ModuleFrame>
 
       <div className="bg-gradient-to-br from-[#635BFF]/5 to-purple-50 border border-purple-100 rounded-2xl p-5">
         <h3 className="text-sm font-bold text-pietra mb-3 flex items-center gap-2">
@@ -208,6 +199,6 @@ export default function PaymentsPage() {
           <li className="flex gap-2"><span className="text-[#635BFF] font-bold">4.</span> {t('payments.setupStep4')}</li>
         </ol>
       </div>
-    </div>
+    </ExecutivePageShell>
   )
 }

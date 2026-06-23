@@ -11,6 +11,11 @@ import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
 import toast from 'react-hot-toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import FilterPills from '../components/ui/FilterPills'
 
 interface OrderItem {
   id: string
@@ -119,50 +124,33 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="aura-page-header">
-        <div>
-          <h1 className="aura-page-title">{t('orders.title')}</h1>
-          <p className="aura-page-subtitle">{t('orders.subtitle')}</p>
-        </div>
-        <button
-          type="button"
-          disabled={isLoading || orders.length === 0}
-          onClick={handleExportPdf}
-          className="aura-btn-ghost flex w-full shrink-0 items-center justify-center gap-1.5 disabled:opacity-50 sm:w-auto"
-        >
-          <Download className="w-4 h-4" />
-          {t('orders.exportPdf', { defaultValue: 'Esporta PDF' })}
-        </button>
-      </div>
-
-      <div className="aura-filter-row">
-        {filters.map(f => (
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('orders.title')}
+        subtitle={t('orders.subtitle')}
+        actions={(
           <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === f.key ? 'bg-aura-gold text-navy font-semibold' : 'glass-chip text-fumo hover:bg-white/[0.05]'}`}
+            type="button"
+            disabled={isLoading || orders.length === 0}
+            onClick={handleExportPdf}
+            className="aura-btn-ghost flex w-full shrink-0 items-center justify-center gap-1.5 disabled:opacity-50 sm:w-auto"
           >
-            {f.label}
-            {f.count !== undefined && (
-              <span className={`text-xs px-1.5 rounded-full ${filter === f.key ? 'bg-navy/30 text-navy' : 'bg-navy-surface text-fumo'}`}>
-                {f.count}
-              </span>
-            )}
+            <Download className="w-4 h-4" />
+            {t('orders.exportPdf', { defaultValue: 'Esporta PDF' })}
           </button>
-        ))}
-      </div>
+        )}
+      />
+
+      <FilterPills filters={filters} active={filter} onChange={setFilter} />
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <PageSkeleton variant="cards" count={6} />
       ) : isError ? (
         <QueryErrorBanner />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {orders.map(order => (
-            <div key={order.id} className="glass-card p-5 hover:shadow-md transition-shadow">
+            <div key={order.id} className="aura-order-card p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -232,13 +220,14 @@ export default function OrdersPage() {
             </div>
           ))}
           {orders.length === 0 && (
-            <div className="col-span-full flex flex-col items-center py-16 text-fumo">
-              <ChefHat className="w-12 h-12 mb-3 opacity-30" />
-              <p className="font-medium">{t('orders.noOrders')}</p>
-            </div>
+            <EmptyState
+              className="col-span-full"
+              icon={ChefHat}
+              title={t('orders.noOrders')}
+            />
           )}
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

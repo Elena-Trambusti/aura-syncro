@@ -86,6 +86,14 @@
     "previewUnsubscribed": "Free preview — activate Premium to unlock everything",
     "previewOnboarding": "Onboarding in progress — features unlock when setup is complete"
   },
+  "commandPalette": {
+    "title": "Quick navigation",
+    "placeholder": "Search sections, tables, orders…",
+    "shortPlaceholder": "Search section…",
+    "noResults": "No results",
+    "navigate": "navigate",
+    "open": "open"
+  },
   "auth": {
     "loginTitle": "Sign in to dashboard",
     "login": "Sign in",
@@ -198,7 +206,20 @@
     "vsLastMonth": "{{value}}% vs last month",
     "revenueChart": "Revenue Trend — Last 7 days",
     "revenueLabel": "Revenue",
-    "topDishes": "Top Dishes — Last 30 days"
+    "topDishes": "Top Dishes — Last 30 days",
+    "liveCommandTitle": "Command center",
+    "liveCommandSubtitle": "Live operational overview of service",
+    "tableStatus": "Floor status",
+    "viewFloor": "Open table map",
+    "upcomingReservations": "Upcoming reservations",
+    "noUpcomingReservations": "No upcoming reservations today",
+    "viewReservations": "Manage reservations",
+    "kitchenQueue": "Kitchen queue",
+    "kitchenPending": "Pending",
+    "kitchenPreparing": "Preparing",
+    "openKitchen": "Open kitchen display",
+    "quickNav": "Quick access",
+    "secondaryMetrics": "Secondary metrics"
   },
   "tables": {
     "title": "Tables & POS",

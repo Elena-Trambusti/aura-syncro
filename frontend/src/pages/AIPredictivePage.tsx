@@ -10,6 +10,10 @@ import {
 } from 'recharts'
 import { cn } from '../lib/utils'
 import { usePredictiveAI, type PredictiveAlert, type AlertSeverity } from '../hooks/usePredictiveAI'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import EmptyState from '../components/ui/EmptyState'
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 
@@ -84,26 +88,11 @@ function AlertCard({ alert }: { alert: PredictiveAlert }) {
 }
 
 function ChartSkeleton() {
-  return (
-    <div className="animate-pulse space-y-4 p-6">
-      <div className="h-4 w-1/3 rounded bg-navy-surface" />
-      <div className="h-64 rounded-xl bg-navy-surface" />
-    </div>
-  )
+  return <PageSkeleton variant="cards" count={1} className="p-4" />
 }
 
 function AlertsSkeleton() {
-  return (
-    <div className="space-y-3 p-4">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="animate-pulse rounded-xl premium-card p-4">
-          <div className="h-4 w-1/4 rounded bg-navy-surface mb-3" />
-          <div className="h-3 w-full rounded bg-navy-surface" />
-          <div className="h-3 w-2/3 rounded bg-navy-surface mt-2" />
-        </div>
-      ))}
-    </div>
-  )
+  return <PageSkeleton variant="list" count={3} className="p-4" />
 }
 
 export default function AIPredictivePage() {
@@ -128,66 +117,63 @@ function AIPredictivePageContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-aura-gold shadow-sm">
-              <Brain className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="aura-page-title text-pietra">{t('aiPredictive.title')}</h1>
-              <p className="aura-page-subtitle">{t('aiPredictive.subtitle')}</p>
-            </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('aiPredictive.title')}
+        subtitle={t('aiPredictive.subtitle')}
+        meta={(
+          <>
+            {engineVersion && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm">
+                <Brain className="h-3 w-3 text-amber-500" />
+                {t('aiPredictive.engineLabel', { version: engineVersion })}
+                {weatherSource && (
+                  <span className="text-fumo">
+                    · {t(`aiPredictive.weatherSource.${weatherSource === 'open-meteo' ? 'openMeteo' : 'simulated'}`)}
+                  </span>
+                )}
+              </span>
+            )}
+            {factorsUsed.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {factorsUsed.map(f => (
+                  <span
+                    key={f}
+                    className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm"
+                  >
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                    {factorLabels[f]}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        actions={(
+          <div className="flex items-center gap-2">
+            {generatedAt && (
+              <p className="text-xs text-fumo">
+                {t('aiPredictive.updatedAt', {
+                  date: new Date(generatedAt).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'short' }),
+                })}
+              </p>
+            )}
+            <button
+              type="button"
+              disabled={isFetching}
+              onClick={async () => {
+                const result = await refetch()
+                if (result.isError) toast.error(t('aiPredictive.loadError'))
+                else toast.success(t('aiPredictive.refreshed', { defaultValue: 'Dati aggiornati' }))
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg premium-card px-3 py-2 text-sm font-medium text-fumo shadow-sm transition-colors hover:bg-white/[0.05] disabled:opacity-60"
+            >
+              <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
+              {t('aiPredictive.refresh')}
+            </button>
           </div>
-          {engineVersion && (
-            <span className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm">
-              <Brain className="h-3 w-3 text-amber-500" />
-              {t('aiPredictive.engineLabel', { version: engineVersion })}
-              {weatherSource && (
-                <span className="text-fumo">
-                  · {t(`aiPredictive.weatherSource.${weatherSource === 'open-meteo' ? 'openMeteo' : 'simulated'}`)}
-                </span>
-              )}
-            </span>
-          )}
-          {factorsUsed.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {factorsUsed.map(f => (
-                <span
-                  key={f}
-                  className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm"
-                >
-                  <Sparkles className="h-3 w-3 text-amber-500" />
-                  {factorLabels[f]}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {generatedAt && (
-            <p className="text-xs text-fumo">
-              {t('aiPredictive.updatedAt', {
-                date: new Date(generatedAt).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'short' }),
-              })}
-            </p>
-          )}
-          <button
-            type="button"
-            disabled={isFetching}
-            onClick={async () => {
-              const result = await refetch()
-              if (result.isError) toast.error(t('aiPredictive.loadError'))
-              else toast.success(t('aiPredictive.refreshed', { defaultValue: 'Dati aggiornati' }))
-            }}
-            className="inline-flex items-center gap-1.5 rounded-lg premium-card px-3 py-2 text-sm font-medium text-fumo shadow-sm transition-colors hover:bg-white/[0.05] disabled:opacity-60"
-          >
-            <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
-            {t('aiPredictive.refresh')}
-          </button>
-        </div>
-      </div>
+        )}
+      />
 
       {isError && (
         <div className="rounded-xl border border-red-500/25 bg-red-500/10 p-4 flex gap-3">
@@ -308,11 +294,11 @@ function AIPredictivePageContent() {
           ) : isError ? (
             <div className="p-8 text-center text-sm text-red-400">{t('aiPredictive.loadError')}</div>
           ) : alerts.length === 0 ? (
-            <div className="p-8 text-center">
-              <Sparkles className="mx-auto mb-3 h-10 w-10 text-emerald-500" />
-              <p className="font-medium text-pietra">{t('aiPredictive.noAlerts')}</p>
-              <p className="mt-1 text-sm text-fumo">{t('aiPredictive.noAlertsHint')}</p>
-            </div>
+            <EmptyState
+              icon={Sparkles}
+              title={t('aiPredictive.noAlerts')}
+              description={t('aiPredictive.noAlertsHint')}
+            />
           ) : (
             <div className="space-y-3 p-4">
               {alerts.map(alert => (
@@ -322,6 +308,6 @@ function AIPredictivePageContent() {
           )}
         </section>
       </div>
-    </div>
+    </ExecutivePageShell>
   )
 }

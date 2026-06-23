@@ -6,6 +6,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { Download, ExternalLink, Copy, BookOpen, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '../lib/utils'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import EmptyState from '../components/ui/EmptyState'
 
 const QR_FG = '#000000'
 const QR_BG = '#FFFFFF'
@@ -57,32 +61,39 @@ export default function QRBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-fumo">{t('common.loading')}</p>
-      </div>
+      <ExecutivePageShell className="mx-auto flex w-full max-w-lg flex-col items-center px-4 py-6">
+        <ExecutivePageHeader title={t('qrBuilder.title')} subtitle={t('qrBuilder.subtitle')} />
+        <PageSkeleton variant="cards" count={1} className="w-full" />
+      </ExecutivePageShell>
     )
   }
 
   if (!slug) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-fumo max-w-md">{t('qrBuilder.slugMissing')}</p>
-        <Link
-          to="/impostazioni"
-          className="inline-flex items-center gap-2 rounded-xl bg-aura-gold px-5 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light transition-colors"
-        >
-          {t('qrBuilder.goToSettings')}
-        </Link>
-      </div>
+      <ExecutivePageShell className="mx-auto flex w-full max-w-lg flex-col items-center px-4 py-6">
+        <EmptyState
+          icon={BookOpen}
+          title={t('qrBuilder.slugMissing')}
+          action={(
+            <Link
+              to="/impostazioni"
+              className="inline-flex items-center gap-2 rounded-xl bg-aura-gold px-5 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light transition-colors"
+            >
+              {t('qrBuilder.goToSettings')}
+            </Link>
+          )}
+        />
+      </ExecutivePageShell>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col items-center px-4 py-6">
-      <header className="mb-6 w-full text-center">
-        <h1 className="text-2xl font-bold text-pietra">{t('qrBuilder.title')}</h1>
-        <p className="mt-2 text-sm text-fumo">{t('qrBuilder.subtitle')}</p>
-      </header>
+    <ExecutivePageShell className="mx-auto flex w-full max-w-lg flex-col items-center px-4 py-6">
+      <ExecutivePageHeader
+        title={t('qrBuilder.title')}
+        subtitle={t('qrBuilder.subtitle')}
+        className="mb-6 w-full text-center [&_.aura-page-title]:text-center [&_.aura-page-subtitle]:text-center"
+      />
 
       <div className="mb-6 flex w-full rounded-xl premium-card p-1 shadow-sm">
         <button
@@ -196,6 +207,6 @@ export default function QRBuilderPage() {
           fgColor={QR_FG}
         />
       </div>
-    </div>
+    </ExecutivePageShell>
   )
 }

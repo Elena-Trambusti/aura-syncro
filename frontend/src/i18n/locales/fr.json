@@ -86,6 +86,14 @@
     "previewUnsubscribed": "Aperçu gratuit — activez Premium pour tout débloquer",
     "previewOnboarding": "Onboarding en cours — les fonctions se débloquent à la fin du setup"
   },
+  "commandPalette": {
+    "title": "Navigation rapide",
+    "placeholder": "Rechercher sections, tables, commandes…",
+    "shortPlaceholder": "Rechercher…",
+    "noResults": "Aucun résultat",
+    "navigate": "naviguer",
+    "open": "ouvrir"
+  },
   "auth": {
     "loginTitle": "Connexion au panneau",
     "login": "Se connecter",
@@ -198,7 +206,20 @@
     "vsLastMonth": "{{value}}% vs mois dernier",
     "revenueChart": "Évolution du CA — 7 derniers jours",
     "revenueLabel": "Chiffre d'affaires",
-    "topDishes": "Plats populaires — 30 derniers jours"
+    "topDishes": "Plats populaires — 30 derniers jours",
+    "liveCommandTitle": "Centre de commande",
+    "liveCommandSubtitle": "Vue opérationnelle live du service",
+    "tableStatus": "État salle",
+    "viewFloor": "Ouvrir plan tables",
+    "upcomingReservations": "Réservations à venir",
+    "noUpcomingReservations": "Aucune réservation imminente aujourd'hui",
+    "viewReservations": "Gérer réservations",
+    "kitchenQueue": "File cuisine",
+    "kitchenPending": "En attente",
+    "kitchenPreparing": "En préparation",
+    "openKitchen": "Ouvrir écran cuisine",
+    "quickNav": "Accès rapide",
+    "secondaryMetrics": "Métriques secondaires"
   },
   "tables": {
     "title": "Tables & Caisse",

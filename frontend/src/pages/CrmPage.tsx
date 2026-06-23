@@ -11,6 +11,11 @@ import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import KpiStatCard from '../components/ui/KpiStatCard'
 
 interface CustomerListItem {
   id: string
@@ -164,57 +169,50 @@ export default function CrmPage() {
       label: t('crm.stats.total'),
       value: String(stats?.total ?? customers.length),
       icon: Users,
-      iconBg: 'bg-navy-surface',
-      iconColor: 'text-fumo',
+      accent: 'gold' as const,
     },
     {
       label: t('crm.stats.avgSpent'),
       value: formatCurrency(stats?.avgSpent ?? 0),
       icon: TrendingUp,
-      iconBg: 'bg-emerald-500/10',
-      iconColor: 'text-emerald-400',
+      accent: 'emerald' as const,
     },
     {
       label: t('crm.stats.vip'),
       value: String(stats?.vipCount ?? customers.filter(isVipCustomer).length),
       icon: Award,
-      iconBg: 'bg-aura-gold/10',
-      iconColor: 'text-aura-gold',
+      accent: 'amber' as const,
     },
   ]
 
   return (
-    <div className="space-y-6">
-      <div className={ui.pageHeader}>
-        <div>
-          <h1 className={ui.pageTitle}>{t('crm.title')}</h1>
-          <p className={ui.pageSubtitle}>{t('crm.subtitle')}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => { setForm(emptyForm()); setShowCreateModal(true) }}
-          className="flex items-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          {t('crm.newCustomer')}
-        </button>
-      </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('crm.title')}
+        subtitle={t('crm.subtitle')}
+        actions={(
+          <button
+            type="button"
+            onClick={() => { setForm(emptyForm()); setShowCreateModal(true) }}
+            className="flex items-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            {t('crm.newCustomer')}
+          </button>
+        )}
+      />
 
       {(customersError || statsError) && <QueryErrorBanner />}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {statBlocks.map(s => (
-          <div key={s.label} className={`${ui.cardSm} p-5`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-fumo">{s.label}</p>
-                <p className="text-2xl font-bold text-pietra mt-1">{s.value}</p>
-              </div>
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', s.iconBg)}>
-                <s.icon className={cn('w-5 h-5', s.iconColor)} />
-              </div>
-            </div>
-          </div>
+          <KpiStatCard
+            key={s.label}
+            label={s.label}
+            value={s.value}
+            icon={s.icon}
+            accent={s.accent}
+          />
         ))}
       </div>
 
@@ -232,6 +230,9 @@ export default function CrmPage() {
       </div>
 
       <div className={`${ui.cardSm} overflow-hidden`}>
+        {customersLoading && customers.length === 0 ? (
+          <PageSkeleton variant="table" count={8} />
+        ) : (
         <div className={ui.tableWrap}>
           <table className="w-full max-w-full">
             <thead>
@@ -245,17 +246,13 @@ export default function CrmPage() {
               </tr>
             </thead>
             <tbody>
-              {customersLoading && customers.length === 0 ? (
+              {customers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-fumo">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-aura-gold" />
-                    {t('common.loading')}
-                  </td>
-                </tr>
-              ) : customers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-fumo">
-                    {debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
+                  <td colSpan={6} className="px-5 py-8">
+                    <EmptyState
+                      icon={Users}
+                      title={debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -327,6 +324,7 @@ export default function CrmPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       <CustomerSlideOver
@@ -429,6 +427,6 @@ export default function CrmPage() {
           </div>
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

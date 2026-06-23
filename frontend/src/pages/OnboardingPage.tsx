@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, CalendarHeart, Sparkles, Info } from 'lucide-react'
+import { ClipboardList, CalendarHeart, Info } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
 const TALLY_EMBED_SRC =
   'https://tally.so/embed/WOQp1P?alignLeft=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1'
@@ -74,25 +76,12 @@ export default function OnboardingPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-8">
-      <div className="rounded-2xl border border-aura-gold/25/60 bg-gradient-to-br from-amber-50 via-white to-slate-50 p-6 sm:p-8 shadow-sm">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100">
-            <Sparkles className="h-6 w-6 text-aura-gold" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-aura-gold">
-              {t('onboarding.badge')}
-            </p>
-            <h1 className="text-2xl font-bold text-pietra sm:text-3xl">
-              {t('onboarding.title')}
-            </h1>
-          </div>
-        </div>
-        <p className="max-w-2xl text-sm leading-relaxed text-fumo sm:text-base">
-          {t('onboarding.subtitle', { name: restaurant?.name ?? '' })}
-        </p>
-      </div>
+    <ExecutivePageShell className="mx-auto max-w-4xl space-y-8 pb-8">
+      <ExecutivePageHeader
+        title={t('onboarding.title')}
+        subtitle={t('onboarding.subtitle', { name: restaurant?.name ?? '' })}
+        eyebrow={t('onboarding.badge')}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">
@@ -146,7 +135,7 @@ export default function OnboardingPage() {
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
         <p className="text-sm leading-relaxed text-blue-900">{t('onboarding.teamNote')}</p>
       </div>
-    </div>
+    </ExecutivePageShell>
   )
 }
 

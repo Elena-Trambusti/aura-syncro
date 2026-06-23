@@ -4,13 +4,17 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
-import { TrendingUp, TrendingDown, FileText, PieChart, BarChart2, Download } from 'lucide-react'
+import { TrendingUp, TrendingDown, FileText, Download } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart as RechartsPie, Pie, Legend } from 'recharts'
 import { downloadCSV } from '../lib/export'
 import { useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import FilterPills from '../components/ui/FilterPills'
+import KpiStatCard from '../components/ui/KpiStatCard'
 
 interface PLSummary {
   revenue: number; subtotal: number; tax: number; totalDiscount: number; orders: number
@@ -74,75 +78,66 @@ export default function ReportsPage() {
   const s = plData?.summary
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="aura-page-title">{t('reports.title')}</h1>
-          <p className="aura-page-subtitle">{t('reports.subtitle')}</p>
-          <p className="text-fumo text-sm mt-1">{t('reports.heroHint')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/report/fiscal"
-            className="flex items-center gap-1.5 rounded-xl border border-aura-gold/30 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100"
-          >
-            <FileText className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
-            {t('reportFiscal.linkLabel')}
-          </Link>
-          <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
-            {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
-            {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-          </select>
-        </div>
-      </div>
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('reports.title')}
+        subtitle={(
+          <>
+            <p>{t('reports.subtitle')}</p>
+            <p className="text-fumo text-sm mt-1">{t('reports.heroHint')}</p>
+          </>
+        )}
+        actions={(
+          <div className="flex items-center gap-2">
+            <Link
+              to="/report/fiscal"
+              className="flex items-center gap-1.5 rounded-xl border border-aura-gold/30 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100"
+            >
+              <FileText className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
+              {t('reportFiscal.linkLabel')}
+            </Link>
+            <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
+              {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
+              {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+        )}
+      />
 
       {hasError && <QueryErrorBanner message={t('reports.loadError')} />}
 
-      {/* Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {([
-          { key: 'pl', label: t('reports.tabPl'), icon: FileText },
-          { key: 'foodcost', label: t('reports.tabFoodCost'), icon: PieChart },
-          { key: 'annuale', label: t('reports.tabYearly'), icon: BarChart2 },
-        ] as const).map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-aura-gold text-navy font-semibold' : 'glass-chip hover:bg-white/[0.05]'}`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FilterPills
+        filters={([
+          { key: 'pl', label: t('reports.tabPl') },
+          { key: 'foodcost', label: t('reports.tabFoodCost') },
+          { key: 'annuale', label: t('reports.tabYearly') },
+        ])}
+        active={activeTab}
+        onChange={key => setActiveTab(key as typeof activeTab)}
+      />
 
       {!hasError && activeTab === 'pl' && (
         <div className="space-y-6">
           {/* KPI Cards */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              { label: 'Fatturato', value: formatCurrency(s?.revenue || 0), icon: TrendingUp, color: 'bg-emerald-600', sub: `${s?.orders || 0} ordini` },
-              { label: 'Food Cost', value: formatCurrency(s?.estimatedFoodCost || 0), icon: TrendingDown, color: 'bg-amber-600', sub: `${s?.foodCostPct || 0}% del fatturato` },
-              { label: 'Utile Lordo', value: formatCurrency(s?.grossProfit || 0), icon: TrendingUp, color: (s?.grossProfit || 0) >= 0 ? 'bg-blue-600' : 'bg-red-600', sub: 'Ricavi - Food Cost' },
-              { label: 'Utile Netto', value: formatCurrency(s?.netProfit || 0), icon: TrendingUp, color: (s?.netProfit || 0) >= 0 ? 'bg-violet-600' : 'bg-red-600', sub: `Costo personale: ${formatCurrency(s?.laborCost || 0)}` },
+              { label: 'Fatturato', value: formatCurrency(s?.revenue || 0), icon: TrendingUp, accent: 'emerald' as const, sub: `${s?.orders || 0} ordini` },
+              { label: 'Food Cost', value: formatCurrency(s?.estimatedFoodCost || 0), icon: TrendingDown, accent: 'amber' as const, sub: `${s?.foodCostPct || 0}% del fatturato` },
+              { label: 'Utile Lordo', value: formatCurrency(s?.grossProfit || 0), icon: TrendingUp, accent: 'blue' as const, sub: 'Ricavi - Food Cost' },
+              { label: 'Utile Netto', value: formatCurrency(s?.netProfit || 0), icon: TrendingUp, accent: (s?.netProfit || 0) >= 0 ? 'gold' as const : 'rose' as const, sub: `Costo personale: ${formatCurrency(s?.laborCost || 0)}` },
             ].map(c => (
-              <div key={c.label} className="glass-card p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-fumo">{c.label}</p>
-                    <p className="text-xl font-bold text-pietra mt-1">{c.value}</p>
-                    <p className="text-xs text-fumo mt-1">{c.sub}</p>
-                  </div>
-                  <div className={`w-10 h-10 ${c.color} rounded-xl flex items-center justify-center`}>
-                    <c.icon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
+              <div key={c.label}>
+                <KpiStatCard label={c.label} value={c.value} icon={c.icon} accent={c.accent} />
+                <p className="text-xs text-fumo mt-1 px-1">{c.sub}</p>
               </div>
             ))}
           </div>
 
           {/* Breakdown costi */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="glass-card p-6">
+            <div className="premium-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-pietra">Dettaglio {MONTHS[selectedMonth]} {selectedYear}</h3>
                 <button onClick={exportPL} className="flex items-center gap-1.5 text-xs text-aura-gold hover:text-amber-800 font-medium">
@@ -170,7 +165,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Grafico giornaliero */}
-            <div className="glass-card p-6">
+            <div className="premium-card p-6">
               <h3 className="text-base font-semibold text-pietra mb-4">Andamento giornaliero</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={plData?.dailyBreakdown || []} barSize={8}>
@@ -190,7 +185,7 @@ export default function ReportsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Categorie */}
-            <div className="glass-card p-6">
+            <div className="premium-card p-6">
               <h3 className="text-base font-semibold text-pietra mb-4">Fatturato per Categoria</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <RechartsPie>
@@ -204,7 +199,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Tabella food cost */}
-            <div className="xl:col-span-2 glass-card overflow-hidden">
+            <div className="xl:col-span-2 premium-card overflow-hidden">
               <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
                 <h3 className="text-base font-semibold text-pietra">Margini per Piatto</h3>
                 <button onClick={exportFoodCost} className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-400 font-medium">
@@ -256,22 +251,22 @@ export default function ReportsPage() {
       {!hasError && activeTab === 'annuale' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="glass-card p-5 text-center">
+            <div className="premium-card p-5 text-center">
               <p className="text-sm text-fumo">Fatturato {selectedYear}</p>
               <p className="text-2xl font-bold text-pietra mt-1">{formatCurrency(yearly?.totalRevenue || 0)}</p>
             </div>
-            <div className="glass-card p-5 text-center">
+            <div className="premium-card p-5 text-center">
               <p className="text-sm text-fumo">Mese Migliore</p>
               <p className="text-xl font-bold text-amber-400 mt-1">{yearly?.bestMonth?.monthName || '—'}</p>
               <p className="text-sm text-fumo">{formatCurrency(yearly?.bestMonth?.revenue || 0)}</p>
             </div>
-            <div className="glass-card p-5 text-center">
+            <div className="premium-card p-5 text-center">
               <p className="text-sm text-fumo">Media Mensile</p>
               <p className="text-2xl font-bold text-pietra mt-1">{formatCurrency((yearly?.totalRevenue || 0) / 12)}</p>
             </div>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="premium-card p-6">
             <h3 className="text-base font-semibold text-pietra mb-4">Fatturato Mensile {selectedYear}</h3>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={yearly?.months || []}>
@@ -284,7 +279,7 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="glass-card overflow-hidden">
+          <div className="premium-card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="glass-table-head">
                 <tr>
@@ -307,6 +302,6 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

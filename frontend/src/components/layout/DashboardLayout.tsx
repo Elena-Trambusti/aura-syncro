@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import CommandPalette from './CommandPalette'
 import PwaNotificationBanner, { PwaInstallHint } from './PwaNotificationBanner'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
@@ -11,6 +12,7 @@ interface LayoutContextType {
   openSidebar: () => void
   closeSidebar: () => void
   toggleSidebar: () => void
+  openCommandPalette: () => void
 }
 
 const LayoutContext = createContext<LayoutContextType | null>(null)
@@ -23,12 +25,14 @@ export function useDashboardLayout() {
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
   const { user } = useAuth()
   usePushNotifications(!!user)
 
   const openSidebar = useCallback(() => setSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
   const toggleSidebar = useCallback(() => setSidebarOpen(o => !o), [])
+  const openCommandPalette = useCallback(() => setCommandOpen(true), [])
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -41,8 +45,19 @@ export default function DashboardLayout() {
     }
   }, [sidebarOpen])
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setCommandOpen(o => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   return (
-    <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar }}>
+    <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar, openCommandPalette }}>
       <div className="pwa-app-shell">
         <Sidebar />
         <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden">
@@ -54,6 +69,7 @@ export default function DashboardLayout() {
           </main>
         </div>
       </div>
+      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
     </LayoutContext.Provider>
   )
 }

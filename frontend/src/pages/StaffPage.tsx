@@ -13,6 +13,10 @@ import ModalPortal from '../components/ModalPortal'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
 
 type StaffTab = 'team' | 'shifts'
 
@@ -99,21 +103,21 @@ export default function StaffPage() {
     && newStaff.password.length >= MIN_PASSWORD_LENGTH
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-pietra">{t('staff.title')}</h1>
-          <p className="mt-1 text-sm text-fumo">{t('staff.subtitle')}</p>
-        </div>
-        <button
-          type="button"
-          onClick={openAddMemberForm}
-          className="flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light"
-        >
-          <Plus className="h-4 w-4" />
-          {t('staff.addMember')}
-        </button>
-      </div>
+    <ExecutivePageShell className="mx-auto max-w-5xl space-y-6">
+      <ExecutivePageHeader
+        title={t('staff.title')}
+        subtitle={t('staff.subtitle')}
+        actions={(
+          <button
+            type="button"
+            onClick={openAddMemberForm}
+            className="flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light"
+          >
+            <Plus className="h-4 w-4" />
+            {t('staff.addMember')}
+          </button>
+        )}
+      />
 
       <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-navy-surface/40 p-1">
         <button
@@ -165,26 +169,26 @@ export default function StaffPage() {
 
           <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-navy-elevated shadow-sm">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-              </div>
+              <PageSkeleton variant="table" count={6} className="p-4" />
             ) : isError ? (
               <div className="p-6">
                 <QueryErrorBanner />
               </div>
             ) : staff.length === 0 ? (
-              <div className="flex flex-col items-center gap-4 py-16 text-fumo">
-                <UserCog className="h-10 w-10 opacity-40" />
-                <p className="text-sm">{t('staff.empty')}</p>
-                <button
-                  type="button"
-                  onClick={openAddMemberForm}
-                  className="inline-flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('staff.addFirstMember')}
-                </button>
-              </div>
+              <EmptyState
+                icon={UserCog}
+                title={t('staff.empty')}
+                action={(
+                  <button
+                    type="button"
+                    onClick={openAddMemberForm}
+                    className="inline-flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t('staff.addFirstMember')}
+                  </button>
+                )}
+              />
             ) : (
               <div className="w-full max-w-full overflow-x-auto">
                 <table className="w-full max-w-full text-sm">
@@ -331,6 +335,6 @@ export default function StaffPage() {
           </div>
         </ModalPortal>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

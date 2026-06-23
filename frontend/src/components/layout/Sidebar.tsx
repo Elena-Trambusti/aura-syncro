@@ -137,7 +137,7 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'premium-sidebar w-[17.75rem] lg:w-[18.25rem]',
+          'premium-sidebar w-[18.5rem] lg:w-[19.5rem]',
           'max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-[70]',
           'max-lg:w-[min(304px,88vw)]',
           'max-lg:transition-transform max-lg:duration-300 max-lg:ease-out',
@@ -211,19 +211,23 @@ export default function Sidebar() {
                       className={itemClass}
                       aria-label={`${t(item.labelKey)} — ${t('nav.lockedAria')}`}
                     >
-                      <FeatureIcon className="h-[18px] w-[18px] shrink-0 opacity-50" strokeWidth={1.75} />
+                      <span className="aura-nav-icon aura-nav-icon--muted">
+                        <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                      </span>
                       <span className="truncate">{t(item.labelKey)}</span>
                       <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" aria-hidden />
                     </button>
                   ) : (
                     <NavLink to={item.to} className={itemClass}>
-                      <FeatureIcon
-                        className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-aura-gold' : '', isProLocked && !isActive && 'text-violet-400/80')}
-                        strokeWidth={isActive ? 2 : 1.75}
-                      />
+                      <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
+                        <FeatureIcon
+                          className={cn('h-[17px] w-[17px]', isActive ? 'text-aura-gold' : '', isProLocked && !isActive && 'text-violet-400/80')}
+                          strokeWidth={isActive ? 2.25 : 1.75}
+                        />
+                      </span>
                       <span className="truncate">{t(item.labelKey)}</span>
                       {isProLocked && (
-                        <span className="ml-auto rounded border border-violet-500/25 bg-violet-500/100/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-300">
+                        <span className="ml-auto rounded border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-300">
                           Pro
                         </span>
                       )}
@@ -249,7 +253,9 @@ export default function Sidebar() {
                   className="premium-nav-item opacity-60"
                   aria-label={`${t(link.labelKey)} — ${t('nav.lockedAria')}`}
                 >
-                  <FeatureIcon className="h-[18px] w-[18px] shrink-0 opacity-50" strokeWidth={1.75} />
+                  <span className="aura-nav-icon aura-nav-icon--muted">
+                    <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                  </span>
                   <span className="truncate">{t(link.labelKey)}</span>
                   <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" />
                 </button>
@@ -265,7 +271,9 @@ export default function Sidebar() {
                   rel="noopener noreferrer"
                   className="premium-nav-item"
                 >
-                  <FeatureIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                  <span className="aura-nav-icon">
+                    <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                  </span>
                   {t(link.labelKey)}
                   <span className="ml-auto text-xs opacity-40">↗</span>
                 </a>
@@ -277,18 +285,18 @@ export default function Sidebar() {
 
         <div className="border-t border-white/[0.06] p-4">
           {user && (
-            <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-navy-surface/60 px-3 py-2.5">
-              <div className="premium-avatar">
+            <div className="aura-sidebar-user">
+              <div className="premium-avatar premium-avatar--lg">
                 {user.name.charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-pietra">{user.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-pietra">{user.name}</p>
                 <p className="truncate text-[11px] text-fumo">{roleLabel}</p>
               </div>
             </div>
           )}
-          <p className="text-center text-[10px] uppercase tracking-[0.14em] text-fumo/60">
-            {BRAND.name} · v2.0
+          <p className="mt-3 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-fumo/50">
+            {BRAND.name}
           </p>
         </div>
       </aside>

@@ -12,6 +12,8 @@ import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
 import toast from 'react-hot-toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
 interface RestaurantSettings {
   countryCode?: CountryCode
@@ -183,20 +185,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <ExecutivePageShell className="space-y-6 max-w-2xl">
       {isError && <QueryErrorBanner />}
-      <div>
-        <h1 className="aura-page-title">{t('settings.title')}</h1>
-        <p className="aura-page-subtitle">{t('settings.subtitle')}</p>
-      </div>
+      <ExecutivePageHeader
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
+      />
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-1">{t('common.language')}</h2>
         <p className="text-sm text-fumo mb-4">{t('common.languageDescription')}</p>
         <LanguageSwitcher />
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-1">{t('settings.fiscalTitle')}</h2>
         <p className="text-sm text-fumo mb-4">{t('settings.fiscalDesc')}</p>
         <div className="grid grid-cols-2 gap-4">
@@ -252,7 +254,7 @@ export default function SettingsPage() {
         <p className="text-xs text-fumo mt-4">{t('settings.saveHint')}</p>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-1">{t('settings.billingTitle')}</h2>
         <p className="text-sm text-fumo mb-4">{t('settings.billingDesc')}</p>
         <div className="grid grid-cols-2 gap-4">
@@ -311,7 +313,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-4">{t('settings.restaurantInfo')}</h2>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -345,7 +347,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.qrMenu')}</h2>
         <p className="text-sm text-fumo mb-4">{t('settings.qrMenuDesc')}</p>
         <div className="space-y-4">
@@ -380,7 +382,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.qrBooking')}</h2>
         <p className="text-sm text-fumo mb-4">{t('settings.qrBookingDesc')}</p>
         <div className="space-y-4">
@@ -415,7 +417,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.kds')}</h2>
         <p className="text-sm text-fumo mb-4">{t('settings.kdsDesc')}</p>
         <div className="flex items-center gap-3">
@@ -430,7 +432,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-3">{t('settings.accountInfo')}</h2>
         <div className="space-y-2">
           {[
@@ -459,6 +461,6 @@ export default function SettingsPage() {
           {save.isPending ? t('common.saving') : t('settings.saveChanges')}
         </button>
       </div>
-    </div>
+    </ExecutivePageShell>
   )
 }

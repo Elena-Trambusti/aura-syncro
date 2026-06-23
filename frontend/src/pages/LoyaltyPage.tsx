@@ -9,6 +9,10 @@ import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import KpiStatCard from '../components/ui/KpiStatCard'
 
 interface LoyaltyTier {
   id: string; name: string; minPoints: number; color: string
@@ -65,19 +69,17 @@ export default function LoyaltyPage() {
   const topCustomers = overview?.topCustomers || []
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="aura-page-title">{t('loyalty.title')}</h1>
-          <p className="aura-page-subtitle">{t('loyalty.subtitleAuto')}</p>
-        </div>
-        {overview?.autoManaged !== false && (
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('loyalty.title')}
+        subtitle={t('loyalty.subtitleAuto')}
+        actions={overview?.autoManaged !== false ? (
           <div className="flex items-center gap-2 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-4 py-2.5 text-sm font-medium text-amber-900 shrink-0">
             <Sparkles className="h-4 w-4 text-aura-gold" aria-hidden />
             {t('loyalty.autoManagedBadge')}
           </div>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <div className="rounded-xl premium-card p-4 shadow-sm">
         <p className="text-sm text-fumo">{t('loyalty.autoManagedHint')}</p>
@@ -87,19 +89,11 @@ export default function LoyaltyPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: t('loyalty.stats.members'), value: stats?.totalMembers || 0, icon: Users, iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-          { label: t('loyalty.stats.activeMonth'), value: stats?.activeThisMonth || 0, icon: TrendingUp, iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
-          { label: t('loyalty.stats.pointsIssued'), value: (stats?.totalPointsIssued || 0).toLocaleString(), icon: Star, iconBg: 'bg-aura-gold/10', iconColor: 'text-aura-gold' },
+          { label: t('loyalty.stats.members'), value: stats?.totalMembers || 0, icon: Users, accent: 'gold' as const },
+          { label: t('loyalty.stats.activeMonth'), value: stats?.activeThisMonth || 0, icon: TrendingUp, accent: 'blue' as const },
+          { label: t('loyalty.stats.pointsIssued'), value: (stats?.totalPointsIssued || 0).toLocaleString(), icon: Star, accent: 'amber' as const },
         ].map(s => (
-          <div key={s.label} className="saas-card p-5 flex items-center gap-4">
-            <div className={`w-12 h-12 ${s.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
-              <s.icon className={`w-6 h-6 ${s.iconColor}`} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-pietra">{s.value}</p>
-              <p className="text-sm font-medium text-fumo">{s.label}</p>
-            </div>
-          </div>
+          <KpiStatCard key={s.label} label={s.label} value={s.value} icon={s.icon} accent={s.accent} />
         ))}
       </div>
 
@@ -108,7 +102,7 @@ export default function LoyaltyPage() {
           <h2 className="text-base font-semibold text-fumo">{t('loyalty.vipLevels')}</h2>
           <div className="space-y-3">
             {tiers.map(tier => (
-              <div key={tier.id} className="glass-card p-5">
+              <div key={tier.id} className="premium-card p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: tier.color + '22', border: `2px solid ${tier.color}` }}>
@@ -135,9 +129,9 @@ export default function LoyaltyPage() {
 
         <div className="space-y-4">
           <h2 className="text-base font-semibold text-fumo">{t('loyalty.topCustomers')}</h2>
-          <div className="glass-card overflow-hidden">
+          <div className="premium-card overflow-hidden">
             {topCustomers.length === 0 ? (
-              <p className="text-sm text-fumo text-center p-6">{t('loyalty.noData')}</p>
+              <EmptyState icon={Gift} title={t('loyalty.noData')} />
             ) : (
               <ul className="divide-y divide-white/[0.06]">
                 {topCustomers.map((c, idx) => (
@@ -170,7 +164,7 @@ export default function LoyaltyPage() {
         {/* Mobile: card layout */}
         <div className="space-y-3 md:hidden">
           {customers.slice(0, 20).map(c => (
-            <div key={c.id} className="glass-card p-4 space-y-3">
+            <div key={c.id} className="premium-card p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-semibold text-pietra truncate">{c.name}</p>
@@ -194,7 +188,7 @@ export default function LoyaltyPage() {
         </div>
 
         {/* Desktop: tabella scrollabile */}
-        <div className="glass-card overflow-hidden hidden md:block">
+        <div className="premium-card overflow-hidden hidden md:block">
           <div className={ui.tableWrap}>
             <table className="w-full min-w-[640px] text-sm">
               <thead className="glass-table-head">
@@ -253,6 +247,6 @@ export default function LoyaltyPage() {
           </div>
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

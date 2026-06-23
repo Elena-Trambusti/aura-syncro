@@ -8,6 +8,8 @@ import { formatCurrency } from '../lib/utils'
 import { formatApiError } from '../lib/errors'
 import { BRAND } from '../lib/brand'
 import { useAuth } from '../contexts/AuthContext'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
 const SETUP_FEE = 500
 const MONTHLY_FEE = 199
@@ -57,20 +59,18 @@ export default function BillingPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div className="text-center">
-        <img
-          src={BRAND_LOGO_SRC}
-          alt={BRAND.name}
-          className="mx-auto mb-6 h-12 w-auto sm:h-14"
-        />
-        <h1 className="text-2xl font-bold tracking-tight text-pietra sm:text-3xl">
-          {t('billing.pageTitle')}
-        </h1>
-        <p className="mt-2 mx-auto max-w-lg text-sm leading-relaxed text-fumo sm:text-base">
-          {t('billing.pageSubtitle')}
-        </p>
-      </div>
+    <ExecutivePageShell className="mx-auto max-w-2xl space-y-8">
+      <ExecutivePageHeader
+        title={t('billing.pageTitle')}
+        subtitle={t('billing.pageSubtitle')}
+        meta={(
+          <img
+            src={BRAND_LOGO_SRC}
+            alt={BRAND.name}
+            className="mt-4 h-12 w-auto sm:h-14"
+          />
+        )}
+      />
 
       {hasPremium && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
@@ -167,6 +167,6 @@ export default function BillingPage() {
           </ul>
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

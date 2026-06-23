@@ -18,6 +18,9 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import ModalPortal from '../components/ModalPortal'
 
 type ReservationTab = 'bookings' | 'waitlist'
@@ -251,44 +254,46 @@ export default function ReservationsPage() {
     res.status === 'PENDING' || res.status === 'CONFIRMED'
 
   return (
-    <div className="space-y-4">
-      <div className={ui.pageHeader}>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="aura-page-title">{t('reservations.title')}</h1>
-            <ReservationsHelpTooltip />
-          </div>
-          <p className="aura-page-subtitle">{t('reservations.subtitle', { count: activeReservations.length, covers: totalCovers })}</p>
-          {bookingUrl && activeTab === 'bookings' && (
-            <div className="mt-2 flex max-w-xl items-center gap-1.5 text-xs text-fumo">
-              <Link2 className="h-3.5 w-3.5 shrink-0 text-fumo" />
-              <span className="truncate">{bookingUrl.replace(/^https?:\/\//, '')}</span>
-              <button
-                type="button"
-                onClick={copyBookingLink}
-                className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
-                title={t('common.copyLink')}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => window.open(bookingUrl, '_blank')}
-                className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
-                title={t('reservations.openPublicBooking')}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </button>
+    <ExecutivePageShell className="space-y-4">
+      <ExecutivePageHeader
+        title={t('reservations.title')}
+        subtitle={t('reservations.subtitle', { count: activeReservations.length, covers: totalCovers })}
+        meta={(
+          <>
+            <div className="flex items-center gap-2">
+              <ReservationsHelpTooltip />
             </div>
-          )}
-        </div>
-        {canManageReservations && activeTab === 'bookings' && (
+            {bookingUrl && activeTab === 'bookings' && (
+              <div className="mt-2 flex max-w-xl items-center gap-1.5 text-xs text-fumo">
+                <Link2 className="h-3.5 w-3.5 shrink-0 text-fumo" />
+                <span className="truncate">{bookingUrl.replace(/^https?:\/\//, '')}</span>
+                <button
+                  type="button"
+                  onClick={copyBookingLink}
+                  className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
+                  title={t('common.copyLink')}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.open(bookingUrl, '_blank')}
+                  className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
+                  title={t('reservations.openPublicBooking')}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        actions={canManageReservations && activeTab === 'bookings' ? (
           <button onClick={() => setShowForm(true)} className={`flex shrink-0 items-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm`}>
             <Plus className="w-4 h-4" />
             {t('reservations.newReservation')}
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <div className={`${ui.card} px-4 py-3`}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -465,19 +470,15 @@ export default function ReservationsPage() {
         ))}
 
         {displayedReservations.length === 0 && (
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-white/[0.08] bg-navy-elevated px-6 py-14 text-center">
-            <CalendarDays className="mb-3 h-12 w-12 text-slate-300" />
-            <p className="font-semibold text-pietra">
-              {showArchived || archivedReservations.length === 0
-                ? t('reservations.noReservations')
-                : t('reservations.activeEmptyTitle')}
-            </p>
-            <p className="mt-1 max-w-md text-sm text-fumo">
-              {showArchived || archivedReservations.length === 0
-                ? t('reservations.noReservationsHint')
-                : t('reservations.activeEmptyHint')}
-            </p>
-          </div>
+          <EmptyState
+            icon={CalendarDays}
+            title={showArchived || archivedReservations.length === 0
+              ? t('reservations.noReservations')
+              : t('reservations.activeEmptyTitle')}
+            description={showArchived || archivedReservations.length === 0
+              ? t('reservations.noReservationsHint')
+              : t('reservations.activeEmptyHint')}
+          />
         )}
       </div>
 
@@ -514,6 +515,6 @@ export default function ReservationsPage() {
       )}
       </>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

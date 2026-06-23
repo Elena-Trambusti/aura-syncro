@@ -87,6 +87,14 @@
     "previewUnsubscribed": "Anteprima gratuita — attiva Premium per sbloccare tutto",
     "previewOnboarding": "Onboarding in corso — le funzioni si sbloccano a setup completato"
   },
+  "commandPalette": {
+    "title": "Navigazione rapida",
+    "placeholder": "Cerca sezioni, tavoli, ordini…",
+    "shortPlaceholder": "Cerca sezione…",
+    "noResults": "Nessun risultato",
+    "navigate": "naviga",
+    "open": "apri"
+  },
   "auth": {
     "loginTitle": "Accedi al pannello",
     "login": "Accedi",
@@ -218,7 +226,20 @@
     "menuPerformance": "Menu",
     "revenueChart": "Andamento Fatturato — Ultimi 7 giorni",
     "revenueLabel": "Fatturato",
-    "topDishes": "Top Piatti — Ultimi 30 giorni"
+    "topDishes": "Top Piatti — Ultimi 30 giorni",
+    "liveCommandTitle": "Centro di comando",
+    "liveCommandSubtitle": "Panoramica operativa live del servizio",
+    "tableStatus": "Stato sala",
+    "viewFloor": "Apri mappa tavoli",
+    "upcomingReservations": "Prossime prenotazioni",
+    "noUpcomingReservations": "Nessuna prenotazione imminente oggi",
+    "viewReservations": "Gestisci prenotazioni",
+    "kitchenQueue": "Coda cucina",
+    "kitchenPending": "In attesa",
+    "kitchenPreparing": "In preparazione",
+    "openKitchen": "Apri schermo cucina",
+    "quickNav": "Accesso rapido",
+    "secondaryMetrics": "Metriche secondarie"
   },
   "tables": {
     "title": "Tavoli & POS",

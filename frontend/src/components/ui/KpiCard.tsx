@@ -12,6 +12,7 @@ interface KpiCardProps {
   accent?: 'gold' | 'emerald' | 'blue' | 'amber'
   size?: 'hero' | 'standard' | 'compact'
   valueTone?: 'gold' | 'light'
+  sparklineData?: number[]
   className?: string
 }
 
@@ -22,31 +23,58 @@ const ACCENT_ICON = {
   amber: 'text-amber-400 border-amber-500/30 bg-amber-500/[0.08]',
 } as const
 
-function KpiSparkline({ accent }: { accent: KpiCardProps['accent'] }) {
-  const stroke =
-    accent === 'emerald' ? '#34d399' :
-    accent === 'blue' ? '#60a5fa' :
-    accent === 'amber' ? '#fbbf24' :
-    '#D4AF37'
+const ACCENT_STROKE = {
+  gold: '#D4AF37',
+  emerald: '#34d399',
+  blue: '#60a5fa',
+  amber: '#fbbf24',
+} as const
+
+function buildSparkPath(data: number[], width = 240, height = 64): string {
+  if (data.length === 0) return ''
+  const max = Math.max(...data, 1)
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+
+  return data
+    .map((v, i) => {
+      const x = data.length === 1 ? width / 2 : (i / (data.length - 1)) * width
+      const y = height - 10 - ((v - min) / range) * (height - 20)
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+function KpiSparkline({
+  accent,
+  data,
+}: {
+  accent: KpiCardProps['accent']
+  data?: number[]
+}) {
+  const stroke = ACCENT_STROKE[accent ?? 'gold']
+  const path = data && data.length >= 2
+    ? buildSparkPath(data)
+    : 'M0 48 C 30 44, 50 36, 80 38 S 140 28, 180 22 S 220 18, 240 12'
 
   return (
     <svg className="aura-kpi-spark" viewBox="0 0 240 64" preserveAspectRatio="none" aria-hidden>
       <path
-        d="M0 48 C 30 44, 50 36, 80 38 S 140 28, 180 22 S 220 18, 240 12"
+        d={`${path} V 64 H 0 Z`}
+        fill={`url(#kpi-area-${accent})`}
+        opacity="0.28"
+      />
+      <path
+        d={path}
         fill="none"
         stroke={stroke}
         strokeWidth="2"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
-      <path
-        d="M0 48 C 30 44, 50 36, 80 38 S 140 28, 180 22 S 220 18, 240 12 V 64 H 0 Z"
-        fill={`url(#kpi-spark-${accent})`}
-        opacity="0.35"
-      />
       <defs>
-        <linearGradient id={`kpi-spark-${accent}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
+        <linearGradient id={`kpi-area-${accent}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.4" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -64,18 +92,20 @@ export default function KpiCard({
   accent = 'gold',
   size = 'standard',
   valueTone = 'light',
+  sparklineData,
   className,
 }: KpiCardProps) {
   return (
-    <div className={cn('aura-kpi', `aura-kpi--${size}`, className)}>
+    <div className={cn('aura-kpi', `aura-kpi--${size}`, size === 'hero' && 'aura-kpi--command', className)}>
       <div className="relative z-[1] flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="aura-kpi-label">{title}</p>
-          <div className="mt-2">
+          <div className={cn('mt-2', size === 'hero' && 'mt-3')}>
             <p
               className={cn(
                 'aura-kpi-value',
                 size === 'hero' ? 'aura-kpi-value--hero' : 'aura-kpi-value--standard',
+                size === 'compact' && 'text-2xl sm:text-3xl',
                 valueTone === 'gold' && 'aura-kpi-value--gold',
               )}
             >
@@ -92,14 +122,14 @@ export default function KpiCard({
             )}
           </div>
         </div>
-        <div className={cn('aura-kpi-icon', ACCENT_ICON[accent])}>
-          <Icon className="h-5 w-5" aria-hidden />
+        <div className={cn('aura-kpi-icon', ACCENT_ICON[accent], size === 'hero' && 'h-12 w-12')}>
+          <Icon className={cn('h-5 w-5', size === 'hero' && 'h-6 w-6')} aria-hidden />
         </div>
       </div>
       {subtitle && (
-        <p className="relative z-[1] mt-3 text-[11px] leading-relaxed text-fumo/75">{subtitle}</p>
+        <p className="relative z-[1] mt-3 text-[11px] leading-relaxed text-fumo/80">{subtitle}</p>
       )}
-      <KpiSparkline accent={accent} />
+      <KpiSparkline accent={accent} data={sparklineData} />
     </div>
   )
 }

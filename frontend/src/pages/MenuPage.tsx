@@ -11,6 +11,9 @@ import { Plus, Edit2, Trash2, BookOpen, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ModalPortal from '../components/ModalPortal'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import RecipeEditorModal from '../components/menu/RecipeEditorModal'
 import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
@@ -208,21 +211,19 @@ export default function MenuPage() {
   const filteredItems = selectedCat ? allItems.filter(i => i.category.id === selectedCat) : allItems
 
   return (
-    <div className="space-y-5">
+    <ExecutivePageShell className="space-y-5">
       <div className={`${ui.card} p-4 sm:p-5 space-y-4`}>
-        <div className={ui.pageHeader}>
-          <div className="min-w-0">
-            <h1 className={ui.pageTitle}>{t('menu.title')}</h1>
-            <p className={ui.pageSubtitle}>{t('menu.subtitle', { count: allItems.length, categories: categories.length })}</p>
-          </div>
-          {canManageMenu && (
-          <button onClick={() => setShowForm(true)}
-            className={`flex items-center justify-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm w-full sm:w-auto shrink-0`}>
-            <Plus className="w-4 h-4" />
-            {t('menu.newDish')}
-          </button>
-          )}
-        </div>
+        <ExecutivePageHeader
+          title={t('menu.title')}
+          subtitle={t('menu.subtitle', { count: allItems.length, categories: categories.length })}
+          actions={canManageMenu ? (
+            <button onClick={() => setShowForm(true)}
+              className={`flex items-center justify-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm w-full sm:w-auto shrink-0`}>
+              <Plus className="w-4 h-4" />
+              {t('menu.newDish')}
+            </button>
+          ) : undefined}
+        />
         <div className={ui.filterRow}>
           <button onClick={() => setSelectedCat(null)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${!selectedCat ? ui.tabActive : ui.tabInactive}`}>
@@ -352,10 +353,7 @@ export default function MenuPage() {
         </table>
         </div>
         {filteredItems.length === 0 && (
-          <div className="flex flex-col items-center py-12 text-fumo">
-            <BookOpen className="w-10 h-10 mb-2 opacity-30" />
-            <p>{t('menu.noDishes')}</p>
-          </div>
+          <EmptyState icon={BookOpen} title={t('menu.noDishes')} />
         )}
       </div>
       )}
@@ -431,6 +429,6 @@ export default function MenuPage() {
           </div>
         </ModalPortal>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, formatCurrency, formatTime } from '../lib/utils'
 import { ui } from '../lib/ui'
-import { RefreshCw, Plus, Edit2, Trash2, Settings2, X } from 'lucide-react'
+import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import OrderModal from '../components/orders/OrderModal'
 import ModalPortal from '../components/ModalPortal'
@@ -15,6 +15,12 @@ import { tq } from '../lib/queryKeys'
 import { useRealtimeTables } from '../hooks/useRealtimeInvalidation'
 import { useRole } from '../hooks/useRole'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import KpiStatCard from '../components/ui/KpiStatCard'
+import FilterPills from '../components/ui/FilterPills'
 import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -37,10 +43,10 @@ type TableFormData = { number: number; seats: number; area: string }
 type TableFormState = { number: NumericField; seats: NumericField; area: string }
 
 const STAT_ACCENTS = [
-  { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'saas-stat-accent-emerald' },
-  { key: 'occupied' as const, status: 'OCCUPIED' as TableStatus, accent: 'saas-stat-accent-amber' },
-  { key: 'reserved' as const, status: 'RESERVED' as TableStatus, accent: 'saas-stat-accent-amber' },
-  { key: 'cleaning' as const, status: 'CLEANING' as TableStatus, accent: 'saas-stat-accent-blue' },
+  { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'emerald' as const, icon: CheckCircle2 },
+  { key: 'occupied' as const, status: 'OCCUPIED' as TableStatus, accent: 'amber' as const, icon: Users },
+  { key: 'reserved' as const, status: 'RESERVED' as TableStatus, accent: 'amber' as const, icon: CalendarCheck },
+  { key: 'cleaning' as const, status: 'CLEANING' as TableStatus, accent: 'blue' as const, icon: Sparkles },
 ]
 
 function TableFormModal({
@@ -292,50 +298,50 @@ export default function TablesPage() {
   }
 
   return (
-    <div className="pwa-mobile-page">
-      <div className="aura-page-header">
-        <div>
-          <h1 className="aura-page-title">{t('tables.title')}</h1>
-          <p className="aura-page-subtitle">{t('tables.subtitle')}</p>
-        </div>
-        <div className="relative z-10 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {canManageTables && (
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('tables.title')}
+        subtitle={t('tables.subtitle')}
+        actions={(
+          <>
+            {canManageTables && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowManage(v => {
+                    const next = !v
+                    if (next) {
+                      requestAnimationFrame(() => {
+                        document.getElementById('tables-manage-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      })
+                    }
+                    return next
+                  })
+                  setEditingTable(null)
+                }}
+                className={cn(
+                  'flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors sm:w-auto',
+                  showManage ? 'bg-aura-gold/15 text-aura-gold border border-aura-gold/30' : 'saas-chip text-fumo hover:bg-white/[0.05]',
+                )}
+              >
+                <Settings2 className="h-4 w-4" />
+                {t('tables.manageSection')}
+              </button>
+            )}
             <button
               type="button"
+              disabled={isFetching}
               onClick={() => {
-                setShowManage(v => {
-                  const next = !v
-                  if (next) {
-                    requestAnimationFrame(() => {
-                      document.getElementById('tables-manage-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    })
-                  }
-                  return next
-                })
-                setEditingTable(null)
+                void refetch().then(() => toast.success(t('tables.refreshed', { defaultValue: 'Tavoli aggiornati' })))
               }}
-              className={cn(
-                'flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors sm:w-auto',
-                showManage ? 'bg-aura-gold/15 text-aura-gold border border-aura-gold/30' : 'saas-chip text-fumo hover:bg-white/[0.05]',
-              )}
+              className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/[0.05] disabled:opacity-60 sm:w-auto"
             >
-              <Settings2 className="h-4 w-4" />
-              {t('tables.manageSection')}
+              <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
+              {t('common.refresh')}
             </button>
-          )}
-          <button
-            type="button"
-            disabled={isFetching}
-            onClick={() => {
-              void refetch().then(() => toast.success(t('tables.refreshed', { defaultValue: 'Tavoli aggiornati' })))
-            }}
-            className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/[0.05] disabled:opacity-60 sm:w-auto"
-          >
-            <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
-            {t('common.refresh')}
-          </button>
-        </div>
-      </div>
+          </>
+        )}
+      />
 
       {canManageTables && showManage && (
         <section id="tables-manage-panel" className="saas-card space-y-4 p-4 sm:p-5">
@@ -399,36 +405,24 @@ export default function TablesPage() {
         </section>
       )}
 
-      <div className="pwa-tables-stats">
-        {STAT_ACCENTS.map(({ key, status, accent }) => (
-          <div key={key} className={cn('saas-stat p-4 pl-5', accent)}>
-            <p className="text-2xl font-bold text-pietra tabular-nums">{stats[key]}</p>
-            <p className="text-xs font-medium text-fumo uppercase tracking-wider mt-0.5">{statLabels[key]}</p>
-            <span className={cn('inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full font-medium', TABLE_STATUS_BADGE[status])}>
-              {TABLE_STATUS_LABELS[status]}
-            </span>
-          </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        {STAT_ACCENTS.map(({ key, accent, icon: Icon }) => (
+          <KpiStatCard
+            key={key}
+            label={statLabels[key]}
+            value={stats[key]}
+            icon={Icon}
+            accent={accent}
+          />
         ))}
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-1.5 flex-wrap overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
-          {areas.map(area => (
-            <button
-              key={area}
-              type="button"
-              onClick={() => setFilterArea(area)}
-              className={cn(
-                'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0',
-                filterArea === area
-                  ? 'bg-aura-gold hover:bg-aura-gold text-navy font-semibold shadow-sm'
-                  : 'saas-chip text-fumo hover:bg-white/[0.05]',
-              )}
-            >
-              {area}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          filters={areas.map(area => ({ key: area, label: area }))}
+          active={filterArea}
+          onChange={setFilterArea}
+        />
 
         <div className="flex items-center gap-3 flex-wrap">
           {STAT_ACCENTS.map(({ status }) => (
@@ -443,14 +437,13 @@ export default function TablesPage() {
       {isError ? (
         <QueryErrorBanner />
       ) : isLoading ? (
-        <div className="saas-floor flex justify-center items-center py-20">
-          <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
-        </div>
+        <PageSkeleton variant="cards" count={8} />
       ) : filtered.length === 0 ? (
-        <div className="saas-card p-12 text-center space-y-4">
-          <p className="text-base font-semibold text-pietra">{t('tables.emptyTitle')}</p>
-          <p className="text-sm text-fumo max-w-md mx-auto">{t('tables.emptyHint')}</p>
-          {canManageTables && (
+        <EmptyState
+          icon={Users}
+          title={t('tables.emptyTitle')}
+          description={t('tables.emptyHint')}
+          action={canManageTables ? (
             <button
               type="button"
               onClick={() => { setShowManage(true); setEditingTable({} as Table) }}
@@ -459,8 +452,8 @@ export default function TablesPage() {
               <Plus className="w-4 h-4" />
               {t('tables.emptyAction')}
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
         <TableFloorPlan
@@ -562,6 +555,6 @@ export default function TablesPage() {
           </button>
         </div>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }

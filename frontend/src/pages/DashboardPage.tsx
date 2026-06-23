@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -17,8 +17,11 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import KpiCard from '../components/ui/KpiCard'
+import ExecutivePageShell from '../components/layout/ExecutivePageShell'
+import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import OperationalPulse from '../components/dashboard/OperationalPulse'
 import ServiceHeatmap from '../components/dashboard/ServiceHeatmap'
+import LiveCommandCenter from '../components/dashboard/LiveCommandCenter'
 
 interface DashboardData {
   today: { orders: number; revenue: number; reservations: number; activeOrders: number }
@@ -146,6 +149,11 @@ export default function DashboardPage() {
     enabled: hasProPlan,
   })
 
+  const revenueSparkline = useMemo(
+    () => (revenueData as Array<{ revenue?: number }> | undefined)?.map(d => d.revenue ?? 0) ?? [],
+    [revenueData],
+  )
+
   const opsItems = [
     {
       key: 'service',
@@ -185,30 +193,25 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="pwa-mobile-page">
-      <div className="aura-executive-header">
-        <div className="space-y-1">
-          <p className="aura-brand-eyebrow">{BRAND.name}</p>
-          <h1 className="aura-page-title">
-            {t('dashboard.title', { name: restaurant?.name || t('common.restaurant') })}
-          </h1>
-          <p className="aura-page-subtitle">
-            {t('dashboard.executiveSubtitle', { defaultValue: 'Operating system del servizio — visione executive' })}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="aura-date-badge">
-            <Clock className="mr-1.5 h-3.5 w-3.5 text-aura-gold/80" aria-hidden />
-            {formatLongDate()}
+    <ExecutivePageShell className="space-y-6">
+      <ExecutivePageHeader
+        title={t('dashboard.title', { name: restaurant?.name || t('common.restaurant') })}
+        subtitle={t('dashboard.executiveSubtitle', { defaultValue: 'Operating system del servizio — visione executive' })}
+        actions={(
+          <div className="flex flex-col items-end gap-2">
+            <div className="aura-date-badge">
+              <Clock className="mr-1.5 h-3.5 w-3.5 text-aura-gold/80" aria-hidden />
+              {formatLongDate()}
+            </div>
+            {hasProPlan && (
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400/90">
+                <Activity className="h-3 w-3" aria-hidden />
+                {t('dashboard.liveSync', { defaultValue: 'Sync live · 30s' })}
+              </span>
+            )}
           </div>
-          {hasProPlan && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400/90">
-              <Activity className="h-3 w-3" aria-hidden />
-              {t('dashboard.liveSync', { defaultValue: 'Sync live · 30s' })}
-            </span>
-          )}
-        </div>
-      </div>
+        )}
+      />
 
       {summaryError && (
         <div className="premium-alert-error">
@@ -218,7 +221,7 @@ export default function DashboardPage() {
       )}
 
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
-        <div className="aura-hero-kpi-grid">
+        <div className="aura-hero-kpi-grid aura-hero-kpi-grid--executive">
           <KpiCard
             title={t('dashboard.todayRevenue')}
             value={formatCurrency(dashboard?.today.revenue || 0)}
@@ -227,7 +230,8 @@ export default function DashboardPage() {
             accent="gold"
             size="hero"
             valueTone="gold"
-            className="lg:col-span-1"
+            sparklineData={revenueSparkline.length >= 2 ? revenueSparkline : undefined}
+            className="xl:col-span-5"
           />
           <KpiCard
             title={t('dashboard.monthlyRevenue')}
@@ -238,36 +242,41 @@ export default function DashboardPage() {
             accent="gold"
             size="hero"
             valueTone="gold"
+            className="xl:col-span-4"
           />
-          <KpiCard
-            title={t('dashboard.activeOrders')}
-            value={String(dashboard?.today.activeOrders || 0)}
-            subtitle={t('dashboard.activeOrdersSub')}
-            icon={ClipboardList}
-            accent="amber"
-            size="standard"
-          />
-          <KpiCard
-            title={t('dashboard.todayReservations')}
-            value={String(dashboard?.today.reservations || 0)}
-            subtitle={t('dashboard.todayReservationsSub')}
-            icon={CalendarCheck}
-            accent="blue"
-            size="standard"
-          />
+          <div className="flex flex-col gap-3 xl:col-span-3">
+            <KpiCard
+              title={t('dashboard.activeOrders')}
+              value={String(dashboard?.today.activeOrders || 0)}
+              subtitle={t('dashboard.activeOrdersSub')}
+              icon={ClipboardList}
+              accent="amber"
+              size="compact"
+            />
+            <KpiCard
+              title={t('dashboard.todayReservations')}
+              value={String(dashboard?.today.reservations || 0)}
+              subtitle={t('dashboard.todayReservationsSub')}
+              icon={CalendarCheck}
+              accent="blue"
+              size="compact"
+            />
+          </div>
         </div>
       </section>
 
+      <LiveCommandCenter />
+
       <section aria-label={t('dashboard.operationalStatus', { defaultValue: 'Stato operativo' })}>
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-fumo/75">
+          <h2 className="aura-section-eyebrow">
             {t('dashboard.operationalStatus', { defaultValue: 'Stato operativo' })}
           </h2>
         </div>
         <OperationalPulse items={opsItems} />
       </section>
 
-      <section className="aura-hero-kpi-grid" aria-label={t('dashboard.performance', { defaultValue: 'Performance' })}>
+      <section className="aura-secondary-metrics" aria-label={t('dashboard.secondaryMetrics', { defaultValue: 'Metriche secondarie' })}>
         <KpiCard
           title={t('dashboard.totalCustomers')}
           value={String(dashboard?.totals.customers || 0)}
@@ -389,6 +398,6 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
-    </div>
+    </ExecutivePageShell>
   )
 }
