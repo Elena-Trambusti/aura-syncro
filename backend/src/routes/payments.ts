@@ -441,7 +441,19 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
     totale: { amount: stripeOrders._sum?.total ?? 0, count: stripeOrders._count._all },
     mese: { amount: monthStats._sum?.total ?? 0, count: monthStats._count._all },
     mensile: Object.values(monthlyData),
-    recentPayments,
+    recentPayments: recentPayments.map(order => ({
+      id: order.id,
+      total: order.total,
+      paidAt: order.paidAt,
+      type: order.type,
+      table: order.table,
+      items: order.items.map(item => ({
+        quantity: item.quantity,
+        menuItem: item.menuItem
+          ? { name: item.menuItem.name }
+          : { name: 'Piatto rimosso' },
+      })),
+    })),
     stripeEnabled: STRIPE_ENABLED,
   })
 })

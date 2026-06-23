@@ -11,6 +11,7 @@ import { stripeApiKeysUrl, stripePaymentsUrl } from '../lib/stripeDashboard'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import { ui } from '../lib/ui'
 
 interface PaymentOrder {
   id: string
@@ -32,10 +33,13 @@ interface OverviewData {
 export default function PaymentsPage() {
   const { t } = useTranslation()
   const tk = useTenantQueryKey()
-  const { data, isLoading, isError } = useQuery<OverviewData>({
+  const { data, isLoading, isError, error, refetch } = useQuery<OverviewData>({
     queryKey: tq(tk, 'payments', 'overview'),
     queryFn: () => api.get('/payments/overview').then(r => r.data),
   })
+
+  const apiError = error as { response?: { status?: number; data?: { error?: string; code?: string } } } | null
+  const errorMessage = apiError?.response?.data?.error
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
@@ -49,7 +53,14 @@ export default function PaymentsPage() {
         <h1 className="aura-page-title">{t('payments.title')}</h1>
         <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
       </div>
-      <QueryErrorBanner />
+      <QueryErrorBanner message={errorMessage ?? t('common.loadError')} />
+      <button
+        type="button"
+        onClick={() => refetch()}
+        className={`${ui.btnPrimary} px-4 py-2.5 text-sm`}
+      >
+        {t('common.refresh')}
+      </button>
     </div>
   )
 
@@ -59,7 +70,7 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="aura-page-title">{t('payments.title')}</h1>
           <p className="aura-page-subtitle">{t('payments.subtitle')}</p>
@@ -69,7 +80,7 @@ export default function PaymentsPage() {
           href={stripePaymentsUrl()}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
         >
           <ExternalLink className="w-4 h-4" />
           {t('payments.stripeDashboard')}
@@ -167,7 +178,7 @@ export default function PaymentsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-900">
-                    {order.items.map(i => `${i.quantity}× ${i.menuItem.name}`).join(', ')}
+                    {order.items.map(i => `${i.quantity}× ${i.menuItem?.name ?? t('payments.unknownDish')}`).join(', ')}
                   </p>
                   <p className="text-xs text-slate-600 mt-0.5">
                     {order.table

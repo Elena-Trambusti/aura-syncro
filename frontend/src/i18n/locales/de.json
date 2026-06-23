@@ -867,6 +867,7 @@
     "recentPayments": "Letzte Zahlungen",
     "noPaymentsYet": "Noch keine digitalen Zahlungen",
     "noPaymentsHint": "QR-Menü-Zahlungen erscheinen hier",
+    "unknownDish": "Entferntes Gericht",
     "tableOrder": "Tisch {{number}}",
     "takeaway": "Takeaway",
     "qrOrder": "QR",

@@ -805,6 +805,7 @@
     "recentPayments": "Recent payments",
     "noPaymentsYet": "No digital payments yet",
     "noPaymentsHint": "QR menu payments will appear here",
+    "unknownDish": "Removed dish",
     "tableOrder": "Table {{number}}",
     "takeaway": "Takeaway",
     "qrOrder": "QR",

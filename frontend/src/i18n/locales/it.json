@@ -814,6 +814,7 @@
     "recentPayments": "Ultimi pagamenti",
     "noPaymentsYet": "Nessun pagamento digitale ancora",
     "noPaymentsHint": "I pagamenti dal menu QR appariranno qui",
+    "unknownDish": "Piatto rimosso",
     "tableOrder": "Tavolo {{number}}",
     "takeaway": "Asporto",
     "qrOrder": "QR",
