@@ -1,12 +1,30 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { registerRoute, NavigationRoute } from 'workbox-routing'
+import { NetworkFirst } from 'workbox-strategies'
 
 declare let self: ServiceWorkerGlobalScope
 
 const ORDERS_PATH = '/ordini'
 
-precacheAndRoute(self.__WB_MANIFEST)
+/** Non precachare index.html: dopo un deploy i bundle hanno hash nuovi e la shell HTML stale causa pagina bianca. */
+const precacheManifest = self.__WB_MANIFEST.filter(entry => {
+  const url = typeof entry === 'string' ? entry : entry.url
+  return url !== 'index.html' && !url.endsWith('/index.html')
+})
+
+precacheAndRoute(precacheManifest)
 cleanupOutdatedCaches()
+
+/** Shell HTML sempre da rete per primi, con fallback cache (offline). */
+registerRoute(
+  new NavigationRoute(
+    new NetworkFirst({
+      cacheName: 'aura-documents',
+      networkTimeoutSeconds: 5,
+    }),
+  ),
+)
 
 /** autoUpdate: attiva subito il nuovo worker senza chiedere conferma */
 self.addEventListener('install', () => {
