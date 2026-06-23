@@ -103,7 +103,7 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-slate-900/40 transition-opacity',
+          ui.slideOverOverlay,
           customer ? 'opacity-100' : 'opacity-0 pointer-events-none',
         )}
         onClick={onClose}
@@ -111,13 +111,15 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
       />
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-white/[0.08] shadow-xl',
-          'transform transition-transform duration-300 ease-out flex flex-col',
+          ui.slideOver,
+          'transform transition-transform duration-300 ease-out',
           customer ? 'translate-x-0' : 'translate-x-full',
         )}
         aria-hidden={!customer}
+        role="dialog"
+        aria-modal={!!customer}
       >
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-white/[0.08] bg-navy-mid px-6 py-4">
           <h2 className="text-lg font-bold text-pietra">{t('crm.slideOver.title')}</h2>
           <div className="flex items-center gap-1">
             {customer && onSave && !editing && (
@@ -337,20 +339,20 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
                   value: customer.lastVisit ? formatDate(customer.lastVisit) : t('crm.neverVisited'),
                 },
               ].map(row => (
-                <div key={row.label} className="rounded-xl border border-white/[0.08] bg-navy-surface/50 p-3">
-                  <p className="text-xs text-fumo">{row.label}</p>
-                  <p className="mt-1 text-sm font-semibold text-pietra">{row.value}</p>
+                <div key={row.label} className="premium-kpi p-3 sm:p-4">
+                  <p className="premium-kpi-label text-[10px]">{row.label}</p>
+                  <p className="mt-1 text-base font-semibold text-pietra tabular-nums sm:text-lg">{row.value}</p>
                 </div>
               ))}
             </div>
 
             {customer.allergens && (
-              <div className="rounded-xl border border-red-500/25 bg-red-500/10 p-4">
-                <p className="flex items-center gap-2 text-sm font-semibold text-red-800">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+                <p className="flex items-center gap-2 text-sm font-semibold text-red-400">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   {t('crm.slideOver.allergens')}
                 </p>
-                <p className="mt-1 text-sm text-red-400">{customer.allergens}</p>
+                <p className="mt-1 text-sm text-red-300/90">{customer.allergens}</p>
               </div>
             )}
 

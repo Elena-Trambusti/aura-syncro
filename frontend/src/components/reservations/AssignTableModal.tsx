@@ -85,7 +85,7 @@ export default function AssignTableModal({ reservation, onSuccess, onCancel }: A
                   'rounded-xl border p-3 text-left transition-colors',
                   selectedTableId === table.id
                     ? 'border-amber-500 bg-aura-gold/10 ring-2 ring-amber-200'
-                    : 'border-white/[0.08] bg-white hover:border-aura-gold/30 hover:bg-aura-gold/10/50',
+                    : 'border-white/[0.08] bg-navy-surface hover:border-aura-gold/30 hover:bg-aura-gold/10',
                 )}
               >
                 <p className="font-bold text-pietra">T{table.number}</p>

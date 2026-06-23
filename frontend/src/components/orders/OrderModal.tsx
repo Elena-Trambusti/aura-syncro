@@ -211,7 +211,7 @@ export default function OrderModal({
 
   /** Menu: categorie + griglia piatti */
   const menuPanel = (
-    <div className="flex h-full min-h-0 w-full flex-col bg-white">
+    <div className="flex h-full min-h-0 w-full flex-col bg-navy-elevated">
       <div className="flex min-h-0 flex-1">
         <div className="w-28 shrink-0 border-r border-white/[0.08] overflow-y-auto bg-navy-surface/50 py-2 sm:w-36">
           {categories.map(cat => (
@@ -223,7 +223,7 @@ export default function OrderModal({
                 'w-full px-3 py-2.5 text-left text-sm font-medium transition-colors',
                 (selectedCategory || categories[0]?.id) === cat.id
                   ? 'border-r-2 border-amber-500 bg-aura-gold/10 text-aura-gold'
-                  : 'text-fumo hover:bg-white',
+                  : 'text-fumo hover:bg-white/[0.05]',
               )}
             >
               {cat.name}
@@ -249,13 +249,13 @@ export default function OrderModal({
                       ? 'cursor-not-allowed border-white/[0.08] bg-navy-surface/50 opacity-75'
                       : inCart
                         ? 'cursor-pointer border-amber-400 bg-aura-gold/10'
-                        : 'cursor-pointer border-white/[0.08] bg-white hover:border-aura-gold/30 hover:bg-white/[0.05]',
+                        : 'cursor-pointer border-white/[0.08] bg-navy-surface hover:border-aura-gold/30 hover:bg-white/[0.05]',
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className={cn('text-sm font-semibold', isSoldOut ? 'text-fumo' : 'text-pietra')}>{item.name}</p>
                     {isSoldOut && (
-                      <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-700">
+                      <span className="shrink-0 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-400">
                         {t('orderModal.soldOut')}
                       </span>
                     )}
@@ -414,7 +414,7 @@ export default function OrderModal({
 
   /** Pannello ordine / carrello / checkout */
   const orderPanel = (
-    <div className="flex h-full min-h-0 w-full flex-col bg-white lg:border-l lg:border-white/[0.08]">
+    <div className="flex h-full min-h-0 w-full flex-col bg-navy-elevated lg:border-l lg:border-white/[0.08]">
       {cartContent}
       {checkoutContent}
       {orderEmptyContent}
@@ -424,11 +424,11 @@ export default function OrderModal({
   return (
     <ModalPortal onClose={onClose} overlayClassName="items-stretch justify-stretch p-0 sm:items-center sm:justify-center sm:p-4">
       <div
-        className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
+        className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-navy-elevated sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header compatto: titolo + azioni + tab mobile in un solo blocco fisso */}
-        <div className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-white">
+        <div className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-navy-mid">
           <div className="flex items-center justify-between gap-2 px-3 py-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:gap-3 sm:px-4 sm:py-3 sm:pt-[max(1rem,env(safe-area-inset-top))]">
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-base font-bold text-pietra sm:text-lg">
