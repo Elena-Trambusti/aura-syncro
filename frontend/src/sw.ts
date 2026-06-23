@@ -1,5 +1,4 @@
 /// <reference lib="webworker" />
-import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 
 declare let self: ServiceWorkerGlobalScope
@@ -9,7 +8,11 @@ const ORDERS_PATH = '/ordini'
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
-/** Richiesto da vite-plugin-pwa quando l'utente clicca "Aggiorna ora" */
+/** autoUpdate: attiva subito il nuovo worker senza chiedere conferma */
+self.addEventListener('install', () => {
+  self.skipWaiting()
+})
+
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
@@ -17,7 +20,7 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clientsClaim())
+  event.waitUntil(self.clients.claim())
 })
 
 interface PushPayload {
