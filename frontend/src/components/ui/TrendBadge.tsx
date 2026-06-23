@@ -12,10 +12,8 @@ export default function TrendBadge({ value, label, className }: TrendBadgeProps)
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums tracking-wide',
-        positive
-          ? 'bg-emerald-500/100/10 text-emerald-400 border border-emerald-500/20'
-          : 'bg-red-500/100/10 text-red-400 border border-red-500/20',
+        'aura-trend-badge',
+        positive ? 'aura-trend-badge--up' : 'aura-trend-badge--down',
         className,
       )}
     >

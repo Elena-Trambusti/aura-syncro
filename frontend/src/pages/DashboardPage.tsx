@@ -10,13 +10,15 @@ import { BRAND } from '../lib/brand'
 import {
   TrendingUp, ShoppingBag, CalendarCheck,
   Users, AlertTriangle, ClipboardList, AlertCircle,
+  UtensilsCrossed, Activity, Clock,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
 import KpiCard from '../components/ui/KpiCard'
-import PremiumCard from '../components/ui/PremiumCard'
+import OperationalPulse from '../components/dashboard/OperationalPulse'
+import ServiceHeatmap from '../components/dashboard/ServiceHeatmap'
 
 interface DashboardData {
   today: { orders: number; revenue: number; reservations: number; activeOrders: number }
@@ -87,8 +89,8 @@ function TopDishRow({
   }, [])
 
   return (
-    <div className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-white/[0.03]">
-      <span className="w-5 text-xs font-bold tabular-nums text-fumo transition-colors group-hover:text-aura-gold">
+    <div className="group -mx-1 flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-white/[0.03]">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] text-[11px] font-bold tabular-nums text-fumo transition-colors group-hover:border-aura-gold/30 group-hover:text-aura-gold">
         {rank}
       </span>
       <div className="min-w-0 flex-1">
@@ -138,17 +140,74 @@ export default function DashboardPage() {
     enabled: hasProPlan,
   })
 
+  const { data: hourlyData } = useQuery({
+    queryKey: tq(tk, 'analytics', 'hourly'),
+    queryFn: () => api.get('/analytics/hourly').then(r => r.data),
+    enabled: hasProPlan,
+  })
+
+  const opsItems = [
+    {
+      key: 'service',
+      label: t('dashboard.opsService', { defaultValue: 'Servizio' }),
+      value: (dashboard?.today.activeOrders || 0) > 0
+        ? t('dashboard.opsServiceLive', { defaultValue: 'In corso' })
+        : t('dashboard.opsServiceIdle', { defaultValue: 'Pronto' }),
+      hint: t('dashboard.activeOrdersSub'),
+      icon: UtensilsCrossed,
+      tone: 'gold' as const,
+      live: (dashboard?.today.activeOrders || 0) > 0,
+    },
+    {
+      key: 'orders',
+      label: t('dashboard.opsOrders', { defaultValue: 'Ordini oggi' }),
+      value: String(dashboard?.today.orders || 0),
+      hint: t('dashboard.todayRevenueSub'),
+      icon: ClipboardList,
+      tone: 'blue' as const,
+    },
+    {
+      key: 'covers',
+      label: t('dashboard.opsCovers', { defaultValue: 'Coperti' }),
+      value: String(dashboard?.today.reservations || 0),
+      hint: t('dashboard.todayReservationsSub'),
+      icon: CalendarCheck,
+      tone: 'emerald' as const,
+    },
+    {
+      key: 'alerts',
+      label: t('dashboard.opsAlerts', { defaultValue: 'Allerte' }),
+      value: String(dashboard?.totals.lowStockAlerts || 0),
+      hint: t('dashboard.stockAlertsSub'),
+      icon: AlertTriangle,
+      tone: (dashboard?.totals.lowStockAlerts || 0) > 0 ? 'rose' as const : 'amber' as const,
+    },
+  ]
+
   return (
     <div className="pwa-mobile-page">
       <div className="aura-executive-header">
-        <div>
+        <div className="space-y-1">
           <p className="aura-brand-eyebrow">{BRAND.name}</p>
           <h1 className="aura-page-title">
             {t('dashboard.title', { name: restaurant?.name || t('common.restaurant') })}
           </h1>
-          <p className="aura-page-subtitle">{t('dashboard.executiveSubtitle', { defaultValue: 'Panoramica operativa in tempo reale' })}</p>
+          <p className="aura-page-subtitle">
+            {t('dashboard.executiveSubtitle', { defaultValue: 'Operating system del servizio — visione executive' })}
+          </p>
         </div>
-        <div className="aura-date-badge">{formatLongDate()}</div>
+        <div className="flex flex-col items-end gap-2">
+          <div className="aura-date-badge">
+            <Clock className="mr-1.5 h-3.5 w-3.5 text-aura-gold/80" aria-hidden />
+            {formatLongDate()}
+          </div>
+          {hasProPlan && (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400/90">
+              <Activity className="h-3 w-3" aria-hidden />
+              {t('dashboard.liveSync', { defaultValue: 'Sync live · 30s' })}
+            </span>
+          )}
+        </div>
       </div>
 
       {summaryError && (
@@ -159,27 +218,16 @@ export default function DashboardPage() {
       )}
 
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
-        <div className="pwa-stat-grid">
+        <div className="aura-hero-kpi-grid">
           <KpiCard
             title={t('dashboard.todayRevenue')}
             value={formatCurrency(dashboard?.today.revenue || 0)}
             subtitle={t('dashboard.todayRevenueSub')}
             icon={TrendingUp}
             accent="gold"
-          />
-          <KpiCard
-            title={t('dashboard.activeOrders')}
-            value={String(dashboard?.today.activeOrders || 0)}
-            subtitle={t('dashboard.activeOrdersSub')}
-            icon={ClipboardList}
-            accent="amber"
-          />
-          <KpiCard
-            title={t('dashboard.todayReservations')}
-            value={String(dashboard?.today.reservations || 0)}
-            subtitle={t('dashboard.todayReservationsSub')}
-            icon={CalendarCheck}
-            accent="blue"
+            size="hero"
+            valueTone="gold"
+            className="lg:col-span-1"
           />
           <KpiCard
             title={t('dashboard.monthlyRevenue')}
@@ -188,48 +236,76 @@ export default function DashboardPage() {
             trend={dashboard?.month.revenueGrowth}
             trendLabel={v => t('dashboard.vsLastMonth', { value: v })}
             accent="gold"
-          />
-        </div>
-
-        <div className="pwa-stat-grid-2 mt-3 sm:mt-4">
-          <KpiCard
-            title={t('dashboard.totalCustomers')}
-            value={String(dashboard?.totals.customers || 0)}
-            subtitle={t('dashboard.totalCustomersSub')}
-            icon={Users}
-            accent="emerald"
+            size="hero"
+            valueTone="gold"
           />
           <KpiCard
-            title={t('dashboard.stockAlerts')}
-            value={String(dashboard?.totals.lowStockAlerts || 0)}
-            subtitle={t('dashboard.stockAlertsSub')}
-            icon={AlertTriangle}
+            title={t('dashboard.activeOrders')}
+            value={String(dashboard?.today.activeOrders || 0)}
+            subtitle={t('dashboard.activeOrdersSub')}
+            icon={ClipboardList}
             accent="amber"
+            size="standard"
+          />
+          <KpiCard
+            title={t('dashboard.todayReservations')}
+            value={String(dashboard?.today.reservations || 0)}
+            subtitle={t('dashboard.todayReservationsSub')}
+            icon={CalendarCheck}
+            accent="blue"
+            size="standard"
           />
         </div>
       </section>
 
+      <section aria-label={t('dashboard.operationalStatus', { defaultValue: 'Stato operativo' })}>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-fumo/75">
+            {t('dashboard.operationalStatus', { defaultValue: 'Stato operativo' })}
+          </h2>
+        </div>
+        <OperationalPulse items={opsItems} />
+      </section>
+
+      <section className="aura-hero-kpi-grid" aria-label={t('dashboard.performance', { defaultValue: 'Performance' })}>
+        <KpiCard
+          title={t('dashboard.totalCustomers')}
+          value={String(dashboard?.totals.customers || 0)}
+          subtitle={t('dashboard.totalCustomersSub')}
+          icon={Users}
+          accent="emerald"
+          size="compact"
+        />
+        <KpiCard
+          title={t('dashboard.stockAlerts')}
+          value={String(dashboard?.totals.lowStockAlerts || 0)}
+          subtitle={t('dashboard.stockAlertsSub')}
+          icon={AlertTriangle}
+          accent="amber"
+          size="compact"
+        />
+      </section>
+
       {hasProPlan && (
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:gap-6" aria-label={t('dashboard.analyticsSection', { defaultValue: 'Analytics' })}>
-          <PremiumCard padding="md" className="xl:col-span-2">
-            <h3 className="premium-section-title mb-4 sm:mb-5">{t('dashboard.revenueChart')}</h3>
+        <section className="aura-dashboard-bento" aria-label={t('dashboard.analyticsSection', { defaultValue: 'Analytics' })}>
+          <div className="aura-module-frame aura-module-frame--hero aura-bento-span-8 p-5 sm:p-6 lg:p-7">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="aura-brand-eyebrow">{t('dashboard.performance', { defaultValue: 'Performance' })}</p>
+                <h3 className="premium-section-title mt-1">{t('dashboard.revenueChart')}</h3>
+              </div>
+              <p className="text-[11px] text-fumo/70">{t('dashboard.revenueLabel', { defaultValue: 'Fatturato netto' })}</p>
+            </div>
             {revenueError ? (
               <ChartError message={t('common.loadError')} />
             ) : (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={revenueData || []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={BRAND.gold} stopOpacity={0.35} />
+                      <stop offset="0%" stopColor={BRAND.gold} stopOpacity={0.4} />
                       <stop offset="100%" stopColor={BRAND.gold} stopOpacity={0} />
                     </linearGradient>
-                    <filter id="goldGlow">
-                      <feGaussianBlur stdDeviation="2" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
                   <XAxis
@@ -247,7 +323,7 @@ export default function DashboardPage() {
                     width={48}
                   />
                   <Tooltip
-                    cursor={{ stroke: BRAND.gold, strokeWidth: 1, strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+                    cursor={{ stroke: BRAND.gold, strokeWidth: 1, strokeDasharray: '4 4', strokeOpacity: 0.45 }}
                     content={({ active, payload, label }) => (
                       <RevenueTooltip
                         active={active}
@@ -261,9 +337,8 @@ export default function DashboardPage() {
                     type="monotone"
                     dataKey="revenue"
                     stroke={BRAND.gold}
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     fill="url(#revenueGradient)"
-                    filter="url(#goldGlow)"
                     isAnimationActive
                     animationDuration={1200}
                     animationEasing="ease-out"
@@ -272,30 +347,46 @@ export default function DashboardPage() {
                 </AreaChart>
               </ResponsiveContainer>
             )}
-          </PremiumCard>
+          </div>
 
-          <PremiumCard padding="md">
-            <h3 className="premium-section-title mb-4">{t('dashboard.topDishes')}</h3>
-            {topItemsError ? (
-              <ChartError message={t('common.loadError')} />
-            ) : (
-              <div className="space-y-0.5">
-                {(topItems || []).slice(0, 6).map((item: { menuItemId: string; name: string; quantity: number; revenue: number }, idx: number) => (
-                  <TopDishRow
-                    key={item.menuItemId}
-                    rank={idx + 1}
-                    name={item.name}
-                    quantity={item.quantity}
-                    maxQuantity={topItems?.[0]?.quantity || 1}
-                    piecesLabel={t('common.pieces')}
-                  />
-                ))}
-                {(!topItems || topItems.length === 0) && (
-                  <p className="py-6 text-center text-sm text-fumo">{t('common.noData')}</p>
-                )}
-              </div>
-            )}
-          </PremiumCard>
+          <div className="aura-bento-span-4 space-y-4 sm:space-y-5">
+            <div className="aura-module-frame p-5 sm:p-6">
+              <p className="aura-brand-eyebrow">{t('dashboard.peakHours', { defaultValue: 'Heatmap servizio' })}</p>
+              <h3 className="premium-section-title mt-1 mb-4">
+                {t('dashboard.serviceHeatmap', { defaultValue: 'Intensità oraria' })}
+              </h3>
+              <ServiceHeatmap
+                data={hourlyData || []}
+                locale={locale}
+                peakLabel={t('dashboard.peakHour', { defaultValue: 'Ora di punta' })}
+                quietLabel={t('dashboard.last7Days', { defaultValue: 'Ultimi 7 giorni' })}
+              />
+            </div>
+
+            <div className="aura-module-frame p-5 sm:p-6">
+              <p className="aura-brand-eyebrow">{t('dashboard.menuPerformance', { defaultValue: 'Menu' })}</p>
+              <h3 className="premium-section-title mt-1 mb-3">{t('dashboard.topDishes')}</h3>
+              {topItemsError ? (
+                <ChartError message={t('common.loadError')} />
+              ) : (
+                <div className="space-y-0.5">
+                  {(topItems || []).slice(0, 5).map((item: { menuItemId: string; name: string; quantity: number }, idx: number) => (
+                    <TopDishRow
+                      key={item.menuItemId}
+                      rank={idx + 1}
+                      name={item.name}
+                      quantity={item.quantity}
+                      maxQuantity={topItems?.[0]?.quantity || 1}
+                      piecesLabel={t('common.pieces')}
+                    />
+                  ))}
+                  {(!topItems || topItems.length === 0) && (
+                    <p className="py-6 text-center text-sm text-fumo">{t('common.noData')}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </section>
       )}
     </div>

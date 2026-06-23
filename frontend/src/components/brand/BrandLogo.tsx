@@ -31,12 +31,13 @@ export default function BrandLogo({
   const iconBox = (
     <div
       className={cn(
-        'relative flex shrink-0 items-center justify-center overflow-hidden border border-aura-gold/25 aura-pulse',
-        'bg-gradient-to-br from-navy-elevated via-navy-surface to-navy-mid',
+        'relative flex shrink-0 items-center justify-center overflow-hidden border border-aura-gold/30',
+        'bg-gradient-to-br from-navy-elevated via-[#1e222c] to-navy-mid',
         s.box,
       )}
-      style={{ boxShadow: '0 0 20px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+      style={{ boxShadow: 'var(--aura-signature-glow), inset 0 1px 0 rgba(255,255,255,0.07)' }}
     >
+      <div className="absolute inset-0 bg-gradient-to-tr from-aura-gold/10 via-transparent to-transparent" aria-hidden />
       <img
         src={ICON_SRC}
         alt=""
@@ -57,7 +58,7 @@ export default function BrandLogo({
         <p className={cn('font-display font-semibold tracking-tight text-pietra leading-tight', s.text)}>
           {BRAND.name}
         </p>
-        <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-fumo">
+        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-aura-gold/80">
           {t('brand.saasPlatform')}
         </p>
       </div>

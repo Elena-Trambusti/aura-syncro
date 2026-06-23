@@ -127,7 +127,7 @@ export default function Sidebar() {
     <>
       <div
         className={cn(
-          'max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:bg-black/70 max-lg:backdrop-blur-sm max-lg:transition-opacity',
+          'max-lg:fixed max-lg:inset-0 max-lg:z-[60] max-lg:bg-black/75 max-lg:backdrop-blur-md max-lg:transition-opacity',
           sidebarOpen ? 'max-lg:opacity-100 max-lg:pointer-events-auto' : 'max-lg:pointer-events-none max-lg:opacity-0',
           'lg:hidden',
         )}
@@ -137,26 +137,29 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          'premium-sidebar w-[17.5rem] lg:w-[18rem]',
-          'max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[min(300px,88vw)]',
+          'premium-sidebar w-[17.75rem] lg:w-[18.25rem]',
+          'max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-[70]',
+          'max-lg:w-[min(304px,88vw)]',
           'max-lg:transition-transform max-lg:duration-300 max-lg:ease-out',
           sidebarOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full',
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="relative border-b border-white/[0.06] px-5 py-5">
+        <div className="aura-sidebar-brand">
           <button
             type="button"
             onClick={closeSidebar}
-            className="absolute top-4 right-4 lg:hidden premium-topbar-btn"
+            className="absolute top-3 right-3 lg:hidden premium-topbar-btn"
             aria-label={t('common.closeMenu')}
           >
             <X className="w-5 h-5" />
           </button>
 
-          <BrandLogo size="md" showName layout="horizontal" className="mb-5 pr-8 lg:pr-0" />
+          <div className="aura-brand-capsule mb-4 w-fit max-w-full">
+            <BrandLogo size="sm" showName layout="horizontal" />
+          </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-navy-surface/80 px-3 py-2.5">
+          <div className="aura-tenant-chip">
             {restaurant?.logoUrl ? (
               <img src={restaurant.logoUrl} alt={restaurant.name} className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-white/10" />
             ) : (
@@ -167,9 +170,9 @@ export default function Sidebar() {
                 <UtensilsCrossed className="h-4 w-4 text-navy" />
               </div>
             )}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-pietra">{restaurant?.name || t('common.restaurant')}</p>
-              <p className="text-[10px] uppercase tracking-wider text-fumo">{t('brand.saasPlatform')}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-pietra">{restaurant?.name || t('common.restaurant')}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-fumo/80">{t('brand.saasPlatform')}</p>
             </div>
           </div>
         </div>
@@ -182,10 +185,8 @@ export default function Sidebar() {
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4">
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-fumo/70">
-            {t('nav.dashboard')}
-          </p>
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 lg:min-h-0">
+          <p className="aura-nav-section">{t('nav.operations', { defaultValue: 'Operatività' })}</p>
           <ul className="space-y-0.5">
             {visibleNavItems.map(item => {
               const locked = isItemLocked(item)
