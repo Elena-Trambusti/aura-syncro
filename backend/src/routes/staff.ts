@@ -10,7 +10,7 @@ import { weekBoundsInTimezone } from '../lib/romeDate'
 
 export const staffRouter = Router()
 
-const assignableRoles = ['MANAGER', 'WAITER', 'CHEF'] as const
+const assignableRoles = ['MANAGER', 'WAITER', 'CHEF', 'BARTENDER', 'HOST'] as const
 
 staffRouter.get('/', requirePermission('staff.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const staff = await prisma.user.findMany({

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime } from '../lib/utils'
-import { printReceipt, downloadCSV } from '../lib/export'
+import { printReceipt, downloadOrdersPdf } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -80,7 +80,7 @@ export default function OrdersPage() {
     { key: 'READY', label: t('orders.filterReady') },
   ]
 
-  const csvHeaders = [
+  const pdfHeaders = [
     t('orders.csvHeaders.id'),
     t('orders.csvHeaders.table'),
     t('orders.csvHeaders.type'),
@@ -88,6 +88,35 @@ export default function OrdersPage() {
     t('orders.csvHeaders.total'),
     t('orders.csvHeaders.date'),
   ]
+
+  const filterLabels: Record<string, string> = {
+    active: t('orders.filterActive'),
+    today: t('orders.filterToday'),
+    PREPARING: t('orders.filterKitchen'),
+    READY: t('orders.filterReady'),
+  }
+
+  const handleExportPdf = () => {
+    if (isLoading || orders.length === 0) {
+      toast.error(t('orders.exportEmpty', { defaultValue: 'Nessun ordine da esportare per il filtro selezionato' }))
+      return
+    }
+    downloadOrdersPdf({
+      filename: `ordini-${filter}-${new Date().toISOString().split('T')[0]}.pdf`,
+      title: t('orders.title'),
+      subtitle: `${filterLabels[filter] ?? filter} · ${orders.length} ${t('orders.exportCount', { defaultValue: 'ordini' })}`,
+      headers: pdfHeaders,
+      rows: orders.map((o: Order) => [
+        o.id.slice(-6).toUpperCase(),
+        o.table?.number ? `${t('common.table')} ${o.table.number}` : t('common.takeaway'),
+        o.type,
+        ORDER_STATUS_LABELS[o.status] || o.status,
+        o.total.toFixed(2),
+        formatDateTime(o.createdAt),
+      ]),
+    })
+    toast.success(t('orders.exportPdfDone', { defaultValue: 'PDF ordini scaricato' }))
+  }
 
   return (
     <div className="space-y-6">
@@ -97,24 +126,13 @@ export default function OrdersPage() {
           <p className="aura-page-subtitle">{t('orders.subtitle')}</p>
         </div>
         <button
-          onClick={() => {
-            downloadCSV(
-              `ordini-${new Date().toISOString().split('T')[0]}.csv`,
-              csvHeaders,
-              orders.map((o: Order) => [
-                o.id.slice(-6).toUpperCase(),
-                o.table?.number ? `${t('common.table')} ${o.table.number}` : t('common.takeaway'),
-                o.type,
-                ORDER_STATUS_LABELS[o.status] || o.status,
-                o.total.toFixed(2),
-                formatDateTime(o.createdAt),
-              ])
-            )
-          }}
-          className="aura-btn-ghost flex w-full shrink-0 items-center justify-center gap-1.5 sm:w-auto"
+          type="button"
+          disabled={isLoading || orders.length === 0}
+          onClick={handleExportPdf}
+          className="aura-btn-ghost flex w-full shrink-0 items-center justify-center gap-1.5 disabled:opacity-50 sm:w-auto"
         >
           <Download className="w-4 h-4" />
-          {t('orders.exportCsv')}
+          {t('orders.exportPdf', { defaultValue: 'Esporta PDF' })}
         </button>
       </div>
 

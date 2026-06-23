@@ -74,18 +74,16 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
     }
 
     if (auto.type === 'WIN_BACK') {
-      const minCutoff = new Date(today)
-      minCutoff.setDate(minCutoff.getDate() - 67)
-      const maxCutoff = new Date(today)
-      maxCutoff.setDate(maxCutoff.getDate() - 60)
+      const cutoff = new Date(today)
+      cutoff.setDate(cutoff.getDate() - 60)
 
       const customers = await prisma.customer.findMany({
         where: {
           restaurantId,
           email: { not: null },
           OR: [
-            { lastVisit: { gte: minCutoff, lte: maxCutoff } },
-            { lastVisit: null, createdAt: { lte: maxCutoff } },
+            { lastVisit: { lte: cutoff } },
+            { lastVisit: null, createdAt: { lte: cutoff } },
           ],
         },
       })
@@ -94,6 +92,39 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
         const { firstName } = splitCustomerName(c.name)
         const body = renderTemplate(auto.messageTemplate, { firstName, name: c.name, restaurantName: restaurant?.name ?? '' })
         const r = await sendEmail({ to: c.email, subject: 'Ci manchi!', text: body })
+        if (r.sent) sentCount += 1
+      }
+    }
+
+    if (auto.type === 'VIP_THANKS') {
+      const yesterdayStart = new Date(today)
+      yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+      const yesterdayEnd = new Date(today)
+
+      const customers = await prisma.customer.findMany({
+        where: {
+          restaurantId,
+          email: { not: null },
+          lastVisit: { gte: yesterdayStart, lt: yesterdayEnd },
+          OR: [
+            { tags: { has: 'VIP' } },
+            { totalSpent: { gte: 200 } },
+          ],
+        },
+      })
+      for (const c of customers) {
+        if (!c.email) continue
+        const { firstName } = splitCustomerName(c.name)
+        const body = renderTemplate(auto.messageTemplate, {
+          firstName,
+          name: c.name,
+          restaurantName: restaurant?.name ?? '',
+        })
+        const r = await sendEmail({
+          to: c.email,
+          subject: `Grazie da ${restaurant?.name ?? 'noi'}`,
+          text: body,
+        })
         if (r.sent) sentCount += 1
       }
     }

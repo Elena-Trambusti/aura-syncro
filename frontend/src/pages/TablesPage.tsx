@@ -129,7 +129,7 @@ export default function TablesPage() {
   const [filterArea, setFilterArea] = useState(allAreasKey)
   const [reservedTable, setReservedTable] = useState<Table | null>(null)
 
-  const { data: tables = [], isLoading, isError } = useQuery<Table[]>({
+  const { data: tables = [], isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
   })
@@ -287,27 +287,106 @@ export default function TablesPage() {
           <h1 className="aura-page-title">{t('tables.title')}</h1>
           <p className="aura-page-subtitle">{t('tables.subtitle')}</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="relative z-10 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           {canManageTables && (
             <button
               type="button"
-              onClick={() => { setShowManage(v => !v); setEditingTable(null) }}
-              className="flex items-center justify-center gap-2 px-4 py-2 saas-chip rounded-xl text-sm font-medium text-fumo hover:bg-white/[0.05] transition-colors w-full sm:w-auto shrink-0"
+              onClick={() => {
+                setShowManage(v => {
+                  const next = !v
+                  if (next) {
+                    requestAnimationFrame(() => {
+                      document.getElementById('tables-manage-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    })
+                  }
+                  return next
+                })
+                setEditingTable(null)
+              }}
+              className={cn(
+                'flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors sm:w-auto',
+                showManage ? 'bg-aura-gold/15 text-aura-gold border border-aura-gold/30' : 'saas-chip text-fumo hover:bg-white/[0.05]',
+              )}
             >
-              <Settings2 className="w-4 h-4" />
+              <Settings2 className="h-4 w-4" />
               {t('tables.manageSection')}
             </button>
           )}
           <button
             type="button"
-            onClick={() => queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })}
-            className="flex items-center justify-center gap-2 px-4 py-2 saas-chip rounded-xl text-sm font-medium text-fumo hover:bg-white/[0.05] transition-colors w-full sm:w-auto shrink-0"
+            disabled={isFetching}
+            onClick={() => {
+              void refetch().then(() => toast.success(t('tables.refreshed', { defaultValue: 'Tavoli aggiornati' })))
+            }}
+            className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/[0.05] disabled:opacity-60 sm:w-auto"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
             {t('common.refresh')}
           </button>
         </div>
       </div>
+
+      {canManageTables && showManage && (
+        <section id="tables-manage-panel" className="saas-card space-y-4 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-pietra">{t('tables.manageSection')}</h2>
+              <p className="mt-0.5 text-sm text-fumo">{t('tables.subtitle')}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingTable({} as Table)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-aura-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-aura-gold-light"
+            >
+              <Plus className="h-4 w-4" />
+              {t('tables.newTable')}
+            </button>
+          </div>
+
+          <div className={ui.tableWrap}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className={ui.tableHeadBg}>
+                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('guestMenu.tableNumber')}</th>
+                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.seats')}</th>
+                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.area')}</th>
+                  <th className={`${ui.tableHead} px-3 py-2 text-left`}>{t('common.status')}</th>
+                  <th className={`${ui.tableHead} px-3 py-2 text-right`}>{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tables.map(table => (
+                  <tr key={table.id} className={ui.tableRow}>
+                    <td className="px-3 py-2.5 font-medium text-pietra">T{table.number}</td>
+                    <td className="px-3 py-2.5 text-fumo">{table.seats}</td>
+                    <td className="px-3 py-2.5 text-fumo">{table.area || defaultArea}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', TABLE_STATUS_BADGE[table.status as TableStatus])}>
+                        {TABLE_STATUS_LABELS[table.status as TableStatus]}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <button type="button" onClick={() => setEditingTable(table)} className="rounded-lg p-2 text-fumo hover:bg-white/[0.05]" title={t('common.edit')}>
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { if (confirm(t('tables.confirmDelete'))) deleteTable.mutate(table.id) }}
+                          className="rounded-lg p-2 text-fumo hover:bg-red-500/10 hover:text-red-400"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <div className="pwa-tables-stats">
         {STAT_ACCENTS.map(({ key, status, accent }) => (
@@ -390,75 +469,6 @@ export default function TablesPage() {
           reservationLabel={getReservationLabel}
         />
         </div>
-      )}
-
-      {canManageTables && showManage && (
-        <section className="saas-card p-4 sm:p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-pietra">{t('tables.manageSection')}</h2>
-              <p className="text-sm text-fumo mt-0.5">{t('tables.subtitle')}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditingTable({} as Table)}
-              className="flex items-center justify-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2 rounded-xl text-sm font-semibold"
-            >
-              <Plus className="w-4 h-4" />
-              {t('tables.newTable')}
-            </button>
-          </div>
-
-          <div className={ui.tableWrap}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className={ui.tableHeadBg}>
-                  <th className={`${ui.tableHead} text-left py-2 px-3`}>{t('guestMenu.tableNumber')}</th>
-                  <th className={`${ui.tableHead} text-left py-2 px-3`}>{t('common.seats')}</th>
-                  <th className={`${ui.tableHead} text-left py-2 px-3`}>{t('common.area')}</th>
-                  <th className={`${ui.tableHead} text-left py-2 px-3`}>{t('common.status')}</th>
-                  <th className={`${ui.tableHead} text-right py-2 px-3`}>{t('common.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tables.map(table => (
-                  <tr key={table.id} className={ui.tableRow}>
-                    <td className="py-2.5 px-3 font-medium text-pietra">T{table.number}</td>
-                    <td className="py-2.5 px-3 text-fumo">{table.seats}</td>
-                    <td className="py-2.5 px-3 text-fumo">{table.area || defaultArea}</td>
-                    <td className="py-2.5 px-3">
-                      <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', TABLE_STATUS_BADGE[table.status as TableStatus])}>
-                        {TABLE_STATUS_LABELS[table.status as TableStatus]}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setEditingTable(table)}
-                          className="p-2 hover:bg-white/[0.05] rounded-lg text-fumo"
-                          title={t('common.edit')}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm(t('tables.confirmDelete'))) deleteTable.mutate(table.id)
-                          }}
-                          className="p-2 hover:bg-red-500/10 rounded-lg text-fumo hover:text-red-400"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
       )}
 
       {filtered.some(tbl => tbl.status === 'CLEANING') && (

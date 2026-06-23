@@ -244,10 +244,17 @@ export default function StaffShiftsTab({ onGoToTeam }: StaffShiftsTabProps) {
             const isToday = key === toDateInput(new Date())
 
             return (
-              <button
+              <div
                 key={key}
-                type="button"
+                role="button"
+                tabIndex={assignableStaff.length > 0 ? 0 : -1}
                 onClick={() => assignableStaff.length > 0 && openFormForDate(key)}
+                onKeyDown={e => {
+                  if (assignableStaff.length > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault()
+                    openFormForDate(key)
+                  }
+                }}
                 className={cn(
                   'rounded-xl border bg-navy-elevated p-4 shadow-sm text-left transition-colors',
                   isToday ? 'border-aura-gold/30 ring-1 ring-amber-200' : 'border-white/[0.08]',
@@ -326,7 +333,7 @@ export default function StaffShiftsTab({ onGoToTeam }: StaffShiftsTabProps) {
                     ))}
                   </ul>
                 )}
-              </button>
+              </div>
             )
           })}
         </div>

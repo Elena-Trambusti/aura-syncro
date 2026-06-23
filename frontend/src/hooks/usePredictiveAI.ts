@@ -64,6 +64,7 @@ export function usePredictiveAI() {
     generatedAt: query.data?.generatedAt,
     weatherSource: query.data?.weatherSource,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     isError: query.isError,
     refetch: query.refetch,
   }

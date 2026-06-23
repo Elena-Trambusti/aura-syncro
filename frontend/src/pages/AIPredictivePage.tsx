@@ -3,6 +3,7 @@ import {
   Brain, TrendingUp, AlertTriangle, Sparkles, CloudRain, Sun, Cloud,
   Package, RefreshCw,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -111,7 +112,7 @@ export default function AIPredictivePage() {
 
 function AIPredictivePageContent() {
   const { t, i18n } = useTranslation()
-  const { forecast, alerts, factorsUsed, engineVersion, generatedAt, weatherSource, isLoading, isError, refetch } = usePredictiveAI()
+  const { forecast, alerts, factorsUsed, engineVersion, generatedAt, weatherSource, isLoading, isFetching, isError, refetch } = usePredictiveAI()
 
   const chartData = forecast.map(day => ({
     ...day,
@@ -174,10 +175,15 @@ function AIPredictivePageContent() {
           )}
           <button
             type="button"
-            onClick={() => refetch()}
-            className="inline-flex items-center gap-1.5 rounded-lg premium-card px-3 py-2 text-sm font-medium text-fumo shadow-sm transition-colors hover:bg-white/[0.05]"
+            disabled={isFetching}
+            onClick={async () => {
+              const result = await refetch()
+              if (result.isError) toast.error(t('aiPredictive.loadError'))
+              else toast.success(t('aiPredictive.refreshed', { defaultValue: 'Dati aggiornati' }))
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg premium-card px-3 py-2 text-sm font-medium text-fumo shadow-sm transition-colors hover:bg-white/[0.05] disabled:opacity-60"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
             {t('aiPredictive.refresh')}
           </button>
         </div>

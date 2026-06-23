@@ -171,9 +171,9 @@ export default function MenuPage() {
 
   const deleteCategory = useMutation({
     mutationFn: (id: string) => api.delete(`/menu/categories/${id}`),
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
-      if (selectedCat) setSelectedCat(null)
+      if (selectedCat === deletedId) setSelectedCat(null)
       toast.success(t('menu.categoryDeleted'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {

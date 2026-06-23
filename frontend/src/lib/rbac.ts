@@ -11,7 +11,7 @@ export {
 
 import { type AppRole, normalizeRole, hasPermission } from './permissions'
 
-export const ROLES: AppRole[] = ['OWNER', 'MANAGER', 'WAITER', 'CHEF']
+export const ROLES: AppRole[] = ['OWNER', 'MANAGER', 'WAITER', 'CHEF', 'BARTENDER', 'HOST']
 
 export const STAFF_MANAGE_ROLES: AppRole[] = ['OWNER', 'MANAGER']
 
@@ -31,4 +31,4 @@ export function canAccessAdminNav(userRole: string | undefined | null): boolean 
 }
 
 /** Ruoli assegnabili quando si crea un dipendente (non OWNER) */
-export const ASSIGNABLE_STAFF_ROLES: AppRole[] = ['MANAGER', 'WAITER', 'CHEF']
+export const ASSIGNABLE_STAFF_ROLES: AppRole[] = ['MANAGER', 'WAITER', 'CHEF', 'BARTENDER', 'HOST']

@@ -161,6 +161,8 @@ enum Role {
   MANAGER
   WAITER
   CHEF
+  BARTENDER
+  HOST
 }
 
 // ===== TAVOLI =====

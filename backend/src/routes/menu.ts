@@ -102,7 +102,7 @@ menuRouter.delete('/categories/:id', requirePermission('menu.manage'), async (re
   }
 
   const items = await prisma.menuItem.findMany({
-    where: { categoryId: category.id, restaurantId: tenantId(req), ...activeMenuItemWhere },
+    where: { categoryId: category.id, restaurantId: tenantId(req) },
     select: { id: true },
   })
 

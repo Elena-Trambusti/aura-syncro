@@ -50,15 +50,40 @@ const CAMPAIGN_STATUS_CLASS: Record<Campaign['status'], string> = {
   CANCELLED: 'bg-red-100 text-red-400',
 }
 
+type CampaignSegment = 'all' | 'inactive60' | 'inactive90' | 'topSpender' | 'frequent' | 'newCustomers' | 'vip' | 'birthdayMonth'
+
+const SEGMENT_KEYS: CampaignSegment[] = ['all', 'inactive60', 'inactive90', 'topSpender', 'frequent', 'newCustomers', 'vip', 'birthdayMonth']
+
 function CampaignFormModal({
   onSave,
   onCancel,
 }: {
-  onSave: (data: { name: string; subject: string; message: string }) => void
+  onSave: (data: { name: string; subject: string; message: string; targetFilter: string }) => void
   onCancel: () => void
 }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({ name: '', subject: '', message: '' })
+  const [segment, setSegment] = useState<CampaignSegment>('all')
+  const [previewCount, setPreviewCount] = useState<number | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  const loadPreview = async (seg: CampaignSegment) => {
+    setPreviewLoading(true)
+    try {
+      const filter = seg === 'all' ? null : JSON.stringify({ segment: seg })
+      const r = await api.post<{ count: number }>('/marketing/preview', { targetFilter: filter })
+      setPreviewCount(r.data.count)
+    } catch {
+      setPreviewCount(null)
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const handleSegmentChange = (seg: CampaignSegment) => {
+    setSegment(seg)
+    void loadPreview(seg)
+  }
 
   return (
     <ModalPortal onClose={onCancel}>
@@ -72,6 +97,26 @@ function CampaignFormModal({
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className={ui.input}
             />
+          </div>
+          <div>
+            <label className={ui.label}>{t('marketing.campaignSegment', { defaultValue: 'Segmento destinatari' })}</label>
+            <select
+              value={segment}
+              onChange={e => handleSegmentChange(e.target.value as CampaignSegment)}
+              className={ui.select}
+            >
+              {SEGMENT_KEYS.map(key => (
+                <option key={key} value={key}>{t(`marketing.segments.${key}`)}</option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-fumo">{t(`marketing.segments.${segment}Hint`, { defaultValue: '' })}</p>
+            {(previewCount !== null || previewLoading) && (
+              <p className="mt-1 text-xs font-medium text-aura-gold">
+                {previewLoading
+                  ? t('common.loading')
+                  : t('marketing.segmentPreview', { count: previewCount ?? 0, defaultValue: '{{count}} destinatari con email' })}
+              </p>
+            )}
           </div>
           <div>
             <label className={ui.label}>{t('marketing.campaignSubject')}</label>
@@ -98,7 +143,10 @@ function CampaignFormModal({
           <button
             type="button"
             disabled={!form.name.trim() || !form.message.trim()}
-            onClick={() => onSave(form)}
+            onClick={() => onSave({
+              ...form,
+              targetFilter: segment === 'all' ? '' : JSON.stringify({ segment }),
+            })}
             className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm disabled:opacity-50`}
           >
             {t('common.save')}
@@ -138,8 +186,8 @@ export default function MarketingPage() {
   })
 
   const createCampaign = useMutation({
-    mutationFn: (data: { name: string; subject: string; message: string }) =>
-      api.post('/marketing', { ...data, type: 'EMAIL' }),
+    mutationFn: (data: { name: string; subject: string; message: string; targetFilter?: string }) =>
+      api.post('/marketing', { ...data, type: 'EMAIL', ...(data.targetFilter ? { targetFilter: data.targetFilter } : {}) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'campaigns') })
       setShowCampaignForm(false)

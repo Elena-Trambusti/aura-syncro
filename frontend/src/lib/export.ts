@@ -1,6 +1,9 @@
 /**
  * Genera e scarica un file CSV
  */
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
 export function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]): void {
   const sep = ';'
   const escape = (v: string | number) => {
@@ -102,4 +105,44 @@ export function printReceipt(order: {
     win.document.close()
     win.onload = () => { win.focus(); win.print() }
   }
+}
+
+/** Esporta lista ordini in PDF (jsPDF) */
+export function downloadOrdersPdf(options: {
+  filename: string
+  title: string
+  subtitle: string
+  headers: string[]
+  rows: (string | number)[][]
+  locale?: string
+}): void {
+  const { filename, title, subtitle, headers, rows, locale = 'it-IT' } = options
+  if (rows.length === 0) return
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, 14, 18)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text(subtitle, 14, 26)
+  doc.text(
+    new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(new Date()),
+    pageW - 14,
+    18,
+    { align: 'right' },
+  )
+
+  autoTable(doc, {
+    startY: 32,
+    head: [headers],
+    body: rows.map(r => r.map(String)),
+    styles: { fontSize: 9, cellPadding: 2.5 },
+    headStyles: { fillColor: [26, 29, 38], textColor: [212, 175, 55] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  })
+
+  doc.save(filename)
 }

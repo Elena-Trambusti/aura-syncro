@@ -166,38 +166,68 @@ export default function LoyaltyPage() {
 
       <div>
         <h2 className="text-base font-semibold text-fumo mb-3">{t('loyalty.allCustomers')}</h2>
-        <div className="glass-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="glass-table-head">
-              <tr>
-                {[t('loyalty.tableCustomer'), t('loyalty.tableLevel'), t('loyalty.tablePoints'), t('loyalty.tableSpent'), ''].map(h => (
-                  <th key={h || 'actions'} className="text-left px-4 py-3 text-xs font-semibold text-fumo uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {customers.slice(0, 20).map(c => (
-                <tr key={c.id} className="hover:bg-white/[0.05] transition-colors">
-                  <td className="px-4 py-3 font-medium text-pietra">{c.name}</td>
-                  <td className="px-4 py-3">
-                    {c.loyaltyTier ? (
-                      <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: c.loyaltyTier.color + '22', color: c.loyaltyTier.color }}>{c.loyaltyTier.name}</span>
-                    ) : <span className="text-xs text-fumo">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-bold text-aura-gold">{c.loyaltyPoints.toLocaleString()}</span>
-                    <span className="text-fumo text-xs ml-1">{t('loyalty.pointsShort')}</span>
-                  </td>
-                  <td className="px-4 py-3 text-fumo">{formatCurrency(c.totalSpent)}</td>
-                  <td className="px-4 py-3">
-                    <button type="button" onClick={() => { setSelectedCustomer(c); setShowAdjustModal(true) }} className="flex items-center gap-1 text-xs text-aura-gold hover:text-aura-gold font-medium">
-                      <Gift className="w-3.5 h-3.5" /> {t('loyalty.adjust')} <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </td>
+
+        {/* Mobile: card layout */}
+        <div className="space-y-3 md:hidden">
+          {customers.slice(0, 20).map(c => (
+            <div key={c.id} className="glass-card p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-pietra truncate">{c.name}</p>
+                  {c.loyaltyTier ? (
+                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: c.loyaltyTier.color + '22', color: c.loyaltyTier.color }}>{c.loyaltyTier.name}</span>
+                  ) : <span className="text-xs text-fumo">—</span>}
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-aura-gold">{c.loyaltyPoints.toLocaleString()}</p>
+                  <p className="text-xs text-fumo">{t('loyalty.pointsShort')}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.06]">
+                <span className="text-sm text-fumo">{formatCurrency(c.totalSpent)}</span>
+                <button type="button" onClick={() => { setSelectedCustomer(c); setShowAdjustModal(true) }} className="flex items-center gap-1 text-xs text-aura-gold font-medium">
+                  <Gift className="w-3.5 h-3.5" /> {t('loyalty.adjust')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabella scrollabile */}
+        <div className="glass-card overflow-hidden hidden md:block">
+          <div className={ui.tableWrap}>
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="glass-table-head">
+                <tr>
+                  {[t('loyalty.tableCustomer'), t('loyalty.tableLevel'), t('loyalty.tablePoints'), t('loyalty.tableSpent'), ''].map(h => (
+                    <th key={h || 'actions'} className="text-left px-4 py-3 text-xs font-semibold text-fumo uppercase tracking-wide">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-white/[0.06]">
+                {customers.slice(0, 20).map(c => (
+                  <tr key={c.id} className="hover:bg-white/[0.05] transition-colors">
+                    <td className="px-4 py-3 font-medium text-pietra">{c.name}</td>
+                    <td className="px-4 py-3">
+                      {c.loyaltyTier ? (
+                        <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: c.loyaltyTier.color + '22', color: c.loyaltyTier.color }}>{c.loyaltyTier.name}</span>
+                      ) : <span className="text-xs text-fumo">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-bold text-aura-gold">{c.loyaltyPoints.toLocaleString()}</span>
+                      <span className="text-fumo text-xs ml-1">{t('loyalty.pointsShort')}</span>
+                    </td>
+                    <td className="px-4 py-3 text-fumo">{formatCurrency(c.totalSpent)}</td>
+                    <td className="px-4 py-3">
+                      <button type="button" onClick={() => { setSelectedCustomer(c); setShowAdjustModal(true) }} className="flex items-center gap-1 text-xs text-aura-gold hover:text-aura-gold font-medium">
+                        <Gift className="w-3.5 h-3.5" /> {t('loyalty.adjust')} <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

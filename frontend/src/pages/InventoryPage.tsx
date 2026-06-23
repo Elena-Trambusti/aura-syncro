@@ -143,6 +143,14 @@ export default function InventoryPage() {
 
       {isError && <QueryErrorBanner />}
 
+      <div className="rounded-xl border border-aura-gold/20 bg-aura-gold/5 p-4 flex gap-3">
+        <Package className="w-5 h-5 text-aura-gold shrink-0 mt-0.5" />
+        <div className="text-sm text-fumo space-y-1">
+          <p className="font-semibold text-pietra">{t('inventory.integrationTitle', { defaultValue: 'Collegato al menu e agli ordini' })}</p>
+          <p>{t('inventory.integrationHint', { defaultValue: 'Le ricette dei piatti scalano automaticamente le quantità quando un ordine viene confermato. Configura le ricette dal menu per attivare la sincronizzazione.' })}</p>
+        </div>
+      </div>
+
       {alerts.length > 0 && (
         <div className="bg-red-950/40 border border-red-500/25 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">

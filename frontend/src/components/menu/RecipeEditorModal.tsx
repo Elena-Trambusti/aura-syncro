@@ -36,7 +36,7 @@ export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }
 
   const { data: inventory = [], isLoading: inventoryLoading } = useQuery<InventoryOption[]>({
     queryKey: ['inventory-list'],
-    queryFn: () => api.get<InventoryOption[]>('/inventory').then(r => r.data),
+    queryFn: () => api.get<{ items: InventoryOption[] }>('/inventory').then(r => r.data.items ?? []),
   })
 
   useEffect(() => {

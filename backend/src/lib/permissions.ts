@@ -1,5 +1,5 @@
 /** Ruoli applicativi (allineati a Prisma enum Role) */
-export type AppRole = 'OWNER' | 'MANAGER' | 'WAITER' | 'CHEF'
+export type AppRole = 'OWNER' | 'MANAGER' | 'WAITER' | 'CHEF' | 'BARTENDER' | 'HOST'
 
 export const PERMISSIONS = [
   'tables.read',
@@ -60,6 +60,23 @@ const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<Permission>> = {
     'menu.availability',
     'inventory.read',
   ]),
+  BARTENDER: new Set<Permission>([
+    'orders.read',
+    'orders.create',
+    'orders.items',
+    'orders.status',
+    'menu.read',
+    'menu.availability',
+    'inventory.read',
+  ]),
+  HOST: new Set<Permission>([
+    'tables.read',
+    'tables.status',
+    'reservations.read',
+    'reservations.manage',
+    'orders.read',
+    'customers.read',
+  ]),
 }
 
 export const WAITER_ORDER_STATUSES = new Set(['CONFIRMED', 'PREPARING', 'READY', 'SERVED'])
@@ -68,7 +85,7 @@ export const CHEF_ORDER_STATUSES = new Set(['PREPARING', 'READY'])
 export function normalizeRole(role: string | undefined | null): AppRole {
   if (role === 'KITCHEN') return 'CHEF'
   if (role === 'CASHIER') return 'WAITER'
-  if (role === 'OWNER' || role === 'MANAGER' || role === 'WAITER' || role === 'CHEF') {
+  if (role === 'OWNER' || role === 'MANAGER' || role === 'WAITER' || role === 'CHEF' || role === 'BARTENDER' || role === 'HOST') {
     return role
   }
   return 'WAITER'
@@ -97,7 +114,7 @@ export function canSetOrderStatus(role: string | undefined | null, status: strin
   if (status === 'PAID') return hasPermission(normalized, 'orders.pay')
   if (status === 'CANCELLED') return hasPermission(normalized, 'orders.cancel')
   if (normalized === 'CHEF') return CHEF_ORDER_STATUSES.has(status)
-  if (normalized === 'WAITER') return WAITER_ORDER_STATUSES.has(status)
+  if (normalized === 'WAITER' || normalized === 'BARTENDER') return WAITER_ORDER_STATUSES.has(status)
   return false
 }
 

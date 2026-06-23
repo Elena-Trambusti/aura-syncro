@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -6,7 +6,7 @@ import { formatCurrency, formatDate, cn } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { customerDisplayName, isVipCustomer, tagBadgeClass } from '../lib/customerTags'
 import CustomerSlideOver, { type CustomerDetail, type CustomerEditData } from '../components/crm/CustomerSlideOver'
-import { Search, Users, TrendingUp, Award, Plus } from 'lucide-react'
+import { Search, Users, TrendingUp, Award, Plus, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -55,13 +55,19 @@ export default function CrmPage() {
   const qc = useQueryClient()
   const tk = useTenantQueryKey()
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [form, setForm] = useState<NewCustomerForm>(emptyForm)
 
-  const { data: customers = [], isError: customersError } = useQuery<CustomerListItem[]>({
-    queryKey: tq(tk, 'customers', search),
-    queryFn: () => api.get(`/customers${search ? `?search=${encodeURIComponent(search)}` : ''}`).then(r => r.data),
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const { data: customers = [], isError: customersError, isLoading: customersLoading, isFetching: customersFetching } = useQuery<CustomerListItem[]>({
+    queryKey: tq(tk, 'customers', debouncedSearch),
+    queryFn: () => api.get(`/customers${debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : ''}`).then(r => r.data),
   })
 
   const { data: stats, isError: statsError } = useQuery<CrmStats>({
@@ -201,6 +207,9 @@ export default function CrmPage() {
           className={cn(ui.input, 'pl-10')}
           placeholder={t('crm.searchPlaceholder')}
         />
+        {(customersLoading || customersFetching) && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fumo animate-spin" />
+        )}
       </div>
 
       <div className={`${ui.cardSm} overflow-hidden`}>
@@ -216,7 +225,21 @@ export default function CrmPage() {
               </tr>
             </thead>
             <tbody>
-              {customers.map(customer => (
+              {customersLoading && customers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-fumo">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-aura-gold" />
+                    {t('common.loading')}
+                  </td>
+                </tr>
+              ) : customers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-fumo">
+                    {debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
+                  </td>
+                </tr>
+              ) : (
+              customers.map(customer => (
                 <tr
                   key={customer.id}
                   onClick={() => setSelectedId(customer.id)}
@@ -258,16 +281,11 @@ export default function CrmPage() {
                     {customer.lastVisit ? formatDate(customer.lastVisit) : t('crm.neverVisited')}
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
-        {customers.length === 0 && (
-          <div className="flex flex-col items-center py-16 text-fumo">
-            <Users className="w-10 h-10 mb-2 opacity-30" />
-            <p className="text-sm">{t('crm.noCustomers')}</p>
-          </div>
-        )}
       </div>
 
       <CustomerSlideOver
