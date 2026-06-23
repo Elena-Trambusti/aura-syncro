@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Mail, Phone, Calendar, AlertTriangle, Receipt, Pencil } from 'lucide-react'
+import { X, Mail, Phone, Calendar, AlertTriangle, Receipt, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatCurrency, formatDate, cn } from '../../lib/utils'
 import { tagBadgeClass, customerDisplayName } from '../../lib/customerTags'
@@ -55,7 +55,10 @@ interface CustomerSlideOverProps {
   onClose: () => void
   isLoading?: boolean
   onSave?: (data: CustomerEditData) => void | Promise<void>
+  onDelete?: () => void | Promise<void>
   isSaving?: boolean
+  isDeleting?: boolean
+  startInEditMode?: boolean
 }
 
 function toEditForm(customer: CustomerDetail): CustomerEditData {
@@ -74,7 +77,7 @@ function toEditForm(customer: CustomerDetail): CustomerEditData {
   }
 }
 
-export default function CustomerSlideOver({ customer, onClose, isLoading, onSave, isSaving }: CustomerSlideOverProps) {
+export default function CustomerSlideOver({ customer, onClose, isLoading, onSave, onDelete, isSaving, isDeleting, startInEditMode }: CustomerSlideOverProps) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<CustomerEditData>({
@@ -85,9 +88,9 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
   useEffect(() => {
     if (customer) {
       setForm(toEditForm(customer))
-      setEditing(false)
+      setEditing(Boolean(startInEditMode))
     }
-  }, [customer?.id])
+  }, [customer?.id, startInEditMode])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,6 +133,17 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
                 aria-label={t('common.edit')}
               >
                 <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            {customer && onDelete && !editing && (
+              <button
+                type="button"
+                onClick={() => void onDelete()}
+                disabled={isDeleting}
+                className="rounded-lg p-2 text-fumo hover:bg-rose-500/10 hover:text-rose-400 transition-colors disabled:opacity-50"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 className="h-4 w-4" />
               </button>
             )}
             <button

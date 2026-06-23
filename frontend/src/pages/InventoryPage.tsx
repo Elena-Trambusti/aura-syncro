@@ -10,6 +10,7 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import toast from 'react-hot-toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
+import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface InventoryItem {
   id: string; name: string; unit: string; quantity: number
@@ -24,9 +25,20 @@ function ItemForm({ item, onSave, onCancel }: {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     name: item?.name || '', unit: item?.unit || 'kg',
-    quantity: item?.quantity || 0, minQuantity: item?.minQuantity || 0,
-    cost: item?.cost || 0, supplier: item?.supplier || '', category: item?.category || '',
+    quantity: numericFieldFrom(item?.quantity, ''),
+    minQuantity: numericFieldFrom(item?.minQuantity, ''),
+    cost: numericFieldFrom(item?.cost, ''),
+    supplier: item?.supplier || '', category: item?.category || '',
   })
+
+  const handleSave = () => {
+    onSave({
+      ...form,
+      quantity: numericToNumber(form.quantity),
+      minQuantity: numericToNumber(form.minQuantity),
+      cost: numericToNumber(form.cost),
+    })
+  }
   return (
     <div className="glass-overlay flex items-center justify-center p-4" onClick={onCancel}>
       <div className="glass-modal p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
@@ -53,17 +65,17 @@ function ItemForm({ item, onSave, onCancel }: {
             </div>
             <div>
               <label className="block text-sm font-medium text-fumo mb-1">{t('inventory.currentQty')}</label>
-              <input type="number" step="0.1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseFloat(e.target.value) || 0 }))}
+              <input {...numericInputProps(form.quantity, v => setForm(f => ({ ...f, quantity: v })), 'float')} step="0.1"
                 className="w-full px-3 py-2 saas-input w-full focus:outline-none focus:ring-2 focus:ring-aura-gold/30 focus:border-aura-gold/50" />
             </div>
             <div>
               <label className="block text-sm font-medium text-fumo mb-1">{t('inventory.minStock')}</label>
-              <input type="number" step="0.1" value={form.minQuantity} onChange={e => setForm(f => ({ ...f, minQuantity: parseFloat(e.target.value) || 0 }))}
+              <input {...numericInputProps(form.minQuantity, v => setForm(f => ({ ...f, minQuantity: v })), 'float')} step="0.1"
                 className="w-full px-3 py-2 saas-input w-full focus:outline-none focus:ring-2 focus:ring-aura-gold/30 focus:border-aura-gold/50" />
             </div>
             <div>
               <label className="block text-sm font-medium text-fumo mb-1">{t('inventory.costPerUnit')}</label>
-              <input type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: parseFloat(e.target.value) || 0 }))}
+              <input {...numericInputProps(form.cost, v => setForm(f => ({ ...f, cost: v })), 'float')} step="0.01"
                 className="w-full px-3 py-2 saas-input w-full focus:outline-none focus:ring-2 focus:ring-aura-gold/30 focus:border-aura-gold/50" />
             </div>
             <div>
@@ -76,7 +88,7 @@ function ItemForm({ item, onSave, onCancel }: {
         </div>
         <div className="flex gap-3 mt-5">
           <button onClick={onCancel} className="flex-1 py-2.5 border border-white/[0.1] rounded-xl text-sm font-medium">{t('common.cancel')}</button>
-          <button onClick={() => onSave(form)} className="flex-1 py-2.5 bg-aura-gold hover:bg-aura-gold text-navy font-semibold rounded-xl text-sm font-semibold">{t('common.save')}</button>
+          <button onClick={handleSave} className="flex-1 py-2.5 bg-aura-gold hover:bg-aura-gold text-navy font-semibold rounded-xl text-sm font-semibold">{t('common.save')}</button>
         </div>
       </div>
     </div>

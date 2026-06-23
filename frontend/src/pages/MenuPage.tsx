@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import ModalPortal from '../components/ModalPortal'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import RecipeEditorModal from '../components/menu/RecipeEditorModal'
+import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface MenuItem {
   id: string; name: string; description?: string; price: number
@@ -33,13 +34,25 @@ function ItemForm({ item, categories, onSave, onCancel }: {
     categoryId: item?.categoryId || item?.category?.id || categories[0]?.id || '',
     name: item?.name || '',
     description: item?.description || '',
-    price: item?.price || 0,
+    price: numericFieldFrom(item?.price, ''),
     allergens: item?.allergens || '',
-    preparationTime: item?.preparationTime || 0,
-    calories: item?.calories || 0,
+    preparationTime: numericFieldFrom(item?.preparationTime, ''),
+    calories: numericFieldFrom(item?.calories, ''),
     available: item?.available ?? true,
     featured: item?.featured ?? false,
   })
+
+  const handleSave = () => {
+    if (form.price === '') {
+      return
+    }
+    onSave({
+      ...form,
+      price: numericToNumber(form.price),
+      preparationTime: numericToNumber(form.preparationTime),
+      calories: numericToNumber(form.calories),
+    })
+  }
 
   return (
     <ModalPortal onClose={onCancel}>
@@ -68,18 +81,26 @@ function ItemForm({ item, categories, onSave, onCancel }: {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={ui.label}>{t('menu.price')} *</label>
-              <input type="number" step="0.5" value={form.price} onChange={e => setForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
-                className={ui.input} />
+              <input
+                {...numericInputProps(form.price, v => setForm(f => ({ ...f, price: v })), 'float')}
+                step="0.5"
+                className={ui.input}
+                required
+              />
             </div>
             <div>
               <label className={ui.label}>{t('menu.prepTime')}</label>
-              <input type="number" value={form.preparationTime} onChange={e => setForm(f => ({ ...f, preparationTime: parseInt(e.target.value) || 0 }))}
-                className={ui.input} />
+              <input
+                {...numericInputProps(form.preparationTime, v => setForm(f => ({ ...f, preparationTime: v })), 'int')}
+                className={ui.input}
+              />
             </div>
             <div>
               <label className={ui.label}>{t('menu.calories')}</label>
-              <input type="number" value={form.calories} onChange={e => setForm(f => ({ ...f, calories: parseInt(e.target.value) || 0 }))}
-                className={ui.input} />
+              <input
+                {...numericInputProps(form.calories, v => setForm(f => ({ ...f, calories: v })), 'int')}
+                className={ui.input}
+              />
             </div>
           </div>
           <div>
@@ -101,7 +122,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
         </div>
         <div className="flex gap-3 mt-6">
           <button onClick={onCancel} className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>{t('common.cancel')}</button>
-          <button onClick={() => onSave(form)} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm`}>{t('common.save')}</button>
+          <button onClick={handleSave} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm`}>{t('common.save')}</button>
         </div>
       </div>
     </ModalPortal>

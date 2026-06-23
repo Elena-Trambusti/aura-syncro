@@ -35,10 +35,11 @@ async function syncOrderStatusFromItems(orderId: string): Promise<void> {
   const active = items.filter(i => i.status !== 'CANCELLED')
   if (active.length === 0) return
 
+  const allServed = active.every(i => i.status === 'SERVED')
   const allReady = active.every(i => ['READY', 'SERVED'].includes(i.status))
   const anyInProgress = active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))
 
-  const status = allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
+  const status = allServed ? 'SERVED' : allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
   await prisma.order.update({ where: { id: orderId }, data: { status } })
 }
 
@@ -68,7 +69,7 @@ ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRe
   const orders = await prisma.order.findMany({
     where: {
       restaurantId: req.restaurantId!,
-      status: { notIn: ['PAID', 'CANCELLED'] },
+      status: { notIn: ['PAID', 'CANCELLED', 'SERVED'] },
     },
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
@@ -214,11 +215,18 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     return
   }
 
-  const parsed = itemStatusSchema.safeParse(req.body.status)
+  const parsed = z.object({
+    status: itemStatusSchema,
+    /** Cucina: segna pronte solo N unità (split riga se quantity > 1). */
+    units: z.number().int().positive().optional(),
+  }).safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Stato non valido' })
     return
   }
+
+  const targetStatus = parsed.data.status
+  const readyUnits = parsed.data.units
 
   const order = await prisma.order.findFirst({
     where: { id: req.params.orderId, restaurantId: req.restaurantId! },
@@ -237,12 +245,45 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     return
   }
 
-  await prisma.orderItem.update({
-    where: { id: req.params.itemId },
-    data: { status: parsed.data },
+  const orderItem = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
   })
+  if (!orderItem) {
+    res.status(404).json({ error: 'Piatto non trovato nell\'ordine' })
+    return
+  }
 
-  if (parsed.data === 'CANCELLED') {
+  const splitReady =
+    targetStatus === 'READY'
+    && orderItem.quantity > 1
+    && (readyUnits ?? 1) < orderItem.quantity
+
+  if (splitReady) {
+    const units = readyUnits ?? 1
+    await prisma.$transaction(async tx => {
+      await tx.orderItem.update({
+        where: { id: orderItem.id },
+        data: { quantity: orderItem.quantity - units },
+      })
+      await tx.orderItem.create({
+        data: {
+          orderId: orderItem.orderId,
+          menuItemId: orderItem.menuItemId,
+          quantity: units,
+          unitPrice: orderItem.unitPrice,
+          notes: orderItem.notes,
+          status: 'READY',
+        },
+      })
+    })
+  } else {
+    await prisma.orderItem.update({
+      where: { id: req.params.itemId },
+      data: { status: targetStatus },
+    })
+  }
+
+  if (targetStatus === 'CANCELLED') {
     await prisma.$transaction(async tx => {
       await restoreInventoryForOrderItem(tx, req.params.itemId, req.restaurantId!)
     })
@@ -306,6 +347,13 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     await prisma.orderItem.updateMany({
       where: { orderId: req.params.id, status: { in: ['PENDING', 'PREPARING'] } },
       data: { status: 'READY' },
+    })
+  }
+
+  if (status === 'SERVED') {
+    await prisma.orderItem.updateMany({
+      where: { orderId: req.params.id, status: { not: 'CANCELLED' } },
+      data: { status: 'SERVED' },
     })
   }
 

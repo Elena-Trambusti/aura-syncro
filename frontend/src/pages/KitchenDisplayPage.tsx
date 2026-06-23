@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { getSocket, connectSocket } from '../lib/socket'
-import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink } from 'lucide-react'
+import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -34,6 +34,8 @@ const ITEM_STATUS_COLORS: Record<string, string> = {
   SERVED: 'bg-slate-400',
 }
 
+const KITCHEN_HIDDEN_ITEM_STATUSES = new Set(['SERVED', 'CANCELLED'])
+
 function useElapsedMinutes(createdAt: string) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
@@ -51,22 +53,33 @@ function nextItemStatus(status: string): string | null {
   return null
 }
 
-function OrderCard({ order, onItemStatusChange, onOrderReady }: {
+function OrderCard({
+  order,
+  onItemStatusChange,
+  onOrderReady,
+  onDismiss,
+  isReadyColumn,
+}: {
   order: Order
-  onItemStatusChange: (orderId: string, itemId: string, status: string) => void
+  onItemStatusChange: (orderId: string, itemId: string, status: string, units?: number) => void
   onOrderReady: (orderId: string) => void
+  onDismiss: (orderId: string) => void
+  isReadyColumn?: boolean
 }) {
+  const { t } = useTranslation()
   const elapsed = useElapsedMinutes(order.createdAt)
   const isUrgent = elapsed >= 15
-  const pendingItems = order.items.filter(i => !['READY', 'SERVED', 'CANCELLED'].includes(i.status))
-  const allReady = order.items.every(i => ['READY', 'SERVED', 'CANCELLED'].includes(i.status))
+  const visibleItems = order.items.filter(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status))
+  const pendingItems = visibleItems.filter(i => !['READY'].includes(i.status))
+  const allReady = visibleItems.length > 0 && visibleItems.every(i => i.status === 'READY')
+
+  if (visibleItems.length === 0) return null
 
   return (
     <div className={`rounded-2xl border-2 flex flex-col overflow-hidden transition-all ${
       isUrgent ? 'border-red-500 shadow-red-200 shadow-lg' :
       order.status === 'PREPARING' ? 'border-orange-400' : 'border-slate-700'
     } bg-slate-800`}>
-      {/* Header */}
       <div className={`px-4 py-3 flex items-center justify-between ${
         isUrgent ? 'bg-red-600' : order.status === 'PREPARING' ? 'bg-amber-600' : 'bg-slate-700'
       }`}>
@@ -90,19 +103,12 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
         </div>
       </div>
 
-      {/* Piatti */}
       <div className="flex-1 p-3 space-y-2">
-        {order.items.map(item => (
+        {visibleItems.map(item => (
           <div
             key={item.id}
-            onClick={() => {
-              const next = nextItemStatus(item.status)
-              if (next) onItemStatusChange(order.id, item.id, next)
-            }}
-            className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all ${
-              item.status === 'READY' ? 'bg-emerald-900/40 opacity-70' :
-              item.status === 'SERVED' ? 'bg-slate-700/40 opacity-50' :
-              'bg-slate-700 hover:bg-slate-600'
+            className={`flex items-center gap-2 p-2.5 rounded-xl transition-all ${
+              item.status === 'READY' ? 'bg-emerald-900/40' : 'bg-slate-700'
             }`}
           >
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${ITEM_STATUS_COLORS[item.status] || 'bg-slate-400'}`} />
@@ -114,12 +120,40 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
                 {item.menuItem.name}
               </p>
               {item.notes && <p className="text-xs text-yellow-400 mt-0.5">⚠ {item.notes}</p>}
+              {item.quantity > 1 && item.status === 'PREPARING' && (
+                <p className="text-[10px] text-stone-400 mt-0.5">
+                  {t('kitchen.partialReadyHint', { defaultValue: 'Usa +1 per segnare una porzione pronta' })}
+                </p>
+              )}
             </div>
-            {item.menuItem.preparationTime && (
+            {item.menuItem.preparationTime ? (
               <span className="text-xs text-stone-500">{item.menuItem.preparationTime}m</span>
-            )}
+            ) : null}
             {(item.status === 'PENDING' || item.status === 'PREPARING') && (
-              <CheckCircle2 className="w-4 h-4 text-stone-500 hover:text-emerald-400 transition-colors" />
+              <div className="flex items-center gap-1 shrink-0">
+                {item.status === 'PREPARING' && item.quantity > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onItemStatusChange(order.id, item.id, 'READY', 1)}
+                    className="flex h-8 items-center gap-1 rounded-lg bg-emerald-700 px-2 text-[10px] font-bold text-white hover:bg-emerald-600"
+                    title={t('kitchen.markOneReady', { defaultValue: 'Segna 1 porzione pronta' })}
+                  >
+                    <Plus className="h-3 w-3" />
+                    1
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = nextItemStatus(item.status)
+                    if (next) onItemStatusChange(order.id, item.id, next)
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-600 text-white hover:bg-amber-600"
+                  title={t('kitchen.advanceStatus', { defaultValue: 'Avanza stato' })}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </div>
         ))}
@@ -130,23 +164,27 @@ function OrderCard({ order, onItemStatusChange, onOrderReady }: {
         )}
       </div>
 
-      {/* Footer */}
       <div className="px-3 pb-3">
-        {allReady ? (
-          <div className="flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold text-sm py-2.5 rounded-xl">
+        {allReady || isReadyColumn ? (
+          <button
+            type="button"
+            onClick={() => onDismiss(order.id)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500"
+          >
             <CheckCircle2 className="w-4 h-4" />
-            Tutto Pronto!
-          </div>
+            {t('kitchen.dismissServed', { defaultValue: 'Consegnato — rimuovi' })}
+          </button>
         ) : (
           <button
+            type="button"
             onClick={() => onOrderReady(order.id)}
-            className="w-full bg-amber-600 hover:bg-aura-gold text-navy font-semibold font-bold text-sm py-2.5 rounded-xl transition-colors"
+            className="w-full rounded-xl bg-amber-600 py-2.5 text-sm font-bold text-navy transition-colors hover:bg-aura-gold"
           >
-            Segna Tutto Pronto
+            {t('kitchen.markAllReady', { defaultValue: 'Segna tutto pronto' })}
           </button>
         )}
         <p className="text-center text-xs text-stone-400 mt-1">
-          {pendingItems.length} di {order.items.length} da preparare
+          {pendingItems.length} {t('kitchen.ofTotal', { defaultValue: 'di' })} {visibleItems.length} {t('kitchen.toPrepare', { defaultValue: 'da preparare' })}
         </p>
       </div>
     </div>
@@ -168,7 +206,7 @@ export default function KitchenDisplayPage() {
   const { data: orders = [], isError } = useQuery<Order[]>({
     queryKey: tq(tk, 'kitchen', 'orders'),
     queryFn: () => api.get('/orders/active').then(r =>
-      r.data.filter((o: Order) => !['PAID', 'CANCELLED', 'SERVED'].includes(o.status))
+      r.data.filter((o: Order) => !['PAID', 'CANCELLED', 'SERVED'].includes(o.status)),
     ),
     refetchInterval: 8000,
   })
@@ -182,7 +220,6 @@ export default function KitchenDisplayPage() {
     if (token) connectSocket(token)
   }, [])
 
-  // WebSocket per aggiornamenti real-time
   useEffect(() => {
     const socket = getSocket()
     if (!socket.connected) socket.connect()
@@ -209,12 +246,13 @@ export default function KitchenDisplayPage() {
   }, [refreshKitchen])
 
   const updateItemStatus = useMutation({
-    mutationFn: ({ orderId, itemId, status }: { orderId: string; itemId: string; status: string }) =>
-      api.patch(`/orders/${orderId}/items/${itemId}/status`, { status }).then(r => r.data as Order),
+    mutationFn: ({ orderId, itemId, status, units }: { orderId: string; itemId: string; status: string; units?: number }) =>
+      api.patch(`/orders/${orderId}/items/${itemId}/status`, { status, units }).then(r => r.data as Order),
     onSuccess: (updatedOrder: Order) => {
-      queryClient.setQueryData<Order[]>(tq(tk, 'kitchen', 'orders'), prev =>
-        prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? prev,
-      )
+      queryClient.setQueryData<Order[]>(tq(tk, 'kitchen', 'orders'), prev => {
+        const next = prev?.map(o => o.id === updatedOrder.id ? updatedOrder : o) ?? []
+        return next.filter(o => o.status !== 'SERVED' && o.items.some(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status)))
+      })
       refreshKitchen()
     },
     onError: () => toast.error(t('kitchen.dishUpdateError')),
@@ -233,9 +271,34 @@ export default function KitchenDisplayPage() {
     onError: () => toast.error(t('kitchen.orderReadyError')),
   })
 
+  const dismissOrder = useMutation({
+    mutationFn: (orderId: string) =>
+      api.patch(`/orders/${orderId}/status`, { status: 'SERVED' }).then(r => r.data as Order),
+    onSuccess: (_updatedOrder, orderId) => {
+      queryClient.setQueryData<Order[]>(tq(tk, 'kitchen', 'orders'), prev =>
+        prev?.filter(o => o.id !== orderId) ?? [],
+      )
+      refreshKitchen()
+      toast.success(t('kitchen.orderDismissed', { defaultValue: 'Ordine consegnato e rimosso dalla cucina' }))
+    },
+    onError: () => toast.error(t('kitchen.orderDismissError', { defaultValue: 'Impossibile archiviare l\'ordine' })),
+  })
+
   const pending = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED')
   const preparing = orders.filter(o => o.status === 'PREPARING')
   const ready = orders.filter(o => o.status === 'READY')
+
+  const renderColumn = (columnOrders: Order[], isReadyColumn = false) =>
+    columnOrders.map(order => (
+      <OrderCard
+        key={order.id}
+        order={order}
+        isReadyColumn={isReadyColumn}
+        onItemStatusChange={(oId, iId, status, units) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status, units })}
+        onOrderReady={id => orderReady.mutate(id)}
+        onDismiss={id => dismissOrder.mutate(id)}
+      />
+    )).filter(Boolean)
 
   if (isError) {
     return (
@@ -247,7 +310,6 @@ export default function KitchenDisplayPage() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-slate-900 text-white">
-      {/* Header KDS — flex-wrap su tablet per non tagliare orologio e contatori */}
       <header className={`shrink-0 border-b border-slate-700 px-4 py-3 transition-colors sm:px-6 ${newOrderAlert ? 'bg-orange-600' : 'bg-slate-800'}`}>
         <div className="flex flex-wrap items-center justify-between gap-3 gap-y-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -261,7 +323,6 @@ export default function KitchenDisplayPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4 md:gap-6">
-            {/* Contatori */}
             <div className="flex items-center gap-3 sm:gap-4">
               {[
                 { label: 'In attesa', count: pending.length, color: 'text-yellow-400' },
@@ -295,9 +356,7 @@ export default function KitchenDisplayPage() {
         </div>
       </header>
 
-      {/* Colonne KDS — stack su mobile/tablet, 3 colonne da lg */}
       <div className="min-h-0 flex-1 grid grid-cols-1 divide-y divide-slate-700 overflow-y-auto lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:overflow-hidden">
-        {/* Colonna IN ATTESA */}
         <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
           <div className="px-4 py-2.5 bg-yellow-500/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
@@ -308,14 +367,7 @@ export default function KitchenDisplayPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {pending.map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
-                onOrderReady={id => orderReady.mutate(id)}
-              />
-            ))}
+            {renderColumn(pending)}
             {pending.length === 0 && (
               <div className="flex flex-col items-center py-12 text-stone-300">
                 <ChefHat className="w-10 h-10 mb-2 opacity-40" />
@@ -325,7 +377,6 @@ export default function KitchenDisplayPage() {
           </div>
         </div>
 
-        {/* Colonna IN PREPARAZIONE */}
         <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
           <div className="px-4 py-2.5 bg-amber-600/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
@@ -336,14 +387,7 @@ export default function KitchenDisplayPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {preparing.map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
-                onOrderReady={id => orderReady.mutate(id)}
-              />
-            ))}
+            {renderColumn(preparing)}
             {preparing.length === 0 && (
               <div className="flex flex-col items-center py-12 text-stone-300">
                 <Flame className="w-10 h-10 mb-2 opacity-40" />
@@ -353,9 +397,8 @@ export default function KitchenDisplayPage() {
           </div>
         </div>
 
-        {/* Colonna PRONTI */}
         <div className="flex min-h-[280px] flex-col lg:min-h-0 lg:overflow-hidden">
-          <div className="px-4 py-2.5 bg-emerald-950/400/10 border-b border-slate-700">
+          <div className="px-4 py-2.5 bg-emerald-950/10 border-b border-slate-700">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
@@ -364,14 +407,7 @@ export default function KitchenDisplayPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {ready.map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onItemStatusChange={(oId, iId, status) => updateItemStatus.mutate({ orderId: oId, itemId: iId, status })}
-                onOrderReady={id => orderReady.mutate(id)}
-              />
-            ))}
+            {renderColumn(ready, true)}
             {ready.length === 0 && (
               <div className="flex flex-col items-center py-12 text-stone-300">
                 <CheckCircle2 className="w-10 h-10 mb-2 opacity-40" />
@@ -382,10 +418,9 @@ export default function KitchenDisplayPage() {
         </div>
       </div>
 
-      {/* Footer con istruzioni */}
       <footer className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800 px-4 py-2 sm:px-6">
         <p className="min-w-0 text-xs text-stone-400">
-          Clicca su un piatto per avanzare lo stato (In attesa → In prep. → Pronto) · "Segna Tutto Pronto" completa l'ordine
+          {t('kitchen.footerHint', { defaultValue: 'Tocca ✓ per avanzare · +1 segna una porzione pronta · Consegnato rimuove l\'ordine' })}
         </p>
         <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-stone-400 sm:gap-4">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-yellow-400 rounded-full" />In attesa</span>

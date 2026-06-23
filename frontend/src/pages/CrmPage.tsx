@@ -6,7 +6,7 @@ import { formatCurrency, formatDate, cn } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { customerDisplayName, isVipCustomer, tagBadgeClass } from '../lib/customerTags'
 import CustomerSlideOver, { type CustomerDetail, type CustomerEditData } from '../components/crm/CustomerSlideOver'
-import { Search, Users, TrendingUp, Award, Plus, Loader2 } from 'lucide-react'
+import { Search, Users, TrendingUp, Award, Plus, Loader2, Pencil, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -57,6 +57,7 @@ export default function CrmPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [openCustomerEdit, setOpenCustomerEdit] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [form, setForm] = useState<NewCustomerForm>(emptyForm)
 
@@ -130,6 +131,24 @@ export default function CrmPage() {
       toast.error(err.response?.data?.error || t('crm.saveError'))
     },
   })
+
+  const deleteCustomer = useMutation({
+    mutationFn: (id: string) => api.delete(`/customers/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tq(tk, 'customers') })
+      setSelectedId(null)
+      toast.success(t('crm.deleted', { defaultValue: 'Cliente eliminato' }))
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error || t('crm.deleteError', { defaultValue: 'Impossibile eliminare il cliente' }))
+    },
+  })
+
+  const handleDeleteCustomer = (customer: CustomerListItem) => {
+    const name = customerDisplayName(customer)
+    if (!window.confirm(t('crm.confirmDelete', { name, defaultValue: `Eliminare ${name}?` }))) return
+    deleteCustomer.mutate(customer.id)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -222,19 +241,20 @@ export default function CrmPage() {
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.visits')}</th>
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.spent')}</th>
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.lastVisit')}</th>
+                <th className={cn('text-right px-4 py-3', ui.tableHead)}>{t('crm.table.actions', { defaultValue: 'Azioni' })}</th>
               </tr>
             </thead>
             <tbody>
               {customersLoading && customers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-fumo">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-fumo">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-aura-gold" />
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-fumo">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-fumo">
                     {debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
                   </td>
                 </tr>
@@ -242,7 +262,7 @@ export default function CrmPage() {
               customers.map(customer => (
                 <tr
                   key={customer.id}
-                  onClick={() => setSelectedId(customer.id)}
+                  onClick={() => { setOpenCustomerEdit(false); setSelectedId(customer.id) }}
                   className={cn(
                     ui.tableRow,
                     'cursor-pointer',
@@ -280,6 +300,27 @@ export default function CrmPage() {
                   <td className="px-4 py-3.5 text-sm text-fumo">
                     {customer.lastVisit ? formatDate(customer.lastVisit) : t('crm.neverVisited')}
                   </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); setOpenCustomerEdit(true); setSelectedId(customer.id) }}
+                        className="rounded-lg p-2 text-fumo hover:bg-white/[0.06] hover:text-pietra"
+                        aria-label={t('common.edit')}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); handleDeleteCustomer(customer) }}
+                        className="rounded-lg p-2 text-fumo hover:bg-rose-500/10 hover:text-rose-400"
+                        aria-label={t('common.delete')}
+                        disabled={deleteCustomer.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
               )}
@@ -290,12 +331,20 @@ export default function CrmPage() {
 
       <CustomerSlideOver
         customer={selectedId ? (selectedCustomer ?? null) : null}
-        onClose={() => setSelectedId(null)}
+        onClose={() => { setOpenCustomerEdit(false); setSelectedId(null) }}
         isLoading={detailLoading && Boolean(selectedId)}
         isSaving={updateCustomer.isPending}
+        startInEditMode={openCustomerEdit}
         onSave={async data => {
           if (selectedId) await updateCustomer.mutateAsync({ id: selectedId, data })
         }}
+        onDelete={selectedId ? async () => {
+          const c = customers.find(x => x.id === selectedId)
+          if (!c) return
+          if (!window.confirm(t('crm.confirmDelete', { name: customerDisplayName(c), defaultValue: `Eliminare ${customerDisplayName(c)}?` }))) return
+          await deleteCustomer.mutateAsync(selectedId)
+        } : undefined}
+        isDeleting={deleteCustomer.isPending}
       />
 
       {showCreateModal && (

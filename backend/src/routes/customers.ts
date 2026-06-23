@@ -246,3 +246,28 @@ customersRouter.put('/:id', requirePermission('customers.manage'), async (req: A
   const customer = await prisma.customer.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(customer ? serializeCustomer(customer) : null)
 })
+
+customersRouter.delete('/:id', requirePermission('customers.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const customer = await prisma.customer.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!customer) {
+    tenantNotFound(res, 'Cliente non trovato')
+    return
+  }
+
+  await prisma.$transaction(async tx => {
+    await tx.order.updateMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+      data: { customerId: null },
+    })
+    await tx.reservation.updateMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+      data: { customerId: null },
+    })
+    await tx.loyaltyTransaction.deleteMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+    })
+    await tx.customer.delete({ where: { id: customer.id } })
+  })
+
+  res.status(204).send()
+})

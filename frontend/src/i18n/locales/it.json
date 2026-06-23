@@ -452,6 +452,9 @@
     "newCustomer": "Nuovo Cliente",
     "created": "Cliente creato con successo",
     "updated": "Cliente aggiornato",
+    "deleted": "Cliente eliminato",
+    "deleteError": "Impossibile eliminare il cliente",
+    "confirmDelete": "Eliminare {{name}}?",
     "saveError": "Errore durante il salvataggio",
     "firstNameRequired": "Il nome è obbligatorio",
     "noCustomers": "Nessun cliente trovato",
@@ -469,7 +472,8 @@
       "tags": "Tag",
       "visits": "Visite",
       "spent": "Tot. speso",
-      "lastVisit": "Ultima visita"
+      "lastVisit": "Ultima visita",
+      "actions": "Azioni"
     },
     "form": {
       "firstName": "Nome",

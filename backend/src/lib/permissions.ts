@@ -80,7 +80,7 @@ const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<Permission>> = {
 }
 
 export const WAITER_ORDER_STATUSES = new Set(['CONFIRMED', 'PREPARING', 'READY', 'SERVED'])
-export const CHEF_ORDER_STATUSES = new Set(['PREPARING', 'READY'])
+export const CHEF_ORDER_STATUSES = new Set(['PREPARING', 'READY', 'SERVED'])
 
 export function normalizeRole(role: string | undefined | null): AppRole {
   if (role === 'KITCHEN') return 'CHEF'
