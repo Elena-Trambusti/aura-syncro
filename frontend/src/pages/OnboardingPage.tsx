@@ -111,6 +111,7 @@ export default function OnboardingPage() {
             </li>
           ))}
         </ul>
+        <p className="mt-4 text-sm text-fumo leading-relaxed">{t('onboarding.posSetupNote')}</p>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">

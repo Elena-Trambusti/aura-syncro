@@ -340,6 +340,13 @@
     "bookingQr": "Generate booking QR",
     "kds": "Kitchen Display (KDS)",
     "kdsDesc": "Open this link on a tablet or monitor in the kitchen to view orders in real time",
+    "posTitle": "Physical POS / fiscal register",
+    "posDesc": "Configured by the Aura Syncro team after your setup call, based on your terminal.",
+    "posStatusPending": "Awaiting configuration",
+    "posStatusSimulation": "Demo / training mode",
+    "posStatusStripe": "Stripe Terminal connected",
+    "posStatusExternal": "External register: {{provider}}",
+    "posLegalNote": "The legally valid fiscal receipt is issued by the restaurant's certified POS when configured as an external register.",
     "accountInfo": "Account Information",
     "restaurantId": "Restaurant ID",
     "slug": "Slug (URL)",
@@ -1071,7 +1078,17 @@
     "discountInvalid": "Invalid discount code",
     "loyaltyDiscountHint": "Loyalty discount {{tier}}: −{{pct}}% applied at checkout",
     "discountAppliedAmount": "Discount: −{{amount}}",
-    "posSimulationNotice": "POS simulation mode active — no real card charge."
+    "posSimulationNotice": "POS simulation mode active — no real card charge.",
+    "posPendingSetup": "Physical POS setup in progress — Aura Syncro will complete integration after your onboarding call. Card payments are simulated until then.",
+    "posExternalDevice": "Card payment on {{provider}}. Aura Syncro records the sale; the legal fiscal receipt is issued by your POS.",
+    "posExternalGeneric": "your restaurant POS",
+    "customerTitle": "Customer / loyalty",
+    "customerSearchPlaceholder": "Search by name, phone or email…",
+    "customerNoResults": "No customers found",
+    "customerLinked": "Customer linked to order",
+    "customerLinkError": "Could not link customer",
+    "customerRemove": "Remove",
+    "loyaltyTierBadge": "{{tier}} — {{pct}}% discount at checkout"
   },
   "billing": {
     "pageTitle": "The restaurant platform built for you",
@@ -1121,7 +1138,8 @@
     "checklistTables": "Configure tables and dining room (after unlock)",
     "checklistDone": "Done",
     "checklistPending": "To do",
-    "progressLabel": "{{done}} of {{total}} steps completed"
+    "progressLabel": "{{done}} of {{total}} steps completed",
+    "posSetupNote": "Your physical POS (fiscal printer/register) is configured after the setup call, once you share the terminal brand and model. Until then, in-app card payments are in preparatory mode."
   },
   "paywall": {
     "title": "Premium Feature",

@@ -113,9 +113,26 @@ async function main() {
       orderId: order.id,
       paymentMethod: 'CASH',
       tipAmount: 0,
+      applyLoyaltyDiscount: true,
     },
-  })) as { success: boolean; order: { status: string } }
+  })) as { success: boolean; order: { status: string; discount?: number } }
   console.log('✓ Pagamento finalizzato — status', paid.order.status)
+
+  // Loyalty discount path (customer linked at create)
+  const orderWithDiscount = (await api('/orders', {
+    token,
+    method: 'POST',
+    body: {
+      type: 'TAKEAWAY',
+      customerId: customer.id,
+      items: [{ menuItemId, quantity: 2 }],
+    },
+  })) as { id: string; total: number; discount?: number }
+  if ((orderWithDiscount.discount ?? 0) <= 0) {
+    console.warn('⚠ Sconto fedeltà non applicato — verificare tier Gold sul cliente demo')
+  } else {
+    console.log(`✓ Sconto fedeltà applicato: €${orderWithDiscount.discount}`)
+  }
 
   const customers = (await api('/customers', { token })) as Array<{
     id: string

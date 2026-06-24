@@ -32,6 +32,14 @@ enum PlanTier {
   PRO
 }
 
+/** Integrazione POS fisico — configurata in fase di setup concierge per ogni ristorante */
+enum PosIntegrationMode {
+  PENDING_SETUP   // Post-pagamento: POS non ancora collegato
+  SIMULATION      // Solo demo/formazione — ricevute non legali
+  STRIPE_TERMINAL // Stripe Terminal / PaymentIntent
+  EXTERNAL        // Registratore di cassa esterno — incasso sul loro hardware
+}
+
 // ===== RISTORANTE =====
 model Restaurant {
   id          String   @id @default(cuid())
@@ -116,6 +124,14 @@ model RestaurantSettings {
   stripeProSubscriptionId String?
   /** Piano moduli: BASE (core POS) o PRO (CRM, AI, marketing, fiscal…) */
   planTier              PlanTier @default(BASE)
+  /** POS fisico / registratore — configurato dal team in onboarding */
+  posIntegrationMode    PosIntegrationMode @default(PENDING_SETUP)
+  /** Marca/modello POS (es. Nexi, SumUp, Custom) — compilato in setup */
+  posProviderLabel      String?
+  posTerminalId         String?
+  posMerchantId         String?
+  posSetupNotes         String?
+  posConfiguredAt       DateTime?
 }
 
 // ===== UTENTI =====

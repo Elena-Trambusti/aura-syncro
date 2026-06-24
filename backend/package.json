@@ -15,8 +15,10 @@
     "db:push": "npx prisma db push",
     "db:seed": "tsx src/seed.ts",
     "db:seed-tenant": "tsx src/seed-tenant.ts",
+    "db:seed-demo": "tsx scripts/seed-demo-tenant.ts",
+    "test:flow": "tsx scripts/test-flow.ts",
     "db:recalculate-taxes": "tsx scripts/recalculate-order-taxes.ts",
-    "test": "tsx --test src/lib/taxEngine.test.ts src/lib/tipFiscal.test.ts src/lib/predictiveEngine.test.ts src/lib/fiscalInvoice.test.ts src/lib/menuStock.test.ts",
+    "test": "tsx --test src/lib/taxEngine.test.ts src/lib/tipFiscal.test.ts src/lib/predictiveEngine.test.ts src/lib/fiscalInvoice.test.ts src/lib/menuStock.test.ts src/lib/posIntegration.test.ts src/lib/orderDiscount.test.ts",
     "stripe:verify": "tsx scripts/verify-stripe.ts",
     "stripe:sync-webhooks": "tsx scripts/sync-stripe-webhooks.ts",
     "db:studio": "npx prisma studio"

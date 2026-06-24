@@ -365,6 +365,13 @@
     "bookingQr": "Genera QR prenotazioni",
     "kds": "Schermo Cucina (KDS)",
     "kdsDesc": "Apri questo link su un tablet o monitor in cucina per visualizzare gli ordini in tempo reale",
+    "posTitle": "POS fisico / registratore",
+    "posDesc": "Configurato dal team Aura Syncro dopo la call di setup, in base al vostro terminale.",
+    "posStatusPending": "In attesa di configurazione",
+    "posStatusSimulation": "Modalità demo/formazione",
+    "posStatusStripe": "Stripe Terminal collegato",
+    "posStatusExternal": "Registratore esterno: {{provider}}",
+    "posLegalNote": "La ricevuta fiscale legale è emessa dal POS certificato del ristorante quando configurato come registratore esterno.",
     "accountInfo": "Informazioni Account",
     "restaurantId": "ID Ristorante",
     "slug": "Slug (URL)",
@@ -1155,7 +1162,17 @@
     "discountInvalid": "Codice sconto non valido",
     "loyaltyDiscountHint": "Sconto fedeltà {{tier}}: −{{pct}}% applicato al pagamento",
     "discountAppliedAmount": "Sconto: −{{amount}}",
-    "posSimulationNotice": "Modalità simulazione POS attiva — nessun addebito reale sulla carta."
+    "posSimulationNotice": "Modalità simulazione POS attiva — nessun addebito reale sulla carta.",
+    "posPendingSetup": "POS fisico in configurazione — il team Aura Syncro completerà l'integrazione dopo la call di setup. Fino ad allora i pagamenti carta sono simulati.",
+    "posExternalDevice": "Incasso carta sul registratore {{provider}}. Aura Syncro registra il pagamento; la ricevuta fiscale legale esce dal vostro POS.",
+    "posExternalGeneric": "del ristorante",
+    "customerTitle": "Cliente / programma fedeltà",
+    "customerSearchPlaceholder": "Cerca per nome, telefono o email…",
+    "customerNoResults": "Nessun cliente trovato",
+    "customerLinked": "Cliente collegato all'ordine",
+    "customerLinkError": "Impossibile collegare il cliente",
+    "customerRemove": "Rimuovi",
+    "loyaltyTierBadge": "{{tier}} — sconto {{pct}}% al pagamento"
   },
   "billing": {
     "pageTitle": "Il gestionale pensato per il tuo ristorante",
@@ -1205,7 +1222,8 @@
     "checklistTables": "Configura tavoli e sala (dopo sblocco)",
     "checklistDone": "Completato",
     "checklistPending": "Da fare",
-    "progressLabel": "{{done}} di {{total}} passaggi completati"
+    "progressLabel": "{{done}} di {{total}} passaggi completati",
+    "posSetupNote": "Il POS fisico (registratore di cassa) si configura dopo la call di setup, quando ci fornirete marca e modello del terminale. Fino ad allora i pagamenti carta in app sono in modalità preparatoria."
   },
   "paywall": {
     "title": "Funzionalità Premium",

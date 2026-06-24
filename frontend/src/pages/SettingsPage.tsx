@@ -92,7 +92,28 @@ export default function SettingsPage() {
     queryFn: () => api.get('/restaurant').then(r => r.data),
   })
 
-  const [form, setForm] = useState({
+  const { data: posStatus } = useQuery<{
+    mode: string
+    providerLabel?: string | null
+    configured: boolean
+    usesExternalFiscalDevice: boolean
+  }>({
+    queryKey: tq(tk, 'restaurant', 'pos-status'),
+    queryFn: () => api.get('/restaurant/pos-status').then(r => r.data),
+  })
+
+  const posStatusLabel = (() => {
+    if (!posStatus) return '—'
+    if (posStatus.mode === 'PENDING_SETUP') return t('settings.posStatusPending')
+    if (posStatus.mode === 'SIMULATION') return t('settings.posStatusSimulation')
+    if (posStatus.mode === 'STRIPE_TERMINAL') return t('settings.posStatusStripe')
+    if (posStatus.mode === 'EXTERNAL') {
+      return t('settings.posStatusExternal', { provider: posStatus.providerLabel ?? 'POS' })
+    }
+    return posStatus.mode
+  })()
+
+  const [form, setForm] = useState<SettingsForm>({
     name: '',
     address: '',
     phone: '',
@@ -430,6 +451,15 @@ export default function SettingsPage() {
             {t('common.open')}
           </button>
         </div>
+      </div>
+
+      <div className="premium-card p-6">
+        <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.posTitle')}</h2>
+        <p className="text-sm text-fumo mb-3">{t('settings.posDesc')}</p>
+        <p className="text-sm font-semibold text-pietra">{posStatusLabel}</p>
+        {posStatus?.usesExternalFiscalDevice && (
+          <p className="mt-2 text-xs text-fumo">{t('settings.posLegalNote')}</p>
+        )}
       </div>
 
       <div className="premium-card p-6">

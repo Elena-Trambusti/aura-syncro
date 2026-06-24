@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { computeTaxForRestaurant } from './orderTax'
-import { PublicOrderError } from './publicOrder'
+import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 
@@ -54,22 +54,15 @@ export async function createGuestStripeCheckout(
     if (table) tableId = table.id
   }
 
+  const itemsWithPriceRaw = await resolveGuestItemsWithStock(restaurantId, items)
   const menuItems = await prisma.menuItem.findMany({
-    where: {
-      id: { in: items.map(i => i.menuItemId) },
-      restaurantId,
-      available: true,
-    },
+    where: { id: { in: items.map(i => i.menuItemId) }, restaurantId },
+    select: { id: true, name: true },
   })
-
-  if (menuItems.length !== items.length) {
-    throw new PublicOrderError('Alcuni piatti non sono disponibili', 400)
-  }
-
-  const itemsWithPrice = items.map(item => {
-    const mi = menuItems.find(m => m.id === item.menuItemId)!
-    return { ...item, unitPrice: mi.price, name: mi.name }
-  })
+  const itemsWithPrice = itemsWithPriceRaw.map(item => ({
+    ...item,
+    name: menuItems.find(m => m.id === item.menuItemId)?.name ?? 'Piatto',
+  }))
 
   const grossTotal = itemsWithPrice.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
   const { subtotal, tax, total, taxRateApplied } = await computeTaxForRestaurant(restaurantId, grossTotal)

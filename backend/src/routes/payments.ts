@@ -17,29 +17,13 @@ import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
 import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount } from '../lib/orderDiscount'
+import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 
 export const paymentsRouter = Router()
 
 const posOrderInclude = {
   table: true,
   items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' as const } },
-}
-
-/** Simula l'invio del pagamento a un terminale POS fisico (legacy — usa posCharge). */
-async function simulatePosTerminal(amount: number): Promise<{
-  success: boolean
-  transactionId: string
-  terminalId: string
-  provider: string
-}> {
-  const { chargePosCard } = await import('../lib/posCharge')
-  const r = await chargePosCard(amount, {})
-  return {
-    success: r.success,
-    transactionId: r.transactionId,
-    terminalId: r.terminalId,
-    provider: r.provider,
-  }
 }
 
 const splitSchema = z.object({
@@ -97,7 +81,8 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, r
     ? await resolveLoyaltyDiscount(req.restaurantId!, order.customerId)
     : { source: 'NONE' as const, discountPct: 0, discountAmount: 0 }
 
-  const posSimulation = process.env.POS_USE_SIMULATION !== 'false'
+  const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
+  const posStatus = serializePosStatusForCheckout(posConfig)
 
   res.json({
     order,
@@ -116,7 +101,9 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, r
       pct: loyaltyDiscount.discountPct,
       tierName: loyaltyDiscount.tierName,
     } : null,
-    posSimulation,
+    posStatus,
+    /** @deprecated use posStatus.isCardChargeSimulated */
+    posSimulation: posStatus.isCardChargeSimulated,
   })
 })
 

@@ -155,43 +155,32 @@ console.log('  favicon.png')
 console.log('Generating og-image.jpg…')
 const ogWidth = 1200
 const ogHeight = 630
-const logoWidth = 560
-const logoBuffer = await sharp(logoTallyPath).resize(logoWidth).png().toBuffer()
-const logoMeta = await sharp(logoBuffer).metadata()
-const logoHeight = logoMeta.height ?? Math.round(logoWidth * 0.27)
-const logoTop = Math.round((ogHeight - logoHeight) / 2 - 50)
+const ogBg = '#FAFAF9'
 
-const ogSubtitleSvg = Buffer.from(`
-<svg width="${ogWidth}" height="${ogHeight}" xmlns="http://www.w3.org/2000/svg">
-  <text x="600" y="430" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="34" font-weight="600" fill="#475569">
-    Gestionale cloud per ristoranti — Italia, Spagna e Canarie
-  </text>
-  <text x="600" y="478" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8">
-    Prenotazioni · Tavoli · POS · Menu QR · Report fiscale IVA/IGIC
-  </text>
-</svg>`)
+const tallyMeta = await sharp(logoTallyPath).metadata()
+const tallyAspect = (tallyMeta.width ?? 1200) / (tallyMeta.height ?? 320)
+const maxLogoWidth = Math.round(ogWidth * 0.7)
+const maxLogoHeight = Math.round(ogHeight * 0.55)
+let logoWidth = maxLogoWidth
+let logoHeight = Math.round(logoWidth / tallyAspect)
+if (logoHeight > maxLogoHeight) {
+  logoHeight = maxLogoHeight
+  logoWidth = Math.round(logoHeight * tallyAspect)
+}
+
+const logoBuffer = await sharp(logoTallyPath).resize(logoWidth, logoHeight).png().toBuffer()
 
 await sharp({
-  create: { width: ogWidth, height: ogHeight, channels: 3, background: '#f8fafc' },
+  create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },
 })
   .composite([
     {
-      input: await sharp({
-        create: { width: ogWidth - 96, height: ogHeight - 96, channels: 3, background: '#ffffff' },
-      })
-        .png()
-        .toBuffer(),
-      top: 48,
-      left: 48,
-    },
-    {
       input: logoBuffer,
-      top: logoTop,
+      top: Math.round((ogHeight - logoHeight) / 2),
       left: Math.round((ogWidth - logoWidth) / 2),
     },
-    { input: ogSubtitleSvg, top: 0, left: 0 },
   ])
-  .jpeg({ quality: 90, mozjpeg: true })
+  .jpeg({ quality: 92, mozjpeg: true })
   .toFile(join(publicDir, 'og-image.jpg'))
 console.log('  og-image.jpg')
 

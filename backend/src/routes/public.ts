@@ -192,7 +192,7 @@ publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Respo
     res.status(201).json({ orderId: order.id, status: order.status })
   } catch (err) {
     if (err instanceof PublicOrderError) {
-      res.status(err.statusCode).json({ error: err.message })
+      res.status(err.statusCode).json({ error: err.message, code: err.code })
       return
     }
     console.error('[public/orders]', err)
@@ -218,7 +218,7 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
     res.json(result)
   } catch (err) {
     if (err instanceof PublicOrderError) {
-      res.status(err.statusCode).json({ error: err.message })
+      res.status(err.statusCode).json({ error: err.message, code: err.code })
       return
     }
     console.error('[public/checkout]', err)

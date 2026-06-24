@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { prisma } from './prisma'
 import { computeTaxForRestaurant } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
+import { assertMenuItemOrderable } from './menuStock'
 
 export const publicOrderSchema = z.object({
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
@@ -23,38 +24,72 @@ export class PublicOrderError extends Error {
   constructor(
     message: string,
     readonly statusCode: number = 400,
+    readonly code?: string,
   ) {
     super(message)
     this.name = 'PublicOrderError'
   }
 }
 
-/**
- * Crea un ordine guest dal menu QR.
- * Valida che tutti i piatti appartengano allo stesso ristorante.
- */
-export async function createPublicOrder(input: PublicOrderInput) {
-  const { items, tableNumber, guestEmail, guestPhone, guestName, ...orderData } = input
-
+export async function resolveGuestItemsWithStock(
+  restaurantId: string,
+  items: PublicOrderInput['items'],
+) {
   const menuItems = await prisma.menuItem.findMany({
     where: {
       id: { in: items.map(i => i.menuItemId) },
+      restaurantId,
       available: true,
+      archived: false,
+    },
+    include: {
+      inventoryLinks: { include: { inventoryItem: { select: { quantity: true } } } },
     },
   })
 
   if (menuItems.length !== items.length) {
     const found = new Set(menuItems.map(m => m.id))
     const missing = items.filter(i => !found.has(i.menuItemId)).map(i => i.menuItemId)
-    throw new PublicOrderError(`Piatti non disponibili o non trovati: ${missing.join(', ')}`, 404)
+    throw new PublicOrderError(`Piatti non disponibili o non trovati: ${missing.join(', ')}`, 404, 'MENU_ITEM_NOT_FOUND')
   }
 
-  const restaurantIds = new Set(menuItems.map(m => m.restaurantId))
-  if (restaurantIds.size !== 1) {
-    throw new PublicOrderError('Tutti i piatti devono appartenere allo stesso ristorante', 400)
+  const itemsWithPrice = items.map(item => {
+    const mi = menuItems.find(m => m.id === item.menuItemId)!
+    try {
+      assertMenuItemOrderable(mi, item.quantity)
+    } catch (e) {
+      const code = (e as { code?: string }).code
+      if (code === 'MENU_ITEM_UNAVAILABLE') {
+        throw new PublicOrderError('Piatto non disponibile', 400, code)
+      }
+      if (code === 'MENU_ITEM_SOLD_OUT') {
+        throw new PublicOrderError('Piatto esaurito — ingredienti insufficienti', 400, code)
+      }
+      throw e
+    }
+    return { ...item, unitPrice: mi.price }
+  })
+
+  return itemsWithPrice
+}
+
+/**
+ * Crea un ordine guest dal menu QR.
+ * Valida stock/disponibilità come il POS cameriere.
+ */
+export async function createPublicOrder(input: PublicOrderInput) {
+  const { items, tableNumber, guestEmail, guestPhone, guestName, ...orderData } = input
+
+  const probe = await prisma.menuItem.findFirst({
+    where: { id: items[0]?.menuItemId },
+    select: { restaurantId: true },
+  })
+  if (!probe) {
+    throw new PublicOrderError('Piatto non trovato', 404, 'MENU_ITEM_NOT_FOUND')
   }
 
-  const restaurantId = menuItems[0]!.restaurantId
+  const restaurantId = probe.restaurantId
+  const itemsWithPrice = await resolveGuestItemsWithStock(restaurantId, items)
 
   let tableId: string | undefined
   if (tableNumber) {
@@ -63,11 +98,6 @@ export async function createPublicOrder(input: PublicOrderInput) {
     })
     if (table) tableId = table.id
   }
-
-  const itemsWithPrice = items.map(item => {
-    const mi = menuItems.find(m => m.id === item.menuItemId)!
-    return { ...item, unitPrice: mi.price }
-  })
 
   const grossTotal = itemsWithPrice.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   const { subtotal, tax, total, taxRateApplied } = await computeTaxForRestaurant(restaurantId, grossTotal)

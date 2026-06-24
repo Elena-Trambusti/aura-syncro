@@ -22,7 +22,15 @@ export const ordersRouter = Router()
 const orderInclude = {
   table: true,
   waiter: { select: { id: true, name: true } },
-  customer: { select: { id: true, name: true } },
+  customer: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      loyaltyPoints: true,
+      loyaltyTier: { select: { name: true, discountPct: true, color: true } },
+    },
+  },
   items: {
     include: { menuItem: { include: { category: true } } },
     orderBy: { createdAt: 'asc' as const },
@@ -76,6 +84,39 @@ ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRe
     orderBy: { createdAt: 'desc' },
   })
   res.json(orders)
+})
+
+/** Ricerca rapida clienti per collegamento ordine (camerieri / cassa) */
+ordersRouter.get('/customers/search', requirePermission('orders.create'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const q = String(req.query.q ?? '').trim()
+  if (q.length < 2) {
+    res.json([])
+    return
+  }
+
+  const customers = await prisma.customer.findMany({
+    where: {
+      restaurantId: req.restaurantId!,
+      OR: [
+        { name: { contains: q, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q } },
+      ],
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      loyaltyPoints: true,
+      loyaltyTier: { select: { name: true, discountPct: true, color: true } },
+    },
+    orderBy: { totalVisits: 'desc' },
+    take: 8,
+  })
+  res.json(customers)
 })
 
 ordersRouter.get('/:id', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {

@@ -11,6 +11,7 @@ import { useRole } from '../../hooks/useRole'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import ModalPortal from '../ModalPortal'
+import CustomerPicker, { type CustomerOption } from '../checkout/CustomerPicker'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; soldOut?: boolean; orderable?: boolean; category: { name: string } }
 interface Category { id: string; name: string; items: MenuItem[] }
@@ -18,7 +19,11 @@ interface CartItem { menuItemId: string; name: string; price: number; quantity: 
 
 interface Table {
   id: string; number: number; seats: number; status: string
-  orders: Array<{ id: string; status: string; total: number; subtotal: number; tax: number; items: Array<{ id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string }> }>
+  orders: Array<{
+    id: string; status: string; total: number; subtotal: number; tax: number
+    customer?: CustomerOption | null
+    items: Array<{ id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string }>
+  }>
 }
 
 const LG_BREAKPOINT = 1024
@@ -378,6 +383,15 @@ export default function OrderModal({
           <p className="text-lg font-bold text-pietra">
             {t('orderModal.orderTotal')}: {formatCurrency(activeOrder!.total)}
           </p>
+
+          <CustomerPicker
+            orderId={activeOrder!.id}
+            currentCustomer={activeOrder!.customer}
+            compact
+            onLinked={() => {
+              queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+            }}
+          />
 
           {canPayOrder && (
           <button

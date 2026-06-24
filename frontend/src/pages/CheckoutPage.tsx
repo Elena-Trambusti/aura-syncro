@@ -9,6 +9,7 @@ import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
 import { printReceipt } from '../lib/export'
 import ReceiptPreviewModal, { type CheckoutFinalizeResult } from '../components/checkout/ReceiptPreviewModal'
+import CustomerPicker from '../components/checkout/CustomerPicker'
 import {
   ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt,
 } from 'lucide-react'
@@ -64,6 +65,14 @@ export default function CheckoutPage() {
     order: CheckoutOrder
     restaurant: { name: string; taxId?: string | null }
     loyaltyDiscount?: { pct: number; tierName?: string } | null
+    posStatus?: {
+      mode: string
+      providerLabel?: string | null
+      isCardChargeSimulated: boolean
+      usesExternalFiscalDevice: boolean
+      legalReceiptSource: string
+      configured: boolean
+    }
     posSimulation?: boolean
   }>({
     queryKey: tq(tk, 'checkout', orderId),
@@ -75,7 +84,8 @@ export default function CheckoutPage() {
   const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount) || 0) : 0
   const grandTotal = (order?.total ?? 0) + parsedTip
   const loyaltyDiscount = data?.loyaltyDiscount
-  const posSimulation = data?.posSimulation !== false
+  const posStatus = data?.posStatus
+  const posSimulation = posStatus?.isCardChargeSimulated ?? data?.posSimulation !== false
 
   const applyPromo = useMutation({
     mutationFn: (code: string) =>
@@ -209,10 +219,30 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {posSimulation && paymentMethod === 'CARD' && (
+        {posStatus?.mode === 'PENDING_SETUP' && paymentMethod === 'CARD' && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            {t('checkout.posPendingSetup')}
+          </div>
+        )}
+
+        {posStatus?.usesExternalFiscalDevice && paymentMethod === 'CARD' && (
+          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+            {t('checkout.posExternalDevice', { provider: posStatus.providerLabel ?? t('checkout.posExternalGeneric') })}
+          </div>
+        )}
+
+        {posSimulation && paymentMethod === 'CARD' && posStatus?.mode !== 'PENDING_SETUP' && !posStatus?.usesExternalFiscalDevice && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             {t('checkout.posSimulationNotice')}
           </div>
+        )}
+
+        {orderId && order && (
+          <CustomerPicker
+            orderId={orderId}
+            currentCustomer={order.customer ?? null}
+            onLinked={() => { void refetch() }}
+          />
         )}
 
         {(loyaltyDiscount || (order.discount ?? 0) > 0) && (

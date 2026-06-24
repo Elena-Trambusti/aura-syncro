@@ -6,6 +6,7 @@ import { AuthRequest, authenticate, requireRole } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
 import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from '../lib/taxEngine'
+import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 
 export const restaurantRouter = Router()
 
@@ -54,6 +55,12 @@ restaurantRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReque
     include: { settings: true },
   })
   res.json(restaurant)
+})
+
+/** Stato integrazione POS (sola lettura per owner/manager) */
+restaurantRouter.get('/pos-status', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const config = await loadRestaurantPosConfig(req.restaurantId!)
+  res.json(serializePosStatusForCheckout(config))
 })
 
 restaurantRouter.put('/', requirePermission('settings.manage'), requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {

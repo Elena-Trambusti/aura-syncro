@@ -24,7 +24,18 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
     include: {
       orders: {
         where: { status: { notIn: ['PAID', 'CANCELLED'] } },
-        include: { items: { include: { menuItem: true } } },
+        include: {
+          items: { include: { menuItem: true } },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              loyaltyPoints: true,
+              loyaltyTier: { select: { name: true, discountPct: true, color: true } },
+            },
+          },
+        },
       },
       reservations: {
         where: {
