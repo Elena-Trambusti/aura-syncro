@@ -13,6 +13,7 @@ export { getApiBaseUrl }
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
 })
 
 export function setTenantHeader(restaurantId: string | null) {

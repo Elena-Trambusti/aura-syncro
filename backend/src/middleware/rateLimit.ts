@@ -68,6 +68,8 @@ export const globalApiLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: req => req.path.startsWith('/api/webhooks/'),
+  skip: req =>
+    req.path.startsWith('/api/webhooks/')
+    || req.path.startsWith('/api/sentry-tunnel'),
   message: message('Troppe richieste. Riprova tra un minuto.'),
 })

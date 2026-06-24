@@ -99,13 +99,14 @@ export default function Sidebar() {
   }, [tier, canAccessAdminNav, canManageStaff, can])
 
   function isItemLocked(item: (typeof navItems)[number]): boolean {
+    if (item.proOnly && !hasProPlan) return true
+
     if (tier === 'unsubscribed') {
       if (item.billingOnly) return false
       if (isFreeTierNavItem(item.to, item.exact)) return false
       return true
     }
     if (tier === 'onboarding') return !item.onboardingOnly
-    if (item.proOnly && !hasProPlan) return true
     return false
   }
 
@@ -155,8 +156,8 @@ export default function Sidebar() {
             <X className="w-5 h-5" />
           </button>
 
-          <div className="aura-brand-capsule mb-4 mx-auto w-fit max-w-full justify-center">
-            <BrandLogo size="sm" showName layout="horizontal" className="justify-center" />
+          <div className="aura-brand-capsule mb-3 mx-auto w-full max-w-full justify-center">
+            <BrandLogo size="md" showName layout="horizontal" className="justify-center" />
           </div>
 
           <div className="aura-tenant-chip">
@@ -170,9 +171,8 @@ export default function Sidebar() {
                 <UtensilsCrossed className="h-4 w-4 text-navy" />
               </div>
             )}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-semibold text-pietra">{restaurant?.name || t('common.restaurant')}</p>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-fumo/80">{t('brand.saasPlatform')}</p>
             </div>
           </div>
         </div>
@@ -190,7 +190,6 @@ export default function Sidebar() {
           <ul className="space-y-0.5">
             {visibleNavItems.map(item => {
               const locked = isItemLocked(item)
-              const isProLocked = !locked && item.proOnly && !hasProPlan
               const FeatureIcon = item.icon
               const isActive = !locked && (item.exact
                 ? location.pathname === item.to
@@ -221,16 +220,11 @@ export default function Sidebar() {
                     <NavLink to={item.to} className={itemClass}>
                       <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
                         <FeatureIcon
-                          className={cn('h-[17px] w-[17px]', isActive ? 'text-aura-gold' : '', isProLocked && !isActive && 'text-violet-400/80')}
+                          className={cn('h-[17px] w-[17px]', isActive ? 'text-aura-gold' : '')}
                           strokeWidth={isActive ? 2.25 : 1.75}
                         />
                       </span>
                       <span className="truncate">{t(item.labelKey)}</span>
-                      {isProLocked && (
-                        <span className="ml-auto rounded border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-300">
-                          Pro
-                        </span>
-                      )}
                     </NavLink>
                   )}
                 </li>

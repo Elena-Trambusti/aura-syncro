@@ -72,7 +72,7 @@ export default function Header() {
                 }
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="hidden lg:inline">{t(link.labelKey)}</span>
+                <span className="hidden xl:inline">{t(link.labelKey)}</span>
               </NavLink>
             )
           })}
@@ -90,7 +90,7 @@ export default function Header() {
         </button>
 
         {hasProPlan && (
-          <span className="aura-live-pill hidden sm:inline-flex">
+          <span className="aura-live-pill hidden xl:inline-flex shrink-0 whitespace-nowrap">
             <span className="aura-live-pill__dot" aria-hidden />
             {t('dashboard.liveSync')}
           </span>

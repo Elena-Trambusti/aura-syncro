@@ -31,6 +31,7 @@ import { publicRouter } from './routes/public'
 import { adminRouter } from './routes/admin'
 import { aiRouter } from './routes/ai'
 import { pushRouter } from './routes/push'
+import { sentryTunnelRouter } from './routes/sentryTunnel'
 import { AuthRequest, authenticate } from './middleware/auth'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
@@ -77,6 +78,8 @@ app.use(globalApiLimiter)
 
 // Webhook Stripe canonico: body grezzo prima di express.json()
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
+// Tunnel Sentry — body grezzo, prima di express.json()
+app.use('/api/sentry-tunnel', sentryTunnelRouter)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
