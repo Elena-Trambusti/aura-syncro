@@ -16,6 +16,7 @@ import { restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
+import { getIdempotentResponse, readIdempotencyKey, saveIdempotentResponse } from '../lib/apiIdempotency'
 
 export const ordersRouter = Router()
 
@@ -132,6 +133,15 @@ ordersRouter.get('/:id', requirePermission('orders.read'), async (req: AuthReque
 })
 
 ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const idempotencyKey = readIdempotencyKey(req)
+  if (idempotencyKey && req.restaurantId) {
+    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey)
+    if (cached) {
+      res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+  }
+
   const schema = z.object({
     tableId: z.string().optional(),
     customerId: z.string().optional(),
@@ -255,6 +265,10 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     finalOrder.id,
     `Nuovo ordine da ${tableLabel} — ${formatOrderCurrency(finalOrder.total)}`,
   )
+
+  if (idempotencyKey && req.restaurantId) {
+    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders', 201, finalOrder)
+  }
 
   res.status(201).json(finalOrder)
 })
@@ -423,6 +437,15 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
 })
 
 ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const idempotencyKey = readIdempotencyKey(req)
+  if (idempotencyKey && req.restaurantId) {
+    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey)
+    if (cached) {
+      res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+  }
+
   const schema = z.object({
     menuItemId: z.string(),
     quantity: z.number().int().positive(),
@@ -507,6 +530,11 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     include: orderInclude,
   })
   io.to(tenantId(req)).emit('order:updated', updatedOrder)
+
+  if (idempotencyKey && req.restaurantId) {
+    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items', 201, createdItem)
+  }
+
   res.status(201).json(createdItem)
 })
 

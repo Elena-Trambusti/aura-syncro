@@ -79,6 +79,22 @@ model Restaurant {
   fiscalChainState FiscalChainState?
   stripeWebhookEvents StripeWebhookEvent[]
   saasElectronicInvoices SaasElectronicInvoice[]
+  apiIdempotencyRecords ApiIdempotencyRecord[]
+}
+
+/** Risposte cache per X-Idempotency-Key (retry offline / doppio tap) */
+model ApiIdempotencyRecord {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  key          String
+  route        String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime   @default(now())
+
+  @@unique([restaurantId, key])
+  @@index([createdAt])
 }
 
 model RestaurantSettings {
