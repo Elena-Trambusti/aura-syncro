@@ -12,7 +12,10 @@ import { enrichCategoriesWithStock } from '../lib/menuStock'
 
 export const publicRouter = Router()
 
-import { GUEST_ORDERING_DISABLED } from '../lib/guestOrderingPolicy'
+import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
+import { createPublicOrder, publicOrderSchema, PublicOrderError } from '../lib/publicOrder'
+import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicCheckout'
+import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 
 /** GET /api/public/menu/:slug — Menu digitale (solo consultazione) */
 publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<void> => {
@@ -50,6 +53,8 @@ publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<voi
       fiscal: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
     },
     categories: categories.filter(cat => cat.items.length > 0),
+    guestOrderingEnabled: isGuestOrderingEnabled(),
+    stripeEnabled: STRIPE_ENABLED,
   })
 })
 
@@ -150,14 +155,73 @@ publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res:
   }
 })
 
-/**
- * Ordini guest disabilitati — il ristorante usa i camerieri (POS).
- * Il menu QR è solo consultazione.
- */
-publicRouter.post('/orders', publicOrderLimiter, (_req: Request, res: Response): void => {
-  res.status(403).json(GUEST_ORDERING_DISABLED)
+/** POST /api/public/orders — Ordine guest dal menu QR (paga al tavolo) */
+publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Response): Promise<void> => {
+  if (!isGuestOrderingEnabled()) {
+    res.status(403).json(GUEST_ORDERING_DISABLED)
+    return
+  }
+
+  const bodySchema = publicOrderSchema.extend({ slug: z.string().min(1) })
+  const parsed = bodySchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
+    return
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: parsed.data.slug },
+    select: { id: true, slug: true },
+  })
+  if (!restaurant) {
+    res.status(404).json({ error: 'Ristorante non trovato' })
+    return
+  }
+
+  try {
+    const { order, restaurantId, tableNumber, total } = await createPublicOrder(parsed.data)
+    io.to(restaurantId).emit('order:created', order)
+
+    const tableLabel = tableNumber ? `tavolo ${tableNumber}` : parsed.data.type.toLowerCase()
+    void broadcastNewOrderNotification(
+      restaurantId,
+      order.id,
+      `Ordine QR da ${tableLabel} — ${formatOrderCurrency(total)}`,
+    )
+
+    res.status(201).json({ orderId: order.id, status: order.status })
+  } catch (err) {
+    if (err instanceof PublicOrderError) {
+      res.status(err.statusCode).json({ error: err.message })
+      return
+    }
+    console.error('[public/orders]', err)
+    res.status(500).json({ error: 'Errore durante l\'ordine' })
+  }
 })
 
-publicRouter.post('/checkout', publicCheckoutLimiter, (_req: Request, res: Response): void => {
-  res.status(403).json(GUEST_ORDERING_DISABLED)
+/** POST /api/public/checkout — Stripe Checkout per ordine guest */
+publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: Response): Promise<void> => {
+  if (!isGuestOrderingEnabled()) {
+    res.status(403).json(GUEST_ORDERING_DISABLED)
+    return
+  }
+
+  const parsed = guestCheckoutSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
+    return
+  }
+
+  try {
+    const result = await createGuestStripeCheckout(parsed.data)
+    res.json(result)
+  } catch (err) {
+    if (err instanceof PublicOrderError) {
+      res.status(err.statusCode).json({ error: err.message })
+      return
+    }
+    console.error('[public/checkout]', err)
+    res.status(500).json({ error: 'Errore durante il checkout' })
+  }
 })

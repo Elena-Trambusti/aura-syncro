@@ -44,7 +44,7 @@ interface FiscalApiResponse extends FiscalReportData {
   }
 }
 
-const glassPanel = 'glass-card'
+const glassPanel = 'premium-card'
 
 const inputClass = cn(
   'glass-input rounded-xl px-3 py-2.5 text-sm text-fumo',
@@ -354,7 +354,7 @@ function ReportFiscalContent() {
                       </p>
                     )}
                   </div>
-                  <div className={cn('rounded-xl glass-card p-3 shadow-sm', card.iconColor)}>
+                  <div className={cn('rounded-xl premium-card p-3 shadow-sm', card.iconColor)}>
                     <Icon className="h-6 w-6" />
                   </div>
                 </div>
@@ -486,7 +486,7 @@ function ReportFiscalContent() {
                             <div
                               className={cn(
                                 'grid grid-cols-7 items-center rounded-xl border border-gray-200/40',
-                                'glass-card px-4 py-3.5 shadow-sm transition-all duration-200',
+                                'premium-card px-4 py-3.5 shadow-sm transition-all duration-200',
                                 'group-hover:border-orange-200 group-hover:bg-white/[0.05] group-hover:shadow-md group-hover:shadow-orange-100/40',
                               )}
                             >

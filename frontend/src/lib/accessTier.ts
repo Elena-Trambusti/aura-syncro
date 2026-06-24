@@ -9,6 +9,8 @@ export const ONBOARDING_PATH = '/dashboard/onboarding'
 /** Rotte accessibili senza abbonamento Premium (anteprima post-registrazione) */
 export const FREE_TIER_NAV_PATHS = [
   '/dashboard',
+  '/tavoli',
+  '/prenotazioni',
   '/ordini',
   '/menu',
   '/pagamenti',

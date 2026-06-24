@@ -12,9 +12,10 @@ import { releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxForRestaurant } from '../lib/orderTax'
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
-import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
+import { restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
+import { applyDiscountToOrder } from '../lib/orderDiscount'
 
 export const ordersRouter = Router()
 
@@ -180,9 +181,17 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
       },
       include: orderInclude,
     })
-    await deductInventoryForOrder(tx, created.id, req.restaurantId!)
     return created
   })
+
+  let finalOrder = order
+  if (resolvedCustomerId) {
+    await applyDiscountToOrder(order.id, req.restaurantId!, { applyLoyalty: true })
+    finalOrder = await prisma.order.findFirst({
+      where: { id: order.id, restaurantId: req.restaurantId! },
+      include: orderInclude,
+    }) ?? order
+  }
 
   if (orderData.tableId) {
     const tableUpdated = await prisma.table.updateMany({
@@ -197,16 +206,16 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     if (table) io.to(req.restaurantId!).emit('table:updated', table)
   }
 
-  io.to(req.restaurantId!).emit('order:created', order)
+  io.to(req.restaurantId!).emit('order:created', finalOrder)
 
-  const tableLabel = order.table ? `tavolo ${order.table.number}` : order.type.toLowerCase()
+  const tableLabel = finalOrder.table ? `tavolo ${finalOrder.table.number}` : finalOrder.type.toLowerCase()
   void broadcastNewOrderNotification(
     req.restaurantId!,
-    order.id,
-    `Nuovo ordine da ${tableLabel} — ${formatOrderCurrency(order.total)}`,
+    finalOrder.id,
+    `Nuovo ordine da ${tableLabel} — ${formatOrderCurrency(finalOrder.total)}`,
   )
 
-  res.status(201).json(order)
+  res.status(201).json(finalOrder)
 })
 
 ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, res: Response): Promise<void> => {
@@ -421,8 +430,8 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     throw e
   }
 
-  const orderItem = await prisma.$transaction(async tx => {
-    const created = await tx.orderItem.create({
+  const createdItem = await prisma.$transaction(async tx => {
+    return tx.orderItem.create({
       data: {
         orderId: req.params.id,
         menuItemId: result.data.menuItemId,
@@ -432,8 +441,6 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
       },
       include: { menuItem: true },
     })
-    await deductInventoryForOrder(tx, req.params.id, tenantId(req))
-    return created
   })
 
   const orderWithItems = await prisma.order.findFirst({
@@ -441,12 +448,17 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     include: { items: true },
   })
   if (orderWithItems) {
-    const grossTotal = orderWithItems.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
+    const grossTotal = orderWithItems.items
+      .filter(i => i.status !== 'CANCELLED')
+      .reduce((s, i) => s + i.unitPrice * i.quantity, 0)
     const { subtotal, tax, total, taxRateApplied } = await computeTaxForExistingOrder(orderWithItems, grossTotal)
     await prisma.order.updateMany({
       where: scopedWhere(req, req.params.id),
       data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
     })
+    if (orderWithItems.customerId || orderWithItems.discount > 0) {
+      await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })
+    }
   }
 
   const updatedOrder = await prisma.order.findFirst({
@@ -454,5 +466,49 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     include: orderInclude,
   })
   io.to(tenantId(req)).emit('order:updated', updatedOrder)
-  res.status(201).json(orderItem)
+  res.status(201).json(createdItem)
+})
+
+ordersRouter.patch('/:id/customer', requirePermission('orders.create'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({
+    customerId: z.string().nullable().optional(),
+    customerEmail: z.string().email().optional(),
+    customerPhone: z.string().min(6).optional(),
+    customerName: z.string().min(2).optional(),
+  })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  const order = await prisma.order.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!order) {
+    tenantNotFound(res, 'Ordine non trovato')
+    return
+  }
+  if (['PAID', 'CANCELLED'].includes(order.status)) {
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
+
+  let customerId = result.data.customerId
+  if (!customerId && (result.data.customerEmail || result.data.customerPhone)) {
+    customerId = await resolveOrCreateCustomer(tenantId(req), {
+      email: result.data.customerEmail,
+      phone: result.data.customerPhone,
+      name: result.data.customerName,
+    })
+  }
+
+  await prisma.order.updateMany({
+    where: scopedWhere(req, req.params.id),
+    data: { customerId: customerId ?? null },
+  })
+
+  const updated = await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })
+  io.to(tenantId(req)).emit('order:updated', updated)
+  res.json(updated)
 })

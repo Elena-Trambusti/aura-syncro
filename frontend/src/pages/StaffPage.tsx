@@ -6,7 +6,7 @@ import { api } from '../lib/api'
 import { getRoleLabel, getInitials, cn } from '../lib/utils'
 import { useRole } from '../hooks/useRole'
 import { type AppRole } from '../lib/rbac'
-import { Plus, UserCog, Loader2, X, UserMinus, UserCheck, CalendarDays } from 'lucide-react'
+import { Plus, UserCog, Loader2, X, UserMinus, UserCheck, CalendarDays, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 import StaffShiftsTab from '../components/staff/StaffShiftsTab'
 import ModalPortal from '../components/ModalPortal'
@@ -52,6 +52,7 @@ export default function StaffPage() {
   const { assignableStaffRoles } = useRole()
   const [activeTab, setActiveTab] = useState<StaffTab>('team')
   const [showForm, setShowForm] = useState(false)
+  const [editingMember, setEditingMember] = useState<StaffMember | null>(null)
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -86,6 +87,17 @@ export default function StaffPage() {
       setShowForm(false)
       setNewStaff({ name: '', email: '', password: '', role: 'WAITER', phone: '' })
       toast.success(t('staff.memberAdded'))
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t('staff.memberAddError'))),
+  })
+
+  const updateStaff = useMutation({
+    mutationFn: (data: { id: string; payload: Record<string, unknown> }) =>
+      api.put(`/staff/${data.id}`, data.payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'staff') })
+      setEditingMember(null)
+      toast.success(t('staff.memberUpdated'))
     },
     onError: (err) => toast.error(apiErrorMessage(err, t('staff.memberAddError'))),
   })
@@ -225,18 +237,28 @@ export default function StaffPage() {
                         </td>
                         <td className="px-5 py-4 text-right">
                           {member.role !== 'OWNER' && (
-                            <button
-                              type="button"
-                              onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
-                              disabled={toggleActive.isPending}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-fumo hover:bg-white/[0.05]"
-                            >
-                              {member.active ? (
-                                <><UserMinus className="h-3.5 w-3.5" />{t('staff.deactivate')}</>
-                              ) : (
-                                <><UserCheck className="h-3.5 w-3.5" />{t('staff.activate')}</>
-                              )}
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingMember(member)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-fumo hover:bg-white/[0.05]"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                {t('staff.editMember')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
+                                disabled={toggleActive.isPending}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-fumo hover:bg-white/[0.05]"
+                              >
+                                {member.active ? (
+                                  <><UserMinus className="h-3.5 w-3.5" />{t('staff.deactivate')}</>
+                                ) : (
+                                  <><UserCheck className="h-3.5 w-3.5" />{t('staff.activate')}</>
+                                )}
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -335,6 +357,98 @@ export default function StaffPage() {
           </div>
         </ModalPortal>
       )}
+      {editingMember && (
+        <ModalPortal onClose={() => !updateStaff.isPending && setEditingMember(null)}>
+          <div
+            className="w-full max-w-md rounded-xl border border-white/[0.08] bg-navy-elevated p-6 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-pietra">{t('staff.editMemberTitle')}</h3>
+              <button type="button" onClick={() => setEditingMember(null)} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <EditMemberForm
+              member={editingMember}
+              assignableRoles={assignableStaffRoles}
+              isPending={updateStaff.isPending}
+              onSave={(payload) => updateStaff.mutate({ id: editingMember.id, payload })}
+              onCancel={() => setEditingMember(null)}
+            />
+          </div>
+        </ModalPortal>
+      )}
     </ExecutivePageShell>
+  )
+}
+
+function EditMemberForm({
+  member,
+  assignableRoles,
+  isPending,
+  onSave,
+  onCancel,
+}: {
+  member: StaffMember
+  assignableRoles: AppRole[]
+  isPending: boolean
+  onSave: (payload: Record<string, unknown>) => void
+  onCancel: () => void
+}) {
+  const { t } = useTranslation()
+  const [form, setForm] = useState({
+    name: member.name,
+    email: member.email,
+    role: member.role as AppRole,
+    phone: member.phone ?? '',
+    password: '',
+  })
+
+  return (
+    <>
+      <div className="space-y-4">
+        <label className="block text-sm font-medium text-pietra">
+          {t('staff.formName')}
+          <input type="text" value={form.name} onChange={e => setForm(s => ({ ...s, name: e.target.value }))} className="saas-input mt-1 w-full py-2.5 text-sm" />
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('staff.formEmail')}
+          <input type="email" value={form.email} onChange={e => setForm(s => ({ ...s, email: e.target.value }))} className="saas-input mt-1 w-full py-2.5 text-sm" />
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('staff.formPasswordOptional')}
+          <input type="password" value={form.password} onChange={e => setForm(s => ({ ...s, password: e.target.value }))} className="saas-input mt-1 w-full py-2.5 text-sm" minLength={8} />
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('staff.formRole')}
+          <select value={form.role} onChange={e => setForm(s => ({ ...s, role: e.target.value as AppRole }))} className="saas-input mt-1 w-full py-2.5 text-sm">
+            {assignableRoles.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
+          </select>
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('staff.formPhone')}
+          <input type="tel" value={form.phone} onChange={e => setForm(s => ({ ...s, phone: e.target.value }))} className="saas-input mt-1 w-full py-2.5 text-sm" />
+        </label>
+      </div>
+      <div className="mt-6 flex gap-3">
+        <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-fumo">{t('common.cancel')}</button>
+        <button
+          type="button"
+          disabled={isPending || form.name.trim().length < 2}
+          onClick={() => onSave({
+            name: form.name.trim(),
+            email: form.email.trim(),
+            role: form.role,
+            phone: form.phone.trim() || null,
+            ...(form.password.length >= 8 ? { password: form.password } : {}),
+          })}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60"
+        >
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {t('staff.saveChanges')}
+        </button>
+      </div>
+    </>
   )
 }

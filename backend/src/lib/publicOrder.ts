@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { prisma } from './prisma'
 import { computeTaxForRestaurant } from './orderTax'
-import { deductInventoryForOrder } from './inventoryDeduction'
 import { resolveOrCreateCustomer } from './customerResolver'
 
 export const publicOrderSchema = z.object({
@@ -108,7 +107,6 @@ export async function createPublicOrder(input: PublicOrderInput) {
         items: { include: { menuItem: true } },
       },
     })
-    await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
 

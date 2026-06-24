@@ -15,7 +15,8 @@ import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
-import { GUEST_ORDERING_DISABLED } from '../lib/guestOrderingPolicy'
+import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
+import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount } from '../lib/orderDiscount'
 
 export const paymentsRouter = Router()
 
@@ -60,6 +61,8 @@ const finalizeSchema = z.object({
   split: splitSchema,
   simulateEmail: z.string().email().optional(),
   stripePaymentIntentId: z.string().optional(),
+  discountCode: z.string().optional(),
+  applyLoyaltyDiscount: z.boolean().optional().default(true),
 })
 
 async function loadOrderForCheckout(orderId: string, restaurantId: string) {
@@ -67,6 +70,7 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
     where: { id: orderId, restaurantId },
     include: {
       table: true,
+      customer: { include: { loyaltyTier: true } },
       items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
     },
   })
@@ -89,6 +93,12 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, r
   const strategy = getFiscalStrategyFromConfig(fiscal)
   const tipPolicy = strategy.getCheckoutTipPolicy()
 
+  const loyaltyDiscount = order.customerId
+    ? await resolveLoyaltyDiscount(req.restaurantId!, order.customerId)
+    : { source: 'NONE' as const, discountPct: 0, discountAmount: 0 }
+
+  const posSimulation = process.env.POS_USE_SIMULATION !== 'false'
+
   res.json({
     order,
     fiscalRegime: fiscalConfigPayload(fiscal, restaurant?.settings?.taxId),
@@ -102,6 +112,11 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, r
       name: restaurant?.name,
       taxId: restaurant?.settings?.taxId ?? null,
     },
+    loyaltyDiscount: loyaltyDiscount.discountPct > 0 ? {
+      pct: loyaltyDiscount.discountPct,
+      tierName: loyaltyDiscount.tierName,
+    } : null,
+    posSimulation,
   })
 })
 
@@ -113,10 +128,35 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
-  const { orderId, tipAmount, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId } = parsed.data
+  const { orderId, tipAmount, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount } = parsed.data
 
   const order = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  try {
+    if (discountCode) {
+      await applyDiscountToOrder(orderId, req.restaurantId!, { discountCode })
+    } else if (applyLoyaltyDiscount && order.customerId) {
+      await applyDiscountToOrder(orderId, req.restaurantId!, { applyLoyalty: true })
+    }
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'INVALID_DISCOUNT_CODE') {
+      res.status(400).json({ error: 'Codice sconto non valido', code })
+      return
+    }
+    if (code === 'ORDER_CLOSED') {
+      res.status(400).json({ error: 'Ordine chiuso' })
+      return
+    }
+    throw err
+  }
+
+  const refreshedOrder = await loadOrderForCheckout(orderId, req.restaurantId!)
+  if (!refreshedOrder) {
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
@@ -127,9 +167,9 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
 
   let splitBreakdown
   if (paymentMethod === 'SPLIT' && split) {
-    const totalWithTip = order.total + Math.max(0, tipAmount)
+    const totalWithTip = refreshedOrder.total + Math.max(0, tipAmount)
     splitBreakdown = computeSplitBreakdown(
-      order.items.filter(i => i.status !== 'CANCELLED'),
+      refreshedOrder.items.filter(i => i.status !== 'CANCELLED'),
       totalWithTip,
       split,
     )
@@ -252,9 +292,67 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
   }
 })
 
-// ── Checkout pubblico guest: disabilitato (pilota — ordini solo via POS) ───────
+// ── Applica sconto fedeltà o codice promo prima del pagamento ────────────────
+paymentsRouter.post('/apply-discount', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({
+    orderId: z.string(),
+    discountCode: z.string().optional(),
+    applyLoyalty: z.boolean().optional().default(true),
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  try {
+    const order = await applyDiscountToOrder(parsed.data.orderId, req.restaurantId!, {
+      discountCode: parsed.data.discountCode,
+      applyLoyalty: parsed.data.applyLoyalty,
+    })
+    res.json({ order })
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'INVALID_DISCOUNT_CODE') {
+      res.status(400).json({ error: 'Codice sconto non valido', code })
+      return
+    }
+    if (code === 'ORDER_NOT_FOUND') {
+      res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
+    if (code === 'ORDER_CLOSED') {
+      res.status(400).json({ error: 'Ordine chiuso' })
+      return
+    }
+    throw err
+  }
+})
+
+// ── Valida codice promo (anteprima) ──────────────────────────────────────────
+paymentsRouter.post('/validate-promo', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({ code: z.string().min(1) })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Codice richiesto' })
+    return
+  }
+
+  const discount = await resolveCampaignDiscount(req.restaurantId!, parsed.data.code)
+  if (discount.discountPct <= 0) {
+    res.status(404).json({ error: 'Codice non valido o scaduto', code: 'INVALID_DISCOUNT_CODE' })
+    return
+  }
+  res.json({ valid: true, discountPct: discount.discountPct })
+})
+
+// ── Checkout pubblico guest: disabilitato se policy off ───────────────────────
 paymentsRouter.post('/checkout', publicCheckoutLimiter, async (_req: Request, res: Response): Promise<void> => {
-  res.status(403).json(GUEST_ORDERING_DISABLED)
+  if (!isGuestOrderingEnabled()) {
+    res.status(403).json(GUEST_ORDERING_DISABLED)
+    return
+  }
+  res.status(400).json({ error: 'Usa POST /api/public/checkout per ordini guest' })
 })
 
 // ── Verifica stato sessione (dalla pagina di successo) ────────────────────────

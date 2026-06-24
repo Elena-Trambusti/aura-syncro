@@ -31,11 +31,13 @@ interface CheckoutOrder {
   subtotal: number
   tax: number
   total: number
+  discount?: number
   taxRateApplied?: number | null
   table?: { number: number } | null
   type: string
   createdAt: string
   items: OrderItem[]
+  customer?: { id: string; name: string; loyaltyTier?: { name: string; discountPct: number } | null } | null
 }
 
 export default function CheckoutPage() {
@@ -55,11 +57,14 @@ export default function CheckoutPage() {
   const [wantsTip, setWantsTip] = useState(false)
   const [tipAmount, setTipAmount] = useState('')
   const [receiptEmail, setReceiptEmail] = useState('')
+  const [discountCode, setDiscountCode] = useState('')
   const [finalizeResult, setFinalizeResult] = useState<CheckoutFinalizeResult | null>(null)
 
-  const { data, isLoading, isError } = useQuery<{
+  const { data, isLoading, isError, refetch } = useQuery<{
     order: CheckoutOrder
     restaurant: { name: string; taxId?: string | null }
+    loyaltyDiscount?: { pct: number; tierName?: string } | null
+    posSimulation?: boolean
   }>({
     queryKey: tq(tk, 'checkout', orderId),
     queryFn: () => api.get(`/payments/checkout/${orderId}`).then(r => r.data),
@@ -69,6 +74,18 @@ export default function CheckoutPage() {
   const order = data?.order
   const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount) || 0) : 0
   const grandTotal = (order?.total ?? 0) + parsedTip
+  const loyaltyDiscount = data?.loyaltyDiscount
+  const posSimulation = data?.posSimulation !== false
+
+  const applyPromo = useMutation({
+    mutationFn: (code: string) =>
+      api.post('/payments/apply-discount', { orderId, discountCode: code }).then(r => r.data),
+    onSuccess: () => {
+      void refetch()
+      toast.success(t('checkout.discountApplied'))
+    },
+    onError: () => toast.error(t('checkout.discountInvalid')),
+  })
 
   const activeItems = useMemo(
     () => order?.items.filter(i => i.status !== 'CANCELLED') ?? [],
@@ -119,6 +136,7 @@ export default function CheckoutPage() {
         paymentMethod,
         splitSettlement: paymentMethod === 'SPLIT' ? splitSettlement : undefined,
         simulateEmail: receiptEmail || undefined,
+        discountCode: discountCode.trim() || undefined,
       }
 
       if (paymentMethod === 'SPLIT') {
@@ -191,6 +209,47 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        {posSimulation && paymentMethod === 'CARD' && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            {t('checkout.posSimulationNotice')}
+          </div>
+        )}
+
+        {(loyaltyDiscount || (order.discount ?? 0) > 0) && (
+          <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+            {loyaltyDiscount && (
+              <p>{t('checkout.loyaltyDiscountHint', { pct: loyaltyDiscount.pct, tier: loyaltyDiscount.tierName ?? '' })}</p>
+            )}
+            {(order.discount ?? 0) > 0 && (
+              <p className="font-semibold">{t('checkout.discountAppliedAmount', { amount: formatCurrency(order.discount!) })}</p>
+            )}
+          </section>
+        )}
+
+        {/* Codice promo */}
+        <section className="rounded-xl premium-card p-5 shadow-sm">
+          <label className="block text-sm font-medium text-pietra">
+            {t('checkout.promoCode')}
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={discountCode}
+                onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                placeholder={t('checkout.promoCodePlaceholder')}
+                className="saas-input flex-1 py-2.5 text-sm uppercase"
+              />
+              <button
+                type="button"
+                onClick={() => applyPromo.mutate(discountCode.trim())}
+                disabled={!discountCode.trim() || applyPromo.isPending}
+                className="rounded-xl bg-navy-surface px-4 py-2 text-sm font-semibold text-pietra hover:bg-white/[0.05] disabled:opacity-50"
+              >
+                {t('checkout.applyPromo')}
+              </button>
+            </div>
+          </label>
+        </section>
+
         {/* Riepilogo piatti */}
         <section className="rounded-xl premium-card p-5 shadow-sm">
           <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-pietra">
@@ -223,6 +282,12 @@ export default function CheckoutPage() {
               <span>{taxLabel} ({order.taxRateApplied ?? fiscal.taxRate}%)</span>
               <span className="tabular-nums">{formatCurrency(order.tax)}</span>
             </div>
+            {(order.discount ?? 0) > 0 && (
+              <div className="flex justify-between text-emerald-400">
+                <span>{t('checkout.discount')}</span>
+                <span className="tabular-nums">-{formatCurrency(order.discount!)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold text-pietra">
               <span>{t('checkout.foodTotal')}</span>
               <span className="tabular-nums">{formatCurrency(order.total)}</span>

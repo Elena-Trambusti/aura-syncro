@@ -4,7 +4,6 @@ import { stripe, STRIPE_ENABLED } from './stripe'
 import { computeTaxForRestaurant } from './orderTax'
 import { PublicOrderError } from './publicOrder'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
-import { deductInventoryForOrder } from './inventoryDeduction'
 import { resolveOrCreateCustomer } from './customerResolver'
 
 export const guestCheckoutSchema = z.object({
@@ -105,7 +104,6 @@ export async function createGuestStripeCheckout(
         },
       },
     })
-    await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
 

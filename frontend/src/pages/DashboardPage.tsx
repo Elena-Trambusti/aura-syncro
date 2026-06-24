@@ -22,6 +22,7 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import OperationalPulse from '../components/dashboard/OperationalPulse'
 import ServiceHeatmap from '../components/dashboard/ServiceHeatmap'
 import LiveCommandCenter from '../components/dashboard/LiveCommandCenter'
+import PageSkeleton from '../components/ui/PageSkeleton'
 
 interface DashboardData {
   today: { orders: number; revenue: number; reservations: number; activeOrders: number }
@@ -125,7 +126,7 @@ export default function DashboardPage() {
   const { hasProPlan } = usePlanTier()
   const locale = getIntlLocale()
 
-  const { data: dashboard, isError: summaryError } = useQuery<DashboardData>({
+  const { data: dashboard, isError: summaryError, isLoading: summaryLoading } = useQuery<DashboardData>({
     queryKey: tq(tk, 'analytics', 'summary'),
     queryFn: () => api.get('/analytics/summary').then(r => r.data),
     refetchInterval: 30_000,
@@ -213,6 +214,10 @@ export default function DashboardPage() {
         )}
       />
 
+      {summaryLoading ? (
+        <PageSkeleton variant="cards" count={4} />
+      ) : (
+        <>
       {summaryError && (
         <div className="premium-alert-error">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
@@ -397,6 +402,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+      )}
+        </>
       )}
     </ExecutivePageShell>
   )

@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, CalendarHeart, Info } from 'lucide-react'
+import { ClipboardList, CalendarHeart, Info, CheckCircle2, Circle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -33,6 +33,9 @@ export default function OnboardingPage() {
   const { restaurant, refreshRestaurant } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const calendlyRef = useRef<HTMLDivElement>(null)
+  const [checklist, setChecklist] = useState({ menu: false, call: false })
+
+  const checklistDone = Number(checklist.menu) + Number(checklist.call)
 
   useEffect(() => {
     if (searchParams.get('welcome') === 'true') {
@@ -82,6 +85,33 @@ export default function OnboardingPage() {
         subtitle={t('onboarding.subtitle', { name: restaurant?.name ?? '' })}
         eyebrow={t('onboarding.badge')}
       />
+
+      <section className="rounded-xl premium-card p-5 shadow-sm">
+        <h2 className="mb-3 font-bold text-pietra">{t('onboarding.checklistTitle')}</h2>
+        <p className="mb-4 text-sm text-fumo">{t('onboarding.progressLabel', { done: checklistDone, total: 2 })}</p>
+        <ul className="space-y-3">
+          {([
+            { key: 'menu' as const, label: t('onboarding.checklistMenu') },
+            { key: 'call' as const, label: t('onboarding.checklistCall') },
+          ]).map(item => (
+            <li key={item.key}>
+              <button
+                type="button"
+                onClick={() => setChecklist(c => ({ ...c, [item.key]: !c[item.key] }))}
+                className="flex w-full items-center gap-3 rounded-lg border border-white/[0.08] px-4 py-3 text-left text-sm hover:bg-white/[0.03]"
+              >
+                {checklist[item.key]
+                  ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+                  : <Circle className="h-5 w-5 shrink-0 text-fumo" />}
+                <span className={checklist[item.key] ? 'text-fumo line-through' : 'text-pietra'}>{item.label}</span>
+                <span className="ml-auto text-xs text-fumo">
+                  {checklist[item.key] ? t('onboarding.checklistDone') : t('onboarding.checklistPending')}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">

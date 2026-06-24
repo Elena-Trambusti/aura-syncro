@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 import { api } from '../lib/api'
-import { formatCurrency } from '../lib/utils'
+import { formatCurrency, cn } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
+import GuestCartBar from '../components/public/GuestCartBar'
+import GuestCartDrawer from '../components/public/GuestCartDrawer'
+import { useGuestCart } from '../hooks/useGuestCart'
 import {
   AlertCircle, Search, X, Star, Wheat, Milk, Egg, Fish, Shell,
-  Nut, Bean, Clock, Flame, UtensilsCrossed, CalendarDays,
+  Nut, Bean, Clock, Flame, UtensilsCrossed, CalendarDays, Plus,
 } from 'lucide-react'
 
 interface MenuItem {
@@ -47,9 +51,18 @@ function AllergenBadge({ allergen }: { allergen: string }) {
   )
 }
 
-function MenuItemCard({ item }: { item: MenuItem }) {
+function MenuItemCard({
+  item,
+  orderable,
+  onAdd,
+}: {
+  item: MenuItem
+  orderable: boolean
+  onAdd?: () => void
+}) {
   const { t } = useTranslation()
   const allergenList = item.allergens?.split(',').map(a => a.trim()).filter(Boolean) ?? []
+  const canOrder = orderable && item.orderable !== false && !item.soldOut
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -86,6 +99,16 @@ function MenuItemCard({ item }: { item: MenuItem }) {
             <p className="shrink-0 text-lg font-bold tabular-nums text-slate-900">
               {formatCurrency(item.price)}
             </p>
+            {canOrder && onAdd && (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {t('publicMenu.addToCart')}
+              </button>
+            )}
           </div>
 
           {allergenList.length > 0 && (
@@ -128,12 +151,25 @@ function parseTableFromSearch(params: URLSearchParams): number | null {
 
 export default function PublicMenuPage() {
   const { slug } = useParams<{ slug: string }>()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useTranslation()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [cartOpen, setCartOpen] = useState(false)
+  const cart = useGuestCart(slug)
 
   const tableNumber = useMemo(() => parseTableFromSearch(searchParams), [searchParams])
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'cancelled') {
+      toast.error(t('publicMenu.paymentCancelled'))
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('payment')
+        return next
+      }, { replace: true })
+    }
+  }, [searchParams, setSearchParams, t])
 
   const { data, isLoading, error } = useQuery<{
     restaurant: {
@@ -142,8 +178,11 @@ export default function PublicMenuPage() {
       description?: string | null
       colorTheme?: string
       slug: string
+      fiscal?: { taxRate: number; taxName: string }
     }
     categories: Category[]
+    guestOrderingEnabled?: boolean
+    stripeEnabled?: boolean
   }>({
     queryKey: ['public-menu', slug],
     queryFn: () => api.get(`/public/menu/${slug}`).then(r => r.data),
@@ -174,6 +213,9 @@ export default function PublicMenuPage() {
   const displayTitle = search.trim()
     ? t('publicMenu.searchResults', { query: search })
     : activeCategory?.name ?? t('publicMenu.title')
+
+  const guestOrderingEnabled = data?.guestOrderingEnabled !== false
+  const hasCartItems = cart.itemCount > 0
 
   if (isLoading) {
     return (
@@ -220,9 +262,13 @@ export default function PublicMenuPage() {
           <div className="flex items-start gap-2.5">
             <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
             <p className="text-sm font-medium text-amber-900">
-              {tableNumber != null
-                ? t('publicMenu.atTableOrderHint', { number: tableNumber })
-                : t('publicMenu.browseBeforeVisitHint')}
+              {guestOrderingEnabled
+                ? (tableNumber != null
+                  ? t('publicMenu.orderHint')
+                  : t('publicMenu.browseBeforeVisitHint'))
+                : (tableNumber != null
+                  ? t('publicMenu.atTableOrderHint', { number: tableNumber })
+                  : t('publicMenu.browseBeforeVisitHint'))}
             </p>
           </div>
         </div>
@@ -278,7 +324,7 @@ export default function PublicMenuPage() {
         </nav>
       )}
 
-      <main className="px-4 py-4 pb-8">
+      <main className={cn('px-4 py-4', hasCartItems ? 'pb-28' : 'pb-8')}>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
           {displayTitle}
         </h2>
@@ -286,7 +332,15 @@ export default function PublicMenuPage() {
         {displayItems.length > 0 ? (
           <div className="space-y-3">
             {displayItems.map(item => (
-              <MenuItemCard key={item.id} item={item} />
+              <MenuItemCard
+                key={item.id}
+                item={item}
+                orderable={guestOrderingEnabled}
+                onAdd={() => {
+                  cart.addItem({ menuItemId: item.id, name: item.name, price: item.price })
+                  toast.success(t('publicMenu.addedToCart', { name: item.name }))
+                }}
+              />
             ))}
           </div>
         ) : (
@@ -298,9 +352,9 @@ export default function PublicMenuPage() {
         )}
 
         <div className="mt-8 space-y-3">
-          {tableNumber != null ? (
+          {!guestOrderingEnabled && tableNumber != null ? (
             <p className="text-center text-xs text-slate-400">{t('publicMenu.browseOnlyHint')}</p>
-          ) : (
+          ) : !guestOrderingEnabled ? (
             <>
               <Link
                 to={`/prenota/${slug}`}
@@ -311,9 +365,33 @@ export default function PublicMenuPage() {
               </Link>
               <p className="text-center text-xs text-slate-400">{t('publicMenu.bookingFooterHint')}</p>
             </>
-          )}
+          ) : null}
         </div>
       </main>
+
+      {guestOrderingEnabled && (
+        <>
+          <GuestCartBar
+            itemCount={cart.itemCount}
+            total={cart.subtotal}
+            onOpen={() => setCartOpen(true)}
+          />
+          <GuestCartDrawer
+            open={cartOpen}
+            onClose={() => setCartOpen(false)}
+            slug={slug!}
+            restaurantName={data.restaurant.name}
+            stripeEnabled={data.stripeEnabled ?? false}
+            fiscal={data.restaurant.fiscal ?? { taxRate: 10, taxName: 'IVA' }}
+            tableNumber={tableNumber}
+            items={cart.items}
+            subtotal={cart.subtotal}
+            onSetQuantity={cart.setQuantity}
+            onRemoveItem={cart.removeItem}
+            onClearCart={cart.clearCart}
+          />
+        </>
+      )}
     </div>
   )
 }

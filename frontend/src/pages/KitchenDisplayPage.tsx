@@ -89,7 +89,7 @@ function OrderCard({
           </span>
           <div>
             <span className="text-xs font-medium text-white/80">
-              {order.type === 'DINE_IN' ? 'Sala' : order.type === 'TAKEAWAY' ? 'Asporto' : 'Delivery'}
+              {order.type === 'DINE_IN' ? t('kitchen.typeDineIn') : order.type === 'TAKEAWAY' ? t('kitchen.typeTakeaway') : t('kitchen.typeDelivery')}
             </span>
             <p className="text-xs text-white/60">#{order.id.slice(-4).toUpperCase()}</p>
           </div>
