@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next'
 import BrandLogo from '../brand/BrandLogo'
 import { BRAND } from '../../lib/brand'
 import LanguageSwitcher from '../layout/LanguageSwitcher'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function LandingNav() {
   const { t } = useTranslation()
+  const { user } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-md">
@@ -24,18 +26,29 @@ export default function LandingNav() {
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
-          <Link
-            to="/login"
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
-          >
-            {t('landing.nav.login')}
-          </Link>
-          <Link
-            to="/register"
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
-          >
-            {t('landing.nav.register', { defaultValue: 'Registrati' })}
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-amber-500 hover:text-amber-400 hover:bg-white/5 sm:inline-block transition-colors"
+            >
+              Vai alla Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
+              >
+                {t('landing.nav.login')}
+              </Link>
+              <Link
+                to="/register"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
+              >
+                {t('landing.nav.register', { defaultValue: 'Registrati' })}
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

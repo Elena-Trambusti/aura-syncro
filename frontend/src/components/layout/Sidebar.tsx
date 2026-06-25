@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
@@ -155,7 +155,9 @@ export default function Sidebar() {
           </button>
 
           <div className="flex items-center justify-center w-full">
-            <BrandLogo size="md" showName layout="horizontal" />
+            <Link to="/" className="inline-block transition-transform hover:scale-105 hover:opacity-80 active:scale-95" aria-label="Torna alla Home">
+              <BrandLogo size="md" showName layout="horizontal" />
+            </Link>
           </div>
 
           <div className="group flex items-center justify-center mx-auto w-full gap-2.5 cursor-pointer">
