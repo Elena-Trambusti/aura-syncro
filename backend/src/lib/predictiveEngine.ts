@@ -337,7 +337,7 @@ export function calculateAffluenceForecastAdvanced(
     const baseCovers = reservedCovers + Math.round(walkInBase * holidayMult)
 
     const weatherMult = WEATHER_IMPACT[day.condition] ?? 1.0
-    const weatherImpactPct = day.condition === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
+    const weatherImpactPct = (day.condition as string) === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
     const predictedCovers = Math.max(0, Math.round(baseCovers * weatherMult))
 
     const confidence = demand.sampleCount > 0
@@ -380,7 +380,7 @@ export function calculateAffluenceForecast(
       : Math.round(defaultCovers * holidayMult)
       
     const weatherMult = WEATHER_IMPACT[day.condition] ?? 1.0
-    const weatherImpactPct = day.condition === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
+    const weatherImpactPct = (day.condition as string) === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
     const predictedCovers = Math.max(0, Math.round(baseCovers * weatherMult))
 
     return {

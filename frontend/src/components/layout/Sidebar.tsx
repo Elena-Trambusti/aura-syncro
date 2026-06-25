@@ -12,7 +12,6 @@ import { useAccessTier } from '../../hooks/useAccessTier'
 import { usePlanTier } from '../../hooks/usePlanTier'
 import { useRole } from '../../hooks/useRole'
 import { type Permission } from '../../lib/permissions'
-import { getTenantTheme } from '../../lib/tenantTheme'
 import { BRAND } from '../../lib/brand'
 import BrandLogo from '../brand/BrandLogo'
 import { useDashboardLayout } from './DashboardLayout'
@@ -67,7 +66,6 @@ export default function Sidebar() {
   const { tier } = useAccessTier()
   const { hasProPlan } = usePlanTier()
   const { canAccessAdminNav, canManageStaff, can } = useRole()
-  const theme = getTenantTheme(restaurant?.colorTheme)
   const { sidebarOpen, closeSidebar } = useDashboardLayout()
 
   const isPreviewMode = tier === 'unsubscribed' || tier === 'onboarding'
