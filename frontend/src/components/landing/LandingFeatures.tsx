@@ -14,25 +14,25 @@ export default function LandingFeatures() {
   const { t } = useTranslation()
 
   return (
-    <section id="features" className="bg-slate-100/60 px-4 py-24 sm:px-6 sm:py-28">
+    <section id="features" className="bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 px-4 py-24 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('landing.features.title')}</h2>
-          <p className="mt-3 text-slate-600">{t('landing.features.subtitle')}</p>
+          <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">{t('landing.features.title')}</h2>
+          <p className="mt-3 text-slate-300">{t('landing.features.subtitle')}</p>
         </div>
         <div className="mt-12 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ key, icon: Icon, className, iconBg }) => (
             <div
               key={key}
-              className={`rounded-2xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${className}`}
+              className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg p-6 shadow-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] hover:border-amber-500/50 ${className}`}
             >
-              <div className={`mb-4 inline-flex rounded-xl p-3 ${iconBg}`}>
-                <Icon className="h-6 w-6" strokeWidth={1.75} />
+              <div className="mb-4 inline-flex rounded-xl p-3 bg-white/5 border border-white/10">
+                <Icon className="h-6 w-6 text-amber-500" strokeWidth={1.5} />
               </div>
-              <h3 className="text-base font-semibold text-slate-900">
+              <h3 className="text-base font-semibold text-slate-100">
                 {t(`landing.features.${key}.title`)}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
                 {t(`landing.features.${key}.desc`)}
               </p>
             </div>

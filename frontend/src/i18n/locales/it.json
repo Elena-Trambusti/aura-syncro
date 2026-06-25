@@ -1411,13 +1411,14 @@
       "features": "Funzionalità",
       "pricing": "Prezzi",
       "login": "Accedi",
-      "tryNow": "Prova ora"
+      "register": "Registrati",
+      "tryNow": "Inizia ora"
     },
     "hero": {
       "badge": "Italia · Spagna · Isole Canarie",
       "title": "Il gestionale che mette in sincrono il tuo ristorante",
       "subtitle": "{{brand}} è il software cloud per ristorazione strutturata: POS veloce, menu QR, comande in tempo reale e fiscalità multi-paese.",
-      "ctaPrimary": "Prova ora",
+      "ctaPrimary": "Inizia ora",
       "ctaSecondary": "Guarda demo",
       "previewKpi1": "Ricavi vs mese scorso",
       "previewKpi2": "Coperti oggi",
@@ -1455,14 +1456,14 @@
       }
     },
     "pricing": {
-      "title": "Piani chiari per ogni fase di crescita",
+      "title": "Un unico piano Premium, tutto incluso",
       "subtitle": "Setup chiavi in mano e canone mensile trasparente. Nessuna sorpresa.",
-      "cta": "Inizia la prova",
+      "cta": "Inizia ora",
       "starter": {
         "name": "Starter",
         "tagline": "Operatività quotidiana in sala e cucina",
-        "price": "Su misura",
-        "setup": "",
+        "price": "€199/mese",
+        "setup": "€500 setup iniziale (una tantum)",
         "features": [
           "Gestione tavoli e comande",
           "Menu digitale e categorie",
@@ -1471,7 +1472,7 @@
         ]
       },
       "pro": {
-        "name": "Pro",
+        "name": "Premium",
         "badge": "Consigliato",
         "tagline": "Suite completa per ristoranti strutturati",
         "price": "€199/mese",

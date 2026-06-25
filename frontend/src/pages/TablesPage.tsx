@@ -9,6 +9,7 @@ import toast from 'react-hot-toast'
 import OrderModal from '../components/orders/OrderModal'
 import ModalPortal from '../components/ModalPortal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
+import FloorPlanEditor from '../components/tables/FloorPlanEditor'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -141,6 +142,7 @@ export default function TablesPage() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [transferSourceId, setTransferSourceId] = useState<string | null>(null)
   const [showManage, setShowManage] = useState(false)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
@@ -326,6 +328,16 @@ export default function TablesPage() {
               >
                 <Settings2 className="h-4 w-4" />
                 {t('tables.manageSection')}
+              </button>
+            )}
+            {canManageTables && (
+              <button
+                type="button"
+                onClick={() => setIsEditorOpen(true)}
+                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-aura-gold bg-aura-gold/10 hover:bg-aura-gold/20 hover:text-aura-gold transition-colors sm:w-auto"
+              >
+                <Edit2 className="h-4 w-4" />
+                {t('tables.editLayout', { defaultValue: 'Editor Layout' })}
               </button>
             )}
             <button
@@ -554,6 +566,13 @@ export default function TablesPage() {
             {t('tables.transferCancel')}
           </button>
         </div>
+      )}
+
+      {isEditorOpen && (
+        <FloorPlanEditor
+          tables={tables}
+          onClose={() => setIsEditorOpen(false)}
+        />
       )}
     </ExecutivePageShell>
   )

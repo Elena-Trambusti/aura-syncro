@@ -233,6 +233,7 @@ model Table {
   posX         Float      @default(0)
   posY         Float      @default(0)
   shape        TableShape @default(SQUARE)
+  rotation     Int        @default(0)
   area         String?
   qrCode       String?
   createdAt    DateTime   @default(now())

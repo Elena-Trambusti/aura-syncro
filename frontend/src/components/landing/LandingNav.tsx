@@ -32,9 +32,9 @@ export default function LandingNav() {
           </Link>
           <Link
             to="/register"
-            className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 sm:px-4"
+            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 sm:inline-block"
           >
-            {t('landing.nav.tryNow')}
+            {t('landing.nav.register', { defaultValue: 'Registrati' })}
           </Link>
         </div>
       </div>

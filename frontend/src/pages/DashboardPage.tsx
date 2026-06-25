@@ -236,7 +236,7 @@ export default function DashboardPage() {
             size="hero"
             valueTone="gold"
             sparklineData={revenueSparkline.length >= 2 ? revenueSparkline : undefined}
-            className="xl:col-span-5"
+            className="xl:col-span-4"
           />
           <KpiCard
             title={t('dashboard.monthlyRevenue')}
@@ -249,26 +249,24 @@ export default function DashboardPage() {
             valueTone="gold"
             className="xl:col-span-4"
           />
-          <div className="grid grid-cols-2 gap-4 w-full xl:col-span-3">
-            <KpiCard
-              title={t('dashboard.activeOrders')}
-              value={String(dashboard?.today.activeOrders || 0)}
-              subtitle={t('dashboard.activeOrdersSub')}
-              icon={ClipboardList}
-              accent="amber"
-              size="hero"
-              className="w-full [&_.aura-kpi-label]:whitespace-normal [&_.aura-kpi-label]:break-normal"
-            />
-            <KpiCard
-              title={t('dashboard.todayReservations')}
-              value={String(dashboard?.today.reservations || 0)}
-              subtitle={t('dashboard.todayReservationsSub')}
-              icon={CalendarCheck}
-              accent="blue"
-              size="hero"
-              className="w-full [&_.aura-kpi-label]:whitespace-normal [&_.aura-kpi-label]:break-normal"
-            />
-          </div>
+          <KpiCard
+            title={t('dashboard.activeOrders')}
+            value={String(dashboard?.today.activeOrders || 0)}
+            subtitle={t('dashboard.activeOrdersSub')}
+            icon={ClipboardList}
+            accent="amber"
+            size="hero"
+            className="xl:col-span-2"
+          />
+          <KpiCard
+            title={t('dashboard.todayReservations')}
+            value={String(dashboard?.today.reservations || 0)}
+            subtitle={t('dashboard.todayReservationsSub')}
+            icon={CalendarCheck}
+            accent="blue"
+            size="hero"
+            className="xl:col-span-2"
+          />
         </div>
       </section>
 

@@ -10,6 +10,8 @@ import cors from 'cors'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import dotenv from 'dotenv'
+import * as Sentry from '@sentry/node'
+import { nodeProfilingIntegration } from '@sentry/profiling-node'
 import { authRouter } from './routes/auth'
 import { tablesRouter } from './routes/tables'
 import { menuRouter } from './routes/menu'
@@ -49,6 +51,29 @@ import { globalApiLimiter } from './middleware/rateLimit'
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config()
 }
+
+// Inizializza Sentry prima di qualsiasi rotta o middleware
+Sentry.init({
+  dsn: process.env.SENTRY_BACKEND_DSN,
+  environment: process.env.NODE_ENV || 'development',
+  enabled: process.env.NODE_ENV === 'production',
+  tracesSampleRate: 0.1, // Conservativo per preservare la quota
+  profilesSampleRate: 0.1,
+  integrations: [nodeProfilingIntegration()],
+  sendDefaultPii: false, // Disabilita invio IP e intestazioni PII per default
+  beforeSend(event) {
+    if (event.request && event.request.data) {
+      try {
+        const data = typeof event.request.data === 'string' ? JSON.parse(event.request.data) : event.request.data;
+        if (data && typeof data === 'object' && 'password' in data) {
+          data.password = '[FILTERED]';
+          event.request.data = JSON.stringify(data);
+        }
+      } catch (e) {}
+    }
+    return event;
+  }
+})
 
 validateEnv()
 
@@ -132,6 +157,9 @@ app.use('/api/ai', authenticate, requireDashboardAccess, requireProPlan, aiRoute
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
+
+// Gestore Errori Sentry (deve essere DOPO le rotte ma PRIMA del gestore errori custom)
+Sentry.setupExpressErrorHandler(app)
 
 app.use(errorHandler)
 

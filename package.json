@@ -17,5 +17,9 @@
     "db:seed": "npm run db:seed --prefix backend",
     "db:seed-tenant": "npm run db:seed-tenant --prefix backend",
     "db:studio": "npm run db:studio --prefix backend"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.61.0",
+    "@sentry/react": "^10.61.0"
   }
 }

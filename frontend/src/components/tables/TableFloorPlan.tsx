@@ -20,6 +20,7 @@ export interface FloorTable {
   posX: number
   posY: number
   shape: string
+  rotation?: number
   area?: string
   upcomingReservation?: TableReservationPreview | null
 }
@@ -39,24 +40,7 @@ function tableSize(seats: number, shape: string) {
   return { w: size, h: size }
 }
 
-function computeBounds(tables: FloorTable[]) {
-  if (tables.length === 0) return { minX: 0, minY: 0, width: 520, height: 300 }
 
-  const xs = tables.map(t => t.posX)
-  const ys = tables.map(t => t.posY)
-  const pad = 56
-  const minX = Math.min(...xs) - pad
-  const minY = Math.min(...ys) - pad
-  const maxX = Math.max(...xs) + pad + 80
-  const maxY = Math.max(...ys) + pad + 80
-
-  return {
-    minX,
-    minY,
-    width: Math.max(maxX - minX, 320),
-    height: Math.max(maxY - minY, 240),
-  }
-}
 
 export type TableTransferRole = 'source' | 'target' | 'disabled'
 
@@ -105,51 +89,21 @@ export default function TableFloorPlan({
     }
     onTableClick(table)
   }
-  const bounds = computeBounds(tables)
-  const hasLayout = tables.some(t => t.posX > 0 || t.posY > 0)
-
-  if (!hasLayout) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-        {tables.map(table => (
-          <TableTile
-            key={table.id}
-            table={table}
-            statusLabel={statusLabel}
-            seatsLabel={seatsLabel}
-            orderTotal={activeOrderTotal?.(table.id) ?? null}
-            reservationHint={reservationLabel?.(table) ?? null}
-            transferRole={getTableTransferRole(table, transferSourceId)}
-            transferHint={
-              getTableTransferRole(table, transferSourceId) === 'source'
-                ? transferSourceLabel
-                : getTableTransferRole(table, transferSourceId) === 'target'
-                  ? transferTargetLabel
-                  : undefined
-            }
-            onClick={() => handleTileClick(table)}
-            className="table-tile--static"
-          />
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div className="saas-floor p-4 sm:p-6 overflow-x-auto">
       <div
-        className="relative mx-auto"
+        className="relative mx-auto bg-[#0f111a] rounded-2xl border border-white/10 shadow-xl overflow-hidden"
         style={{
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
-          aspectRatio: `${bounds.width} / ${bounds.height}`,
-          minHeight: 240,
+          aspectRatio: '16/9',
+          minHeight: 400,
         }}
       >
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+        
         {tables.map(table => {
-          const left = ((table.posX - bounds.minX) / bounds.width) * 100
-          const top = ((table.posY - bounds.minY) / bounds.height) * 100
           return (
             <TableTile
               key={table.id}
@@ -167,7 +121,8 @@ export default function TableFloorPlan({
                     : undefined
               }
               onClick={() => handleTileClick(table)}
-              style={{ left: `${left}%`, top: `${top}%` }}
+              className="absolute"
+              style={{ left: `${table.posX}%`, top: `${table.posY}%`, transform: `rotate(${table.rotation || 0}deg)` }}
             />
           )
         })}

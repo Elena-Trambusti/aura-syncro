@@ -59,6 +59,36 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
   res.json(tables)
 })
 
+tablesRouter.patch('/positions', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.array(z.object({
+    id: z.string(),
+    posX: z.number(),
+    posY: z.number(),
+    rotation: z.number().int().default(0),
+  }))
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  // Update tables using a transaction for atomicity
+  await prisma.$transaction(
+    result.data.map(table => prisma.table.updateMany({
+      where: scopedWhere(req, table.id),
+      data: { posX: table.posX, posY: table.posY, rotation: table.rotation }
+    }))
+  )
+  
+  // Fetch the updated tables to emit via socket
+  const updatedTables = await prisma.table.findMany({
+    where: tenantWhere(req),
+    orderBy: { number: 'asc' }
+  })
+  io.to(tenantId(req)).emit('tables:updated', updatedTables)
+  res.json({ success: true, count: result.data.length })
+})
+
 tablesRouter.post('/', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     number: z.number().int().positive(),

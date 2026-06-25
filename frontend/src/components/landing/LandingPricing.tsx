@@ -3,20 +3,20 @@ import { useTranslation } from 'react-i18next'
 import { Check, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
-const PLANS = ['starter', 'pro'] as const
+const PLANS = ['pro'] as const
 
 export default function LandingPricing() {
   const { t } = useTranslation()
 
   return (
-    <section id="pricing" className="bg-navy px-4 py-24 sm:px-6 sm:py-32">
+    <section id="pricing" className="bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 px-4 py-24 sm:px-6 sm:py-32">
       <div className="mx-auto max-w-5xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">{t('landing.pricing.title')}</h2>
-          <p className="mt-3 text-slate-600">{t('landing.pricing.subtitle')}</p>
+          <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">{t('landing.pricing.title')}</h2>
+          <p className="mt-3 text-slate-300">{t('landing.pricing.subtitle')}</p>
         </div>
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="mt-14 mx-auto max-w-md">
           {PLANS.map(plan => {
             const isPro = plan === 'pro'
             const featureKeys = t(`landing.pricing.${plan}.features`, { returnObjects: true }) as string[]
@@ -26,7 +26,7 @@ export default function LandingPricing() {
                 className={cn(
                   'relative flex flex-col rounded-2xl border p-8',
                   isPro
-                    ? 'scale-[1.02] border-amber-400 bg-slate-900 text-slate-100 shadow-2xl'
+                    ? 'scale-[1.02] border-white/10 bg-white/5 backdrop-blur-lg text-slate-100 shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)] hover:border-amber-500/50'
                     : 'border-slate-200 bg-white text-slate-900 shadow-sm',
                 )}
               >
@@ -65,7 +65,7 @@ export default function LandingPricing() {
                   className={cn(
                     'mt-8 block rounded-xl py-3 text-center text-sm font-semibold transition-colors',
                     isPro
-                      ? 'bg-amber-500 text-white hover:bg-amber-400'
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] transition-all animate-[pulse_3s_ease-in-out_infinite]'
                       : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50',
                   )}
                 >
