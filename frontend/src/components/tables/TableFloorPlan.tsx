@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '../../lib/utils'
 
 export type TableStatus = 'FREE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING'
@@ -80,6 +81,22 @@ export default function TableFloorPlan({
   transferTargetLabel,
 }: TableFloorPlanProps) {
   const inTransferMode = Boolean(transferSourceId)
+  
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const observer = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width
+      // Riferimento 1000px. Se lo schermo è più piccolo, calcola la scala.
+      // Lasciamo un piccolo margine per non schiacciarlo sui bordi.
+      const availableWidth = width - 32 // 32px per i padding
+      setScale(availableWidth < 1000 ? availableWidth / 1000 : 1)
+    })
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   const handleTileClick = (table: FloorTable) => {
     if (inTransferMode && transferSourceId) {
@@ -90,16 +107,16 @@ export default function TableFloorPlan({
     onTableClick(table)
   }
   return (
-    <div className="saas-floor p-4 sm:p-6 overflow-x-auto scrollbar-thin">
-      <div
-        className="relative mx-auto bg-[#0f111a] rounded-2xl border border-white/10 shadow-xl overflow-hidden"
-        style={{
-          width: '100%',
-          minWidth: 1000,
-          minHeight: 800,
-        }}
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+    <div ref={containerRef} className="w-full overflow-hidden saas-floor bg-navy-mid/30">
+      <div className="p-4 sm:p-6" style={{ height: (800 * scale) + 48 }}>
+        <div 
+          className="origin-top-left transition-transform duration-200"
+          style={{ transform: `scale(${scale})` }}
+        >
+          <div
+            className="relative w-[1000px] h-[800px] bg-[#0f111a] rounded-2xl border border-white/10 shadow-xl overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         
         {tables.map(table => {
           return (
@@ -124,6 +141,8 @@ export default function TableFloorPlan({
             />
           )
         })}
+          </div>
+        </div>
       </div>
     </div>
   )
