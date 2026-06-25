@@ -160,15 +160,14 @@ export default function Sidebar() {
             </Link>
           </div>
 
-          <div className="group flex items-center justify-center mx-auto w-full gap-2.5 cursor-pointer">
+          <div className="flex items-center justify-center mx-auto w-full gap-2.5">
             {restaurant?.logoUrl ? (
               <img src={restaurant.logoUrl} alt={restaurant.name} className="h-5 w-5 shrink-0 rounded-sm object-cover ring-1 ring-white/10" />
             ) : (
-              <UtensilsCrossed className="h-4 w-4 shrink-0 text-fumo group-hover:text-aura-gold transition-colors" />
+              <UtensilsCrossed className="h-4 w-4 shrink-0 text-fumo" />
             )}
             <div className="flex items-center gap-1.5 min-w-0">
-              <p className="truncate text-sm font-medium text-pietra transition-colors">{restaurant?.name || t('common.restaurant')}</p>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-fumo group-hover:text-aura-gold transition-colors" />
+              <p className="truncate text-sm font-medium text-pietra">{restaurant?.name || t('common.restaurant')}</p>
             </div>
           </div>
         </div>
