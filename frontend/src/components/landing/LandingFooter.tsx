@@ -11,7 +11,7 @@ export default function LandingFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="relative border-t border-white/5 bg-[#050608] px-4 py-12 sm:px-6 overflow-hidden">
+    <footer className="relative border-t border-white/5 bg-transparent px-4 py-12 sm:px-6 overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-full max-w-2xl h-32 bg-amber-500/5 blur-3xl pointer-events-none rounded-full" />
       

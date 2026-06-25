@@ -9,10 +9,14 @@ export default function LandingPricing() {
   const { t } = useTranslation()
 
   return (
-    <section id="pricing" className="bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 px-4 py-24 sm:px-6 sm:py-32">
+    <section id="pricing" className="relative bg-transparent px-4 py-24 sm:px-6 sm:py-32 overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+        <div className="h-[700px] w-[700px] rounded-full bg-amber-500/10 blur-[150px]" />
+      </div>
       <div className="mx-auto max-w-5xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">{t('landing.pricing.title')}</h2>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-400">{t('landing.pricing.title')}</h2>
           <p className="mt-3 text-slate-300">{t('landing.pricing.subtitle')}</p>
         </div>
 
@@ -26,7 +30,7 @@ export default function LandingPricing() {
                 className={cn(
                   'relative flex flex-col rounded-2xl border p-8',
                   isPro
-                    ? 'scale-[1.02] border-white/10 bg-white/5 backdrop-blur-lg text-slate-100 shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)] hover:border-amber-500/50'
+                    ? 'scale-[1.01] border-white/[0.08] bg-white/[0.02] backdrop-blur-xl text-slate-100 shadow-[0_8_32px_0_rgba(0,0,0,0.37)] transition-all duration-500 hover:scale-[1.02] hover:border-amber-500/40 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)]'
                     : 'border-slate-200 bg-white text-slate-900 shadow-sm',
                 )}
               >

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import { resolveApiBaseUrl } from './backendUrl'
 import { isPublicAppRoute } from './publicRoutes'
 
@@ -46,6 +47,16 @@ api.interceptors.response.use(
       if (!isPublicAppRoute(path)) {
         window.location.href = '/login'
       }
+    } else if (err.response?.status === 403 && err.response?.data?.code === 'DEMO_READ_ONLY') {
+      toast.error(err.response.data.error || 'Azione non consentita in modalità Demo.', {
+        icon: '⚠️',
+        style: {
+          borderRadius: '10px',
+          background: '#1e293b', // slate-800
+          color: '#fcd34d', // amber-300
+          border: '1px solid rgba(245, 158, 11, 0.2)', // amber-500/20
+        },
+      })
     }
     return Promise.reject(err)
   }

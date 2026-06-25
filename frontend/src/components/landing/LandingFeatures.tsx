@@ -14,10 +14,14 @@ export default function LandingFeatures() {
   const { t } = useTranslation()
 
   return (
-    <section id="features" className="bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 px-4 py-24 sm:px-6 sm:py-28">
+    <section id="features" className="relative bg-transparent px-4 py-24 sm:px-6 sm:py-28 overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+        <div className="h-[800px] w-[800px] rounded-full bg-amber-500/10 blur-[150px]" />
+      </div>
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">{t('landing.features.title')}</h2>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-400">{t('landing.features.title')}</h2>
           <p className="mt-3 text-slate-300">{t('landing.features.subtitle')}</p>
         </div>
         <div className="mt-12 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-4">

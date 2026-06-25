@@ -6,6 +6,7 @@ import Header from './Header'
 import CommandPalette from './CommandPalette'
 import PwaNotificationBanner, { PwaInstallHint } from './PwaNotificationBanner'
 import OfflineSyncBanner from '../OfflineSyncBanner'
+import DemoBanner from '../DemoBanner'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 import { tq } from '../../lib/queryKeys'
@@ -78,6 +79,7 @@ export default function DashboardLayout() {
             <PwaInstallHint />
             <PwaNotificationBanner enabled={!!user} />
             <OfflineSyncBanner enabled={!!user} onSynced={handleOfflineSynced} className="mb-3" />
+            <DemoBanner />
             <Outlet />
           </main>
         </div>

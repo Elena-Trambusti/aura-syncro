@@ -50,13 +50,24 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[420px]">
           <div className="mb-6 text-center sm:mb-8">
-            <BrandLogo size="lg" showName layout="horizontal" className="mx-auto mb-5 justify-center" />
+            <Link to="/" className="inline-block transition-transform hover:scale-105">
+              <BrandLogo size="lg" showName layout="horizontal" className="mx-auto mb-5 justify-center" />
+            </Link>
             <h1 className="font-display text-2xl font-semibold tracking-tight text-pietra sm:text-3xl">
               {BRAND.name}
             </h1>
             <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-fumo">
               {t('brand.tagline')}
             </p>
+          </div>
+
+          <div className="text-left w-full">
+            <Link 
+              to="/" 
+              className="text-white/60 hover:text-amber-500 text-sm transition-colors mb-4 inline-block cursor-pointer"
+            >
+              &larr; Torna alla home
+            </Link>
           </div>
 
           <div className="aura-auth-card">

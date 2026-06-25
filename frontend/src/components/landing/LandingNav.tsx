@@ -8,17 +8,17 @@ export default function LandingNav() {
   const { t } = useTranslation()
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <BrandLogo size="sm" className="mx-0 shadow-sm" />
-          <span className="text-sm font-bold text-slate-900 sm:text-base">{BRAND.name}</span>
+          <span className="text-sm font-bold text-white sm:text-base">{BRAND.name}</span>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-          <a href="#features" className="hover:text-slate-900 transition-colors">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
+          <a href="#features" className="hover:text-amber-500 transition-colors">
             {t('landing.nav.features')}
           </a>
-          <a href="#pricing" className="hover:text-slate-900 transition-colors">
+          <a href="#pricing" className="hover:text-amber-500 transition-colors">
             {t('landing.nav.pricing')}
           </a>
         </nav>
@@ -26,13 +26,13 @@ export default function LandingNav() {
           <LanguageSwitcher />
           <Link
             to="/login"
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 sm:inline-block"
+            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
           >
             {t('landing.nav.login')}
           </Link>
           <Link
             to="/register"
-            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 sm:inline-block"
+            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-amber-500 hover:bg-white/5 sm:inline-block transition-colors"
           >
             {t('landing.nav.register', { defaultValue: 'Registrati' })}
           </Link>

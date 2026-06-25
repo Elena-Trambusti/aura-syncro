@@ -34,9 +34,9 @@ const STATUS_CLASS: Record<TableStatus, string> = {
 
 function tableSize(seats: number, shape: string) {
   if (shape === 'RECTANGLE') {
-    return seats >= 6 ? { w: 112, h: 64 } : { w: 96, h: 56 }
+    return seats >= 6 ? { w: 180, h: 110 } : { w: 160, h: 100 }
   }
-  const size = seats <= 2 ? 64 : seats <= 4 ? 76 : 88
+  const size = seats <= 2 ? 110 : seats <= 4 ? 125 : 140
   return { w: size, h: size }
 }
 
@@ -97,8 +97,7 @@ export default function TableFloorPlan({
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
-          aspectRatio: '16/9',
-          minHeight: 400,
+          minHeight: 800,
         }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
@@ -176,11 +175,11 @@ function TableTile({
       )}
       aria-label={`Tavolo ${table.number}, ${seatsLabel(table.seats)}, ${statusLabel(table.status)}`}
     >
-      <span className="text-sm font-bold leading-none">T{table.number}</span>
-      <span className="text-[10px] opacity-80 leading-none">{table.seats}p</span>
+      <span className="text-base font-bold leading-none">T{table.number}</span>
+      <span className="text-xs opacity-80 leading-none">{table.seats}p</span>
       {table.status !== 'FREE' && (
         <span className={cn(
-          'text-[9px] font-semibold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full',
+          'text-[10px] font-bold uppercase leading-none mt-1 px-2 py-1 rounded-full',
           table.status === 'CLEANING' && 'bg-blue-600/90 text-white',
           table.status === 'OCCUPIED' && 'bg-amber-600/90 text-white',
           table.status === 'RESERVED' && 'bg-aura-gold/90 text-white',
@@ -189,10 +188,10 @@ function TableTile({
         </span>
       )}
       {orderTotal && transferRole !== 'target' && (
-        <span className="text-[10px] font-semibold leading-none mt-0.5">{orderTotal}</span>
+        <span className="text-xs font-bold leading-none mt-1">{orderTotal}</span>
       )}
       {reservationHint && !orderTotal && transferRole !== 'target' && (
-        <span className="text-[9px] font-medium leading-tight mt-0.5 text-center px-1 line-clamp-2">{reservationHint}</span>
+        <span className="text-xs font-semibold leading-tight mt-1 text-center px-1.5 drop-shadow-md">{reservationHint}</span>
       )}
       {transferHint && (
         <span className="text-[9px] font-bold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full bg-slate-900 text-white">

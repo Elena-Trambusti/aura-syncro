@@ -1,44 +1,72 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Sparkles, Zap, BarChart3 } from 'lucide-react'
+import { ArrowRight, Sparkles, Zap, BarChart3, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { BRAND } from '../../lib/brand'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function LandingHero() {
   const { t } = useTranslation()
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
+
+  const handleDemoLogin = async () => {
+    try {
+      setIsDemoLoading(true)
+      // Usiamo le credenziali demo esistenti del seed di Aura Syncro
+      await login('admin@demo.it', 'admin123')
+      navigate('/dashboard')
+    } catch (error) {
+      toast.error('Errore avvio demo: impossibile collegarsi.')
+      console.error(error)
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 px-4 pb-20 pt-12 sm:px-6 sm:pb-28 sm:pt-20">
+    <section className="relative overflow-hidden bg-transparent px-4 pb-20 pt-12 sm:px-6 sm:pb-28 sm:pt-20">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 right-0 h-80 w-80 rounded-full bg-amber-200/40 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-orange-100/50 blur-3xl" />
+        <div className="absolute -top-32 -left-20 h-[600px] w-[600px] rounded-full bg-amber-500/20 blur-[120px]" />
+        <div className="absolute top-1/4 -right-32 h-[700px] w-[700px] rounded-full bg-orange-500/15 blur-[140px]" />
       </div>
 
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-500 backdrop-blur-md">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-500 backdrop-blur-md opacity-0 animate-[fade-in-up_1s_ease-out_forwards]">
             <Sparkles className="h-3.5 w-3.5" />
             {t('landing.hero.badge')}
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl lg:leading-[1.05]">
+          <h1 className="text-4xl font-black tracking-tighter sm:text-5xl lg:text-6xl lg:leading-[1.05] bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-400 opacity-0 animate-[fade-in-up_1s_ease-out_150ms_forwards]">
             {t('landing.hero.title')}
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg opacity-0 animate-[fade-in-up_1s_ease-out_300ms_forwards]">
             {t('landing.hero.subtitle', { brand: BRAND.name })}
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row opacity-0 animate-[fade-in-up_1s_ease-out_450ms_forwards]">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] animate-[pulse_3s_ease-in-out_infinite]"
+              className="relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] group"
             >
-              {t('landing.hero.ctaPrimary')}
-              <ArrowRight className="h-4 w-4" />
+              <div className="absolute inset-0 w-[50%] bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer-sweep_3s_ease-in-out_infinite]" />
+              <span className="relative">{t('landing.hero.ctaPrimary')}</span>
+              <ArrowRight className="relative h-4 w-4" />
             </Link>
+            <button
+              onClick={handleDemoLogin}
+              disabled={isDemoLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10 hover:border-amber-500/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+            >
+              {isDemoLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-500" /> : <Zap className="h-4 w-4 text-amber-500" />}
+              Entra nella Demo Live (Senza Registrazione)
+            </button>
           </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-tr from-amber-100/70 via-transparent to-orange-100/70 blur-2xl" />
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="relative animate-[float_6s_ease-in-out_infinite]">
+          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-5 shadow-[0_8_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl">
             <div className="rounded-2xl border border-white/5 bg-slate-950/80 p-4 text-slate-100 shadow-inner backdrop-blur-md">
               <div className="flex items-center justify-between rounded-xl bg-slate-800 px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-semibold">

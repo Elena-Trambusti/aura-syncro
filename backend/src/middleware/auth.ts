@@ -42,7 +42,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
         restaurantId: payload.restaurantId,
         active: true,
       },
-      select: { id: true, role: true, tokenVersion: true },
+      select: { id: true, role: true, tokenVersion: true, email: true },
     })
 
     if (!user) {
@@ -59,6 +59,18 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     req.userId = user.id
     req.restaurantId = payload.restaurantId
     req.userRole = normalizeRole(user.role)
+
+    // Modalità Sandbox Interattiva: blocchiamo solo le impostazioni (Settings/Tenant) e le cancellazioni distruttive.
+    // Questo permette ai prospect di giocare con tavoli, ordini e prenotazioni.
+    if (user.email === 'admin@demo.it' && !['GET', 'OPTIONS'].includes(req.method)) {
+      const isDestructive = req.method === 'DELETE'
+      const isSettings = req.path.includes('/settings') || req.path.includes('/users')
+      if (isDestructive || isSettings) {
+        res.status(403).json({ error: 'Nelle Demo Live non puoi cancellare o modificare le impostazioni del locale.', code: 'DEMO_READ_ONLY' })
+        return
+      }
+    }
+
     next()
   } catch {
     res.status(401).json({ error: 'Token non valido', code: 'AUTH_INVALID' })

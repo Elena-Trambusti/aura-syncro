@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; import bcrypt from 'bcryptjs'; const prisma = new PrismaClient(); bcrypt.hash('admin123', 12).then(hashed => prisma.user.updateMany({ where: { email: 'admin@demo.it' }, data: { password: hashed, active: true } })).then(console.log).finally(() => prisma.$disconnect());

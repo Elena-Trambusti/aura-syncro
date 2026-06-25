@@ -6,7 +6,8 @@ export default function LandingTrustBar() {
   const { t } = useTranslation()
 
   return (
-    <section className="border-y border-white/10 bg-navy px-4 py-8 sm:px-6">
+    <section className="relative border-t border-white/5 bg-transparent px-4 py-12 sm:px-6">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="mx-auto max-w-6xl">
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
           {t('landing.trust.title')}
