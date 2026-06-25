@@ -38,10 +38,12 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem(RESTAURANT_ID_KEY)
+      localStorage.removeItem('aura-auth-cache')
+
       const path = window.location.pathname
       if (!isPublicAppRoute(path)) {
-        localStorage.removeItem('token')
-        localStorage.removeItem(RESTAURANT_ID_KEY)
         window.location.href = '/login'
       }
     }

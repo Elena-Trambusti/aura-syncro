@@ -249,14 +249,15 @@ export default function DashboardPage() {
             valueTone="gold"
             className="xl:col-span-4"
           />
-          <div className="grid grid-cols-2 gap-3 xl:col-span-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-4 w-full xl:col-span-3">
             <KpiCard
               title={t('dashboard.activeOrders')}
               value={String(dashboard?.today.activeOrders || 0)}
               subtitle={t('dashboard.activeOrdersSub')}
               icon={ClipboardList}
               accent="amber"
-              size="compact"
+              size="hero"
+              className="w-full [&_.aura-kpi-label]:whitespace-normal [&_.aura-kpi-label]:break-normal"
             />
             <KpiCard
               title={t('dashboard.todayReservations')}
@@ -264,7 +265,8 @@ export default function DashboardPage() {
               subtitle={t('dashboard.todayReservationsSub')}
               icon={CalendarCheck}
               accent="blue"
-              size="compact"
+              size="hero"
+              className="w-full [&_.aura-kpi-label]:whitespace-normal [&_.aura-kpi-label]:break-normal"
             />
           </div>
         </div>

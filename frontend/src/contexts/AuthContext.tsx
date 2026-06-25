@@ -97,8 +97,8 @@ function applyActiveRestaurant(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const cachedBoot = readAuthCache()
   const hasStoredToken = !!localStorage.getItem('token')
+  const cachedBoot = hasStoredToken ? readAuthCache() : null
   if (hasStoredToken && cachedBoot) {
     setTenantHeader(cachedBoot.restaurant.id)
   }
@@ -166,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedToken = localStorage.getItem('token')
     if (!storedToken) {
       setIsLoading(false)
+      clearAuthCache()
       return
     }
 
