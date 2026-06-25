@@ -90,13 +90,12 @@ export default function TableFloorPlan({
     onTableClick(table)
   }
   return (
-    <div className="saas-floor p-4 sm:p-6 overflow-x-auto">
+    <div className="saas-floor p-4 sm:p-6 overflow-x-auto scrollbar-thin">
       <div
         className="relative mx-auto bg-[#0f111a] rounded-2xl border border-white/10 shadow-xl overflow-hidden"
         style={{
           width: '100%',
-          maxWidth: '100%',
-          minWidth: 0,
+          minWidth: 1000,
           minHeight: 800,
         }}
       >
