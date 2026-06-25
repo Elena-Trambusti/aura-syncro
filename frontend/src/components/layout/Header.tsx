@@ -80,7 +80,7 @@ export default function Header() {
         <button
           type="button"
           onClick={openCommandPalette}
-          className="premium-topbar-btn md:hidden"
+          className="premium-topbar-btn hidden sm:flex md:hidden"
           aria-label={t('commandPalette.title')}
         >
           <Search className="h-5 w-5" />

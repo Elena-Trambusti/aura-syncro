@@ -249,7 +249,7 @@ export default function DashboardPage() {
             valueTone="gold"
             className="xl:col-span-4"
           />
-          <div className="flex flex-col gap-3 xl:col-span-3">
+          <div className="grid grid-cols-2 gap-3 xl:col-span-3 sm:gap-4">
             <KpiCard
               title={t('dashboard.activeOrders')}
               value={String(dashboard?.today.activeOrders || 0)}
