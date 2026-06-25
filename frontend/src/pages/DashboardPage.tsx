@@ -226,7 +226,7 @@ export default function DashboardPage() {
       )}
 
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
-        <div className="aura-hero-kpi-grid aura-hero-kpi-grid--executive">
+        <div className="grid grid-cols-2 gap-4 w-full">
           <KpiCard
             title={t('dashboard.todayRevenue')}
             value={formatCurrency(dashboard?.today.revenue || 0)}
@@ -236,7 +236,6 @@ export default function DashboardPage() {
             size="hero"
             valueTone="gold"
             sparklineData={revenueSparkline.length >= 2 ? revenueSparkline : undefined}
-            className="xl:col-span-4"
           />
           <KpiCard
             title={t('dashboard.monthlyRevenue')}
@@ -247,7 +246,6 @@ export default function DashboardPage() {
             accent="gold"
             size="hero"
             valueTone="gold"
-            className="xl:col-span-4"
           />
           <KpiCard
             title={t('dashboard.activeOrders')}
@@ -256,7 +254,6 @@ export default function DashboardPage() {
             icon={ClipboardList}
             accent="amber"
             size="hero"
-            className="xl:col-span-2"
           />
           <KpiCard
             title={t('dashboard.todayReservations')}
@@ -265,7 +262,6 @@ export default function DashboardPage() {
             icon={CalendarCheck}
             accent="blue"
             size="hero"
-            className="xl:col-span-2"
           />
         </div>
       </section>
