@@ -67,22 +67,22 @@ export default function PaymentSuccessPage() {
 
   return (
     <div className="aura-auth-shell mx-auto min-h-screen max-w-lg">
-      <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
-        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-900/80 to-emerald-950' : 'bg-gradient-to-br from-aura-gold/20 to-navy-surface'}`}>
+        <div className="w-20 h-20 bg-white/5 border border-white/10 shadow-premium-sm rounded-full flex items-center justify-center mx-auto mb-4">
           {isPaid
-            ? <CheckCircle2 className="w-10 h-10 text-white" />
-            : <ChefHat className="w-10 h-10 text-white" />
+            ? <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+            : <ChefHat className="w-10 h-10 text-aura-gold" />
           }
         </div>
-        <h1 className="text-2xl font-black mb-1">
+        <h1 className="text-2xl font-black mb-1 text-pietra">
           {isPaid ? t('guestCheckout.confirmedTitle') : t('guestCheckout.processingTitle')}
         </h1>
-        <p className="text-white/80 text-sm">
+        <p className="text-fumo text-sm">
           {isPaid ? t('guestCheckout.confirmedSubtitle') : t('guestCheckout.processingSubtitle')}
         </p>
         {data.amount > 0 && (
-          <div className="mt-4 bg-white/20 rounded-2xl px-6 py-3 inline-block">
-            <span className="text-3xl font-black">{formatCurrency(data.amount)}</span>
+          <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl px-6 py-3 inline-block">
+            <span className="text-3xl font-black text-pietra">{formatCurrency(data.amount)}</span>
           </div>
         )}
       </div>

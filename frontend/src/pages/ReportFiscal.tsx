@@ -312,8 +312,8 @@ function ReportFiscalContent() {
         </div>
 
         {data?.summary.tipsDistribution && (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">
-            <p className="font-semibold text-slate-900">
+          <div className="rounded-xl border border-white/10 bg-navy-surface px-4 py-3 text-xs text-fumo shadow-sm">
+            <p className="font-semibold text-pietra">
               {data.reportLabels?.tipsSectionTitle ?? data.reportLabels?.tipsLabel}
             </p>
             <p className="mt-1">
@@ -479,30 +479,32 @@ function ReportFiscalContent() {
                           key={row.orderId}
                           className={cn(
                             'group transition-all duration-200',
-                            'hover:-translate-y-1',
+                            'hover:-translate-y-1'
                           )}
                         >
-                          <td colSpan={7} className="p-0">
-                            <div
-                              className={cn(
-                                'grid grid-cols-7 items-center rounded-xl border border-gray-200/40',
-                                'premium-card px-4 py-3.5 shadow-sm transition-all duration-200',
-                                'group-hover:border-orange-200 group-hover:bg-white/[0.05] group-hover:shadow-md group-hover:shadow-orange-100/40',
-                              )}
-                            >
-                              <span className="whitespace-nowrap text-fumo">
-                                {row.fecha ? fmtDate(row.fecha) : '—'}
-                              </span>
-                              <span className="flex items-center gap-1.5 font-mono text-xs font-semibold text-fumo">
-                                <Hash className="h-3 w-3 text-orange-400" />
-                                {row.orderId.slice(-6).toUpperCase()}
-                              </span>
-                              <span className="text-fumo">{formatCurrency(row.baseImponible)}</span>
-                              <span className="text-fumo">{formatCurrency(row.tax)}</span>
-                              <span className="font-semibold text-pietra">{formatCurrency(row.revenueAmount)}</span>
-                              <span className="font-medium text-aura-gold">{formatCurrency(row.tipAmount)}</span>
-                              <span className="font-bold text-aura-gold">{formatCurrency(row.total)}</span>
-                            </div>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-fumo bg-navy-surface border-y border-l border-white/10 rounded-l-xl group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 group-hover:shadow-md transition-colors">
+                            {row.fecha ? fmtDate(row.fecha) : '—'}
+                          </td>
+                          <td className="px-4 py-3.5 bg-navy-surface border-y border-white/10 group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            <span className="flex items-center gap-1.5 font-mono text-xs font-semibold text-fumo">
+                              <Hash className="h-3 w-3 text-aura-gold" />
+                              {row.orderId.slice(-6).toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 text-fumo bg-navy-surface border-y border-white/10 group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            {formatCurrency(row.baseImponible)}
+                          </td>
+                          <td className="px-4 py-3.5 text-fumo bg-navy-surface border-y border-white/10 group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            {formatCurrency(row.tax)}
+                          </td>
+                          <td className="px-4 py-3.5 font-semibold text-pietra bg-navy-surface border-y border-white/10 group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            {formatCurrency(row.revenueAmount)}
+                          </td>
+                          <td className="px-4 py-3.5 font-medium text-aura-gold bg-navy-surface border-y border-white/10 group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            {formatCurrency(row.tipAmount)}
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-aura-gold bg-navy-surface border-y border-r border-white/10 rounded-r-xl group-hover:bg-aura-gold/5 group-hover:border-aura-gold/40 transition-colors">
+                            {formatCurrency(row.total)}
                           </td>
                         </tr>
                       ))}

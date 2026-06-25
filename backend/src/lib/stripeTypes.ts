@@ -61,3 +61,11 @@ export type StripeSubscriptionPayload = {
   status: string
   metadata?: Record<string, string> | null
 }
+
+export type StripePaymentIntentPayload = {
+  id: string
+  status: string
+  amount: number
+  metadata?: Record<string, string> | null
+  client_reference_id?: string | null
+}

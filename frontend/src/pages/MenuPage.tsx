@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -240,7 +240,7 @@ export default function MenuPage() {
                   <button
                     type="button"
                     onClick={() => setCategoryForm({ id: cat.id, name: cat.name })}
-                    className="p-1.5 rounded-lg text-fumo hover:text-fumo hover:bg-white/[0.05]"
+                    className="p-1.5 rounded-lg text-fumo hover:text-aura-gold hover:bg-aura-gold/10 transition-colors"
                     aria-label={t('menu.editCategory')}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export default function MenuPage() {
                     onClick={() => {
                       if (confirm(t('menu.confirmDeleteCategory'))) deleteCategory.mutate(cat.id)
                     }}
-                    className="p-1.5 rounded-lg text-fumo hover:text-red-400 hover:bg-red-500/10"
+                    className="p-1.5 rounded-lg text-fumo hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     aria-label={t('common.delete')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

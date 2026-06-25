@@ -51,8 +51,24 @@ function toDateKey(d: Date): string {
  */
 export async function runPredictiveAnalysis(restaurantId: string): Promise<PredictiveAIResult> {
   const windowStart = weeksAgo(8)
+  const yoyStart = weeksAgo(56)
+  const yoyEnd = weeksAgo(52)
   const forecastEnd = new Date()
   forecastEnd.setDate(forecastEnd.getDate() + 7)
+
+  const dateFilter = {
+    OR: [
+      { createdAt: { gte: windowStart } },
+      { createdAt: { gte: yoyStart, lte: yoyEnd } },
+    ],
+  }
+
+  const resDateFilter = {
+    OR: [
+      { date: { gte: weeksAgo(12) } },
+      { date: { gte: yoyStart, lte: yoyEnd } },
+    ],
+  }
 
   const [
     paidOrders,
@@ -65,7 +81,7 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     prisma.order.findMany({
       where: {
         restaurantId,
-        createdAt: { gte: windowStart },
+        ...dateFilter,
         status: 'PAID',
       },
       select: {
@@ -85,7 +101,7 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
       where: {
         order: {
           restaurantId,
-          createdAt: { gte: windowStart },
+          ...dateFilter,
           status: { notIn: ['CANCELLED'] },
         },
       },
@@ -103,7 +119,7 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     prisma.reservation.findMany({
       where: {
         restaurantId,
-        date: { gte: weeksAgo(12) },
+        ...resDateFilter,
         status: { notIn: ['CANCELLED', 'NO_SHOW'] },
       },
       select: { date: true, covers: true, status: true },

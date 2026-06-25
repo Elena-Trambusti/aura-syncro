@@ -213,6 +213,10 @@ export default function OrderModal({
 
   const goToCheckout = () => {
     if (!activeOrder) return
+    if (!navigator.onLine) {
+      toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
+      return
+    }
     onClose()
     navigate(`/checkout/${activeOrder.id}`)
   }

@@ -116,17 +116,6 @@ export async function createGuestStripeCheckout(
     quantity: item.quantity,
   }))
 
-  if (tax > 0) {
-    lineItems.push({
-      price_data: {
-        currency: 'eur',
-        product_data: { name: 'IVA / Imposte' },
-        unit_amount: Math.round(tax * 100),
-      },
-      quantity: 1,
-    })
-  }
-
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: customerEmail,

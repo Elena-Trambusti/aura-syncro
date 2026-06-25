@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -321,7 +321,7 @@ export default function TablesPage() {
                 }}
                 className={cn(
                   'flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors sm:w-auto',
-                  showManage ? 'bg-aura-gold/15 text-aura-gold border border-aura-gold/30' : 'saas-chip text-fumo hover:bg-white/[0.05]',
+                  showManage ? 'bg-aura-gold/15 text-aura-gold border border-aura-gold/30' : 'saas-chip text-fumo hover:bg-white/5 hover:text-pietra',
                 )}
               >
                 <Settings2 className="h-4 w-4" />
@@ -334,7 +334,7 @@ export default function TablesPage() {
               onClick={() => {
                 void refetch().then(() => toast.success(t('tables.refreshed', { defaultValue: 'Tavoli aggiornati' })))
               }}
-              className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/[0.05] disabled:opacity-60 sm:w-auto"
+              className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/5 hover:text-pietra disabled:opacity-60 sm:w-auto"
             >
               <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
               {t('common.refresh')}
@@ -384,7 +384,7 @@ export default function TablesPage() {
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-1">
-                        <button type="button" onClick={() => setEditingTable(table)} className="rounded-lg p-2 text-fumo hover:bg-white/[0.05]" title={t('common.edit')}>
+                        <button type="button" onClick={() => setEditingTable(table)} className="rounded-lg p-2 text-fumo hover:bg-white/5 hover:text-aura-gold transition-colors" title={t('common.edit')}>
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
@@ -537,18 +537,18 @@ export default function TablesPage() {
       )}
 
       {transferSourceId && transferSourceTable && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-amber-400 bg-aura-gold px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
-          <p className="text-center text-sm font-semibold text-white leading-snug">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-aura-gold/30 bg-navy/95 backdrop-blur-xl px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <p className="text-center text-sm font-semibold text-aura-gold leading-snug">
             {t('tables.transferModeBanner', { number: transferSourceTable.number })}
           </p>
-          <p className="text-center text-xs text-amber-100 mt-1">
+          <p className="text-center text-xs text-fumo mt-1">
             {t('tables.transferModeHint')}
           </p>
           <button
             type="button"
             onClick={() => setTransferSourceId(null)}
             disabled={transferOrder.isPending}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-aura-gold/30 bg-aura-gold/10 py-3.5 text-sm font-bold text-aura-gold transition-colors hover:bg-aura-gold/20 disabled:opacity-60"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 py-3.5 text-sm font-bold text-pietra transition-colors disabled:opacity-60"
           >
             <X className="h-4 w-4" />
             {t('tables.transferCancel')}

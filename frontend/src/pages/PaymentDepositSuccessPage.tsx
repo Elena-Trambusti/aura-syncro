@@ -35,9 +35,9 @@ export default function PaymentDepositSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-navy flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+          <Loader2 className="w-10 h-10 text-aura-gold animate-spin" />
           <p className="text-fumo">{t('depositSuccess.verifying')}</p>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function PaymentDepositSuccessPage() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-navy flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
           <h2 className="text-xl font-bold text-pietra mb-2">{t('depositSuccess.errorTitle')}</h2>
           <p className="text-fumo mb-6">{t('depositSuccess.errorDesc')}</p>
@@ -65,34 +65,34 @@ export default function PaymentDepositSuccessPage() {
   const isPaid = data.status === 'paid'
 
   return (
-    <div className="min-h-screen bg-navy-surface/50 max-w-lg mx-auto">
-      <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-600 to-teal-700' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
-        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          {isPaid ? <CheckCircle2 className="w-10 h-10 text-white" /> : <CalendarCheck className="w-10 h-10 text-white" />}
+    <div className="min-h-screen bg-navy max-w-lg mx-auto">
+      <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-900/80 to-emerald-950' : 'bg-gradient-to-br from-aura-gold/20 to-navy-surface'}`}>
+        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-premium-sm">
+          {isPaid ? <CheckCircle2 className="w-10 h-10 text-emerald-400" /> : <CalendarCheck className="w-10 h-10 text-aura-gold" />}
         </div>
-        <h1 className="text-2xl font-black mb-1">
+        <h1 className="text-2xl font-black mb-1 text-pietra">
           {isPaid ? t('depositSuccess.confirmedTitle') : t('depositSuccess.processingTitle')}
         </h1>
-        <p className="text-white/80 text-sm">
+        <p className="text-fumo text-sm">
           {isPaid ? t('depositSuccess.confirmedSubtitle') : t('depositSuccess.processingSubtitle')}
         </p>
         {data.amount > 0 && (
-          <div className="mt-4 bg-white/20 rounded-2xl px-6 py-3 inline-block">
-            <span className="text-3xl font-black">{formatCurrency(data.amount)}</span>
+          <div className="mt-4 bg-white/5 rounded-2xl px-6 py-3 inline-block border border-white/10">
+            <span className="text-3xl font-black text-pietra">{formatCurrency(data.amount)}</span>
           </div>
         )}
       </div>
 
       {data.reservation && (
         <div className="px-5 py-6 space-y-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-white/[0.06] space-y-2 text-sm text-fumo">
-            <p><strong>{data.reservation.restaurantName}</strong></p>
+          <div className="premium-card p-5 space-y-2 text-sm text-fumo">
+            <p><strong className="text-pietra">{data.reservation.restaurantName}</strong></p>
             <p>{t('depositSuccess.guest', { name: data.reservation.guestName })}</p>
             <p>{t('depositSuccess.covers', { count: data.reservation.covers })}</p>
             <p>{t('depositSuccess.date', { date: new Date(data.reservation.date).toLocaleDateString() })}</p>
           </div>
           {data.customerEmail && (
-            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-100 rounded-xl p-4">
+            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
               {t('depositSuccess.receiptSent', { email: data.customerEmail })}
             </p>
           )}
@@ -103,7 +103,7 @@ export default function PaymentDepositSuccessPage() {
         {backLink ? (
           <Link
             to={backLink}
-            className="flex items-center justify-center w-full py-3.5 border-2 border-white/[0.08] rounded-2xl text-fumo font-semibold hover:bg-white/[0.05] transition-colors"
+            className="flex items-center justify-center w-full py-3.5 border border-white/10 rounded-xl text-fumo font-semibold hover:bg-white/5 hover:text-pietra transition-colors"
           >
             {t('depositSuccess.backToMenu')}
           </Link>

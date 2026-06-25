@@ -116,6 +116,21 @@ const DEFAULT_WEEKEND_DAYS = [0, 6] // domenica, sabato
 const FISH_PATTERN = /pesce|branzino|fish|pescado|fisch|salmone|tonno|gamber/i
 const OUTDOOR_PATTERN = /terrazz|estern|outdoor|dehors|giardino|patio/i
 
+const HOLIDAY_MULTIPLIERS: Record<string, number> = {
+  '01-01': 1.5, // Capodanno
+  '02-14': 1.8, // San Valentino
+  '03-08': 1.3, // Festa della Donna
+  '04-25': 1.5, // Liberazione
+  '05-01': 1.5, // Festa dei Lavoratori
+  '06-02': 1.4, // Festa della Repubblica
+  '08-15': 1.8, // Ferragosto
+  '10-31': 1.4, // Halloween
+  '12-24': 1.6, // Vigilia
+  '12-25': 2.0, // Natale
+  '12-26': 1.5, // Santo Stefano
+  '12-31': 2.5, // San Silvestro
+}
+
 export function getDayI18nKey(dayOfWeek: number): string {
   return DAY_I18N_KEYS[dayOfWeek] ?? DAY_I18N_KEYS[1]
 }
@@ -162,12 +177,25 @@ export function calculateExpectedDemand(
   cutoff.setHours(0, 0, 0, 0)
   cutoff.setDate(cutoff.getDate() - windowWeeks * 7)
 
-  const samples = pastSales.filter(record => {
+  const yoyCutoffStart = new Date(cutoff)
+  yoyCutoffStart.setFullYear(yoyCutoffStart.getFullYear() - 1)
+  const yoyCutoffEnd = new Date()
+  yoyCutoffEnd.setHours(0, 0, 0, 0)
+  yoyCutoffEnd.setFullYear(yoyCutoffEnd.getFullYear() - 1)
+
+  const recentSamples = pastSales.filter(record => {
     const date = parseDate(record.date)
     return date >= cutoff && getDayOfWeek(record) === dayOfWeek
   })
 
-  if (samples.length === 0) {
+  const yoySamples = pastSales.filter(record => {
+    const date = parseDate(record.date)
+    return date >= yoyCutoffStart && date <= yoyCutoffEnd && getDayOfWeek(record) === dayOfWeek
+  })
+
+  const sampleCount = recentSamples.length + yoySamples.length
+
+  if (sampleCount === 0) {
     return {
       itemId,
       dayOfWeek,
@@ -178,15 +206,28 @@ export function calculateExpectedDemand(
     }
   }
 
-  const total = samples.reduce((sum, s) => sum + s.quantity, 0)
-  const expectedQuantity = round2(total / samples.length)
-  const confidence = Math.min(95, Math.round(40 + samples.length * 12))
+  const recentTotal = recentSamples.reduce((sum, s) => sum + s.quantity, 0)
+  const recentAvg = recentSamples.length > 0 ? recentTotal / recentSamples.length : 0
+
+  const yoyTotal = yoySamples.reduce((sum, s) => sum + s.quantity, 0)
+  const yoyAvg = yoySamples.length > 0 ? yoyTotal / yoySamples.length : 0
+
+  let expectedQuantity = 0
+  if (recentSamples.length > 0 && yoySamples.length > 0) {
+    expectedQuantity = round2((recentAvg * 0.7) + (yoyAvg * 0.3))
+  } else if (recentSamples.length > 0) {
+    expectedQuantity = round2(recentAvg)
+  } else {
+    expectedQuantity = round2(yoyAvg)
+  }
+
+  const confidence = Math.min(95, Math.round(40 + sampleCount * 10 + (yoySamples.length > 0 ? 10 : 0)))
 
   return {
     itemId,
     dayOfWeek,
     expectedQuantity,
-    sampleCount: samples.length,
+    sampleCount,
     confidence,
     method: 'moving_average_dow',
   }
@@ -245,18 +286,17 @@ export function aggregateInventoryDemand(
   return aggregated
 }
 
-/** Meteo simulato deterministico (sostituibile con API meteo reale) */
+/** Meteo simulato trasparente (fallback neutrale) */
 export function buildWeatherForecast(daysAhead = 7, startOffset = 1): WeatherForecastDay[] {
-  const pattern: WeatherCondition[] = ['sunny', 'sunny', 'cloudy', 'rain', 'sunny', 'sunny', 'rain']
   const forecast: WeatherForecastDay[] = []
 
   for (let i = startOffset; i < startOffset + daysAhead; i++) {
     const date = new Date()
     date.setDate(date.getDate() + i)
     forecast.push({
-      date: date.toISOString().split('T')[0],
+      date: date.toISOString().split('T')[0]!,
       dayOfWeek: date.getDay(),
-      condition: pattern[i % pattern.length],
+      condition: 'unknown' as any,
     })
   }
 
@@ -282,6 +322,10 @@ export function calculateAffluenceForecastAdvanced(
   }
 
   return weatherForecast.map(day => {
+    const dateObj = new Date(day.date)
+    const monthDay = `${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`
+    const holidayMult = HOLIDAY_MULTIPLIERS[monthDay] ?? 1.0
+
     const demand = calculateExpectedDemand('__covers__', coverHistory, day.dayOfWeek, options)
     const historicalAvg = demand.sampleCount > 0
       ? Math.round(demand.expectedQuantity)
@@ -290,10 +334,10 @@ export function calculateAffluenceForecastAdvanced(
     const reservedCovers = upcomingReservations[day.date] ?? 0
     const avgReservedOnDow = Math.round(avgReservedByDow[day.dayOfWeek] ?? 0)
     const walkInBase = Math.max(0, historicalAvg - avgReservedOnDow)
-    const baseCovers = reservedCovers + walkInBase
+    const baseCovers = reservedCovers + Math.round(walkInBase * holidayMult)
 
-    const weatherMult = WEATHER_IMPACT[day.condition]
-    const weatherImpactPct = Math.round((weatherMult - 1) * 100)
+    const weatherMult = WEATHER_IMPACT[day.condition] ?? 1.0
+    const weatherImpactPct = day.condition === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
     const predictedCovers = Math.max(0, Math.round(baseCovers * weatherMult))
 
     const confidence = demand.sampleCount > 0
@@ -326,12 +370,17 @@ export function calculateAffluenceForecast(
   const defaultCovers = options?.defaultCovers ?? 45
 
   return weatherForecast.map(day => {
+    const dateObj = new Date(day.date)
+    const monthDay = `${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`
+    const holidayMult = HOLIDAY_MULTIPLIERS[monthDay] ?? 1.0
+
     const demand = calculateExpectedDemand('__covers__', coverHistory, day.dayOfWeek, options)
     const baseCovers = demand.sampleCount > 0
-      ? Math.round(demand.expectedQuantity)
-      : defaultCovers
-    const weatherMult = WEATHER_IMPACT[day.condition]
-    const weatherImpactPct = Math.round((weatherMult - 1) * 100)
+      ? Math.round(demand.expectedQuantity * holidayMult)
+      : Math.round(defaultCovers * holidayMult)
+      
+    const weatherMult = WEATHER_IMPACT[day.condition] ?? 1.0
+    const weatherImpactPct = day.condition === 'unknown' ? 0 : Math.round((weatherMult - 1) * 100)
     const predictedCovers = Math.max(0, Math.round(baseCovers * weatherMult))
 
     return {
@@ -504,6 +553,43 @@ export function generateSmartAlerts(
         growthPct: trend.growthPct,
       },
     })
+  }
+
+  // ── REGOLA 4: rischio spreco (WASTE RISK) ────────────────────────────────
+  for (const item of inventory) {
+    const tags = inferInventoryTags(item)
+    // Solo deperibili (pesce fresco o esplicitamente taggati)
+    if (!tags.includes('fresh_fish') && !tags.includes('perishable')) continue
+
+    const demandProfile = expectedDemand[item.id]
+    if (!demandProfile) continue
+
+    let totalDemand7Days = 0
+    for (let dow = 0; dow < 7; dow++) {
+      totalDemand7Days += demandProfile[dow]?.expectedQuantity ?? 0
+    }
+
+    // Se la scorta è superiore al 200% del fabbisogno settimanale
+    if (totalDemand7Days > 0 && item.currentQuantity > totalDemand7Days * 2) {
+      alerts.push({
+        id: `rule4-waste-${item.id}`,
+        ruleId: 'RULE_WASTE_RISK',
+        severity: 'optimization',
+        i18nKey: 'aiPredictive.alerts.wasteRisk',
+        params: {
+          item: item.name,
+          qty: round2(item.currentQuantity),
+          demand: round2(totalDemand7Days),
+        },
+        context: {
+          rule: 'RULE_WASTE_RISK',
+          itemId: item.id,
+          currentQuantity: item.currentQuantity,
+          totalDemand7Days,
+          tags,
+        },
+      })
+    }
   }
 
   return dedupeAlerts(alerts)

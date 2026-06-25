@@ -1,6 +1,10 @@
 import { Router, Request, Response } from 'express'
 import { stripe, pickStripeWebhookSecret } from '../../lib/stripe'
 import { handleCheckoutSessionCompleted } from '../../lib/stripeCheckoutWebhook'
+import {
+  handlePaymentIntentSucceeded,
+  handlePaymentIntentFailed,
+} from '../../lib/stripePaymentIntentWebhook'
 import { syncRestaurantSubscriptionStatus } from '../../lib/stripeSubscriptionWebhook'
 import { handleStripeInvoicePaid } from '../../lib/stripeInvoiceWebhook'
 import {
@@ -13,6 +17,7 @@ import type {
   StripeEventPayload,
   StripeInvoicePayload,
   StripeSubscriptionPayload,
+  StripePaymentIntentPayload,
 } from '../../lib/stripeTypes'
 import { asyncHandler } from '../../lib/asyncHandler'
 
@@ -31,6 +36,16 @@ async function resolveRestaurantIdFromEvent(event: StripeEventPayload): Promise<
 async function dispatchStripeEvent(event: StripeEventPayload): Promise<void> {
   if (event.type === 'checkout.session.completed') {
     await handleCheckoutSessionCompleted(event.data.object as StripeCheckoutSessionPayload)
+    return
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    await handlePaymentIntentSucceeded(event.data.object as StripePaymentIntentPayload)
+    return
+  }
+
+  if (event.type === 'payment_intent.payment_failed') {
+    await handlePaymentIntentFailed(event.data.object as StripePaymentIntentPayload)
     return
   }
 

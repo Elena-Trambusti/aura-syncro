@@ -241,7 +241,7 @@ export default function StaffPage() {
                               <button
                                 type="button"
                                 onClick={() => setEditingMember(member)}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-fumo hover:bg-white/[0.05]"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/5 px-3 py-1.5 text-xs font-medium text-fumo hover:text-aura-gold hover:border-aura-gold/30 hover:bg-aura-gold/10 transition-colors"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                                 {t('staff.editMember')}
@@ -250,7 +250,7 @@ export default function StaffPage() {
                                 type="button"
                                 onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
                                 disabled={toggleActive.isPending}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-fumo hover:bg-white/[0.05]"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-white/5 px-3 py-1.5 text-xs font-medium text-fumo hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors"
                               >
                                 {member.active ? (
                                   <><UserMinus className="h-3.5 w-3.5" />{t('staff.deactivate')}</>
@@ -279,7 +279,7 @@ export default function StaffPage() {
           >
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-pietra">{t('staff.addMemberTitle')}</h3>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-fumo hover:text-pietra hover:bg-white/5 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -365,7 +365,7 @@ export default function StaffPage() {
           >
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-pietra">{t('staff.editMemberTitle')}</h3>
-              <button type="button" onClick={() => setEditingMember(null)} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
+              <button type="button" onClick={() => setEditingMember(null)} className="rounded-lg p-1 text-fumo hover:text-pietra hover:bg-white/5 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>

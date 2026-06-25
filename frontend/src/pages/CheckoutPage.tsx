@@ -145,7 +145,11 @@ export default function CheckoutPage() {
   }, [paymentMethod, order, guestCount, splitMode, itemAssignments, activeItems, grandTotal, t])
 
   const finalize = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
+      if (!navigator.onLine) {
+        throw new Error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
+      }
+
       const payload: Record<string, unknown> = {
         orderId,
         tipAmount: parsedTip,
@@ -179,8 +183,8 @@ export default function CheckoutPage() {
       toast.success(t('checkout.paymentSuccess'))
     },
     onError: (err: any) => {
-      console.error("FINALIZE ERROR:", err.response?.data)
-      const serverMsg = err.response?.data?.error || t('checkout.paymentError')
+      console.error("FINALIZE ERROR:", err.response?.data || err.message)
+      const serverMsg = err.response?.data?.error || err.message || t('checkout.paymentError')
       const details = err.response?.data?.details ? JSON.stringify(err.response?.data?.details) : ''
       toast.error(`${serverMsg} ${details}`)
     },

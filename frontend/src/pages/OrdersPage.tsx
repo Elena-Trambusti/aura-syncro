@@ -173,14 +173,14 @@ export default function OrdersPage() {
 
               <div className="space-y-2 mb-4">
                 {Array.from(new Set(order.items.map(i => i.course || 1))).sort((a,b) => a-b).map(course => (
-                  <div key={course} className="space-y-1 bg-white/[0.02] p-2 rounded-lg">
+                  <div key={course} className="space-y-1 border-t border-white/[0.04] pt-2 mt-2 first:border-0 first:pt-0 first:mt-0">
                     <div className="text-[10px] uppercase font-bold text-aura-gold mb-1">{t('orders.course', { defaultValue: 'Portata' })} {course}</div>
                     {order.items.filter(i => (i.course || 1) === course).map(item => (
                       <div key={item.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 bg-navy-surface rounded-full flex items-center justify-center text-xs font-bold text-fumo">
+                        <span className="w-5 h-5 border border-white/10 rounded-full flex items-center justify-center text-[10px] font-bold text-fumo">
                           {item.quantity}
                         </span>
-                        <span className="text-fumo flex-1">{item.menuItem.name}</span>
+                        <span className="text-pietra flex-1 font-medium">{item.menuItem.name}</span>
                         <span className="text-fumo">{formatCurrency(item.unitPrice * item.quantity)}</span>
                       </div>
                     ))}
@@ -215,7 +215,7 @@ export default function OrdersPage() {
                     </div>
                     <button
                       onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'))}
-                      className="p-1.5 hover:bg-white/[0.05] rounded-lg text-fumo hover:text-fumo transition-colors"
+                      className="p-1.5 hover:text-aura-gold hover:bg-aura-gold/10 rounded-lg text-fumo transition-colors"
                       title={t('common.printReceipt')}
                     >
                       <Printer className="w-4 h-4" />

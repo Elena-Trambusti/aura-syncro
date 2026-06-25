@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock, ChevronDown,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '../../lib/utils'
@@ -146,33 +146,29 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="aura-sidebar-brand flex flex-col items-center text-center">
+        <div className="relative px-6 pt-8 pb-6 flex flex-col gap-6 shrink-0">
           <button
             type="button"
             onClick={closeSidebar}
-            className="absolute top-3 right-3 lg:hidden premium-topbar-btn"
+            className="absolute top-5 right-5 lg:hidden text-fumo hover:text-pietra transition-colors"
             aria-label={t('common.closeMenu')}
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div className="aura-brand-capsule mb-3 mx-auto w-full max-w-full justify-center">
-            <BrandLogo size="md" showName layout="horizontal" className="justify-center" />
+          <div className="flex items-center">
+            <BrandLogo size="md" showName layout="horizontal" />
           </div>
 
-          <div className="aura-tenant-chip">
+          <div className="group flex items-center gap-2.5 cursor-pointer">
             {restaurant?.logoUrl ? (
-              <img src={restaurant.logoUrl} alt={restaurant.name} className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-white/10" />
+              <img src={restaurant.logoUrl} alt={restaurant.name} className="h-5 w-5 shrink-0 rounded-sm object-cover ring-1 ring-white/10" />
             ) : (
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-white/10"
-                style={{ backgroundColor: theme.color }}
-              >
-                <UtensilsCrossed className="h-4 w-4 text-navy" />
-              </div>
+              <UtensilsCrossed className="h-4 w-4 text-fumo group-hover:text-aura-gold transition-colors" />
             )}
-            <div className="min-w-0 flex-1 text-left">
-              <p className="truncate text-sm font-semibold text-pietra">{restaurant?.name || t('common.restaurant')}</p>
+            <div className="min-w-0 flex-1 flex items-center gap-1.5">
+              <p className="truncate text-sm font-medium text-pietra transition-colors">{restaurant?.name || t('common.restaurant')}</p>
+              <ChevronDown className="h-3.5 w-3.5 text-fumo group-hover:text-aura-gold transition-colors" />
             </div>
           </div>
         </div>

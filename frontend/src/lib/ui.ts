@@ -36,6 +36,6 @@ export const ui = {
   emptyState: 'aura-empty-state',
   alertError: 'premium-alert-error',
   slideOver:
-    'fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/[0.08] bg-navy-elevated shadow-2xl',
+    'fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-white/[0.08] bg-navy-elevated bg-[image:var(--aura-surface-card)] shadow-[var(--shadow-premium-xl)]',
   slideOverOverlay: 'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity',
 } as const

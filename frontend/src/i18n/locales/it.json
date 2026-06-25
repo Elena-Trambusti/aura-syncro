@@ -1050,7 +1050,8 @@
     "alerts": {
       "stockCritical": "Allerta Stock: Previsti {{covers}} coperti {{day}}. La scorta di {{item}} ({{qty}}{{unit}}) è insufficiente. Ordina +{{orderQty}}{{unit}}.",
       "rainFish": "Previsione Pioggia {{day}}: Riduci gli ordini di {{item}} del {{pct}}% per evitare sprechi di food cost.",
-      "trendDish": "Trend in crescita: \"{{dish}}\" sta vendendo il {{pct}}% in più questa settimana. Aumenta la produzione."
+      "trendDish": "Trend in crescita: \"{{dish}}\" sta vendendo il {{pct}}% in più questa settimana. Aumenta la produzione.",
+      "wasteRisk": "Rischio Spreco: Hai {{qty}} di {{item}} ma il consumo stimato è solo {{demand}} nei prossimi 7 giorni. Spingi la vendita dei piatti correlati per evitare sprechi."
     }
   },
   "kitchen": {
