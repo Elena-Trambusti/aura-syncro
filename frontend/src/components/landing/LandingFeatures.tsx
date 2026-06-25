@@ -21,7 +21,7 @@ export default function LandingFeatures() {
           <p className="mt-3 text-slate-300">{t('landing.features.subtitle')}</p>
         </div>
         <div className="mt-12 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ key, icon: Icon, className, iconBg }) => (
+          {FEATURES.map(({ key, icon: Icon, className }) => (
             <div
               key={key}
               className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg p-6 shadow-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] hover:border-amber-500/50 ${className}`}

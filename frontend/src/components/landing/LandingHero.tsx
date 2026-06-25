@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, PlayCircle, Sparkles, Zap, BarChart3 } from 'lucide-react'
+import { ArrowRight, Sparkles, Zap, BarChart3 } from 'lucide-react'
 import { BRAND } from '../../lib/brand'
 
 export default function LandingHero() {

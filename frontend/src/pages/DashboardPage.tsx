@@ -226,7 +226,7 @@ export default function DashboardPage() {
       )}
 
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
-        <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           <KpiCard
             title={t('dashboard.todayRevenue')}
             value={formatCurrency(dashboard?.today.revenue || 0)}
