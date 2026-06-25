@@ -17,6 +17,9 @@ export default defineConfig({
       manifestFilename: 'manifest.json',
       includeAssets: pwaIncludeAssets,
       manifest: pwaManifest,
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       devOptions: {
         enabled: false,
         type: 'module',
