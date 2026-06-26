@@ -12,7 +12,17 @@ export default function PwaRegistrar() {
 
     toast.dismiss('pwa-update')
 
+    let refreshing = false
+    // Se non c'è un controller iniziale, è la primissima visita (prima installazione)
+    let isFirstInstall = !navigator.serviceWorker?.controller
+
     const onControllerChange = () => {
+      if (isFirstInstall) {
+        isFirstInstall = false
+        return
+      }
+      if (refreshing) return
+      refreshing = true
       window.location.reload()
     }
     navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange)
