@@ -29,6 +29,8 @@ export interface Restaurant extends FiscalRegime {
   isSetupComplete: boolean
   /** Piano moduli: BASE (core) o PRO (avanzato) */
   planTier: 'BASE' | 'PRO'
+  /** Piano abbonamento */
+  subscriptionPlan: 'STARTER' | 'PREMIUM'
 }
 
 interface AuthContextType {
@@ -69,6 +71,7 @@ function normalizeRestaurant(raw: Record<string, unknown>): Restaurant {
     hasActiveSubscription: raw.hasActiveSubscription === true,
     isSetupComplete: raw.isSetupComplete === true,
     planTier: raw.planTier === 'PRO' ? 'PRO' : 'BASE',
+    subscriptionPlan: raw.subscriptionPlan === 'PREMIUM' ? 'PREMIUM' : 'STARTER',
     ...fiscal,
   }
 }

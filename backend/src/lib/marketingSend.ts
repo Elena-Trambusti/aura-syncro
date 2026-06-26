@@ -128,6 +128,37 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
         if (r.sent) sentCount += 1
       }
     }
+
+    if (auto.type === 'REQUEST_REVIEW') {
+      const now = new Date()
+      // Controlla il range "tra 2 ore fa e 1 ora fa" esatta per evitare duplicati
+      const endWindow = new Date(now.getTime() - 1 * 60 * 60 * 1000)
+      const startWindow = new Date(now.getTime() - 2 * 60 * 60 * 1000)
+
+      const customers = await prisma.customer.findMany({
+        where: {
+          restaurantId,
+          email: { not: null },
+          lastVisit: { gte: startWindow, lt: endWindow },
+          totalSpent: { gte: 50 }, // Solo tavoli che hanno speso almeno 50€
+        },
+      })
+      for (const c of customers) {
+        if (!c.email) continue
+        const { firstName } = splitCustomerName(c.name)
+        const body = renderTemplate(auto.messageTemplate, {
+          firstName,
+          name: c.name,
+          restaurantName: restaurant?.name ?? '',
+        })
+        const r = await sendEmail({
+          to: c.email,
+          subject: `Come sei stato da ${restaurant?.name ?? 'noi'}?`,
+          text: body,
+        })
+        if (r.sent) sentCount += 1
+      }
+    }
   }
 
   return sentCount
@@ -138,6 +169,7 @@ export async function processScheduledCampaigns(): Promise<number> {
     where: {
       status: 'SCHEDULED',
       scheduledAt: { lte: new Date() },
+      restaurant: { subscriptionPlan: 'PREMIUM' }
     },
   })
 
@@ -158,7 +190,7 @@ export async function runAllMarketingJobs(): Promise<{ campaigns: number; automa
   const campaigns = await processScheduledCampaigns()
 
   const restaurants = await prisma.restaurant.findMany({
-    where: { settings: { hasActiveSubscription: true } },
+    where: { subscriptionPlan: 'PREMIUM' },
     select: { id: true },
   })
 

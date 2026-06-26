@@ -45,6 +45,7 @@ type RestaurantWithSettings = {
     stripeSubscriptionId?: string | null
     planTier?: import('@prisma/client').PlanTier | null
   } | null
+  subscriptionPlan?: import('@prisma/client').SubscriptionPlan | null
 }
 
 /** Standard restaurant payload for auth responses. */
@@ -71,5 +72,6 @@ export function restaurantPayload(restaurant: RestaurantWithSettings) {
     hasActiveSubscription: devPremiumUnlock || dbSubscriptionActive,
     isSetupComplete: restaurant.isSetupComplete === true,
     planTier: (devProUnlock || dbSubscriptionActive) ? 'PRO' : dbPlanTier,
+    subscriptionPlan: restaurant.subscriptionPlan ?? 'STARTER',
   }
 }

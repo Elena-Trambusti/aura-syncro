@@ -1,4 +1,4 @@
-﻿import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -361,6 +361,26 @@ export default function KitchenDisplayPage() {
     ready: orders.filter(o => o.status === 'READY'),
   }), [orders])
 
+  const aggregateItems = useMemo(() => {
+    const map = new Map<string, { name: string; qty: number; tables: Set<string> }>()
+    const activeOrders = [...pending, ...preparing]
+    
+    for (const order of activeOrders) {
+      const tableLabel = order.table ? `T${order.table.number}` : (order.type === 'TAKEAWAY' ? '🥡' : '🛵')
+      for (const item of order.items) {
+        if (item.status === 'PENDING' || item.status === 'PREPARING') {
+          const key = item.menuItem.name
+          if (!map.has(key)) map.set(key, { name: key, qty: 0, tables: new Set() })
+          const group = map.get(key)!
+          group.qty += item.quantity
+          group.tables.add(tableLabel)
+        }
+      }
+    }
+    
+    return Array.from(map.values()).sort((a,b) => b.qty - a.qty)
+  }, [pending, preparing])
+
   if (isError) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-slate-900 p-6 text-white">
@@ -413,6 +433,28 @@ export default function KitchenDisplayPage() {
           </div>
         </div>
       </header>
+
+      {aggregateItems.length > 0 && (
+        <div className="shrink-0 border-b border-slate-700 bg-slate-800/80 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Flame className="h-5 w-5 shrink-0 text-amber-500 animate-pulse" />
+            <span className="shrink-0 text-sm font-bold text-white uppercase tracking-wider">
+              Sommario Cotture:
+            </span>
+            <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {aggregateItems.map(ag => (
+                <div key={ag.name} className="flex shrink-0 items-center gap-2 rounded-lg bg-slate-700/50 px-3 py-1.5 border border-slate-600">
+                  <span className="text-base font-black text-amber-400">{ag.qty}</span>
+                  <span className="text-sm font-bold text-white">{ag.name}</span>
+                  <span className="text-xs font-medium text-stone-400">
+                    ({Array.from(ag.tables).join(', ')})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid min-h-0 flex-1 grid-cols-1 divide-y divide-slate-700 overflow-y-auto lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:overflow-hidden">
         <KitchenColumn

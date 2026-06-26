@@ -396,13 +396,15 @@
   }
 
   .table-tile {
-    @apply absolute flex flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-navy-surface text-pietra cursor-pointer transition-all;
+    @apply absolute flex flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-navy-surface text-pietra cursor-pointer transition-all duration-300;
     transform: translate(-50%, -50%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   }
 
   .table-tile:hover {
-    transform: translate(-50%, -50%) scale(1.04);
-    @apply border-white/20 bg-navy-elevated;
+    transform: translate(-50%, -50%) scale(1.05);
+    @apply border-white/30 bg-navy-elevated z-10;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
   }
 
   .table-tile--static {
@@ -415,15 +417,28 @@
 
   .table-tile--free {
     @apply border border-emerald-900/50 text-emerald-400 bg-emerald-950/20;
+    box-shadow: 0 0 10px -2px rgba(16, 185, 129, 0.15);
+  }
+  .table-tile--free:hover {
+    box-shadow: 0 0 20px -2px rgba(16, 185, 129, 0.35);
   }
 
   .table-tile--occupied,
   .table-tile--reserved {
     @apply border border-aura-gold/50 text-aura-gold bg-aura-gold/10;
+    box-shadow: 0 0 15px -1px rgba(212, 175, 55, 0.25);
+  }
+  .table-tile--occupied:hover,
+  .table-tile--reserved:hover {
+    box-shadow: 0 0 30px 2px rgba(212, 175, 55, 0.5);
   }
 
   .table-tile--cleaning {
     @apply border border-blue-900/50 text-blue-400 bg-blue-950/20;
+    box-shadow: 0 0 15px -2px rgba(59, 130, 246, 0.2);
+  }
+  .table-tile--cleaning:hover {
+    box-shadow: 0 0 25px 0px rgba(59, 130, 246, 0.4);
   }
 
   .glass-chip { @apply rounded-lg border border-white/[0.08] bg-navy-surface text-pietra; box-shadow: var(--shadow-premium-sm); }

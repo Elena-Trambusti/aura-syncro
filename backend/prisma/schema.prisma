@@ -40,6 +40,11 @@ enum PosIntegrationMode {
   EXTERNAL        // Registratore di cassa esterno — incasso sul loro hardware
 }
 
+enum SubscriptionPlan {
+  STARTER
+  PREMIUM
+}
+
 // ===== RISTORANTE =====
 model Restaurant {
   id          String   @id @default(cuid())
@@ -57,6 +62,7 @@ model Restaurant {
   timezone    String   @default("Europe/Rome")
   /** Concierge onboarding completato dal team Aura Syncro */
   isSetupComplete Boolean @default(false)
+  subscriptionPlan SubscriptionPlan @default(STARTER)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -613,6 +619,7 @@ enum AutomationType {
   BIRTHDAY
   WIN_BACK
   VIP_THANKS
+  REQUEST_REVIEW
 }
 
 model MarketingAutomation {

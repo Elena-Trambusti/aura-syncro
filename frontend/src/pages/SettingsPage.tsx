@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -27,6 +27,8 @@ interface RestaurantSettings {
   sdiRecipientCode?: string | null
   invoicePrefix?: string
   defaultLocale?: string
+  noShowDepositRequired?: boolean | null
+  depositAmount?: number | null
 }
 
 interface RestaurantData {
@@ -56,6 +58,8 @@ type SettingsForm = {
   pec: string
   sdiRecipientCode: string
   invoicePrefix: string
+  noShowDepositRequired: boolean
+  depositAmount: number
 }
 
 function buildSavePayload(data: SettingsForm) {
@@ -77,6 +81,8 @@ function buildSavePayload(data: SettingsForm) {
       pec: emptyToNull(data.pec),
       sdiRecipientCode: emptyToNull(data.sdiRecipientCode),
       invoicePrefix: data.invoicePrefix.trim().toUpperCase() || 'FATT',
+      noShowDepositRequired: data.noShowDepositRequired,
+      depositAmount: data.depositAmount,
     },
   }
 }
@@ -129,6 +135,8 @@ export default function SettingsPage() {
     pec: '',
     sdiRecipientCode: '',
     invoicePrefix: 'FATT',
+    noShowDepositRequired: false,
+    depositAmount: 20,
   })
 
   useEffect(() => {
@@ -149,10 +157,12 @@ export default function SettingsPage() {
       pec: restaurantData.settings?.pec || '',
       sdiRecipientCode: restaurantData.settings?.sdiRecipientCode || '',
       invoicePrefix: restaurantData.settings?.invoicePrefix || 'FATT',
+      noShowDepositRequired: restaurantData.settings?.noShowDepositRequired ?? false,
+      depositAmount: restaurantData.settings?.depositAmount ?? 20,
     })
   }, [restaurantData, restaurant?.name])
 
-  const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
+  const update = (k: string, v: string | number | boolean) => setForm(f => ({ ...f, [k]: v }))
 
   const onCountryChange = (countryCode: CountryCode) => {
     setForm(f => {
@@ -365,6 +375,37 @@ export default function SettingsPage() {
                 rows={3} />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="premium-card p-6">
+        <h2 className="text-base font-semibold text-pietra mb-1">Prenotazioni & Anti No-Show</h2>
+        <p className="text-sm text-fumo mb-4">Richiedi una carta di credito a garanzia per confermare i tavoli.</p>
+        <div className="space-y-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={form.noShowDepositRequired}
+              onChange={e => update('noShowDepositRequired', e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-white/20 bg-navy-surface text-aura-gold focus:ring-aura-gold/30"
+            />
+            <div>
+              <span className="block text-sm font-medium text-pietra">Richiedi caparra per confermare i tavoli</span>
+              <span className="block text-xs text-fumo">I clienti dovranno pre-autorizzare l'importo tramite Stripe.</span>
+            </div>
+          </label>
+          {form.noShowDepositRequired && (
+            <div>
+              <label className="block text-sm font-medium text-fumo mb-1.5">Importo Caparra (€)</label>
+              <input
+                type="number"
+                min={1}
+                value={form.depositAmount}
+                onChange={e => update('depositAmount', parseInt(e.target.value) || 0)}
+                className="w-full sm:w-1/3 px-4 py-2.5 saas-input focus:outline-none focus:ring-2 focus:ring-aura-gold/30 focus:border-aura-gold/50"
+              />
+            </div>
+          )}
         </div>
       </div>
 

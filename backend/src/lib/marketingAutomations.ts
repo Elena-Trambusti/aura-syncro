@@ -3,7 +3,7 @@ import { prisma } from './prisma'
 import { buildFiscalConfig } from './taxEngine'
 import { defaultTemplate } from './crmCustomer'
 
-const AUTOMATION_TYPES: AutomationType[] = ['BIRTHDAY', 'WIN_BACK', 'VIP_THANKS']
+const AUTOMATION_TYPES: AutomationType[] = ['BIRTHDAY', 'WIN_BACK', 'VIP_THANKS', 'REQUEST_REVIEW']
 
 export async function ensureMarketingAutomations(restaurantId: string) {
   const restaurant = await prisma.restaurant.findUnique({

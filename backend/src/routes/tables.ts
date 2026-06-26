@@ -105,6 +105,32 @@ tablesRouter.post('/', requirePermission('tables.manage'), async (req: AuthReque
     return
   }
 
+  // Feature Gating: Subscription Plan
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: tenantId(req) },
+    select: { subscriptionPlan: true },
+  })
+  
+  if (restaurant?.subscriptionPlan === 'STARTER') {
+    const existingTables = await prisma.table.findMany({
+      where: tenantWhere(req),
+      select: { area: true }
+    })
+    
+    if (existingTables.length >= 12) {
+      res.status(403).json({ error: 'Il piano Starter include un massimo di 12 tavoli. Passa al piano Premium per aggiungere più tavoli.' })
+      return
+    }
+    
+    const existingAreas = new Set(existingTables.map(t => t.area || 'Sala'))
+    const requestedArea = result.data.area || 'Sala'
+    
+    if (!existingAreas.has(requestedArea) && existingAreas.size >= 1) {
+      res.status(403).json({ error: 'Il piano Starter include una singola area (Sala). Passa al piano Premium per aggiungere nuove aree come la Terrazza.' })
+      return
+    }
+  }
+
   const table = await prisma.table.create({
     data: { ...result.data, restaurantId: tenantId(req) },
   })
@@ -127,6 +153,30 @@ tablesRouter.put('/:id', requirePermission('tables.manage'), async (req: AuthReq
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
     return
+  }
+
+  // Feature Gating per Area (Update)
+  if (result.data.area) {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: tenantId(req) },
+      select: { subscriptionPlan: true },
+    })
+    
+    if (restaurant?.subscriptionPlan === 'STARTER') {
+      const existingTables = await prisma.table.findMany({
+        where: tenantWhere(req),
+        select: { area: true, id: true }
+      })
+      
+      // Count areas excluding the current table's old area if it's changing
+      const existingAreas = new Set(existingTables.filter(t => t.id !== req.params.id).map(t => t.area || 'Sala'))
+      const requestedArea = result.data.area || 'Sala'
+      
+      if (!existingAreas.has(requestedArea) && existingAreas.size >= 1) {
+        res.status(403).json({ error: 'Il piano Starter include una singola area (Sala). Passa al piano Premium per aggiungere nuove aree come la Terrazza.' })
+        return
+      }
+    }
   }
 
   const updated = await prisma.table.updateMany({

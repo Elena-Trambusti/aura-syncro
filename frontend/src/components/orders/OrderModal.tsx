@@ -376,7 +376,7 @@ export default function OrderModal({
           <div className="shrink-0 p-3 pb-0">
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               <span className="text-xs font-bold text-fumo uppercase shrink-0">{t('orderModal.course', { defaultValue: 'Portata' })}:</span>
-              {[1, 2, 3, 4, 5].map(c => (
+              {[1, 2, 3].map(c => (
                 <button
                   key={c}
                   type="button"

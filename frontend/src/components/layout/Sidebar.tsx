@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock, ChevronDown,
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '../../lib/utils'

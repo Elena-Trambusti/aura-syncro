@@ -12,7 +12,7 @@ export function splitCustomerName(name: string): { firstName: string; lastName: 
 }
 
 export const DEFAULT_AUTOMATION_TEMPLATES: Record<
-  'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS',
+  'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS' | 'REQUEST_REVIEW',
   Record<CountryCode, string>
 > = {
   BIRTHDAY: {
@@ -26,6 +26,10 @@ export const DEFAULT_AUTOMATION_TEMPLATES: Record<
   VIP_THANKS: {
     IT: 'Grazie {{firstName}} per la splendida serata! Abbiamo adorato averti con noi. A presto!',
     ES: '¡Gracias {{firstName}} por una velada maravillosa! Nos encantó tenerte con nosotros. ¡Hasta pronto!',
+  },
+  REQUEST_REVIEW: {
+    IT: 'Speriamo tu sia stato bene da noi, {{firstName}}! Aiutaci a crescere lasciandoci 5 stelle su Google/Tripadvisor: [Inserisci Link]',
+    ES: '¡Esperamos que lo hayas pasado muy bien, {{firstName}}! Ayúdanos a crecer dejándonos 5 estrellas en Google/Tripadvisor: [Insertar Enlace]',
   },
 }
 

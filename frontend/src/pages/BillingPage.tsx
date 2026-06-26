@@ -1,68 +1,95 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
-import { formatCurrency } from '../lib/utils'
+import { formatCurrency, cn } from '../lib/utils'
 import { formatApiError } from '../lib/errors'
 import { BRAND } from '../lib/brand'
 import { useAuth } from '../contexts/AuthContext'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
-const SETUP_FEE = 500
-const MONTHLY_FEE = 199
 const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-tally.svg'
+
+const PLANS = [
+  {
+    id: 'STARTER',
+    name: 'Starter',
+    tagline: 'Per piccoli locali o food truck.',
+    price: 99,
+    setup: 250,
+    features: [
+      'Gestione fino a 12 tavoli',
+      '1 singola area (Sala)',
+      'Menu QR digitale',
+      'Pagamenti Stripe integrati',
+    ],
+    missingFeatures: [
+      'AI Predittiva e Analytics',
+      'Gestione Turni e Scorte',
+    ]
+  },
+  {
+    id: 'PREMIUM',
+    name: 'Premium',
+    tagline: 'Per ristoranti che esigono il massimo.',
+    price: 199,
+    setup: 500,
+    features: [
+      'Aree e tavoli illimitati',
+      'AI Predittiva e Analytics',
+      'Onboarding chiavi in mano',
+      'Gestione Turni e Scorte',
+      'Marketing Automation'
+    ],
+    missingFeatures: []
+  }
+] as const
 
 export default function BillingPage() {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { restaurant } = useAuth()
-  const [loadingPremium, setLoadingPremium] = useState(false)
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const hasPremium = restaurant?.hasActiveSubscription === true
+  const hasSubscription = restaurant?.hasActiveSubscription === true
+  const activePlanId = restaurant?.subscriptionPlan || 'STARTER'
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      toast.success(t('billing.checkoutSuccess'))
+      toast.success(t('billing.checkoutSuccess', { defaultValue: 'Abbonamento attivato con successo!' }))
       setSearchParams({}, { replace: true })
     }
     if (searchParams.get('canceled') === 'true') {
-      toast(t('billing.checkoutCanceled'), { icon: 'ℹ️' })
+      toast(t('billing.checkoutCanceled', { defaultValue: 'Checkout annullato.' }), { icon: 'ℹ️' })
       setSearchParams({}, { replace: true })
     }
   }, [searchParams, setSearchParams, t])
 
-  const handleActivatePremium = async () => {
-    setLoadingPremium(true)
+  const handleActivatePlan = async (planId: string) => {
+    setLoadingPlan(planId)
     setError(null)
 
     try {
-      const { data } = await api.post<{ checkoutUrl: string }>('/checkout')
+      const { data } = await api.post<{ checkoutUrl: string }>('/checkout', { plan: planId })
       if (!data.checkoutUrl) {
-        throw new Error(t('billing.checkoutUrlMissing'))
+        throw new Error(t('billing.checkoutUrlMissing', { defaultValue: 'URL di checkout mancante.' }))
       }
       window.location.href = data.checkoutUrl
     } catch (err: unknown) {
       setError(formatApiError(err))
-      setLoadingPremium(false)
+      setLoadingPlan(null)
     }
   }
 
-  const features = [
-    t('billing.feature1'),
-    t('billing.feature2'),
-    t('billing.feature3'),
-    t('billing.feature4'),
-  ]
-
   return (
-    <ExecutivePageShell className="mx-auto max-w-2xl space-y-8">
+    <ExecutivePageShell className="mx-auto max-w-5xl space-y-8">
       <ExecutivePageHeader
-        title={t('billing.pageTitle')}
-        subtitle={t('billing.pageSubtitle')}
+        title="Piani e Fatturazione"
+        subtitle="Gestisci il tuo abbonamento ad Aura Syncro"
         meta={(
           <img
             src={BRAND_LOGO_SRC}
@@ -72,93 +99,101 @@ export default function BillingPage() {
         )}
       />
 
-      {hasPremium && (
+      {hasSubscription && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
           <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-          <p className="text-sm font-medium text-emerald-900">{t('billing.activeBadge')}</p>
+          <p className="text-sm font-medium text-emerald-900">
+            Abbonamento attivo: <strong className="font-bold">{activePlanId === 'PREMIUM' ? 'Premium' : 'Starter'}</strong>
+          </p>
         </div>
       )}
 
-      {!hasPremium && (
-        <div className="overflow-hidden rounded-2xl premium-card shadow-sm">
-          <div className="border-b border-white/[0.06] bg-gradient-to-br from-aura-gold/10 via-navy-elevated to-navy-mid px-6 py-8 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-aura-gold/80">
-              {t('billing.planBadge')}
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-pietra">{t('billing.cardTitle')}</h2>
-            <p className="mt-1 text-sm text-fumo">{t('billing.cardSubtitle')}</p>
-          </div>
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-800"
+        >
+          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
-          <div className="space-y-6 px-6 py-6 sm:px-8">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/[0.08] bg-navy-surface/50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-fumo">
-                  {t('billing.setupLabel')}
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-pietra">
-                  {formatCurrency(SETUP_FEE)}
-                </p>
-                <p className="mt-1 text-xs text-fumo">{t('billing.setupHint')}</p>
-              </div>
-              <div className="rounded-xl border border-aura-gold/25/60 bg-aura-gold/10/50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-amber-800/70">
-                  {t('billing.subscriptionLabel')}
-                </p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-pietra">
-                  {formatCurrency(MONTHLY_FEE)}
-                  <span className="text-base font-semibold text-fumo">/{t('billing.perMonth')}</span>
-                </p>
-                <p className="mt-1 text-xs text-fumo">{t('billing.subscriptionHint')}</p>
-              </div>
-            </div>
-
-            <p className="text-center text-sm font-medium text-fumo">{t('billing.summary')}</p>
-
-            <ul className="space-y-3 text-sm text-fumo">
-              {features.map(feature => (
-                <li key={feature} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            {error && (
+      {!hasSubscription && (
+        <div className="grid gap-8 md:grid-cols-2">
+          {PLANS.map(plan => {
+            const isPro = plan.id === 'PREMIUM'
+            return (
               <div
-                role="alert"
-                className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-800"
+                key={plan.id}
+                className={cn(
+                  'relative flex flex-col rounded-2xl border p-8 shadow-sm transition-all',
+                  isPro
+                    ? 'scale-[1.01] border-white/[0.08] bg-white/[0.02] backdrop-blur-xl text-slate-100 shadow-[0_8_32px_0_rgba(0,0,0,0.37)] hover:border-amber-500/40'
+                    : 'border-white/5 bg-slate-900/50 backdrop-blur-sm text-slate-100'
+                )}
               >
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{error}</span>
+                <h3 className={cn('text-lg font-bold', isPro ? 'text-white' : 'text-slate-200')}>
+                  {plan.name}
+                </h3>
+                <p className={cn('mt-1 text-sm', isPro ? 'text-slate-300' : 'text-slate-400')}>
+                  {plan.tagline}
+                </p>
+                <div className="mt-6">
+                  <p className={cn('text-3xl font-extrabold', isPro ? 'text-white' : 'text-slate-200')}>
+                    {formatCurrency(plan.price)}
+                    <span className="text-base font-medium">/mese</span>
+                  </p>
+                  <p className={cn('mt-1 text-sm', isPro ? 'text-slate-300' : 'text-slate-400')}>
+                    + {formatCurrency(plan.setup)} setup una tantum
+                  </p>
+                </div>
+                <ul className="mt-8 flex-1 space-y-3">
+                  {plan.features.map(line => (
+                    <li key={line} className={cn('flex items-start gap-2 text-sm', isPro ? 'text-slate-200' : 'text-slate-300')}>
+                      <CheckCircle2 className={cn('mt-0.5 h-4 w-4 shrink-0', isPro ? 'text-amber-300' : 'text-emerald-500')} />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                  {plan.missingFeatures.map(line => (
+                    <li key={line} className="flex items-start gap-2 text-sm text-slate-500/60 line-through">
+                      <X className="mt-0.5 h-4 w-4 shrink-0 text-slate-600/50" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={() => handleActivatePlan(plan.id)}
+                  disabled={loadingPlan !== null}
+                  className={cn(
+                    'mt-8 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all',
+                    isPro
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]'
+                      : 'border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10',
+                    loadingPlan !== null && 'cursor-not-allowed opacity-60'
+                  )}
+                >
+                  {loadingPlan === plan.id ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Elaborazione...
+                    </>
+                  ) : (
+                    'Attiva ' + plan.name
+                  )}
+                </button>
               </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handleActivatePremium}
-              disabled={loadingPremium}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-aura-gold-light disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loadingPremium ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {t('billing.loading')}
-                </>
-              ) : (
-                t('billing.activateButton')
-              )}
-            </button>
-
-            <p className="text-center text-xs text-fumo">{t('billing.secureNote')}</p>
-          </div>
+            )
+          })}
         </div>
       )}
 
-      {hasPremium && (
+      {hasSubscription && (
         <div className="rounded-2xl premium-card px-6 py-6 sm:px-8">
-          <p className="text-sm font-medium text-pietra">{t('billing.allIncludedTitle')}</p>
+          <p className="text-sm font-medium text-pietra">Servizi attivi per il piano {activePlanId === 'PREMIUM' ? 'Premium' : 'Starter'}</p>
           <ul className="mt-4 space-y-2 text-sm text-fumo">
-            {features.map(feature => (
+            {PLANS.find(p => p.id === activePlanId)?.features.map(feature => (
               <li key={feature} className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                 <span>{feature}</span>

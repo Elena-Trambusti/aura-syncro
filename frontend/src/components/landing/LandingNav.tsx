@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 
 export default function LandingNav() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-md">
@@ -26,7 +26,9 @@ export default function LandingNav() {
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
-          {user ? (
+          {isLoading ? (
+            <div className="hidden sm:block h-9 w-32 animate-pulse rounded-lg bg-white/5" />
+          ) : user ? (
             <Link
               to="/dashboard"
               className="hidden rounded-lg px-3 py-2 text-sm font-medium text-amber-500 hover:text-amber-400 hover:bg-white/5 sm:inline-block transition-colors"

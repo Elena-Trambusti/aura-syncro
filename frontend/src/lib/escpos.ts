@@ -63,7 +63,7 @@ export class EscPosPrinter {
   // Costruisce la riga in due colonne per i totali (es: "Pizza        10.00")
   row(left: string, right: string, width = 32) {
     const maxLeft = width - right.length
-    let l = left.substring(0, maxLeft)
+    const l = left.substring(0, maxLeft)
     const spaces = width - l.length - right.length
     this.text(l + ' '.repeat(Math.max(0, spaces)) + right).newline()
     return this

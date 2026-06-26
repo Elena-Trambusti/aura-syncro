@@ -14,6 +14,8 @@ export function isSaasSubscriptionSession(session: CheckoutSessionPayload): bool
   if (session.metadata?.reservationId) return false
   if (session.metadata?.plan === 'pro') return false
   if (session.metadata?.plan === 'premium') return true
+  if (session.metadata?.plan === 'STARTER') return true
+  if (session.metadata?.plan === 'PREMIUM') return true
   if (session.mode === 'subscription') return true
   if (session.subscription) return true
   return false
@@ -85,6 +87,14 @@ export async function activateRestaurantSubscription(
         stripeSubscriptionId: subscriptionId,
         stripeCustomerId,
       },
+    })
+  }
+
+  const plan = session.metadata?.plan?.toUpperCase()
+  if (plan === 'STARTER' || plan === 'PREMIUM') {
+    await prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: { subscriptionPlan: plan as 'STARTER' | 'PREMIUM' }
     })
   }
 

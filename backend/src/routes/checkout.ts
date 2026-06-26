@@ -3,18 +3,36 @@ import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, requireRole } from '../middleware/auth'
 import { resolvePrimaryFrontendUrl } from '../lib/frontendUrl'
+import { z } from 'zod'
 
 export const checkoutRouter = Router()
 
-function resolveStripePriceIds(): { setup: string; subscription: string } | null {
-  const setup = process.env.STRIPE_PRICE_SETUP?.trim()
-  const subscription = process.env.STRIPE_PRICE_SUBSCRIPTION?.trim()
-  if (!setup || !subscription) return null
-  return { setup, subscription }
+function resolveStripePriceIds(plan: 'STARTER' | 'PREMIUM'): { setup: string; subscription: string } | null {
+  if (plan === 'STARTER') {
+    const setup = process.env.STRIPE_PRICE_STARTER_SETUP?.trim()
+    const subscription = process.env.STRIPE_PRICE_STARTER_SUBSCRIPTION?.trim()
+    if (!setup || !subscription) return null
+    return { setup, subscription }
+  } else {
+    const setup = process.env.STRIPE_PRICE_PREMIUM_SETUP?.trim() || process.env.STRIPE_PRICE_SETUP?.trim()
+    const subscription = process.env.STRIPE_PRICE_PREMIUM_SUBSCRIPTION?.trim() || process.env.STRIPE_PRICE_SUBSCRIPTION?.trim()
+    if (!setup || !subscription) return null
+    return { setup, subscription }
+  }
 }
 
 /** POST /api/checkout — Stripe Checkout Session (setup €500 + abbonamento €199/mo, tutto incluso) */
 checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({
+    plan: z.enum(['STARTER', 'PREMIUM']).default('PREMIUM')
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Piano non valido' })
+    return
+  }
+  const plan = parsed.data.plan
+
   if (!STRIPE_ENABLED) {
     res.status(503).json({ error: 'Stripe non configurato. Inserisci STRIPE_SECRET_KEY in backend/.env' })
     return
@@ -37,10 +55,10 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
     return
   }
 
-  const stripePrices = resolveStripePriceIds()
+  const stripePrices = resolveStripePriceIds(plan)
   if (!stripePrices) {
     res.status(503).json({
-      error: 'Prezzi Stripe non configurati. Imposta STRIPE_PRICE_SETUP e STRIPE_PRICE_SUBSCRIPTION in backend/.env',
+      error: `Prezzi Stripe non configurati per il piano ${plan}. Assicurati di aver impostato le variabili d'ambiente corrette in backend/.env`,
     })
     return
   }
@@ -59,13 +77,13 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
       metadata: {
         restaurantId,
         userId,
-        plan: 'premium',
+        plan,
       },
       subscription_data: {
         metadata: {
           restaurantId,
           userId,
-          plan: 'premium',
+          plan,
         },
       },
       success_url: `${frontendUrl}/dashboard/onboarding?welcome=true`,
