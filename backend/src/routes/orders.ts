@@ -293,6 +293,7 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   }
 
   io.to(req.restaurantId!).emit('order:created', finalOrder)
+  io.to(req.restaurantId!).emit('print:kitchen', { type: 'kitchen', order: finalOrder })
 
   const tableLabel = finalOrder.table ? `tavolo ${finalOrder.table.number}` : finalOrder.type.toLowerCase()
   void broadcastNewOrderNotification(
@@ -630,6 +631,7 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     include: orderInclude,
   })
   io.to(tenantId(req)).emit('order:updated', updatedOrder)
+  io.to(tenantId(req)).emit('print:kitchen', { type: 'kitchen', order: updatedOrder, newItem: createdItem })
 
   if (idempotencyKey && req.restaurantId) {
     await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items', 201, createdItem)

@@ -68,6 +68,7 @@ export async function completeOrderPayment(input: {
   const releasedTable = await releaseTableIfEmpty(updatedOrder?.tableId)
   if (releasedTable) io.to(input.finalize.restaurantId).emit('table:updated', releasedTable)
   io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+  io.to(input.finalize.restaurantId).emit('print:receipt', { type: 'receipt', order: updatedOrder })
 
   let emailSent = false
   if (input.receiptEmail) {
