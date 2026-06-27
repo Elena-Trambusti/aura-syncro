@@ -133,10 +133,8 @@ export default function OrderModal({
       return result
     })()
 
-    // Optimistic UI update: reset cart immediately
-    setCart([])
-    setTab('order')
-    setIsSubmitting(false)
+    // We will reset UI after successful submission to avoid losing cart on error
+    // (no immediate UI reset here)
 
     sendPromise.then((result) => {
       invalidateOrderQueries()

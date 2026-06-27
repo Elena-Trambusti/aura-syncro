@@ -68,7 +68,7 @@ const KitchenOrderItemRow = memo(function KitchenOrderItemRow({
   return (
     <div
       className={`flex items-center gap-2 rounded-xl p-2.5 transition-colors ${
-        item.status === 'READY' ? 'bg-emerald-900/40' : 'bg-slate-700'
+        item.status === 'READY' ? 'bg-emerald-900/40' : 'bg-white/10'
       } ${busy ? 'opacity-70' : ''}`}
     >
       <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${ITEM_STATUS_COLORS[item.status] || 'bg-slate-400'}`} />
@@ -160,11 +160,11 @@ const KitchenOrderCard = memo(function KitchenOrderCard({
       className={`flex flex-col overflow-hidden rounded-2xl border-2 transition-colors ${
         isUrgent ? 'border-red-500 shadow-lg shadow-red-200' :
         order.status === 'PREPARING' ? 'border-orange-400' : 'border-slate-700'
-      } bg-slate-800`}
+      } bg-[#12151C]/60 backdrop-blur-md`}
     >
       <div
         className={`flex items-center justify-between px-4 py-3 ${
-          isUrgent ? 'bg-red-600' : order.status === 'PREPARING' ? 'bg-amber-600' : 'bg-slate-700'
+          isUrgent ? 'bg-red-600' : order.status === 'PREPARING' ? 'bg-amber-600' : 'bg-white/10'
         }`}
       >
         <div className="flex items-center gap-3">
@@ -387,17 +387,17 @@ export default function KitchenDisplayPage() {
 
   if (isError) {
     return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-slate-900 p-6 text-white">
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#0B0E14] p-6 text-white">
         <QueryErrorBanner message={t('common.loadError')} />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-slate-900 text-white">
+    <div className="flex min-h-[100dvh] flex-col bg-[#0B0E14] text-white">
       <header
         className={`shrink-0 border-b border-slate-700 px-4 py-3 transition-colors sm:px-6 ${
-          newOrderAlert ? 'bg-orange-600' : 'bg-slate-800'
+          newOrderAlert ? 'bg-orange-600' : 'bg-[#12151C]/60 backdrop-blur-md'
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-3 gap-y-4">
@@ -454,7 +454,7 @@ export default function KitchenDisplayPage() {
       </header>
 
       {aggregateItems.length > 0 && (
-        <div className="shrink-0 border-b border-slate-700 bg-slate-800/80 px-4 py-3 sm:px-6">
+        <div className="shrink-0 border-b border-slate-700 bg-[#12151C]/60 backdrop-blur-md/80 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Flame className="h-5 w-5 shrink-0 text-amber-500 animate-pulse" />
             <span className="shrink-0 text-sm font-bold text-white uppercase tracking-wider">
@@ -462,7 +462,7 @@ export default function KitchenDisplayPage() {
             </span>
             <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {aggregateItems.map(ag => (
-                <div key={ag.name} className="flex shrink-0 items-center gap-2 rounded-lg bg-slate-700/50 px-3 py-1.5 border border-slate-600">
+                <div key={ag.name} className="flex shrink-0 items-center gap-2 rounded-lg bg-white/10/50 px-3 py-1.5 border border-slate-600">
                   <span className="text-base font-black text-amber-400">{ag.qty}</span>
                   <span className="text-sm font-bold text-white">{ag.name}</span>
                   <span className="text-xs font-medium text-stone-400">
@@ -518,7 +518,7 @@ export default function KitchenDisplayPage() {
         />
       </div>
 
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800 px-4 py-2 sm:px-6">
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-[#12151C]/60 backdrop-blur-md px-4 py-2 sm:px-6">
         <p className="min-w-0 text-xs text-stone-400">
           {t('kitchen.footerHint', {
             defaultValue: "Tocca ✓ per avanzare · +1 segna una porzione pronta · Consegnato rimuove l'ordine",

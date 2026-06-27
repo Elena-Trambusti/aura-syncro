@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 
 export default function LandingGallery() {
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
@@ -34,7 +34,7 @@ export default function LandingGallery() {
 
       {/* Marquee Container */}
       <div className="relative flex overflow-x-hidden w-full group">
-        
+
         {/* Sfumature laterali per fondere il carosello con lo sfondo */}
         <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#020202] to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#020202] to-transparent z-10 pointer-events-none" />
@@ -42,7 +42,7 @@ export default function LandingGallery() {
         {/* Traccia in movimento */}
         <div className="flex shrink-0 animate-[marquee_40s_linear_infinite] group-hover:[animation-play-state:paused] gap-8 px-4 items-center">
           {galleryItems.map((item, index) => (
-            <div 
+            <div
               key={`${item.id}-${index}`}
               onClick={() => setSelectedItem(item)}
               className="relative w-[320px] sm:w-[600px] shrink-0 rounded-xl overflow-hidden border border-white/10 bg-[#0B0E14] shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-aura-gold/40 hover:shadow-aura-signature-glow group/card cursor-pointer"
@@ -68,7 +68,7 @@ export default function LandingGallery() {
                     </span>
                   </div>
                 )}
-                
+
                 {/* Overlay luxury in hover (gradiente dal basso) */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 flex items-end p-6">
                   <div className="flex flex-col translate-y-4 group-hover/card:translate-y-0 transition-transform duration-300">
@@ -89,18 +89,18 @@ export default function LandingGallery() {
       {/* Lightbox / Modal */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-          <div 
+          <div
             className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity"
             onClick={() => setSelectedItem(null)}
           />
           <div className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center pointer-events-none">
             <div className="pointer-events-auto relative w-full flex flex-col bg-[#0B0E14] border border-aura-gold/30 rounded-2xl overflow-hidden shadow-2xl shadow-aura-gold/10 animate-in zoom-in-95 duration-300">
-              
-              <button 
+
+              <button
                 onClick={() => setSelectedItem(null)}
                 className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-aura-gold/20 text-white/70 hover:text-aura-gold transition-colors backdrop-blur-md border border-white/10"
               >
-                <XMarkIcon className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
 
               {/* Mac OS Header for Modal */}
@@ -115,9 +115,9 @@ export default function LandingGallery() {
 
               {/* Image Content */}
               <div className="relative w-full overflow-hidden bg-black flex items-center justify-center" style={{ minHeight: '40vh', maxHeight: '75vh' }}>
-                <img 
-                  src={selectedItem.imageUrl} 
-                  alt={selectedItem.title} 
+                <img
+                  src={selectedItem.imageUrl}
+                  alt={selectedItem.title}
                   className="w-full h-full object-contain"
                 />
               </div>

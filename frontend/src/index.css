@@ -182,7 +182,7 @@
   .saas-stat,
   .glass-stat,
   .aura-kpi {
-    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-navy-elevated;
+    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0B0E14]/40 backdrop-blur-xl;
     background-image:
       radial-gradient(ellipse 120% 80% at 100% -20%, rgba(212, 175, 55, 0.09) 0%, transparent 55%),
       linear-gradient(165deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 38%, transparent 100%);
@@ -406,8 +406,7 @@
 
   .premium-chart-panel,
   .pwa-chart-card {
-    @apply relative overflow-hidden rounded-xl border border-white/[0.07] bg-navy-elevated p-5 text-pietra sm:p-6;
-    background-image: var(--aura-surface-card);
+    @apply relative overflow-hidden rounded-xl border border-white/[0.07] bg-[#12151C]/60 p-5 text-pietra sm:p-6 backdrop-blur-md;
     box-shadow: var(--shadow-premium-sm);
   }
 
@@ -680,10 +679,7 @@
   }
 
   .dashboard-main {
-    @apply w-full max-w-full overflow-x-hidden bg-navy text-pietra;
-    background-image:
-      radial-gradient(ellipse 90% 45% at 50% -8%, rgba(212, 175, 55, 0.05) 0%, transparent 58%),
-      linear-gradient(180deg, var(--color-navy-mid) 0%, var(--color-navy) 120px);
+    @apply w-full max-w-full overflow-x-hidden bg-transparent text-pietra;
   }
 
   .premium-alert-error {
@@ -819,7 +815,7 @@
   }
 
   .aura-command-center {
-    @apply rounded-2xl border border-white/[0.08] bg-navy-elevated p-4 sm:p-5 lg:p-6;
+    @apply rounded-2xl border border-white/[0.08] bg-[#12151C]/60 p-4 sm:p-5 lg:p-6 backdrop-blur-2xl;
     background-image:
       radial-gradient(ellipse 80% 50% at 0% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 55%),
       linear-gradient(165deg, rgba(255,255,255,0.04) 0%, transparent 50%);
@@ -839,7 +835,7 @@
   }
 
   .aura-command-module {
-    @apply flex flex-col rounded-xl border border-white/[0.07] bg-navy-surface/40;
+    @apply flex flex-col rounded-xl border border-white/[0.07] bg-[#0B0E14]/40 backdrop-blur-md;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 

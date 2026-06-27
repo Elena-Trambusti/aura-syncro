@@ -184,22 +184,14 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       restaurantName: restaurant?.name,
     })
 
+    // Return only the fields required by the frontend CheckoutFinalizeResult
     res.json({
-      success: true,
-      message: 'Pagamento finalizzato',
       transactionId: result.transactionId,
       order: updatedOrder,
       fiscal: {
-        regime: fiscalConfigPayload(fiscal, restaurant?.settings?.taxId),
         row: result.fiscalRow,
       },
       splitBreakdown: result.splitBreakdown,
-      pos: posResult ? {
-        ...posResult,
-        taxableAmount: posResult.breakdown?.taxableAmount,
-        tipAmount: posResult.breakdown?.tipAmount,
-        amountCharged: posResult.breakdown?.totalCustomerAmount ?? result.total,
-      } : null,
       receipt: {
         emailSent,
         emailTo: simulateEmail ?? null,
