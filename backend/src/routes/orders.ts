@@ -620,7 +620,7 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     }
     
     return { createdItem: newItem, orderWithItems: fetchedOrder }
-  })
+  }, { timeout: 10000 })
 
   if (orderWithItems && (orderWithItems.customerId || orderWithItems.discount > 0)) {
     await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })

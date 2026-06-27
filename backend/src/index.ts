@@ -171,6 +171,18 @@ app.use(errorHandler)
 setupSocketHandlers(io)
 
 const PORT = process.env.PORT || 3001
+
+httpServer.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ ERRORE CRITICO: La porta ${PORT} è già in uso.`)
+    console.error(`💡 Soluzione: Probabilmente hai già avviato il backend in un'altra finestra del terminale, oppure un altro programma sta usando la porta ${PORT}.`)
+    console.error(`Arresta l'altro processo e riavvia il server.\n`)
+    process.exit(1)
+  } else {
+    console.error('Errore del server:', err)
+  }
+})
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server avviato su http://localhost:${PORT}`)
   console.log(`📦 Database: ${process.env.DATABASE_URL?.includes('postgresql') ? 'PostgreSQL (Supabase)' : 'SQLite'}`)

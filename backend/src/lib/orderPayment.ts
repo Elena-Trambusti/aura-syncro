@@ -115,7 +115,7 @@ export async function finalizeOrderPayment(
 
     await decrementInventoryForUnpaidItems(tx, order.id, input.restaurantId)
     return paid
-  })
+  }, { timeout: 20000 })
 
   const fiscalRow = buildFiscalTransactionRow(updatedOrder, paidAt)
 
