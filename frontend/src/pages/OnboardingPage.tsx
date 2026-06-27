@@ -98,11 +98,11 @@ export default function OnboardingPage() {
           </a>
         </section>
 
-        <section className="rounded-2xl premium-card p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row items-center gap-6 justify-between relative overflow-hidden group border border-blue-500/20">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <section className="rounded-2xl premium-card p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row items-center gap-6 justify-between relative overflow-hidden group border border-indigo-500/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 relative z-10">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-              <CalendarHeart className="h-8 w-8 text-blue-400" />
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.15)]">
+              <CalendarHeart className="h-8 w-8 text-indigo-400" />
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t('onboarding.callBlockTitle')}</h2>
@@ -113,16 +113,16 @@ export default function OnboardingPage() {
             href={CALENDLY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(37,99,235,0.2)] hover:shadow-[0_0_35px_rgba(37,99,235,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(234,179,8,0.2)] hover:shadow-[0_0_35px_rgba(234,179,8,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
           >
             Prenota la Call
           </a>
         </section>
       </div>
 
-      <div className="flex gap-3 rounded-xl border border-blue-100 bg-blue-500/10/80 p-4 sm:p-5">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
-        <p className="text-sm leading-relaxed text-blue-900">{t('onboarding.teamNote')}</p>
+      <div className="flex gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6 items-start">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-stone-400" />
+        <p className="text-sm leading-relaxed text-stone-300">{t('onboarding.teamNote')}</p>
       </div>
     </ExecutivePageShell>
   )
