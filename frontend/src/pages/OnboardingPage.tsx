@@ -120,9 +120,15 @@ export default function OnboardingPage() {
         </section>
       </div>
 
-      <div className="flex gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6 items-start">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-stone-400" />
-        <p className="text-sm leading-relaxed text-stone-300">{t('onboarding.teamNote')}</p>
+      <div className="relative overflow-hidden rounded-xl border border-aura-gold/30 bg-[#1a1710] p-5 sm:p-6">
+        <div className="absolute inset-0 bg-aura-gold/10 animate-pulse" />
+        <div className="absolute inset-0 shadow-[0_0_30px_rgba(234,179,8,0.15)_inset] animate-pulse" />
+        <div className="relative z-10 flex gap-4 items-start">
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-aura-gold drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+          <p className="text-sm font-medium leading-relaxed text-aura-gold-light drop-shadow-[0_0_2px_rgba(234,179,8,0.3)]">
+            {t('onboarding.teamNote')}
+          </p>
+        </div>
       </div>
     </ExecutivePageShell>
   )
