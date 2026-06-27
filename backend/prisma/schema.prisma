@@ -20,7 +20,9 @@ enum TaxRegion {
   ES_PENINSULA
 }
 
-/** Regime fiscale normalizzato (AgID IT / Ley Antifraude ES) */
+/**
+ * Regime fiscale normalizzato (AgID IT / Ley Antifraude ES)
+ */
 enum FiscalRegion {
   ITALIA
   SPAGNA_PENINSULA
@@ -32,12 +34,14 @@ enum PlanTier {
   PRO
 }
 
-/** Integrazione POS fisico — configurata in fase di setup concierge per ogni ristorante */
+/**
+ * Integrazione POS fisico — configurata in fase di setup concierge per ogni ristorante
+ */
 enum PosIntegrationMode {
-  PENDING_SETUP   // Post-pagamento: POS non ancora collegato
-  SIMULATION      // Solo demo/formazione — ricevute non legali
+  PENDING_SETUP // Post-pagamento: POS non ancora collegato
+  SIMULATION // Solo demo/formazione — ricevute non legali
   STRIPE_TERMINAL // Stripe Terminal / PaymentIntent
-  EXTERNAL        // Registratore di cassa esterno — incasso sul loro hardware
+  EXTERNAL // Registratore di cassa esterno — incasso sul loro hardware
 }
 
 enum SubscriptionPlan {
@@ -47,71 +51,75 @@ enum SubscriptionPlan {
 
 // ===== RISTORANTE =====
 model Restaurant {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  colorTheme  String   @default("#c9a227")
-  logoUrl     String?
-  address     String?
-  phone       String?
-  email       String?
-  logo        String?
-  coverImage  String?
-  description String?
-  currency    String   @default("EUR")
-  timezone    String   @default("Europe/Rome")
-  /** Concierge onboarding completato dal team Aura Syncro */
-  isSetupComplete Boolean @default(false)
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  colorTheme       String           @default("#c9a227")
+  logoUrl          String?
+  address          String?
+  phone            String?
+  email            String?
+  logo             String?
+  coverImage       String?
+  description      String?
+  currency         String           @default("EUR")
+  timezone         String           @default("Europe/Rome")
+  /**
+   * Concierge onboarding completato dal team Aura Syncro
+   */
+  isSetupComplete  Boolean          @default(false)
   subscriptionPlan SubscriptionPlan @default(STARTER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  users          User[]
-  tables         Table[]
-  menuCategories MenuCategory[]
-  menuItems      MenuItem[]
-  orders         Order[]
-  reservations   Reservation[]
-  customers      Customer[]
-  shifts         Shift[]
-  inventory      InventoryItem[]
-  settings       RestaurantSettings?
-  loyaltyTiers   LoyaltyTier[]
-  campaigns            Campaign[]
-  marketingAutomations MarketingAutomation[]
-  waitlist       WaitlistEntry[]
-  invoices       Invoice[]
-  fiscalSequences FiscalSequence[]
-  fiscalChainState FiscalChainState?
-  stripeWebhookEvents StripeWebhookEvent[]
+  users                  User[]
+  tables                 Table[]
+  menuCategories         MenuCategory[]
+  menuItems              MenuItem[]
+  orders                 Order[]
+  reservations           Reservation[]
+  customers              Customer[]
+  shifts                 Shift[]
+  inventory              InventoryItem[]
+  settings               RestaurantSettings?
+  loyaltyTiers           LoyaltyTier[]
+  campaigns              Campaign[]
+  marketingAutomations   MarketingAutomation[]
+  waitlist               WaitlistEntry[]
+  invoices               Invoice[]
+  fiscalSequences        FiscalSequence[]
+  fiscalChainState       FiscalChainState?
+  stripeWebhookEvents    StripeWebhookEvent[]
   saasElectronicInvoices SaasElectronicInvoice[]
-  apiIdempotencyRecords ApiIdempotencyRecord[]
-  fiscalClosures    FiscalClosure[]
+  apiIdempotencyRecords  ApiIdempotencyRecord[]
+  fiscalClosures         FiscalClosure[]
 }
 
 model FiscalClosure {
-  id              String   @id @default(cuid())
-  restaurantId    String
-  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
-  date            DateTime @default(now())
-  
-  totalRevenue    Float    // Incasso lordo totale
-  totalTax        Float    // IVA totale 
-  totalCash       Float    // Totale contanti dichiarati o calcolati
-  totalCard       Float    // Totale carte calcolate
-  totalTip        Float    @default(0) // Mance totali
-  
-  orderCount      Int      // Numero di ordini chiusi
-  status          String   @default("GENERATED") // GENERATED, TRANSMITTED, ERROR
-  arubaXmlId      String?  // ID eventuale fattura/corrispettivo Aruba
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  date         DateTime   @default(now())
+
+  totalRevenue Float // Incasso lordo totale
+  totalTax     Float // IVA totale 
+  totalCash    Float // Totale contanti dichiarati o calcolati
+  totalCard    Float // Totale carte calcolate
+  totalTip     Float @default(0) // Mance totali
+
+  orderCount Int // Numero di ordini chiusi
+  status     String  @default("GENERATED") // GENERATED, TRANSMITTED, ERROR
+  arubaXmlId String? // ID eventuale fattura/corrispettivo Aruba
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([restaurantId])
 }
 
-/** Risposte cache per X-Idempotency-Key (retry offline / doppio tap) */
+/**
+ * Risposte cache per X-Idempotency-Key (retry offline / doppio tap)
+ */
 model ApiIdempotencyRecord {
   id           String     @id @default(cuid())
   restaurantId String
@@ -127,79 +135,109 @@ model ApiIdempotencyRecord {
 }
 
 model RestaurantSettings {
-  id               String  @id @default(cuid())
-  restaurantId     String  @unique
-  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
-  openTime         String  @default("12:00")
-  closeTime        String  @default("23:00")
-  maxCoversPerSlot Int     @default(20)
-  reservationSlotMinutes Int @default(90)
-  countryCode      CountryCode @default(IT)
-  taxRegion        TaxRegion   @default(IT_MAIN)
-  /** Regime fiscale unificato (IT / ES penisola / Canarie) */
-  fiscalRegion     FiscalRegion @default(ITALIA)
-  defaultLocale    String      @default("it")
-  taxRate          Float       @default(10.0)
-  serviceCharge    Float       @default(0.0)
-  autoConfirmReservations Boolean @default(true)
-  noShowDepositRequired   Boolean @default(false)
-  depositAmount    Float       @default(0.0)
-  taxId            String?
-  /** Ragione sociale per fatturazione elettronica */
-  legalName        String?
-  /** Indirizzo legale della sede fiscale */
-  legalAddress     String?
-  /** Coordinate per previsioni meteo (Open-Meteo) */
-  latitude         Float?
-  longitude        Float?
-  /** Codice fiscale (Italia) */
-  fiscalCode       String?
-  /** PEC per fatturazione elettronica */
-  pec              String?
-  /** Codice destinatario SDI (7 caratteri, es. M5UXCR1) */
-  sdiRecipientCode String?
-  /** Prefisso numerazione documenti (es. FATT → FATT-2026-001) */
-  invoicePrefix    String      @default("FATT")
-  /** Abbonamento SaaS Aura Syncro Premium */
-  hasActiveSubscription Boolean  @default(false)
-  /** Cliente Stripe collegato al tenant (fatturazione SaaS) */
-  stripeCustomerId      String?
-  stripeSubscriptionId  String?
-  /** Abbonamento add-on piano Pro (CRM, AI, marketing…) */
+  id                      String             @id @default(cuid())
+  restaurantId            String             @unique
+  restaurant              Restaurant         @relation(fields: [restaurantId], references: [id])
+  openTime                String             @default("12:00")
+  closeTime               String             @default("23:00")
+  maxCoversPerSlot        Int                @default(20)
+  reservationSlotMinutes  Int                @default(90)
+  countryCode             CountryCode        @default(IT)
+  taxRegion               TaxRegion          @default(IT_MAIN)
+  /**
+   * Regime fiscale unificato (IT / ES penisola / Canarie)
+   */
+  fiscalRegion            FiscalRegion       @default(ITALIA)
+  defaultLocale           String             @default("it")
+  taxRate                 Float              @default(10.0)
+  serviceCharge           Float              @default(0.0)
+  autoConfirmReservations Boolean            @default(true)
+  noShowDepositRequired   Boolean            @default(false)
+  depositAmount           Float              @default(0.0)
+  taxId                   String?
+  /**
+   * Ragione sociale per fatturazione elettronica
+   */
+  legalName               String?
+  /**
+   * Indirizzo legale della sede fiscale
+   */
+  legalAddress            String?
+  /**
+   * Coordinate per previsioni meteo (Open-Meteo)
+   */
+  latitude                Float?
+  longitude               Float?
+  /**
+   * Codice fiscale (Italia)
+   */
+  fiscalCode              String?
+  /**
+   * PEC per fatturazione elettronica
+   */
+  pec                     String?
+  /**
+   * Codice destinatario SDI (7 caratteri, es. M5UXCR1)
+   */
+  sdiRecipientCode        String?
+  /**
+   * Prefisso numerazione documenti (es. FATT → FATT-2026-001)
+   */
+  invoicePrefix           String             @default("FATT")
+  /**
+   * Abbonamento SaaS Aura Syncro Premium
+   */
+  hasActiveSubscription   Boolean            @default(false)
+  /**
+   * Cliente Stripe collegato al tenant (fatturazione SaaS)
+   */
+  stripeCustomerId        String?
+  stripeSubscriptionId    String?
+  /**
+   * Abbonamento add-on piano Pro (CRM, AI, marketing…)
+   */
   stripeProSubscriptionId String?
-  /** Piano moduli: BASE (core POS) o PRO (CRM, AI, marketing, fiscal…) */
-  planTier              PlanTier @default(BASE)
-  /** POS fisico / registratore — configurato dal team in onboarding */
-  posIntegrationMode    PosIntegrationMode @default(PENDING_SETUP)
-  /** Marca/modello POS (es. Nexi, SumUp, Custom) — compilato in setup */
-  posProviderLabel      String?
-  posTerminalId         String?
-  posMerchantId         String?
-  posSetupNotes         String?
-  posConfiguredAt       DateTime?
-  /** Account Stripe Connect del ristorante (Express) per ricevere pagamenti diretti */
-  stripeConnectAccountId String?
+  /**
+   * Piano moduli: BASE (core POS) o PRO (CRM, AI, marketing, fiscal…)
+   */
+  planTier                PlanTier           @default(BASE)
+  /**
+   * POS fisico / registratore — configurato dal team in onboarding
+   */
+  posIntegrationMode      PosIntegrationMode @default(PENDING_SETUP)
+  /**
+   * Marca/modello POS (es. Nexi, SumUp, Custom) — compilato in setup
+   */
+  posProviderLabel        String?
+  posTerminalId           String?
+  posMerchantId           String?
+  posSetupNotes           String?
+  posConfiguredAt         DateTime?
+  /**
+   * Account Stripe Connect del ristorante (Express) per ricevere pagamenti diretti
+   */
+  stripeConnectAccountId  String?
 }
 
 // ===== UTENTI =====
 model User {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   name         String
   email        String
   password     String
-  role         Role     @default(WAITER)
+  role         Role       @default(WAITER)
   avatar       String?
   phone        String?
-  active       Boolean  @default(true)
-  tokenVersion Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  active       Boolean    @default(true)
+  tokenVersion Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  orders       Order[] @relation("OrderWaiter")
-  tipOrders    Order[] @relation("TipWaiter")
-  shifts       Shift[]
+  orders            Order[]            @relation("OrderWaiter")
+  tipOrders         Order[]            @relation("TipWaiter")
+  shifts            Shift[]
   pushSubscriptions PushSubscription[]
 
   @@unique([restaurantId, email])
@@ -231,21 +269,21 @@ enum Role {
 
 // ===== TAVOLI =====
 model Table {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   number       Int
   name         String?
-  seats        Int        @default(4)
+  seats        Int         @default(4)
   status       TableStatus @default(FREE)
-  posX         Float      @default(0)
-  posY         Float      @default(0)
-  shape        TableShape @default(SQUARE)
-  rotation     Int        @default(0)
+  posX         Float       @default(0)
+  posY         Float       @default(0)
+  shape        TableShape  @default(SQUARE)
+  rotation     Int         @default(0)
   area         String?
   qrCode       String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   orders       Order[]
   reservations Reservation[]
@@ -279,127 +317,142 @@ model MenuCategory {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  items        MenuItem[]
+  items MenuItem[]
 }
 
 model MenuItem {
-  id           String     @id @default(cuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  categoryId   String
-  category     MenuCategory @relation(fields: [categoryId], references: [id])
-  name         String
-  description  String?
-  price        Float
-  /** Aliquota IVA/IGIC applicata al piatto (es. 4, 10, 22 IT). Null = default locale. */
-  taxRate      Float?
-  image        String?
-  allergens    String?
-  calories     Int?
+  id              String       @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id])
+  categoryId      String
+  category        MenuCategory @relation(fields: [categoryId], references: [id])
+  name            String
+  description     String?
+  price           Float
+  /**
+   * Aliquota IVA/IGIC applicata al piatto (es. 4, 10, 22 IT). Null = default locale.
+   */
+  taxRate         Float?
+  image           String?
+  allergens       String?
+  calories        Int?
   preparationTime Int?
-  available    Boolean    @default(true)
-  featured     Boolean    @default(false)
-  /** true = rimosso dal menu ma conservato per storico ordini */
-  archived     Boolean    @default(false)
-  sortOrder    Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  available       Boolean      @default(true)
+  featured        Boolean      @default(false)
+  /**
+   * true = rimosso dal menu ma conservato per storico ordini
+   */
+  archived        Boolean      @default(false)
+  sortOrder       Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  orderItems   OrderItem[]
+  orderItems     OrderItem[]
   inventoryLinks InventoryItemLink[]
   modifierGroups MenuModifierGroup[]
 }
 
-
 model MenuModifierGroup {
-  id           String     @id @default(cuid())
-  menuItemId   String
-  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
-  name         String
-  isRequired   Boolean    @default(false)
-  multiSelect  Boolean    @default(false)
-  minOptions   Int        @default(0)
-  maxOptions   Int?
-  sortOrder    Int        @default(0)
+  id          String   @id @default(cuid())
+  menuItemId  String
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name        String
+  isRequired  Boolean  @default(false)
+  multiSelect Boolean  @default(false)
+  minOptions  Int      @default(0)
+  maxOptions  Int?
+  sortOrder   Int      @default(0)
 
-  options      MenuModifierOption[]
+  options MenuModifierOption[]
 }
 
 model MenuModifierOption {
-  id           String     @id @default(cuid())
-  groupId      String
-  group        MenuModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  name         String
-  price        Float      @default(0)
-  sortOrder    Int        @default(0)
+  id        String            @id @default(cuid())
+  groupId   String
+  group     MenuModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name      String
+  price     Float             @default(0)
+  sortOrder Int               @default(0)
 }
 
 // ===== ORDINI =====
 model Order {
-  id           String      @id @default(cuid())
-  restaurantId String
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
-  tableId      String?
-  table        Table?      @relation(fields: [tableId], references: [id])
-  waiterId     String?
-  waiter       User?       @relation("OrderWaiter", fields: [waiterId], references: [id])
-  customerId   String?
-  customer     Customer?   @relation(fields: [customerId], references: [id])
-  status       OrderStatus @default(PENDING)
-  type         OrderType   @default(DINE_IN)
-  notes        String?
-  subtotal     Float       @default(0)
-  tax          Float       @default(0)
-  taxRateApplied Float?
-  serviceCharge Float      @default(0)
-  discount     Float       @default(0)
-  total        Float       @default(0)
-  revenueAmount Float
-  tipAmount     Float      @default(0)
-  tipWaiterId   String?
-  tipWaiter     User?      @relation("TipWaiter", fields: [tipWaiterId], references: [id])
-  paidAt              DateTime?
-  paymentMethod       PaymentMethod?
-  stripeSessionId     String?
-  stripePaymentIntent String?
-  /** Snapshot dati fatturazione B2B al momento del pagamento */
-  billingLegalName   String?
-  billingTaxId       String?
-  billingFiscalCode  String?
-  billingSdiCode     String?
-  billingPec         String?
-  /** Snapshot regime fiscale alla chiusura (immutabile) */
+  id                   String         @id @default(cuid())
+  restaurantId         String
+  restaurant           Restaurant     @relation(fields: [restaurantId], references: [id])
+  tableId              String?
+  table                Table?         @relation(fields: [tableId], references: [id])
+  waiterId             String?
+  waiter               User?          @relation("OrderWaiter", fields: [waiterId], references: [id])
+  customerId           String?
+  customer             Customer?      @relation(fields: [customerId], references: [id])
+  status               OrderStatus    @default(PENDING)
+  type                 OrderType      @default(DINE_IN)
+  notes                String?
+  subtotal             Float          @default(0)
+  tax                  Float          @default(0)
+  taxRateApplied       Float?
+  serviceCharge        Float          @default(0)
+  discount             Float          @default(0)
+  total                Float          @default(0)
+  revenueAmount        Float
+  tipAmount            Float          @default(0)
+  tipWaiterId          String?
+  tipWaiter            User?          @relation("TipWaiter", fields: [tipWaiterId], references: [id])
+  paidAt               DateTime?
+  paymentMethod        PaymentMethod?
+  stripeSessionId      String?
+  stripePaymentIntent  String?
+  /**
+   * Snapshot dati fatturazione B2B al momento del pagamento
+   */
+  billingLegalName     String?
+  billingTaxId         String?
+  billingFiscalCode    String?
+  billingSdiCode       String?
+  billingPec           String?
+  /**
+   * Snapshot regime fiscale alla chiusura (immutabile)
+   */
   fiscalRegionSnapshot FiscalRegion?
-  /** Hash SHA-256 catena VeriFactu / anti-frode (immutabile dopo PAID) */
-  fiscalIntegrityHash  String?   @unique
-  /** Hash ordine precedente nella catena del locale */
+  /**
+   * Hash SHA-256 catena VeriFactu / anti-frode (immutabile dopo PAID)
+   */
+  fiscalIntegrityHash  String?        @unique
+  /**
+   * Hash ordine precedente nella catena del locale
+   */
   fiscalPrevHash       String?
-  /** Timestamp certificato di chiusura conto */
+  /**
+   * Timestamp certificato di chiusura conto
+   */
   fiscalClosedAt       DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  items        OrderItem[]
-  invoice      Invoice?
+  items   OrderItem[]
+  invoice Invoice?
 }
 
 model OrderItem {
-  id         String      @id @default(cuid())
-  orderId    String
-  order      Order       @relation(fields: [orderId], references: [id])
-  menuItemId String
-  menuItem   MenuItem    @relation(fields: [menuItemId], references: [id])
-  quantity   Int         @default(1)
-  unitPrice  Float
-  course     Int         @default(1)
-  notes      String?
-  status     ItemStatus  @default(PENDING)
-  /** Ingredienti già scalati dal magazzino per questa riga */
-  inventoryDeducted Boolean @default(false)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id                String     @id @default(cuid())
+  orderId           String
+  order             Order      @relation(fields: [orderId], references: [id])
+  menuItemId        String
+  menuItem          MenuItem   @relation(fields: [menuItemId], references: [id])
+  quantity          Int        @default(1)
+  unitPrice         Float
+  course            Int        @default(1)
+  notes             String?
+  status            ItemStatus @default(PENDING)
+  /**
+   * Ingredienti già scalati dal magazzino per questa riga
+   */
+  inventoryDeducted Boolean    @default(false)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  modifiers  OrderItemModifier[]
+  modifiers OrderItemModifier[]
 }
 
 model OrderItemModifier {
@@ -445,28 +498,28 @@ enum PaymentMethod {
 
 // ===== PRENOTAZIONI =====
 model Reservation {
-  id           String            @id @default(cuid())
-  restaurantId String
-  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id])
-  tableId      String?
-  table        Table?            @relation(fields: [tableId], references: [id])
-  customerId   String?
-  customer     Customer?         @relation(fields: [customerId], references: [id])
-  guestName    String
-  guestPhone   String
-  guestEmail   String?
-  covers       Int               @default(2)
-  date         DateTime
-  duration     Int               @default(90)
-  status       ReservationStatus @default(CONFIRMED)
-  notes        String?
-  internalNotes String?
-  reminderSent Boolean          @default(false)
-  depositPaid             Boolean   @default(false)
-  depositStripeSessionId  String?
-  depositAmountPaid       Float?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  id                     String            @id @default(cuid())
+  restaurantId           String
+  restaurant             Restaurant        @relation(fields: [restaurantId], references: [id])
+  tableId                String?
+  table                  Table?            @relation(fields: [tableId], references: [id])
+  customerId             String?
+  customer               Customer?         @relation(fields: [customerId], references: [id])
+  guestName              String
+  guestPhone             String
+  guestEmail             String?
+  covers                 Int               @default(2)
+  date                   DateTime
+  duration               Int               @default(90)
+  status                 ReservationStatus @default(CONFIRMED)
+  notes                  String?
+  internalNotes          String?
+  reminderSent           Boolean           @default(false)
+  depositPaid            Boolean           @default(false)
+  depositStripeSessionId String?
+  depositAmountPaid      Float?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 }
 
 enum ReservationStatus {
@@ -480,34 +533,42 @@ enum ReservationStatus {
 
 // ===== CLIENTI (CRM) =====
 model Customer {
-  id             String   @id @default(cuid())
-  restaurantId   String
-  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
-  firstName      String   @default("")
-  lastName       String   @default("")
-  name           String
-  email          String?
-  phone          String?
-  birthdate      DateTime?
-  notes          String?
-  allergens      String?
-  tags           String[] @default([])
-  loyaltyPoints  Int      @default(0)
-  totalVisits    Int      @default(0)
-  totalSpent     Float    @default(0)
-  lastVisit      DateTime?
-  /** P.IVA / NIF cliente (fatturazione B2B) */
-  taxId          String?
-  /** Codice fiscale (Italia) */
-  fiscalCode     String?
-  /** Codice destinatario SDI (7 caratteri) */
+  id               String       @id @default(cuid())
+  restaurantId     String
+  restaurant       Restaurant   @relation(fields: [restaurantId], references: [id])
+  firstName        String       @default("")
+  lastName         String       @default("")
+  name             String
+  email            String?
+  phone            String?
+  birthdate        DateTime?
+  notes            String?
+  allergens        String?
+  tags             String[]     @default([])
+  loyaltyPoints    Int          @default(0)
+  totalVisits      Int          @default(0)
+  totalSpent       Float        @default(0)
+  lastVisit        DateTime?
+  /**
+   * P.IVA / NIF cliente (fatturazione B2B)
+   */
+  taxId            String?
+  /**
+   * Codice fiscale (Italia)
+   */
+  fiscalCode       String?
+  /**
+   * Codice destinatario SDI (7 caratteri)
+   */
   sdiRecipientCode String?
-  /** PEC cliente */
-  pec            String?
-  loyaltyTierId  String?
-  loyaltyTier    LoyaltyTier? @relation(fields: [loyaltyTierId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  /**
+   * PEC cliente
+   */
+  pec              String?
+  loyaltyTierId    String?
+  loyaltyTier      LoyaltyTier? @relation(fields: [loyaltyTierId], references: [id])
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   orders              Order[]
   reservations        Reservation[]
@@ -544,33 +605,33 @@ enum ShiftStatus {
 
 // ===== FEDELTÀ =====
 model LoyaltyTier {
-  id           String     @id @default(cuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  name         String
-  minPoints    Int        @default(0)
-  color        String     @default("#94a3b8")
-  benefits     String?
-  discountPct  Float      @default(0)
-  cashbackPct  Float      @default(0)
-  pointsPerEuro Float     @default(1)
-  sortOrder    Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id            String     @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  minPoints     Int        @default(0)
+  color         String     @default("#94a3b8")
+  benefits      String?
+  discountPct   Float      @default(0)
+  cashbackPct   Float      @default(0)
+  pointsPerEuro Float      @default(1)
+  sortOrder     Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-  customers    Customer[]
+  customers Customer[]
 }
 
 model LoyaltyTransaction {
-  id           String                  @id @default(cuid())
+  id           String                 @id @default(cuid())
   restaurantId String
   customerId   String
-  customer     Customer                @relation(fields: [customerId], references: [id])
+  customer     Customer               @relation(fields: [customerId], references: [id])
   type         LoyaltyTransactionType
   points       Int
   description  String?
   orderId      String?
-  createdAt    DateTime                @default(now())
+  createdAt    DateTime               @default(now())
 }
 
 enum LoyaltyTransactionType {
@@ -639,19 +700,19 @@ model MarketingAutomation {
 
 // ===== LISTA D'ATTESA =====
 model WaitlistEntry {
-  id            String        @id @default(cuid())
+  id            String         @id @default(cuid())
   restaurantId  String
-  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id])
   guestName     String
   guestPhone    String
   guestEmail    String?
-  covers        Int           @default(2)
+  covers        Int            @default(2)
   requestedDate DateTime
   notes         String?
   status        WaitlistStatus @default(WAITING)
   notifiedAt    DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 enum WaitlistStatus {
@@ -664,20 +725,20 @@ enum WaitlistStatus {
 
 // ===== INVENTARIO =====
 model InventoryItem {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   name         String
   unit         String
-  quantity     Float    @default(0)
-  minQuantity  Float    @default(0)
-  cost         Float    @default(0)
+  quantity     Float      @default(0)
+  minQuantity  Float      @default(0)
+  cost         Float      @default(0)
   supplier     String?
   category     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  menuLinks    InventoryItemLink[]
+  menuLinks InventoryItemLink[]
 }
 
 model InventoryItemLink {
@@ -693,8 +754,12 @@ model InventoryItemLink {
 
 // ===== FATTURAZIONE (preparazione SDI / Registratori Telematici) =====
 
-/** Contatore progressivo annuale per ristorante (thread-safe via transazione). */
-/** Stato testa catena crittografica VeriFactu / anti-frode per tenant */
+/**
+ * Contatore progressivo annuale per ristorante (thread-safe via transazione).
+ */
+/**
+ * Stato testa catena crittografica VeriFactu / anti-frode per tenant
+ */
 model FiscalChainState {
   restaurantId String     @id
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -714,20 +779,24 @@ model FiscalSequence {
   @@unique([restaurantId, fiscalYear])
 }
 
-/** Documento fiscale emesso al pagamento (es. FATT-2026-001). */
+/**
+ * Documento fiscale emesso al pagamento (es. FATT-2026-001).
+ */
 model Invoice {
   id             String     @id @default(cuid())
   restaurantId   String
   restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
   orderId        String?    @unique
   order          Order?     @relation(fields: [orderId], references: [id])
-  /** Numero leggibile: {prefix}-{anno}-{seq} */
+  /**
+   * Numero leggibile: {prefix}-{anno}-{seq}
+   */
   documentNumber String
   prefix         String     @default("FATT")
   fiscalYear     Int
   sequence       Int
   issuedAt       DateTime   @default(now())
-  
+
   // Dati Fatturazione Elettronica B2B
   clientePiva           String?
   clienteCodiceFiscale  String?
@@ -735,14 +804,14 @@ model Invoice {
   clientePec            String?
   clienteRagioneSociale String?
   clienteIndirizzo      String?
-  
-  importoTotale         Float      @default(0)
-  statoSdi              String     @default("pending") // pending, sent, delivered, rejected
-  xmlBlob               String?    @db.Text
-  arubaUploadId         String?
 
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  importoTotale Float   @default(0)
+  statoSdi      String  @default("pending") // pending, sent, delivered, rejected
+  xmlBlob       String? @db.Text
+  arubaUploadId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([restaurantId, fiscalYear, sequence])
   @@unique([restaurantId, documentNumber])
@@ -763,7 +832,9 @@ enum SaasElectronicInvoiceStatus {
   failed
 }
 
-/** Ledger idempotenza eventi Stripe (evt_xxx) */
+/**
+ * Ledger idempotenza eventi Stripe (evt_xxx)
+ */
 model StripeWebhookEvent {
   id            String              @id @default(cuid())
   stripeEventId String              @unique
@@ -781,7 +852,9 @@ model StripeWebhookEvent {
   @@index([restaurantId])
 }
 
-/** Fattura elettronica emessa ad Aruba/SDI per pagamento abbonamento SaaS */
+/**
+ * Fattura elettronica emessa ad Aruba/SDI per pagamento abbonamento SaaS
+ */
 model SaasElectronicInvoice {
   id                  String                      @id @default(cuid())
   restaurantId        String?

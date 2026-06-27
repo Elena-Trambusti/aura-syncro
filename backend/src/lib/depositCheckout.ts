@@ -46,34 +46,24 @@ export async function createDepositCheckoutSession(
   const connectAccountId = settings?.stripeConnectAccountId
   const frontendUrl = resolvePrimaryFrontendUrl()
 
+  const depositTotal = depositAmount * reservation.covers
+
   const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
+    mode: 'setup',
     customer_email: reservation.guestEmail || undefined,
+    currency: 'eur',
     metadata: {
       reservationId: reservation.id,
       restaurantId: reservation.restaurantId,
+      depositAmount: depositTotal.toString(),
     },
-    line_items: [{
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: `Caparra prenotazione — ${reservation.restaurant.name}`,
-          description: `${reservation.covers} persone · ${new Date(reservation.date).toLocaleDateString('it-IT')}`,
-        },
-        unit_amount: Math.round(depositAmount * 100),
-      },
-      quantity: 1,
-    }],
+    custom_text: {
+      submit: {
+        message: `La carta verrà salvata a garanzia di ${depositTotal.toFixed(2)}€ e addebitata SOLO in caso di no-show.`,
+      }
+    },
     success_url: `${frontendUrl}/payment/deposit-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${frontendUrl}/payment/cancel?reason=deposit`,
-    ...(connectAccountId ? {
-      payment_intent_data: {
-        application_fee_amount: Math.round(depositAmount * STRIPE_APPLICATION_FEE_PCT * 100),
-        transfer_data: {
-          destination: connectAccountId,
-        },
-      }
-    } : {})
   })
 
   await prisma.reservation.update({

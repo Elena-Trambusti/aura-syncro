@@ -20,8 +20,8 @@ export async function markReservationDepositPaid(
   const reservationId = session.metadata?.reservationId
   if (!reservationId) return null
 
-  if (session.payment_status !== 'paid') {
-    console.warn('[deposit-webhook] Sessione caparra non pagata:', session.id, session.payment_status)
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+    console.warn('[deposit-webhook] Sessione caparra non autorizzata:', session.id, session.payment_status)
     return null
   }
 
@@ -43,7 +43,11 @@ export async function markReservationDepositPaid(
     }
   }
 
-  const amountPaid = session.amount_total ? session.amount_total / 100 : null
+  // In mode: setup, amount_total is null. We parse it from metadata.
+  let amountPaid = session.amount_total ? session.amount_total / 100 : null
+  if (amountPaid === null && session.metadata?.depositAmount) {
+    amountPaid = parseFloat(session.metadata.depositAmount)
+  }
 
   await prisma.reservation.update({
     where: { id: reservationId },

@@ -32,6 +32,8 @@ interface Reservation {
   customer?: { totalVisits: number }
   depositPaid?: boolean
   depositRequired?: boolean
+  depositStripeSessionId?: string | null
+  depositAmountPaid?: number | null
 }
 
 interface RestaurantProfile {
@@ -235,6 +237,17 @@ export default function ReservationsPage() {
     onError: () => toast.error(t('reservations.depositPayError')),
   })
 
+  const chargeNoShow = useMutation({
+    mutationFn: (reservationId: string) => api.post(`/reservations/${reservationId}/charge-no-show`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
+      toast.success('Penale No-Show addebitata con successo!')
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Errore durante l\'addebito')
+    }
+  })
+
   const copyBookingLink = () => {
     if (!bookingUrl) return
     navigator.clipboard.writeText(bookingUrl)
@@ -394,6 +407,11 @@ export default function ReservationsPage() {
                         {t('reservations.depositRequired')}
                       </span>
                     )}
+                    {res.depositAmountPaid && res.depositAmountPaid > 0 && (
+                      <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
+                        Penale Incassata ({res.depositAmountPaid}€)
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fumo">
                     <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{res.covers} {t('reservations.guests')}</span>
@@ -409,60 +427,81 @@ export default function ReservationsPage() {
                 </div>
               </div>
 
-              {canManageReservations && !isArchivedStatus(res.status) && (
+              {canManageReservations && (
                 <div className="flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-3 sm:border-t-0 sm:pt-0 sm:pl-2">
-                  {needsDeposit(res) && (
+                  {res.status === 'NO_SHOW' && res.depositStripeSessionId && !res.depositAmountPaid && (
                     <button
                       type="button"
-                      onClick={() => copyDepositLink.mutate(res.id)}
-                      disabled={copyDepositLink.isPending}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-aura-gold/25 bg-aura-gold/10 px-2.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
-                      title={t('reservations.copyDepositLink')}
+                      onClick={() => {
+                        if (confirm('Vuoi incassare la penale No-Show dalla carta salvata?')) {
+                          chargeNoShow.mutate(res.id)
+                        }
+                      }}
+                      disabled={chargeNoShow.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 bg-red-500/10 px-2.5 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+                      title="Addebita penale No-Show"
                     >
                       <CreditCard className="h-4 w-4" />
-                      <span className="hidden md:inline">{t('reservations.copyDepositLink')}</span>
+                      <span className="hidden md:inline">Incassa Penale</span>
                     </button>
                   )}
-                  {canSeatReservation(res) && (
-                    <button
-                      type="button"
-                      onClick={() => setAssigningReservation(res)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
-                      title={t('reservations.assignTable')}
-                    >
-                      <UserCheck className="h-4 w-4" />
-                      <span className="hidden sm:inline">{t('reservations.assignTable')}</span>
-                    </button>
+
+                  {!isArchivedStatus(res.status) && (
+                    <>
+                      {needsDeposit(res) && (
+                        <button
+                          type="button"
+                          onClick={() => copyDepositLink.mutate(res.id)}
+                          disabled={copyDepositLink.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-aura-gold/25 bg-aura-gold/10 px-2.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                          title={t('reservations.copyDepositLink')}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          <span className="hidden md:inline">{t('reservations.copyDepositLink')}</span>
+                        </button>
+                      )}
+                      {canSeatReservation(res) && (
+                        <button
+                          type="button"
+                          onClick={() => setAssigningReservation(res)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                          title={t('reservations.assignTable')}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                          <span className="hidden sm:inline">{t('reservations.assignTable')}</span>
+                        </button>
+                      )}
+                      {res.status === 'CONFIRMED' && (
+                        <button
+                          type="button"
+                          onClick={() => updateStatus.mutate({ id: res.id, status: 'NO_SHOW' })}
+                          className="rounded-lg p-2 text-fumo hover:bg-white/[0.05] hover:text-fumo"
+                          title={t('reservations.markNoShow')}
+                        >
+                          <LogOut className="h-4 w-4" />
+                        </button>
+                      )}
+                      {res.status === 'SEATED' && (
+                        <button
+                          type="button"
+                          onClick={() => updateStatus.mutate({ id: res.id, status: 'COMPLETED' })}
+                          className="inline-flex items-center gap-1 rounded-lg premium-card px-2.5 py-2 text-xs font-semibold text-fumo hover:bg-white/[0.05]"
+                          title={t('reservations.markCompleted')}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span className="hidden sm:inline">{t('reservations.markCompleted')}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
+                        className="rounded-lg p-2 text-fumo hover:bg-red-500/10 hover:text-red-400"
+                        title={t('common.cancel')}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
-                  {res.status === 'CONFIRMED' && (
-                    <button
-                      type="button"
-                      onClick={() => updateStatus.mutate({ id: res.id, status: 'NO_SHOW' })}
-                      className="rounded-lg p-2 text-fumo hover:bg-white/[0.05] hover:text-fumo"
-                      title={t('reservations.markNoShow')}
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </button>
-                  )}
-                  {res.status === 'SEATED' && (
-                    <button
-                      type="button"
-                      onClick={() => updateStatus.mutate({ id: res.id, status: 'COMPLETED' })}
-                      className="inline-flex items-center gap-1 rounded-lg premium-card px-2.5 py-2 text-xs font-semibold text-fumo hover:bg-white/[0.05]"
-                      title={t('reservations.markCompleted')}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="hidden sm:inline">{t('reservations.markCompleted')}</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => updateStatus.mutate({ id: res.id, status: 'CANCELLED' })}
-                    className="rounded-lg p-2 text-fumo hover:bg-red-500/10 hover:text-red-400"
-                    title={t('common.cancel')}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </button>
                 </div>
               )}
             </div>

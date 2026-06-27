@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
+import { stripe } from '../lib/stripe'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
@@ -268,6 +269,82 @@ reservationsRouter.patch('/:id/status', requirePermission('reservations.manage')
   }
   io.to(tenantId(req)).emit('reservation:updated', reservation)
   res.json(reservation)
+})
+
+reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const reservation = await prisma.reservation.findFirst({
+    where: scopedWhere(req, req.params.id),
+    include: { restaurant: { select: { name: true } } },
+  })
+  
+  if (!reservation) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+
+  if (reservation.status !== 'NO_SHOW') {
+    res.status(400).json({ error: 'La prenotazione deve essere impostata su NO_SHOW prima di addebitare la penale.' })
+    return
+  }
+
+  if (!reservation.depositStripeSessionId) {
+    res.status(400).json({ error: 'Nessuna carta a garanzia salvata per questa prenotazione.' })
+    return
+  }
+
+  if (reservation.depositAmountPaid && reservation.depositAmountPaid > 0) {
+    res.status(400).json({ error: 'Penale già addebitata in precedenza.' })
+    return
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(reservation.depositStripeSessionId)
+    if (!session.setup_intent) {
+      res.status(400).json({ error: 'SetupIntent mancante nella sessione Stripe.' })
+      return
+    }
+
+    const setupIntent = await stripe.setupIntents.retrieve(session.setup_intent as string)
+    if (!setupIntent.payment_method || !setupIntent.customer) {
+      res.status(400).json({ error: 'Metodo di pagamento non trovato nel SetupIntent.' })
+      return
+    }
+
+    // Retrieve settings to get the connected account
+    const settings = await prisma.restaurantSettings.findUnique({
+      where: { restaurantId: tenantId(req) },
+    })
+
+    const penaltyAmount = (settings?.depositAmount || 10) * reservation.covers
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: penaltyAmount * 100,
+      currency: 'eur',
+      customer: setupIntent.customer as string,
+      payment_method: setupIntent.payment_method as string,
+      off_session: true,
+      confirm: true,
+      description: `Penale No-Show - Prenotazione #${reservation.id.slice(-4).toUpperCase()} (${reservation.restaurant.name})`,
+      ...(settings?.stripeConnectAccountId ? {
+        application_fee_amount: Math.round(penaltyAmount * 100 * 0.05), // Assuming 5% fee for this example, or use constant
+        transfer_data: { destination: settings.stripeConnectAccountId },
+      } : {})
+    })
+
+    if (paymentIntent.status === 'succeeded') {
+      const updated = await prisma.reservation.update({
+        where: { id: reservation.id },
+        data: { depositAmountPaid: penaltyAmount },
+      })
+      io.to(tenantId(req)).emit('reservation:updated', updated)
+      res.json(updated)
+    } else {
+      res.status(400).json({ error: 'Addebito fallito o richiede autenticazione (3D Secure).' })
+    }
+  } catch (err) {
+    console.error('[stripe] Errore addebito No-Show:', err)
+    res.status(500).json({ error: 'Errore durante l\'addebito della penale.' })
+  }
 })
 
 reservationsRouter.delete('/:id', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
