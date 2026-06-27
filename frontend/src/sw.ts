@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
-import { NetworkFirst } from 'workbox-strategies'
+import { NetworkFirst, NetworkOnly } from 'workbox-strategies'
+import { BackgroundSyncPlugin } from 'workbox-background-sync'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -24,6 +25,18 @@ registerRoute(
       networkTimeoutSeconds: 5,
     }),
   ),
+)
+
+/** Background Sync per richieste API POST/PATCH di creazione/aggiornamento ordini */
+const bgSyncPlugin = new BackgroundSyncPlugin('aura-offline-queue', {
+  maxRetentionTime: 24 * 60, // Ritenta per un massimo di 24 ore
+})
+
+registerRoute(
+  ({ request, url }) => url.pathname.startsWith('/api/') && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method),
+  new NetworkOnly({
+    plugins: [bgSyncPlugin],
+  }),
 )
 
 /** autoUpdate: attiva subito il nuovo worker senza chiedere conferma */
