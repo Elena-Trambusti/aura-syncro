@@ -116,16 +116,36 @@ export default function OnboardingPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-              <ClipboardList className="h-5 w-5 text-emerald-400" />
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                <ClipboardList className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-pietra">{t('onboarding.menuBlockTitle')}</h2>
+                <p className="text-xs text-fumo">{t('onboarding.menuBlockHint')}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-pietra">{t('onboarding.menuBlockTitle')}</h2>
-              <p className="text-xs text-fumo">{t('onboarding.menuBlockHint')}</p>
-            </div>
+            <a
+              href="https://tally.so/r/WOQp1P"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+            >
+              Apri in nuova scheda
+            </a>
           </div>
-          <div className="overflow-hidden rounded-lg premium-card">
+          <div className="overflow-hidden rounded-lg premium-card relative">
+            <div className="sm:hidden p-4 border-b border-white/5 flex justify-center bg-white/[0.02]">
+              <a
+                href="https://tally.so/r/WOQp1P"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+              >
+                Compila il Modulo Dati
+              </a>
+            </div>
             <iframe
               data-tally-src={TALLY_EMBED_SRC}
               loading="lazy"
