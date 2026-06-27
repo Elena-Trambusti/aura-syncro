@@ -357,9 +357,9 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     && orderItem.quantity > 1
     && (readyUnits ?? 1) < orderItem.quantity
 
-  if (splitReady) {
-    const units = readyUnits ?? 1
-    await prisma.$transaction(async tx => {
+  await prisma.$transaction(async tx => {
+    if (splitReady) {
+      const units = readyUnits ?? 1
       await tx.orderItem.update({
         where: { id: orderItem.id },
         data: { quantity: orderItem.quantity - units },
@@ -374,21 +374,53 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
           status: 'READY',
         },
       })
-    })
-  } else {
-    await prisma.orderItem.update({
-      where: { id: req.params.itemId },
-      data: { status: targetStatus },
-    })
-  }
+    } else {
+      await tx.orderItem.update({
+        where: { id: req.params.itemId },
+        data: { status: targetStatus },
+      })
+    }
 
-  if (targetStatus === 'CANCELLED') {
-    await prisma.$transaction(async tx => {
+    if (targetStatus === 'CANCELLED') {
       await restoreInventoryForOrderItem(tx, req.params.itemId, req.restaurantId!)
-    })
-  }
+    }
 
-  await syncOrderStatusFromItems(req.params.orderId)
+    const allItems = await tx.orderItem.findMany({ where: { orderId: req.params.orderId } })
+    const active = allItems.filter(i => i.status !== 'CANCELLED')
+    
+    // 1. Sync order status
+    if (active.length > 0) {
+      const allServed = active.every(i => i.status === 'SERVED')
+      const allReady = active.every(i => ['READY', 'SERVED'].includes(i.status))
+      const anyInProgress = active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))
+      const status = allServed ? 'SERVED' : allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
+      await tx.order.update({ where: { id: req.params.orderId }, data: { status } })
+    }
+
+    // 2. Sync order totals if it was cancelled or if we split
+    if (targetStatus === 'CANCELLED') {
+      const fetchedOrder = await tx.order.findUnique({
+        where: { id: req.params.orderId },
+        include: { items: true },
+      })
+      if (fetchedOrder) {
+        const grossTotal = active.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
+        const { subtotal, tax, total, taxRateApplied } = await computeTaxForExistingOrder(fetchedOrder, grossTotal)
+        await tx.order.updateMany({
+          where: { id: req.params.orderId },
+          data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
+        })
+      }
+    }
+  })
+
+  // Apply discounts again if totals changed
+  if (targetStatus === 'CANCELLED') {
+    const orderToDiscount = await prisma.order.findUnique({ where: { id: req.params.orderId } })
+    if (orderToDiscount && (orderToDiscount.customerId || orderToDiscount.discount > 0)) {
+      await applyDiscountToOrder(req.params.orderId, req.restaurantId!, { applyLoyalty: true })
+    }
+  }
 
   const updatedOrder = await prisma.order.findUnique({
     where: { id: req.params.orderId },
@@ -548,8 +580,8 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
      }
   }
 
-  const createdItem = await prisma.$transaction(async tx => {
-    return tx.orderItem.create({
+  const { createdItem, orderWithItems } = await prisma.$transaction(async tx => {
+    const newItem = await tx.orderItem.create({
       data: {
         orderId: req.params.id,
         menuItemId: result.data.menuItemId,
@@ -567,24 +599,30 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
       },
       include: { menuItem: true },
     })
+
+    const fetchedOrder = await tx.order.findFirst({
+      where: scopedWhere(req, req.params.id),
+      include: { items: true },
+    })
+
+    if (fetchedOrder) {
+      const grossTotal = fetchedOrder.items
+        .filter(i => i.status !== 'CANCELLED')
+        .reduce((s, i) => s + i.unitPrice * i.quantity, 0)
+      
+      const { subtotal, tax, total, taxRateApplied } = await computeTaxForExistingOrder(fetchedOrder, grossTotal)
+      
+      await tx.order.updateMany({
+        where: scopedWhere(req, req.params.id),
+        data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
+      })
+    }
+    
+    return { createdItem: newItem, orderWithItems: fetchedOrder }
   })
 
-  const orderWithItems = await prisma.order.findFirst({
-    where: scopedWhere(req, req.params.id),
-    include: { items: true },
-  })
-  if (orderWithItems) {
-    const grossTotal = orderWithItems.items
-      .filter(i => i.status !== 'CANCELLED')
-      .reduce((s, i) => s + i.unitPrice * i.quantity, 0)
-    const { subtotal, tax, total, taxRateApplied } = await computeTaxForExistingOrder(orderWithItems, grossTotal)
-    await prisma.order.updateMany({
-      where: scopedWhere(req, req.params.id),
-      data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
-    })
-    if (orderWithItems.customerId || orderWithItems.discount > 0) {
-      await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })
-    }
+  if (orderWithItems && (orderWithItems.customerId || orderWithItems.discount > 0)) {
+    await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })
   }
 
   const updatedOrder = await prisma.order.findFirst({
