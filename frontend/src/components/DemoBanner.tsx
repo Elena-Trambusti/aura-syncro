@@ -7,17 +7,17 @@ export default function DemoBanner() {
   if (user?.email !== 'admin@demo.it') return null
 
   return (
-    <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 shadow-[0_0_15px_rgba(245,158,11,0.1)] backdrop-blur-md">
-      <div className="flex items-start sm:items-center gap-3 flex-col sm:flex-row">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 hidden sm:flex">
-          <AlertCircle className="h-5 w-5" />
+    <div className="mb-6 rounded-xl border border-aura-gold/30 bg-gradient-to-r from-aura-gold/10 to-slate-900 p-4 shadow-[0_0_20px_rgba(212,175,55,0.15)] backdrop-blur-md">
+      <div className="flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-aura-gold/20 text-aura-gold hidden sm:flex">
+          <AlertCircle className="h-6 w-6" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-amber-200">
-            Sei in modalità Demo (Sola Lettura)
+          <p className="text-base font-display font-semibold text-aura-gold">
+            Benvenuto nella Demo Interattiva di Aura Syncro ⚡️
           </p>
-          <p className="text-xs text-amber-200/80 mt-0.5">
-            Puoi esplorare l'interfaccia, ma le azioni di salvataggio e modifica sono disabilitate.
+          <p className="text-sm text-slate-300 mt-1">
+            Per testare il sistema, ti consigliamo di andare nella sezione <strong className="text-white">Tavoli</strong>: apri un tavolo libero, inserisci una comanda e vedi come tutto si sincronizza istantaneamente. Buon divertimento!
           </p>
         </div>
       </div>
