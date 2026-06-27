@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getSocket } from '../lib/socket'
@@ -423,13 +424,13 @@ export default function KitchenDisplayPage() {
 
             <KitchenLiveClock />
 
-            <a
-              href="/dashboard"
+            <Link
+              to="/dashboard"
               className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-stone-500 transition-colors hover:text-white"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </header>
