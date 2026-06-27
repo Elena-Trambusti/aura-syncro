@@ -5,6 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { Toaster } from 'react-hot-toast'
 import './i18n'
 import App from './App'
+import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import { queryClient, idbPersister } from './lib/queryClient'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
         <App />
+        <Analytics />
         <SentryTestButton />
         <Toaster
           position="top-right"
