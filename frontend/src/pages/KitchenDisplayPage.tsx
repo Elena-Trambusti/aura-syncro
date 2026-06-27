@@ -6,6 +6,8 @@ import toast from 'react-hot-toast'
 import { getSocket } from '../lib/socket'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import { useKitchenOrders } from '../hooks/useKitchenOrders'
+import { useSocketStatus } from '../hooks/useSocketStatus'
+import { Wifi, WifiOff } from 'lucide-react'
 import {
   type KitchenOrder,
   type KitchenOrderItem,
@@ -329,6 +331,7 @@ const KitchenColumn = memo(function KitchenColumn({
 export default function KitchenDisplayPage() {
   const { t } = useTranslation()
   const [newOrderAlert, setNewOrderAlert] = useState(false)
+  const isSocketConnected = useSocketStatus()
   const {
     orders,
     isError,
@@ -402,9 +405,24 @@ export default function KitchenDisplayPage() {
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-600">
               <ChefHat className="h-6 w-6 text-white" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-lg font-black text-white">CUCINA</h1>
-              <p className="text-xs text-stone-500">Kitchen Display System</p>
+            <div className="min-w-0 flex items-center gap-3">
+              <div>
+                <h1 className="text-lg font-black text-white">CUCINA</h1>
+                <p className="text-xs text-stone-500">Kitchen Display System</p>
+              </div>
+              
+              {/* Status Badge */}
+              {isSocketConnected ? (
+                <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/50 border border-emerald-900/50 text-emerald-400 text-xs font-semibold">
+                  <Wifi className="w-3 h-3" />
+                  Live
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-950/50 border border-red-900/50 text-red-400 text-xs font-semibold animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                  <WifiOff className="w-3 h-3" />
+                  Disconnesso
+                </div>
+              )}
             </div>
           </div>
 
