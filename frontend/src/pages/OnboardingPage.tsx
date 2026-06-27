@@ -9,7 +9,7 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
 const TALLY_EMBED_SRC =
   'https://tally.so/embed/WOQp1P?alignLeft=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1'
-const CALENDLY_URL = 'https://calendly.com/aurasyncro'
+const CALENDLY_URL = 'https://calendly.com/aurasyncro/30min'
 const TALLY_SCRIPT_SRC = 'https://tally.so/widgets/embed.js'
 const CALENDLY_SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.js'
 
@@ -162,16 +162,36 @@ export default function OnboardingPage() {
         </section>
 
         <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-              <CalendarHeart className="h-5 w-5 text-blue-400" />
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                <CalendarHeart className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-pietra">{t('onboarding.callBlockTitle')}</h2>
+                <p className="text-xs text-fumo">{t('onboarding.callBlockHint')}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-pietra">{t('onboarding.callBlockTitle')}</h2>
-              <p className="text-xs text-fumo">{t('onboarding.callBlockHint')}</p>
-            </div>
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+            >
+              Apri in nuova scheda
+            </a>
           </div>
-          <div className="overflow-hidden rounded-lg premium-card">
+          <div className="overflow-hidden rounded-lg premium-card relative">
+            <div className="sm:hidden p-4 border-b border-white/5 flex justify-center bg-white/[0.02]">
+              <a
+                href={CALENDLY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+              >
+                Prenota la Call
+              </a>
+            </div>
             <div
               ref={calendlyRef}
               className="calendly-inline-widget"
