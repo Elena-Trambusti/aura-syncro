@@ -73,6 +73,11 @@
     0% { opacity: 0; transform: translateY(30px); }
     100% { opacity: 1; transform: translateY(0); }
   }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-50% - 0.75rem)); } /* -50% of the total width minus half the gap */
+  }
 }
 
 @layer base {

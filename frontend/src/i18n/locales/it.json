@@ -1325,7 +1325,7 @@
     "subtitle": "Due codici QR: menu in sala e prenotazioni online",
     "modeMenu": "Menu tavolo",
     "modeBooking": "Prenotazioni",
-    "menuModeDesc": "Il cliente consulta il menu e può ordinare dal telefono. Gli ordini arrivano in cucina.",
+    "menuModeDesc": "Il cliente scansiona il QR per consultare il menu digitale. I camerieri prendono le comande al tavolo.",
     "bookingModeDesc": "Il cliente prenota un tavolo online. Stampalo all'ingresso o sul sito.",
     "previewBooking": "Anteprima prenotazioni",
     "scanTarget": "Questo QR punta a:",

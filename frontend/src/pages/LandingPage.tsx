@@ -4,6 +4,7 @@ import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
 import LandingTrustBar from '../components/landing/LandingTrustBar'
 import LandingFeatures from '../components/landing/LandingFeatures'
+import LandingGallery from '../components/landing/LandingGallery'
 import LandingPricing from '../components/landing/LandingPricing'
 import LandingFooter from '../components/landing/LandingFooter'
 
@@ -39,6 +40,7 @@ export default function LandingPage() {
         <LandingHero />
         <LandingTrustBar />
         <LandingFeatures />
+        <LandingGallery />
         <LandingPricing />
       </main>
       <LandingFooter />
