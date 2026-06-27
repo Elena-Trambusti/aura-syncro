@@ -71,9 +71,12 @@ export default function DashboardLayout() {
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar, openCommandPalette }}>
-      <div className="pwa-app-shell relative bg-[#020202] z-0">
-        {/* Pure black base */}
-        <div className="fixed inset-0 z-[-4] bg-black" />
+      <div className="pwa-app-shell relative bg-transparent z-0">
+        {/* Sfondo marmo globale */}
+        <div className="fixed inset-0 z-[-5] bg-[url('/assets/marble-bg.png')] bg-cover bg-center bg-no-repeat bg-fixed" />
+        
+        {/* Overlay di Fusione Unificato */}
+        <div className="fixed inset-0 z-[-4] bg-gradient-to-b from-neutral-950/80 via-black/95 to-neutral-950/90" />
         
         {/* Luxury glowing orbs */}
         <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-aura-gold/20 mix-blend-screen blur-[120px] pointer-events-none animate-[float_15s_ease-in-out_infinite]" />

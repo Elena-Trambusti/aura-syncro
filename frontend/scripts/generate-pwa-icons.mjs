@@ -22,7 +22,7 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-const BRAND_NAVY = '#0B0E14'
+const BRAND_NAVY = '#030712'
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
