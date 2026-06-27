@@ -1,7 +1,4 @@
-import { useTranslation } from 'react-i18next'
-
 export default function LandingGallery() {
-  const { t } = useTranslation()
 
   // Placeholder arrays per lo scorrimento infinito.
   // L'utente potrà sostituire le URL in questo array quando avrà gli screen definitivi.
