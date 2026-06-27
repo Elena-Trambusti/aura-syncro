@@ -46,28 +46,18 @@ async function writeMaskableIcon(size) {
 
 /** Adaptive Android: foreground (logo su trasparente) + background (tinta piena) */
 async function writeAdaptivePair(size, densityName) {
-  const logoSize = Math.round(size * 0.58)
-  const offset = Math.round((size - logoSize) / 2)
-  const logo = await sharp(svg).resize(logoSize, logoSize).png().toBuffer()
+  const logo = await sharp(svg).resize(size, size).png().toBuffer()
+
+  await sharp(logo)
+    .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
 
   await sharp({
     create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
-    .composite([{ input: logo, top: offset, left: offset }])
-    .png()
-    .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
-
-  await sharp({
-    create: { width: size, height: size, channels: 3, background: BRAND_NAVY },
-  })
     .png()
     .toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
 
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: BRAND_NAVY },
-  })
-    .composite([{ input: logo, top: offset, left: offset }])
-    .png()
+  await sharp(logo)
     .toFile(join(androidDir, `ic_launcher_${densityName}.png`))
 
   console.log(`  android/ic_launcher_${densityName}.png (+ foreground/background)`)
@@ -84,15 +74,8 @@ for (const size of MASKABLE_SIZES) {
 /** iOS home screen — 180×180 con zona sicura */
 {
   const size = 180
-  const logoSize = Math.round(size * 0.58)
-  const offset = Math.round((size - logoSize) / 2)
-  const logo = await sharp(svg).resize(logoSize, logoSize).png().toBuffer()
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: BRAND_NAVY },
-  })
-    .composite([{ input: logo, top: offset, left: offset }])
-    .png()
-    .toFile(join(outDir, 'apple-touch-icon.png'))
+  const logo = await sharp(svg).resize(size, size).png().toBuffer()
+  await sharp(logo).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
 }
 

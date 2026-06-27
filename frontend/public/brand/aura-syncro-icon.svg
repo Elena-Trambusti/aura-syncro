@@ -6,7 +6,7 @@
       <stop offset="100%" stop-color="#B87333" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#aura-gold-metallic)"/>
+  <circle cx="256" cy="256" r="256" fill="url(#aura-gold-metallic)"/>
   <path
     fill="#030712"
     transform="translate(256 256) scale(12) translate(-12 -12)"

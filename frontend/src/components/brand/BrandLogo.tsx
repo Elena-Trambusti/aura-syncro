@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { BRAND } from '../../lib/brand'
 
 const SIZES = {
-  sm: { box: 'h-8 w-8 rounded-lg', img: 'h-5 w-5', text: 'text-sm' },
-  md: { box: 'h-11 w-11 rounded-xl', img: 'h-6 w-6', text: 'text-base' },
-  lg: { box: 'h-14 w-14 rounded-2xl', img: 'h-8 w-8', text: 'text-lg' },
+  sm: { img: 'h-8 w-8', text: 'text-sm' },
+  md: { img: 'h-11 w-11', text: 'text-base' },
+  lg: { img: 'h-14 w-14', text: 'text-lg' },
 } as const
 
 const ICON_SRC = '/brand/aura-syncro-icon.svg'
@@ -29,22 +29,13 @@ export default function BrandLogo({
   const s = SIZES[size]
 
   const iconBox = (
-    <div
-      className={cn(
-        'relative flex shrink-0 items-center justify-center overflow-hidden border border-aura-gold/30',
-        'bg-gradient-to-br from-navy-elevated via-[#1e222c] to-navy-mid',
-        s.box,
-      )}
-      style={{ boxShadow: 'var(--aura-signature-glow), inset 0 1px 0 rgba(255,255,255,0.07)' }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-tr from-aura-gold/10 via-transparent to-transparent" aria-hidden />
-      <img
-        src={ICON_SRC}
-        alt=""
-        className={cn(s.img, 'relative z-10 object-contain object-center')}
-        aria-hidden
-      />
-    </div>
+    <img
+      src={ICON_SRC}
+      alt=""
+      className={cn(s.img, 'shrink-0 object-contain object-center drop-shadow-md')}
+      style={{ filter: 'drop-shadow(0 4px 12px rgba(212, 175, 55, 0.2))' }}
+      aria-hidden
+    />
   )
 
   if (!showName || layout === 'icon') {
