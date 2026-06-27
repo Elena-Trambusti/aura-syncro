@@ -22,7 +22,7 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-const BRAND_GOLD = '#C9A227'
+const BRAND_NAVY = '#0B0E14'
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
@@ -45,7 +45,7 @@ async function writeMaskableIcon(size) {
   const logo = await sharp(svg).resize(logoSize, logoSize).png().toBuffer()
 
   await sharp({
-    create: { width: size, height: size, channels: 4, background: BRAND_GOLD },
+    create: { width: size, height: size, channels: 4, background: BRAND_NAVY },
   })
     .composite([{ input: logo, top: offset, left: offset }])
     .png()
@@ -68,13 +68,13 @@ async function writeAdaptivePair(size, densityName) {
     .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
 
   await sharp({
-    create: { width: size, height: size, channels: 3, background: BRAND_GOLD },
+    create: { width: size, height: size, channels: 3, background: BRAND_NAVY },
   })
     .png()
     .toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
 
   await sharp({
-    create: { width: size, height: size, channels: 4, background: BRAND_GOLD },
+    create: { width: size, height: size, channels: 4, background: BRAND_NAVY },
   })
     .composite([{ input: logo, top: offset, left: offset }])
     .png()
@@ -98,7 +98,7 @@ for (const size of MASKABLE_SIZES) {
   const offset = Math.round((size - logoSize) / 2)
   const logo = await sharp(svg).resize(logoSize, logoSize).png().toBuffer()
   await sharp({
-    create: { width: size, height: size, channels: 4, background: BRAND_GOLD },
+    create: { width: size, height: size, channels: 4, background: BRAND_NAVY },
   })
     .composite([{ input: logo, top: offset, left: offset }])
     .png()
