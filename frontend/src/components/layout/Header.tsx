@@ -69,7 +69,7 @@ export default function Header() {
                 }
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="hidden xl:inline">{t(link.labelKey)}</span>
+                <span className="hidden 2xl:inline">{t(link.labelKey)}</span>
               </NavLink>
             )
           })}
@@ -97,8 +97,8 @@ export default function Header() {
             title={t('nav.openKitchenDisplay')}
           >
             <MonitorCheck className="h-3.5 w-3.5" />
-            <span className="hidden xl:inline">{t('nav.kitchenDisplay')}</span>
-            <ExternalLink className="hidden h-3 w-3 opacity-40 xl:block" />
+            <span className="hidden 2xl:inline">{t('nav.kitchenDisplay')}</span>
+            <ExternalLink className="hidden h-3 w-3 opacity-40 2xl:block" />
           </a>
 
           <LanguageSwitcher />

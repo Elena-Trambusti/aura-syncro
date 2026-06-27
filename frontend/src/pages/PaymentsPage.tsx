@@ -34,6 +34,7 @@ interface OverviewData {
   mensile: { month: string; amount: number; count: number }[]
   recentPayments: PaymentOrder[]
   stripeEnabled: boolean
+  stripeConnectAccountId: string | null
 }
 
 export default function PaymentsPage() {
@@ -73,6 +74,16 @@ export default function PaymentsPage() {
 
   const avgOrder = data.mese.count > 0 ? data.mese.amount / data.mese.count : 0
 
+  const handleConnectStripe = async () => {
+    try {
+      const res = await api.post('/payments/connect-onboarding')
+      window.location.href = res.data.url
+    } catch (err) {
+      console.error(err)
+      alert(t('payments.stripeOnboardingError') || 'Errore durante la connessione a Stripe')
+    }
+  }
+
   return (
     <ExecutivePageShell className="space-y-6">
       <ExecutivePageHeader
@@ -83,17 +94,27 @@ export default function PaymentsPage() {
             <p className="text-fumo text-sm mt-1">{t('payments.heroHint')}</p>
           </>
         )}
-        actions={(
-          <a
-            href={stripePaymentsUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
-          >
-            <ExternalLink className="w-4 h-4" />
-            {t('payments.stripeDashboard')}
-          </a>
-        )}
+        actions={
+          data.stripeConnectAccountId ? (
+            <a
+              href="https://dashboard.stripe.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Il tuo conto Stripe
+            </a>
+          ) : (
+            <button
+              onClick={handleConnectStripe}
+              className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Collega Conto Bancario
+            </button>
+          )
+        }
       />
 
       {!data.stripeEnabled && (

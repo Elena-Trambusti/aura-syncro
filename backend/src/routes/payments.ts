@@ -487,7 +487,7 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfYear = new Date(now.getFullYear(), 0, 1)
 
-  const [stripeOrders, monthStats, yearOrders, recentPayments] = await Promise.all([
+  const [stripeOrders, monthStats, yearOrders, recentPayments, restaurantSettings] = await Promise.all([
     prisma.order.aggregate({
       where: { restaurantId, paymentMethod: 'STRIPE' },
       _sum: { total: true },
@@ -508,6 +508,10 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
       take: 20,
       include: { table: true, items: { include: { menuItem: true } } },
     }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId },
+      select: { stripeConnectAccountId: true },
+    })
   ])
 
   // Raggruppa per mese in JS
@@ -544,5 +548,64 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
       })),
     })),
     stripeEnabled: STRIPE_ENABLED,
+    stripeConnectAccountId: restaurantSettings?.stripeConnectAccountId ?? null,
   })
+})
+
+paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!STRIPE_ENABLED) {
+    res.status(503).json({ error: 'Stripe non configurato sulla piattaforma' })
+    return
+  }
+  
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: req.restaurantId! },
+    include: { settings: true }
+  })
+  if (!restaurant || !restaurant.settings) {
+    res.status(404).json({ error: 'Ristorante non trovato' })
+    return
+  }
+
+  try {
+    let accountId = restaurant.settings.stripeConnectAccountId
+    if (!accountId) {
+      // Crea nuovo account Express
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: restaurant.settings.countryCode || 'IT',
+        email: restaurant.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: 'company',
+        business_profile: {
+          name: restaurant.name,
+          url: `https://aurasyncro.it/${restaurant.slug}`,
+        }
+      })
+      accountId = account.id
+      await prisma.restaurantSettings.update({
+        where: { restaurantId: req.restaurantId! },
+        data: { stripeConnectAccountId: accountId }
+      })
+    }
+
+    // Crea Account Link per Onboarding
+    // ATTENZIONE: per test locale usiamo origin dell'header o localhost
+    const origin = req.headers.origin || 'http://localhost:5173'
+    
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${origin}/dashboard/pagamenti?connect=refresh`,
+      return_url: `${origin}/dashboard/pagamenti?connect=success`,
+      type: 'account_onboarding',
+    })
+
+    res.json({ url: accountLink.url })
+  } catch (err) {
+    console.error('Stripe Connect Onboarding Error:', err)
+    res.status(500).json({ error: 'Errore creazione onboarding Stripe' })
+  }
 })

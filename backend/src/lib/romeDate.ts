@@ -3,17 +3,28 @@ export function formatRomeDate(date: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(date)
 }
 
+const formattersCache = new Map<string, Intl.DateTimeFormat>()
+
+function getFormatter(timeZone: string) {
+  let formatter = formattersCache.get(timeZone)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+    formattersCache.set(timeZone, formatter)
+  }
+  return formatter
+}
+
 function zonedParts(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(date)
+  const parts = getFormatter(timeZone).formatToParts(date)
   const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
   return {
     date: `${get('year')}-${get('month')}-${get('day')}`,

@@ -102,7 +102,7 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                if (window.confirm('Vuoi generare la chiusura di cassa di fine giornata (Zeta)? Questa operazione non è annullabile.')) {
+                if (window.confirm('Vuoi generare la chiusura di cassa di fine giornata? Questa operazione non è annullabile.')) {
                   generateZeta()
                 }
               }}
@@ -110,7 +110,7 @@ export default function ReportsPage() {
               className="flex items-center gap-1.5 rounded-xl border border-aura-gold/30 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
             >
               <Save className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
-              {isGeneratingZeta ? '...' : 'Chiusura Cassa (Zeta)'}
+              {isGeneratingZeta ? '...' : 'Chiusura Cassa'}
             </button>
             <Link
               to="/report/fiscal"

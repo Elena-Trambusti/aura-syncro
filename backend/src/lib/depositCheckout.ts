@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { stripe, STRIPE_ENABLED } from './stripe'
+import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 
 export async function createDepositCheckoutSession(
@@ -43,6 +43,7 @@ export async function createDepositCheckoutSession(
   })
 
   const depositAmount = settings?.depositAmount || 10
+  const connectAccountId = settings?.stripeConnectAccountId
   const frontendUrl = resolvePrimaryFrontendUrl()
 
   const session = await stripe.checkout.sessions.create({
@@ -65,6 +66,14 @@ export async function createDepositCheckoutSession(
     }],
     success_url: `${frontendUrl}/payment/deposit-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${frontendUrl}/payment/cancel?reason=deposit`,
+    ...(connectAccountId ? {
+      payment_intent_data: {
+        application_fee_amount: Math.round(depositAmount * STRIPE_APPLICATION_FEE_PCT * 100),
+        transfer_data: {
+          destination: connectAccountId,
+        },
+      }
+    } : {})
   })
 
   await prisma.reservation.update({

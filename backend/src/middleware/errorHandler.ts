@@ -20,6 +20,6 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 
   console.error(err.stack ?? err.message)
   res.status(500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Errore interno del server' : err.message,
+    error: err.message,
   })
 }

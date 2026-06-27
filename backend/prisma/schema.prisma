@@ -177,6 +177,8 @@ model RestaurantSettings {
   posMerchantId         String?
   posSetupNotes         String?
   posConfiguredAt       DateTime?
+  /** Account Stripe Connect del ristorante (Express) per ricevere pagamenti diretti */
+  stripeConnectAccountId String?
 }
 
 // ===== UTENTI =====

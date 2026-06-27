@@ -71,9 +71,21 @@ export default function DashboardLayout() {
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar, openCommandPalette }}>
-      <div className="pwa-app-shell">
+      <div className="pwa-app-shell relative bg-[#020202] z-0">
+        {/* Pure black base */}
+        <div className="fixed inset-0 z-[-4] bg-black" />
+        
+        {/* Luxury glowing orbs */}
+        <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-aura-gold/20 mix-blend-screen blur-[120px] pointer-events-none animate-[float_15s_ease-in-out_infinite]" />
+        <div className="fixed bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-amber-600/15 mix-blend-screen blur-[120px] pointer-events-none animate-[float_20s_ease-in-out_infinite_reverse]" />
+        
+        {/* Top gold spotlight */}
+        <div className="fixed inset-0 z-[-3] pointer-events-none bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(212,175,55,0.15),rgba(0,0,0,0))]" />
+        
+
+
         <Sidebar />
-        <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden">
+        <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden !bg-transparent !bg-none">
           <Header />
           <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
             <PwaInstallHint />

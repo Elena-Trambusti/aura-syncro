@@ -26,3 +26,6 @@ export const STRIPE_ENABLED = !!(
   STRIPE_SECRET_KEY &&
   !STRIPE_SECRET_KEY.includes('inserisci')
 )
+
+/** Commissione piattaforma del 2% su ogni transazione pagata tramite Stripe Connect */
+export const STRIPE_APPLICATION_FEE_PCT = 0.02

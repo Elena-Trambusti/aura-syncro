@@ -50,7 +50,7 @@ type SettingsForm = {
   description: string
   countryCode: CountryCode
   taxRegion: TaxRegion
-  taxRate: number
+  taxRate: number | ''
   taxId: string
   legalName: string
   legalAddress: string
@@ -59,7 +59,9 @@ type SettingsForm = {
   sdiRecipientCode: string
   invoicePrefix: string
   noShowDepositRequired: boolean
-  depositAmount: number
+  depositAmount: number | ''
+  posProviderLabel: string
+  posTerminalId: string
 }
 
 function buildSavePayload(data: SettingsForm) {
@@ -73,7 +75,7 @@ function buildSavePayload(data: SettingsForm) {
     settings: {
       countryCode: data.countryCode,
       taxRegion: data.taxRegion,
-      taxRate: data.taxRate,
+      taxRate: data.taxRate === '' ? 0 : data.taxRate,
       taxId: emptyToNull(data.taxId),
       legalName: emptyToNull(data.legalName),
       legalAddress: emptyToNull(data.legalAddress),
@@ -82,7 +84,9 @@ function buildSavePayload(data: SettingsForm) {
       sdiRecipientCode: emptyToNull(data.sdiRecipientCode),
       invoicePrefix: data.invoicePrefix.trim().toUpperCase() || 'FATT',
       noShowDepositRequired: data.noShowDepositRequired,
-      depositAmount: data.depositAmount,
+      depositAmount: data.depositAmount === '' ? 0 : data.depositAmount,
+      posProviderLabel: emptyToNull(data.posProviderLabel),
+      posTerminalId: emptyToNull(data.posTerminalId),
     },
   }
 }
@@ -97,27 +101,6 @@ export default function SettingsPage() {
     queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
   })
-
-  const { data: posStatus } = useQuery<{
-    mode: string
-    providerLabel?: string | null
-    configured: boolean
-    usesExternalFiscalDevice: boolean
-  }>({
-    queryKey: tq(tk, 'restaurant', 'pos-status'),
-    queryFn: () => api.get('/restaurant/pos-status').then(r => r.data),
-  })
-
-  const posStatusLabel = (() => {
-    if (!posStatus) return '—'
-    if (posStatus.mode === 'PENDING_SETUP') return t('settings.posStatusPending')
-    if (posStatus.mode === 'SIMULATION') return t('settings.posStatusSimulation')
-    if (posStatus.mode === 'STRIPE_TERMINAL') return t('settings.posStatusStripe')
-    if (posStatus.mode === 'EXTERNAL') {
-      return t('settings.posStatusExternal', { provider: posStatus.providerLabel ?? 'POS' })
-    }
-    return posStatus.mode
-  })()
 
   const [form, setForm] = useState<SettingsForm>({
     name: '',
@@ -137,6 +120,8 @@ export default function SettingsPage() {
     invoicePrefix: 'FATT',
     noShowDepositRequired: false,
     depositAmount: 20,
+    posProviderLabel: '',
+    posTerminalId: '',
   })
 
   useEffect(() => {
@@ -159,6 +144,8 @@ export default function SettingsPage() {
       invoicePrefix: restaurantData.settings?.invoicePrefix || 'FATT',
       noShowDepositRequired: restaurantData.settings?.noShowDepositRequired ?? false,
       depositAmount: restaurantData.settings?.depositAmount ?? 20,
+      posProviderLabel: (restaurantData.settings as any)?.posProviderLabel || '',
+      posTerminalId: (restaurantData.settings as any)?.posTerminalId || '',
     })
   }, [restaurantData, restaurant?.name])
 
@@ -269,7 +256,7 @@ export default function SettingsPage() {
               max={100}
               step={0.1}
               value={form.taxRate}
-              onChange={e => update('taxRate', parseFloat(e.target.value) || 0)}
+              onChange={e => update('taxRate', e.target.value === '' ? '' : parseFloat(e.target.value))}
               className="w-full px-4 py-2.5 saas-input"
             />
           </div>
@@ -401,7 +388,7 @@ export default function SettingsPage() {
                 type="number"
                 min={1}
                 value={form.depositAmount}
-                onChange={e => update('depositAmount', parseInt(e.target.value) || 0)}
+                onChange={e => update('depositAmount', e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-full sm:w-1/3 px-4 py-2.5 saas-input focus:outline-none focus:ring-2 focus:ring-aura-gold/30 focus:border-aura-gold/50"
               />
             </div>
@@ -495,11 +482,40 @@ export default function SettingsPage() {
       </div>
 
       <div className="premium-card p-6">
-        <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.posTitle')}</h2>
-        <p className="text-sm text-fumo mb-3">{t('settings.posDesc')}</p>
-        <p className="text-sm font-semibold text-pietra">{posStatusLabel}</p>
-        {posStatus?.usesExternalFiscalDevice && (
-          <p className="mt-2 text-xs text-fumo">{t('settings.posLegalNote')}</p>
+        <h2 className="text-base font-semibold text-pietra mb-3">Registratore di Cassa / Stampante Fiscale</h2>
+        <p className="text-sm text-fumo mb-4">Configura il collegamento diretto alla cassa per la stampa degli scontrini fisici.</p>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium text-fumo mb-1.5">Marca Registratore</label>
+            <select
+              value={form.posProviderLabel}
+              onChange={e => update('posProviderLabel', e.target.value)}
+              className="w-full px-4 py-2.5 saas-input"
+            >
+              <option value="">Nessuno (Usa solo gestionale)</option>
+              <option value="CUSTOM">Custom</option>
+              <option value="EPSON">Epson</option>
+            </select>
+          </div>
+          
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium text-fumo mb-1.5">Indirizzo IP Locale (es. 192.168.1.50)</label>
+            <input
+              type="text"
+              value={form.posTerminalId}
+              onChange={e => update('posTerminalId', e.target.value)}
+              placeholder="192.168.1.100"
+              className="w-full px-4 py-2.5 saas-input font-mono placeholder:text-white/20"
+              disabled={!form.posProviderLabel}
+            />
+          </div>
+        </div>
+        
+        {form.posProviderLabel && (
+          <p className="mt-4 text-xs text-aura-gold/80 bg-aura-gold/10 p-3 rounded-lg border border-aura-gold/20">
+            Assicurati che il tablet e il registratore di cassa siano collegati alla stessa rete Wi-Fi. La stampa avverrà tramite comunicazione diretta sulla rete locale.
+          </p>
         )}
       </div>
 

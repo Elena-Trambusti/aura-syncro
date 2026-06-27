@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from './prisma'
-import { stripe, STRIPE_ENABLED } from './stripe'
+import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
 import { computeTaxForRestaurant } from './orderTax'
 import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
@@ -39,12 +39,16 @@ export async function createGuestStripeCheckout(
 
   const { items, tableNumber, slug, customerName, customerEmail, ...orderData } = input
 
-  const restaurant = await prisma.restaurant.findUnique({ where: { slug } })
-  if (!restaurant) {
+  const restaurant = await prisma.restaurant.findUnique({ 
+    where: { slug },
+    include: { settings: true }
+  })
+  if (!restaurant || !restaurant.settings) {
     throw new PublicOrderError('Ristorante non trovato', 404)
   }
 
   const restaurantId = restaurant.id
+  const connectAccountId = restaurant.settings.stripeConnectAccountId
 
   let tableId: string | undefined
   if (tableNumber) {
@@ -129,6 +133,14 @@ export async function createGuestStripeCheckout(
     line_items: lineItems,
     success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
     cancel_url: `${frontendUrl}/menu/${slug}?payment=cancelled`,
+    ...(connectAccountId ? {
+      payment_intent_data: {
+        application_fee_amount: Math.round(total * STRIPE_APPLICATION_FEE_PCT * 100),
+        transfer_data: {
+          destination: connectAccountId,
+        },
+      }
+    } : {})
   })
 
   if (!session.url) {
