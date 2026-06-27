@@ -593,18 +593,20 @@ paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess,
     }
 
     // Crea Account Link per Onboarding
-    let origin = req.headers.origin || 'http://localhost:5173'
+    const rawOrigin = req.headers.origin
+    let originStr = typeof rawOrigin === 'string' ? rawOrigin : (Array.isArray(rawOrigin) ? rawOrigin[0] : 'http://localhost:5173')
     
     // TRUCCO: Stripe in modalità Live (chiavi sk_live_) rifiuta "http://localhost".
     // Se siamo in Live Mode dal PC locale, forziamo il reindirizzamento al sito vero per evitare l'errore 500.
-    if (origin.startsWith('http://localhost') && process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
-      origin = 'https://aurasyncro.com' 
+    const stripeKey = process.env.STRIPE_SECRET_KEY || ''
+    if (originStr.startsWith('http://localhost') && stripeKey.startsWith('sk_live_')) {
+      originStr = 'https://aurasyncro.com' 
     }
     
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/dashboard/pagamenti?connect=refresh`,
-      return_url: `${origin}/dashboard/pagamenti?connect=success`,
+      refresh_url: `${originStr}/dashboard/pagamenti?connect=refresh`,
+      return_url: `${originStr}/dashboard/pagamenti?connect=success`,
       type: 'account_onboarding',
     })
 
