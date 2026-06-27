@@ -7,10 +7,12 @@ import {
   fetchRegistrations,
   getStoredAdminKey,
   setStoredAdminKey,
+  deleteRestaurant,
   type PendingSetupRestaurant,
   type PlatformRegistration,
 } from '../lib/platformAdmin'
 import { BRAND } from '../lib/brand'
+import { Trash2 } from 'lucide-react'
 
 type FilterMode = 'today' | 'all'
 type ViewMode = 'registrations' | 'pending'
@@ -30,6 +32,7 @@ export default function PlatformAdminPage() {
   const [meta, setMeta] = useState<{ count: number; date?: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [unlockingId, setUnlockingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -129,6 +132,30 @@ export default function PlatformAdminPage() {
       setError(msg)
     } finally {
       setUnlockingId(null)
+    }
+  }
+
+  const handleDelete = async (restaurantId: string, restaurantName: string) => {
+    const confirmation = window.prompt(
+      `ATTENZIONE! Stai per ELIMINARE DEFINITIVAMENTE il ristorante "${restaurantName}" e tutti i suoi dati (ordini, clienti, ecc.).\n\nScrivi "ELIMINA" per confermare:`,
+    )
+    if (confirmation !== 'ELIMINA') {
+      alert('Eliminazione annullata.')
+      return
+    }
+
+    setDeletingId(restaurantId)
+    setError(null)
+    setSuccessMsg(null)
+    try {
+      const result = await deleteRestaurant(adminKey, restaurantId)
+      setSuccessMsg(result.message)
+      await loadAll(adminKey, filter)
+    } catch (err: unknown) {
+      const { msg } = parseAdminError(err)
+      setError(msg)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -260,8 +287,9 @@ export default function PlatformAdminPage() {
                 {pending.map(r => {
                   const owner = ownerEmailOf(r)
                   return (
-                    <article key={r.id} className="rounded-xl border border-amber-900/50 bg-stone-900 p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
+                    <article key={r.id} className="premium-card p-5 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-aura-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex flex-wrap items-start justify-between gap-3 relative z-10">
                         <div>
                           <p className="font-semibold text-white">{r.name}</p>
                           <p className="text-sm text-amber-400/90">{owner ?? '—'}</p>
@@ -269,19 +297,30 @@ export default function PlatformAdminPage() {
                             Piano {r.settings?.planTier ?? 'BASE'} · slug: {r.slug}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          disabled={unlockingId === r.id || !owner}
-                          onClick={() => void handleUnlock(r)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500/100 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white"
-                        >
-                          {unlockingId === r.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Unlock className="w-4 h-4" />
-                          )}
-                          Sblocca dashboard
-                        </button>
+                        <div className="flex gap-2 items-center">
+                          <button
+                            type="button"
+                            disabled={deletingId === r.id}
+                            onClick={() => void handleDelete(r.id, r.name)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 text-red-400 px-3 py-2 text-sm font-semibold transition-all"
+                            title="Elimina"
+                          >
+                            {deletingId === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={unlockingId === r.id || !owner}
+                            onClick={() => void handleUnlock(r)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 disabled:opacity-50 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                          >
+                            {unlockingId === r.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Unlock className="w-4 h-4" />
+                            )}
+                            Sblocca dashboard
+                          </button>
+                        </div>
                       </div>
                     </article>
                   )
@@ -331,8 +370,9 @@ export default function PlatformAdminPage() {
                 </p>
                 <div className="space-y-3">
                   {registrations.map(r => (
-                    <article key={r.userId} className="rounded-xl border border-stone-800 bg-stone-900 p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                    <article key={r.userId} className="premium-card p-5 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-aura-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2 relative z-10">
                         <div>
                           <p className="font-semibold text-white">{r.ownerName}</p>
                           <p className="text-sm text-amber-400/90">{r.email}</p>
@@ -364,21 +404,32 @@ export default function PlatformAdminPage() {
                           </dd>
                         </div>
                       </dl>
-                      {canUnlock(r) && (
+                      <div className="mt-4 flex justify-end gap-2 relative z-10">
                         <button
                           type="button"
-                          disabled={unlockingId === r.restaurantId}
-                          onClick={() => void handleUnlock(r)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500/100 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white"
+                          disabled={deletingId === r.restaurantId}
+                          onClick={() => void handleDelete(r.restaurantId, r.restaurantName)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 text-red-400 px-3 py-2 text-sm font-semibold transition-all"
+                          title="Elimina"
                         >
-                          {unlockingId === r.restaurantId ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Unlock className="w-4 h-4" />
-                          )}
-                          Sblocca dashboard
+                          {deletingId === r.restaurantId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
-                      )}
+                        {canUnlock(r) && (
+                          <button
+                            type="button"
+                            disabled={unlockingId === r.restaurantId}
+                            onClick={() => void handleUnlock(r)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 disabled:opacity-50 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                          >
+                            {unlockingId === r.restaurantId ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Unlock className="w-4 h-4" />
+                            )}
+                            Sblocca dashboard
+                          </button>
+                        )}
+                      </div>
                     </article>
                   ))}
                 </div>

@@ -102,3 +102,15 @@ export async function completeSetup(
   )
   return data
 }
+
+export async function deleteRestaurant(
+  adminKey: string,
+  restaurantId: string,
+): Promise<{ success: boolean; message: string }> {
+  const { data } = await axios.post(
+    `${adminBase()}/api/admin/restaurant-delete`,
+    { restaurantId, confirm: true },
+    { headers: { ...adminHeaders(adminKey), 'Content-Type': 'application/json' } },
+  )
+  return data
+}

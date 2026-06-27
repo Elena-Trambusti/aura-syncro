@@ -372,3 +372,70 @@ adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise
     restaurant,
   })
 })
+
+const deleteRestaurantSchema = z.object({
+  restaurantId: z.string().min(1),
+  confirm: z.boolean(),
+})
+
+/**
+ * DELETE /api/admin/restaurant-delete
+ * Distrugge definitivamente un ristorante e tutti i suoi dati.
+ */
+adminRouter.post('/restaurant-delete', async (req: Request, res: Response): Promise<void> => {
+  const parsed = deleteRestaurantSchema.safeParse(req.body)
+  if (!parsed.success || !parsed.data.confirm) {
+    res.status(400).json({ error: 'Dati non validi o conferma mancante' })
+    return
+  }
+
+  const { restaurantId } = parsed.data
+
+  const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId } })
+  if (!restaurant) {
+    res.status(404).json({ error: 'Ristorante non trovato' })
+    return
+  }
+
+  console.warn(`[admin] INIZIO ELIMINAZIONE DISTRUTTIVA TENANT: ${restaurantId} - ${restaurant.name}`)
+
+  try {
+    await prisma.$transaction([
+      prisma.pushSubscription.deleteMany({ where: { restaurantId } }),
+      prisma.loyaltyTransaction.deleteMany({ where: { restaurantId } }),
+      prisma.orderItemModifier.deleteMany({ where: { orderItem: { order: { restaurantId } } } }),
+      prisma.orderItem.deleteMany({ where: { order: { restaurantId } } }),
+      prisma.shift.deleteMany({ where: { user: { restaurantId } } }),
+      prisma.user.deleteMany({ where: { restaurantId } }),
+      prisma.waitlistEntry.deleteMany({ where: { restaurantId } }),
+      prisma.reservation.deleteMany({ where: { restaurantId } }),
+      prisma.customer.deleteMany({ where: { restaurantId } }),
+      prisma.loyaltyTier.deleteMany({ where: { restaurantId } }),
+      prisma.order.deleteMany({ where: { restaurantId } }),
+      prisma.menuModifierOption.deleteMany({ where: { group: { restaurantId } } }),
+      prisma.menuModifierGroup.deleteMany({ where: { restaurantId } }),
+      prisma.menuItem.deleteMany({ where: { restaurantId } }),
+      prisma.menuCategory.deleteMany({ where: { restaurantId } }),
+      prisma.table.deleteMany({ where: { restaurantId } }),
+      prisma.inventoryItemLink.deleteMany({ where: { inventoryItem: { restaurantId } } }),
+      prisma.inventoryItem.deleteMany({ where: { restaurantId } }),
+      prisma.marketingAutomation.deleteMany({ where: { restaurantId } }),
+      prisma.campaign.deleteMany({ where: { restaurantId } }),
+      prisma.invoice.deleteMany({ where: { restaurantId } }),
+      prisma.fiscalClosure.deleteMany({ where: { restaurantId } }),
+      prisma.fiscalSequence.deleteMany({ where: { restaurantId } }),
+      prisma.fiscalChainState.deleteMany({ where: { restaurantId } }),
+      prisma.saasElectronicInvoice.deleteMany({ where: { restaurantId } }),
+      prisma.apiIdempotencyRecord.deleteMany({ where: { restaurantId } }),
+      prisma.restaurantSettings.deleteMany({ where: { restaurantId } }),
+      prisma.restaurant.delete({ where: { id: restaurantId } }),
+    ])
+
+    console.warn(`[admin] ELIMINAZIONE COMPLETATA: ${restaurantId}`)
+    res.json({ success: true, message: 'Ristorante eliminato con successo.' })
+  } catch (err: any) {
+    console.error(`[admin] ERRORE ELIMINAZIONE TENANT ${restaurantId}:`, err)
+    res.status(500).json({ error: 'Errore durante la cancellazione. Dettagli nel log del server.' })
+  }
+})
+
