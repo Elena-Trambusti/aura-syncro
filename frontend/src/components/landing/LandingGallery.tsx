@@ -1,16 +1,17 @@
-export default function LandingGallery() {
+import { useState } from 'react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
-  // Placeholder arrays per lo scorrimento infinito.
-  // L'utente potrà sostituire le URL in questo array quando avrà gli screen definitivi.
+export default function LandingGallery() {
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+
+  // Array aggiornato con le immagini luxury generate
   const placeholders = [
-    { id: 1, title: 'Dashboard', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/dashboard.png' },
-    { id: 2, title: 'Pagamenti Digitali', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/pagamenti.png' },
-    { id: 3, title: 'Menu QR', bg: 'bg-gradient-to-br from-slate-800 to-slate-900', imageUrl: '/screenshots/menu-qr.png' },
-    { id: 4, title: 'Schermata Cucina', bg: 'bg-gradient-to-br from-slate-900 to-aura-gold/5', imageUrl: '/screenshots/cucina.png' },
-    { id: 5, title: 'Analytics', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/analytics.png' },
-    { id: 6, title: 'Gestione Tavoli', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/tavoli.png' },
-    { id: 7, title: 'Marketing', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/marketing.png' },
-    { id: 8, title: 'Fatturazione', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/fatturazione.png' },
+    { id: 1, title: 'Dashboard', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/dashboard.png', desc: 'Analisi avanzata e controllo totale dei margini in tempo reale.' },
+    { id: 2, title: 'Pagamenti POS', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/pos.png', desc: 'Un terminale Point of Sale elegante, fluido e anti-errore.' },
+    { id: 3, title: 'Schermata Cucina', bg: 'bg-gradient-to-br from-slate-800 to-slate-900', imageUrl: '/screenshots/kitchen.png', desc: 'Comande smistate in frazioni di secondo, senza lag o incomprensioni.' },
+    { id: 4, title: 'Gestione Tavoli', bg: 'bg-gradient-to-br from-slate-900 to-aura-gold/5', imageUrl: '/screenshots/dashboard.png', desc: 'Mappa visiva della sala per ottimizzare la turnazione dei coperti.' },
+    { id: 5, title: 'Analytics', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/dashboard.png', desc: 'Dati finanziari granulari accessibili da qualsiasi dispositivo.' },
+    { id: 6, title: 'Ordini Sala', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/pos.png', desc: 'Presa degli ordini ottimizzata per minimizzare i tocchi superflui.' },
   ]
 
   // Duplichiamo per l'effetto loop infinito
@@ -43,7 +44,8 @@ export default function LandingGallery() {
           {galleryItems.map((item, index) => (
             <div 
               key={`${item.id}-${index}`}
-              className="relative w-[320px] sm:w-[600px] shrink-0 rounded-xl overflow-hidden border border-white/10 bg-[#0B0E14] shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-aura-gold/40 hover:shadow-aura-signature-glow group/card"
+              onClick={() => setSelectedItem(item)}
+              className="relative w-[320px] sm:w-[600px] shrink-0 rounded-xl overflow-hidden border border-white/10 bg-[#0B0E14] shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-aura-gold/40 hover:shadow-aura-signature-glow group/card cursor-pointer"
             >
               {/* Browser Header (Mac style) */}
               <div className="h-8 bg-[#1A1D26] border-b border-white/5 flex items-center px-4 gap-2 w-full">
@@ -83,6 +85,53 @@ export default function LandingGallery() {
           ))}
         </div>
       </div>
+
+      {/* Lightbox / Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity"
+            onClick={() => setSelectedItem(null)}
+          />
+          <div className="relative w-full max-w-6xl max-h-full flex flex-col items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto relative w-full flex flex-col bg-[#0B0E14] border border-aura-gold/30 rounded-2xl overflow-hidden shadow-2xl shadow-aura-gold/10 animate-in zoom-in-95 duration-300">
+              
+              <button 
+                onClick={() => setSelectedItem(null)}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-aura-gold/20 text-white/70 hover:text-aura-gold transition-colors backdrop-blur-md border border-white/10"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+
+              {/* Mac OS Header for Modal */}
+              <div className="h-10 bg-[#1A1D26] border-b border-white/5 flex items-center px-4 gap-2 w-full">
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                <div className="ml-4 text-sm font-medium text-slate-500 font-sans truncate flex-1 text-center pr-16">
+                  {selectedItem.title} - Aura Syncro
+                </div>
+              </div>
+
+              {/* Image Content */}
+              <div className="relative w-full overflow-hidden bg-black flex items-center justify-center" style={{ minHeight: '40vh', maxHeight: '75vh' }}>
+                <img 
+                  src={selectedItem.imageUrl} 
+                  alt={selectedItem.title} 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              {/* Footer Description */}
+              <div className="bg-gradient-to-r from-slate-900 via-[#1A1D26] to-slate-900 p-6 sm:p-8 border-t border-aura-gold/20 flex flex-col items-center text-center">
+                <h3 className="text-2xl font-display font-bold text-aura-gold mb-2">{selectedItem.title}</h3>
+                <p className="text-slate-300 text-lg max-w-3xl">{selectedItem.desc}</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
