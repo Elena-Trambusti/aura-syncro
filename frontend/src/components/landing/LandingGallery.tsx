@@ -37,27 +37,45 @@ export default function LandingGallery() {
         <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#020202] to-transparent z-10 pointer-events-none" />
 
         {/* Traccia in movimento */}
-        <div className="flex shrink-0 animate-[marquee_40s_linear_infinite] group-hover:[animation-play-state:paused] gap-6 px-3">
+        <div className="flex shrink-0 animate-[marquee_40s_linear_infinite] group-hover:[animation-play-state:paused] gap-8 px-4 items-center">
           {galleryItems.map((item, index) => (
             <div 
               key={`${item.id}-${index}`}
-              className="relative w-[300px] h-[200px] sm:w-[450px] sm:h-[300px] shrink-0 rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 hover:scale-[1.02] hover:border-aura-gold/30 hover:shadow-aura-signature-glow"
+              className="relative w-[320px] sm:w-[600px] shrink-0 rounded-xl overflow-hidden border border-white/10 bg-[#0B0E14] shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-aura-gold/40 hover:shadow-aura-signature-glow group/card"
             >
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover object-top" />
-              ) : (
-                <div className={`w-full h-full ${item.bg} flex items-center justify-center`}>
-                  <span className="text-white/30 font-display text-xl sm:text-2xl tracking-wide">
-                    {item.title}
-                  </span>
+              {/* Browser Header (Mac style) */}
+              <div className="h-8 bg-[#1A1D26] border-b border-white/5 flex items-center px-4 gap-2 w-full">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                <div className="ml-4 text-xs font-medium text-slate-500 font-sans truncate">
+                  aurasyncro.com / {item.title.toLowerCase().replace(/ /g, '-')}
                 </div>
-              )}
-              
-              {/* Overlay luxury in hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 hover:opacity-100 flex items-end p-6">
-                <span className="text-aura-gold font-medium tracking-wider uppercase text-sm">
-                  Esplora {item.title}
-                </span>
+              </div>
+
+              {/* Contenuto / Immagine */}
+              <div className="relative aspect-video w-full bg-[#020202]">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover object-left-top opacity-90 transition-opacity duration-500 group-hover/card:opacity-100" />
+                ) : (
+                  <div className={`w-full h-full ${item.bg} flex items-center justify-center`}>
+                    <span className="text-white/30 font-display text-xl sm:text-2xl tracking-wide">
+                      {item.title}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Overlay luxury in hover (gradiente dal basso) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 flex items-end p-6">
+                  <div className="flex flex-col translate-y-4 group-hover/card:translate-y-0 transition-transform duration-300">
+                    <span className="text-aura-gold font-bold tracking-wider uppercase text-sm mb-1">
+                      {item.title}
+                    </span>
+                    <span className="text-slate-300 text-sm">
+                      Esplora il modulo e scopri le funzionalità avanzate.
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
