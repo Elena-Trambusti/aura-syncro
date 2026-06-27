@@ -4,7 +4,7 @@ export default function LandingGallery() {
   // L'utente potrà sostituire le URL in questo array quando avrà gli screen definitivi.
   const placeholders = [
     { id: 1, title: 'Dashboard', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/dashboard.png' },
-    { id: 2, title: 'POS & Cassa', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900' },
+    { id: 2, title: 'Pagamenti Digitali', bg: 'bg-gradient-to-br from-aura-gold/10 to-slate-900', imageUrl: '/screenshots/pagamenti.png' },
     { id: 3, title: 'Menu QR', bg: 'bg-gradient-to-br from-slate-800 to-slate-900', imageUrl: '/screenshots/menu-qr.png' },
     { id: 4, title: 'Schermata Cucina', bg: 'bg-gradient-to-br from-slate-900 to-aura-gold/5', imageUrl: '/screenshots/cucina.png' },
     { id: 5, title: 'Analytics', bg: 'bg-gradient-to-br from-slate-900 to-slate-800', imageUrl: '/screenshots/analytics.png' },
