@@ -574,7 +574,7 @@ paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess,
       const account = await stripe.accounts.create({
         type: 'express',
         country: restaurant.settings.countryCode || 'IT',
-        email: restaurant.email,
+        email: restaurant.email || undefined,
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
@@ -593,8 +593,13 @@ paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess,
     }
 
     // Crea Account Link per Onboarding
-    // ATTENZIONE: per test locale usiamo origin dell'header o localhost
-    const origin = req.headers.origin || 'http://localhost:5173'
+    let origin = req.headers.origin || 'http://localhost:5173'
+    
+    // TRUCCO: Stripe in modalità Live (chiavi sk_live_) rifiuta "http://localhost".
+    // Se siamo in Live Mode dal PC locale, forziamo il reindirizzamento al sito vero per evitare l'errore 500.
+    if (origin.startsWith('http://localhost') && process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+      origin = 'https://aurasyncro.com' 
+    }
     
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
