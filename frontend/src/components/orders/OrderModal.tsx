@@ -145,9 +145,12 @@ export default function OrderModal({
       } else {
         toast.success(t('orderModal.orderSent'))
       }
+      setCart([])
+      setIsSubmitting(false)
+      onClose()
     }).catch(err => {
       handleOrderSubmitError(err)
-      // Could restore cart here ideally
+      setIsSubmitting(false)
     })
   }
 

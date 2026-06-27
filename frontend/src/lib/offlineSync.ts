@@ -77,20 +77,22 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
   }
 
   const payload = mutation.payload as AddOrderItemsPayload
-  for (const item of payload.items) {
-    const itemKey = `${mutation.id}:${item.menuItemId}`
-    await api.post(
-      `/orders/${payload.orderId}/items`,
-      {
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-        course: item.course,
-        modifiers: item.modifiers,
-        notes: item.notes,
-      },
-      idempotencyHeader(itemKey),
-    )
-  }
+  await Promise.all(
+    payload.items.map(item => {
+      const itemKey = `${mutation.id}:${item.menuItemId}`
+      return api.post(
+        `/orders/${payload.orderId}/items`,
+        {
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          course: item.course,
+          modifiers: item.modifiers,
+          notes: item.notes,
+        },
+        idempotencyHeader(itemKey),
+      )
+    })
+  )
 }
 
 export async function flushOfflineQueue(): Promise<{ synced: number; failed: number }> {

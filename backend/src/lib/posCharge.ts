@@ -25,9 +25,8 @@ async function simulatePosTerminal(
 ): Promise<PosChargeResult> {
   const envDelay = Number(process.env.POS_SIMULATE_DELAY_MS)
   const delayMs = isNaN(envDelay) ? 0 : envDelay
-  if (delayMs > 0) {
-    await new Promise(resolve => setTimeout(resolve, delayMs))
-  }
+  // Removed artificial delay to speed up checkout
+
   return {
     success: true,
     transactionId: `pos_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
