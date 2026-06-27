@@ -7,33 +7,16 @@ import { useAuth } from '../contexts/AuthContext'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
-const TALLY_EMBED_SRC =
-  'https://tally.so/embed/WOQp1P?alignLeft=1&transparentBackground=1&dynamicHeight=1&formEventsForwarding=1'
-const CALENDLY_URL = 'https://calendly.com/aurasyncro/30min'
-const TALLY_SCRIPT_SRC = 'https://tally.so/widgets/embed.js'
-const CALENDLY_SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.js'
 
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve()
-      return
-    }
-    const script = document.createElement('script')
-    script.src = src
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
-    document.body.appendChild(script)
-  })
-}
 
 export default function OnboardingPage() {
   const { t } = useTranslation()
   const { restaurant, refreshRestaurant } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const calendlyRef = useRef<HTMLDivElement>(null)
   const [checklist, setChecklist] = useState({ menu: false, call: false })
+
+  const TALLY_URL = 'https://tally.so/r/WOQp1P'
+  const CALENDLY_URL = 'https://calendly.com/aurasyncro/30min'
 
   const checklistDone = Number(checklist.menu) + Number(checklist.call)
 
@@ -55,28 +38,7 @@ export default function OnboardingPage() {
     return () => window.clearInterval(interval)
   }, [refreshRestaurant, searchParams, restaurant?.hasActiveSubscription])
 
-  useEffect(() => {
-    void loadScript(TALLY_SCRIPT_SRC)
-  }, [])
 
-  useEffect(() => {
-    const initCalendly = () => {
-      const parent = calendlyRef.current
-      if (!parent) return
-
-      if (window.Calendly?.initInlineWidget) {
-        parent.innerHTML = ''
-        window.Calendly.initInlineWidget({
-          url: CALENDLY_URL,
-          parentElement: parent,
-        })
-      }
-    }
-
-    void loadScript(CALENDLY_SCRIPT_SRC).then(initCalendly).catch(() => {
-      /* widget opzionale — il div resta visibile */
-    })
-  }, [])
 
   return (
     <ExecutivePageShell className="mx-auto max-w-4xl space-y-8 pb-8">
@@ -114,91 +76,47 @@ export default function OnboardingPage() {
         <p className="mt-4 text-sm text-fumo leading-relaxed">{t('onboarding.posSetupNote')}</p>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-                <ClipboardList className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="font-bold text-pietra">{t('onboarding.menuBlockTitle')}</h2>
-                <p className="text-xs text-fumo">{t('onboarding.menuBlockHint')}</p>
-              </div>
+      <div className="grid gap-6">
+        <section className="rounded-2xl premium-card p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row items-center gap-6 justify-between relative overflow-hidden group border border-emerald-500/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 relative z-10">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+              <ClipboardList className="h-8 w-8 text-emerald-400" />
             </div>
-            <a
-              href="https://tally.so/r/WOQp1P"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-            >
-              Apri in nuova scheda
-            </a>
-          </div>
-          <div className="overflow-hidden rounded-lg premium-card relative">
-            <div className="sm:hidden p-4 border-b border-white/5 flex justify-center bg-white/[0.02]">
-              <a
-                href="https://tally.so/r/WOQp1P"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-              >
-                Compila il Modulo Dati
-              </a>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t('onboarding.menuBlockTitle')}</h2>
+              <p className="text-sm text-stone-400 max-w-lg leading-relaxed">{t('onboarding.menuBlockHint')}</p>
             </div>
-            <iframe
-              data-tally-src={TALLY_EMBED_SRC}
-              loading="lazy"
-              width="100%"
-              height="284"
-              frameBorder={0}
-              marginHeight={0}
-              marginWidth={0}
-              title={t('onboarding.menuBlockTitle')}
-              className="w-full border-0"
-              style={{ width: '100%', minHeight: '284px' }}
-            />
           </div>
+          <a
+            href={TALLY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(234,179,8,0.2)] hover:shadow-[0_0_35px_rgba(234,179,8,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
+          >
+            Compila il modulo
+          </a>
         </section>
 
-        <section className="rounded-xl premium-card p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                <CalendarHeart className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="font-bold text-pietra">{t('onboarding.callBlockTitle')}</h2>
-                <p className="text-xs text-fumo">{t('onboarding.callBlockHint')}</p>
-              </div>
+        <section className="rounded-2xl premium-card p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row items-center gap-6 justify-between relative overflow-hidden group border border-blue-500/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 relative z-10">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+              <CalendarHeart className="h-8 w-8 text-blue-400" />
             </div>
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-            >
-              Apri in nuova scheda
-            </a>
-          </div>
-          <div className="overflow-hidden rounded-lg premium-card relative">
-            <div className="sm:hidden p-4 border-b border-white/5 flex justify-center bg-white/[0.02]">
-              <a
-                href={CALENDLY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-4 py-2 text-sm font-semibold transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-              >
-                Prenota la Call
-              </a>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t('onboarding.callBlockTitle')}</h2>
+              <p className="text-sm text-stone-400 max-w-lg leading-relaxed">{t('onboarding.callBlockHint')}</p>
             </div>
-            <div
-              ref={calendlyRef}
-              className="calendly-inline-widget"
-              data-url={CALENDLY_URL}
-              style={{ width: '100%', maxWidth: '100%', minWidth: 0, height: '700px' }}
-            />
           </div>
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(37,99,235,0.2)] hover:shadow-[0_0_35px_rgba(37,99,235,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
+          >
+            Prenota la Call
+          </a>
         </section>
       </div>
 
@@ -210,10 +128,3 @@ export default function OnboardingPage() {
   )
 }
 
-declare global {
-  interface Window {
-    Calendly?: {
-      initInlineWidget: (options: { url: string; parentElement: HTMLElement }) => void
-    }
-  }
-}
