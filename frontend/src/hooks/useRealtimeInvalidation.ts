@@ -6,6 +6,7 @@ import { tq } from '../lib/queryKeys'
 
 const TABLE_EVENTS = [
   'table:updated',
+  'tables:updated',
   'table:created',
   'table:deleted',
   'order:created',
@@ -41,6 +42,8 @@ export function useRealtimeTables(): void {
 
 export function useRealtimeOrders(): void {
   useRealtimeQuery(['order:created', 'order:updated'], 'orders')
+  useRealtimeQuery(['order:created', 'order:updated'], 'inventory')
+  useRealtimeQuery(['order:created', 'order:updated'], 'menu')
 }
 
 const RESERVATION_EVENTS = [
@@ -54,7 +57,7 @@ export function useRealtimeReservations(): void {
   useRealtimeQuery(RESERVATION_EVENTS, 'reservations')
 }
 
-export function useRealtimeQuery(events: readonly string[], queryKey: string): void {
+export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: string[]): void {
   const queryClient = useQueryClient()
   const tenantKey = useTenantQueryKey()
   const eventsKey = events.join('|')
@@ -65,7 +68,7 @@ export function useRealtimeQuery(events: readonly string[], queryKey: string): v
 
     const eventList = eventsKey.split('|').filter(Boolean)
     const refresh = () => {
-      queryClient.invalidateQueries({ queryKey: tq(tenantKey, queryKey) })
+      queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
     }
 
     for (const event of eventList) {
@@ -77,5 +80,5 @@ export function useRealtimeQuery(events: readonly string[], queryKey: string): v
         socket.off(event, refresh)
       }
     }
-  }, [queryClient, tenantKey, queryKey, eventsKey])
+  }, [queryClient, tenantKey, eventsKey, queryKeyParts.join('|')])
 }

@@ -108,21 +108,18 @@ export default function TableFloorPlan({
     onTableClick(table)
   }
   return (
-    <div ref={containerRef} className="w-full overflow-hidden bg-navy-mid/30 relative">
+    <div ref={containerRef} className="relative w-full overflow-hidden bg-navy-mid/30">
 
-      <div className="p-4 sm:p-6" style={{ height: (800 * scale) + 48 }}>
-        <div 
-          className="origin-top-left transition-all duration-300"
+      <div className="flex justify-center p-4 sm:p-6" style={{ minHeight: (800 * scale) + 48 }}>
+        <div
+          className="origin-top transition-transform duration-300"
           style={{ transform: `scale(${scale})` }}
         >
-          <div
-            className="relative w-[1000px] h-[800px] rounded-3xl border border-white/10 overflow-hidden shadow-2xl"
-          >
-            {/* Sfondo Marmo/Lusso Scuro - Nessuna Griglia */}
-            <div className="absolute inset-0 bg-[#0f111a]" />
-            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.15) 0%, transparent 60%), repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 10px)' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-aura-gold/10 rounded-full blur-[120px] pointer-events-none" />
-        
+          <div className="table-floor-premium relative h-[800px] w-[1000px]">
+            <div className="table-floor-premium__texture absolute inset-0 opacity-80" />
+            <div className="table-floor-premium__vignette pointer-events-none absolute inset-0" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D4AF37]/10 blur-[110px]" />
+
         {tables.map(table => {
           return (
             <TableTile
@@ -180,8 +177,13 @@ function TableTile({
   const { w, h } = tableSize(table.seats, shape)
 
   const isDisabledInTransfer = transferRole === 'disabled'
+  const glowClass =
+    orderTotal ? 'table-tile-glow--order'
+    : table.status === 'FREE' ? 'table-tile-glow--free'
+    : table.status === 'OCCUPIED' ? 'table-tile-glow--occupied'
+    : table.status === 'RESERVED' ? 'table-tile-glow--reserved'
+    : 'table-tile-glow--cleaning'
 
-  // Generate chairs positions
   const renderChairs = () => {
     const chairs = []
     const padding = 12 // Distance from table edge
@@ -195,8 +197,11 @@ function TableTile({
         const x = Math.cos(angle) * radius
         const y = Math.sin(angle) * radius
         chairs.push(
-          <div key={`chair-${i}`} className="absolute rounded-full bg-white/10 shadow-inner border border-white/5" 
-               style={{ width: chairSize, height: chairSize, left: `calc(50% + ${x}px - ${chairSize/2}px)`, top: `calc(50% + ${y}px - ${chairSize/2}px)` }} />
+          <div
+            key={`chair-${i}`}
+            className="table-chair absolute rounded-full"
+            style={{ width: chairSize, height: chairSize, left: `calc(50% + ${x}px - ${chairSize / 2}px)`, top: `calc(50% + ${y}px - ${chairSize / 2}px)` }}
+          />
         )
       }
     } else if (shape === 'RECTANGLE' || shape === 'SQUARE') {
@@ -222,8 +227,14 @@ function TableTile({
           else { left = `calc(100% + ${padding}px)`; top = `${percent}%`; }
 
           chairs.push(
-            <div key={`chair-${side}-${i}`} className={cn("absolute bg-white/10 shadow-inner border border-white/5", side === 'left' || side === 'right' ? 'w-[14px] h-[24px] rounded-sm' : 'w-[24px] h-[14px] rounded-sm')}
-                 style={{ left, top, transform: 'translate(-50%, -50%)' }} />
+            <div
+              key={`chair-${side}-${i}`}
+              className={cn(
+                'table-chair absolute rounded-sm',
+                side === 'left' || side === 'right' ? 'h-6 w-3.5' : 'h-3.5 w-6',
+              )}
+              style={{ left, top, transform: 'translate(-50%, -50%)' }}
+            />
           )
         }
       }
@@ -237,21 +248,29 @@ function TableTile({
   }
 
   return (
-    <div className={cn("absolute", className)} style={style}>
-      {/* Chairs Layer */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className={cn('absolute', className)} style={style}>
+      <div
+        className={cn(
+          'table-tile-glow pointer-events-none absolute left-0 top-0',
+          glowClass,
+          shape === 'ROUND' && 'rounded-full',
+        )}
+        style={{ width: w, height: h }}
+      />
+
+      <div className="pointer-events-none absolute left-0 top-0" style={{ width: w, height: h }}>
         {renderChairs()}
       </div>
 
-      {/* Main Table Layer */}
       <button
         type="button"
         onClick={onClick}
         disabled={isDisabledInTransfer}
         style={{ width: w, height: h }}
         className={cn(
-          'table-tile !relative !top-0 !left-0 !transform-none',
+          'table-tile table-tile--static',
           STATUS_CLASS[table.status],
+          orderTotal && 'table-tile--has-order',
           shape === 'ROUND' && 'rounded-full',
           transferRole === 'source' && 'table-tile--transfer-source',
           transferRole === 'target' && 'table-tile--transfer-target',
@@ -259,30 +278,31 @@ function TableTile({
         )}
         aria-label={`Tavolo ${table.number}, ${seatsLabel(table.seats)}, ${statusLabel(table.status)}`}
       >
-        <span className="text-base font-bold leading-none z-10 drop-shadow-md">T{table.number}</span>
-        <span className="text-xs opacity-80 leading-none z-10 drop-shadow-md">{table.seats}p</span>
+        <span className="relative z-10 text-base font-bold leading-none text-[#E8C872] drop-shadow-md">T{table.number}</span>
+        <span className="relative z-10 text-xs leading-none text-[#C5A059]/80">{table.seats}p</span>
         {table.status !== 'FREE' && (
           <span className={cn(
-            'text-[10px] font-bold uppercase leading-none mt-1 px-2 py-1 rounded-full z-10 shadow-lg',
-            table.status === 'CLEANING' && 'bg-blue-600/90 text-white',
-            table.status === 'OCCUPIED' && 'bg-amber-600/90 text-white',
-            table.status === 'RESERVED' && 'bg-aura-gold/90 text-navy',
+            'relative z-10 mt-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none',
+            'border-[#D4AF37]/40 bg-[#1a1408]/90 text-[#E8C872]',
+            table.status === 'CLEANING' && 'border-[#D4AF37]/25 text-[#C5A059]/70',
           )}>
             {statusLabel(table.status as TableStatus)}
           </span>
         )}
-        {orderTotal && transferRole !== 'target' && (
-          <span className="text-sm font-black leading-none mt-1 text-white drop-shadow-lg z-10">{orderTotal}</span>
-        )}
-        {reservationHint && !orderTotal && transferRole !== 'target' && (
-          <span className="text-xs font-semibold leading-tight mt-1 text-center px-1.5 text-white drop-shadow-lg z-10">{reservationHint}</span>
-        )}
-        {transferHint && (
-          <span className="text-[9px] font-bold uppercase leading-none mt-0.5 px-1.5 py-0.5 rounded-full bg-slate-900 text-white z-10 shadow-md">
-            {transferHint}
-          </span>
-        )}
-      </button>
+          {orderTotal && transferRole !== 'target' && (
+            <span className="table-tile__total relative z-10">{orderTotal}</span>
+          )}
+          {reservationHint && !orderTotal && transferRole !== 'target' && (
+            <span className="relative z-10 mt-1 max-w-[92%] truncate px-1.5 text-center text-xs font-semibold leading-tight text-[#E8C872]/90 drop-shadow-md">
+              {reservationHint}
+            </span>
+          )}
+          {transferHint && (
+            <span className="relative z-10 mt-0.5 rounded-full border border-[#D4AF37]/30 bg-[#1a1408]/95 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none text-[#E8C872] shadow-md">
+              {transferHint}
+            </span>
+          )}
+        </button>
     </div>
   )
 }

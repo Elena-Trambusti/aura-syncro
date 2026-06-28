@@ -16,6 +16,7 @@ export interface CreateOrderPayload {
   tableId: string
   type: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'
   items: OrderLinePayload[]
+  customerId?: string
 }
 
 export interface AddOrderItemsPayload {

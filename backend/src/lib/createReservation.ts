@@ -65,11 +65,26 @@ export async function createReservation(input: CreateReservationInput) {
     include: { table: true, customer: true, restaurant: { select: { slug: true, name: true } } },
   })
 
+  if (reservation.tableId) {
+    await syncTableReservedForReservation(reservation.tableId, input.restaurantId)
+  }
+
   return {
     reservation,
     depositRequired: requiresDeposit(settings),
     depositAmount: settings?.depositAmount ?? 0,
   }
+}
+
+export async function syncTableReservedForReservation(
+  tableId: string | null | undefined,
+  restaurantId: string,
+): Promise<void> {
+  if (!tableId) return
+  await prisma.table.updateMany({
+    where: { id: tableId, restaurantId, status: 'FREE' },
+    data: { status: 'RESERVED' },
+  })
 }
 
 export { ReservationValidationError }

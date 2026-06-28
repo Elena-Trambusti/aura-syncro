@@ -6,7 +6,6 @@ import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { signOrderReceiptToken } from './paymentReceiptToken'
-import { deductInventoryForOrder } from './inventoryDeduction'
 
 export const guestCheckoutSchema = z.object({
   slug: z.string().min(1),
@@ -119,13 +118,9 @@ export async function createGuestStripeCheckout(
         items: { include: { menuItem: true } },
       },
     })
-    await deductInventoryForOrder(tx, created.id, restaurantId)
+    // Stock e tavolo: solo dopo pagamento Stripe (webhook) — evita leak su checkout abbandonato
     return created
   })
-
-  if (tableId) {
-    await prisma.table.update({ where: { id: tableId }, data: { status: 'OCCUPIED' } })
-  }
 
   const lineItems = itemsWithPrice.map(item => ({
     price_data: {

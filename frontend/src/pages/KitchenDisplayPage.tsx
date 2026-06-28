@@ -14,6 +14,7 @@ import {
   ITEM_STATUS_COLORS,
   KITCHEN_HIDDEN_ITEM_STATUSES,
   nextItemStatus,
+  kitchenColumnForOrder,
 } from '../lib/kitchenOrders'
 
 function useElapsedMinutes(createdAt: string) {
@@ -360,9 +361,9 @@ export default function KitchenDisplayPage() {
   }, [])
 
   const { pending, preparing, ready } = useMemo(() => ({
-    pending: orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED'),
-    preparing: orders.filter(o => o.status === 'PREPARING'),
-    ready: orders.filter(o => o.status === 'READY'),
+    pending: orders.filter(o => kitchenColumnForOrder(o) === 'pending'),
+    preparing: orders.filter(o => kitchenColumnForOrder(o) === 'preparing'),
+    ready: orders.filter(o => kitchenColumnForOrder(o) === 'ready'),
   }), [orders])
 
   const aggregateItems = useMemo(() => {

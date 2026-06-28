@@ -24,10 +24,15 @@ export async function handleCheckoutSessionCompleted(
   if (reservationId) {
     const deposit = await markReservationDepositPaid(session)
     if (deposit) {
-      console.info('[stripe-webhook] Caparra pagata', deposit.reservationId, deposit.amountPaid)
+      console.info(
+        '[stripe-webhook] Caparra prenotazione',
+        deposit.reservationId,
+        deposit.fundsCaptured ? `pagata €${deposit.amountPaid}` : 'carta salvata',
+      )
       io.to(deposit.restaurantId).emit('reservation:deposit_paid', {
         reservationId: deposit.reservationId,
         amountPaid: deposit.amountPaid,
+        fundsCaptured: deposit.fundsCaptured,
       })
     }
     return
@@ -54,7 +59,6 @@ export async function handleCheckoutSessionCompleted(
       if (completed?.updatedOrder) {
         console.info('[stripe-webhook] Ordine guest pagato', orderId)
         io.to(completed.updatedOrder.restaurantId).emit('order:updated', completed.updatedOrder)
-        io.to(completed.updatedOrder.restaurantId).emit('order:new', completed.updatedOrder)
       }
     } else {
       console.warn('[stripe-webhook] Sessione guest non pagata, ordine non finalizzato:', orderId)

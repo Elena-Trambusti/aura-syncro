@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../lib/api'
 import { formatTime, cn } from '../../lib/utils'
 import { Loader2, X, Users } from 'lucide-react'
+import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { tq } from '../../lib/queryKeys'
 import toast from 'react-hot-toast'
 
 interface AvailableTable {
@@ -28,10 +30,11 @@ interface AssignTableModalProps {
 
 export default function AssignTableModal({ reservation, onSuccess, onCancel }: AssignTableModalProps) {
   const { t } = useTranslation()
+  const tk = useTenantQueryKey()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
 
   const { data: tables = [], isLoading } = useQuery<AvailableTable[]>({
-    queryKey: ['reservation-available-tables', reservation.id],
+    queryKey: tq(tk, 'reservation-available-tables', reservation.id),
     queryFn: () => api.get(`/reservations/${reservation.id}/available-tables`).then(r => r.data),
   })
 

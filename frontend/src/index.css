@@ -436,72 +436,192 @@
     @apply font-display text-base sm:text-lg font-semibold tracking-wide text-pietra;
   }
 
+  .table-floor-premium {
+    @apply relative overflow-hidden rounded-3xl;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    background:
+      radial-gradient(ellipse 85% 65% at 50% 42%, rgba(212, 175, 55, 0.16) 0%, transparent 62%),
+      radial-gradient(ellipse 50% 40% at 20% 80%, rgba(197, 160, 89, 0.08) 0%, transparent 55%),
+      linear-gradient(180deg, #16120b 0%, #0e0c08 52%, #080604 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 200, 114, 0.12),
+      inset 0 0 100px rgba(212, 175, 55, 0.04),
+      0 28px 56px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  .table-floor-premium__texture {
+    background-image:
+      radial-gradient(circle at 30% 25%, rgba(212, 175, 55, 0.08) 0%, transparent 42%),
+      radial-gradient(circle at 72% 68%, rgba(197, 160, 89, 0.06) 0%, transparent 40%);
+  }
+
+  .table-floor-premium__vignette {
+    background: radial-gradient(ellipse 92% 85% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.5) 100%);
+  }
+
+  .table-chair {
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    background: linear-gradient(180deg, #221c12 0%, #14100a 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 200, 114, 0.14),
+      0 3px 8px -2px rgba(0, 0, 0, 0.7);
+  }
+
+  .table-tile-glow {
+    @apply -z-10 rounded-2xl opacity-80 blur-2xl transition-opacity duration-300;
+  }
+
+  .table-tile-glow--free { background: rgba(212, 175, 55, 0.1); }
+  .table-tile-glow--occupied { background: rgba(212, 175, 55, 0.16); }
+  .table-tile-glow--reserved { background: rgba(229, 193, 88, 0.2); }
+  .table-tile-glow--cleaning { background: rgba(197, 160, 89, 0.12); }
+  .table-tile-glow--order { background: rgba(232, 200, 114, 0.32); opacity: 1; }
+
   .table-tile {
-    @apply absolute flex flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-gradient-to-br from-[#1a1c23] to-[#0f111a] text-pietra cursor-pointer transition-all duration-300;
-    transform: translate(-50%, -50%);
-    box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 8px 16px -4px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
-    /* Effetto texture simil-materiale */
-    background-image: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%), var(--aura-surface-card);
+    @apply relative flex flex-col items-center justify-center gap-0.5 rounded-xl cursor-pointer transition-all duration-300;
+    transform: none;
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    color: #e8c872;
+    background:
+      linear-gradient(145deg, rgba(232, 200, 114, 0.14) 0%, rgba(212, 175, 55, 0.04) 38%, transparent 58%),
+      linear-gradient(180deg, #221c12 0%, #16120b 46%, #0e0c08 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 200, 114, 0.22),
+      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
+      0 2px 0 rgba(212, 175, 55, 0.18),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
 
   .table-tile::before {
-    /* Effetto alone interno */
     content: '';
-    @apply absolute inset-0 rounded-[inherit] opacity-50 pointer-events-none transition-opacity duration-300;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    @apply absolute inset-0 rounded-[inherit] pointer-events-none transition-opacity duration-300;
+    box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .table-tile::after {
+    content: '';
+    @apply absolute inset-x-4 top-0 h-px rounded-full pointer-events-none;
+    background: linear-gradient(90deg, transparent, rgba(232, 200, 114, 0.65), transparent);
+    opacity: 0.85;
   }
 
   .table-tile:hover {
-    transform: translate(-50%, -50%) scale(1.05);
-    @apply border-white/20 bg-[#1e2028] z-20;
-    box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), 0 15px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    transform: scale(1.04);
+    border-color: rgba(232, 200, 114, 0.65);
+    @apply z-20;
+    box-shadow:
+      inset 0 1px 0 rgba(232, 200, 114, 0.3),
+      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
+      0 2px 0 rgba(212, 175, 55, 0.28),
+      0 0 36px -4px rgba(212, 175, 55, 0.35),
+      0 20px 36px -12px rgba(0, 0, 0, 0.85);
   }
 
   .table-tile--static {
-    @apply relative transform-none left-auto top-auto;
+    @apply relative left-auto top-auto;
+    transform: none;
   }
 
   .table-tile--static:hover {
-    transform: scale(1.03);
+    transform: scale(1.04);
   }
 
   .table-tile--free {
-    @apply border-white/5 text-pietra;
+    border-color: rgba(212, 175, 55, 0.32);
   }
   .table-tile--free:hover {
-    @apply border-emerald-500/30;
-    box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), 0 0 20px -2px rgba(16, 185, 129, 0.2);
+    border-color: rgba(232, 200, 114, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 200, 114, 0.25),
+      0 0 32px -6px rgba(212, 175, 55, 0.28),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
 
   .table-tile--occupied {
-    @apply border-aura-gold/50 text-aura-gold;
-    box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.1), 0 0 25px -2px rgba(212, 175, 55, 0.35);
+    border-color: rgba(232, 200, 114, 0.52);
+    box-shadow:
+      inset 0 0 16px rgba(212, 175, 55, 0.1),
+      0 0 28px -6px rgba(212, 175, 55, 0.22),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
   .table-tile--occupied:hover {
-    box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.2), 0 0 40px 2px rgba(212, 175, 55, 0.6);
+    border-color: rgba(232, 200, 114, 0.72);
+    box-shadow:
+      inset 0 0 20px rgba(212, 175, 55, 0.14),
+      0 0 40px -4px rgba(212, 175, 55, 0.38),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+  }
+
+  .table-tile--has-order {
+    border-color: rgba(232, 200, 114, 0.78);
+    box-shadow:
+      inset 0 0 22px rgba(212, 175, 55, 0.16),
+      0 0 44px -2px rgba(232, 200, 114, 0.42),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
 
   .table-tile--reserved {
-    @apply border-amber-400/50 text-amber-400;
-    box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.1), 0 0 20px -2px rgba(251, 191, 36, 0.25);
+    border-color: rgba(229, 193, 88, 0.55);
+    box-shadow:
+      inset 0 0 14px rgba(212, 175, 55, 0.1),
+      0 0 30px -6px rgba(229, 193, 88, 0.26),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
   .table-tile--reserved:hover {
-    box-shadow: inset 0 0 15px rgba(251, 191, 36, 0.2), 0 0 30px 2px rgba(251, 191, 36, 0.4);
+    border-color: rgba(232, 200, 114, 0.68);
+    box-shadow:
+      inset 0 0 18px rgba(212, 175, 55, 0.14),
+      0 0 38px -4px rgba(229, 193, 88, 0.34),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
   }
 
-  @keyframes breathe {
-    0%, 100% { box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1), 0 0 15px -2px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
-    50% { box-shadow: inset 0 0 25px rgba(59, 130, 246, 0.3), 0 0 35px 5px rgba(59, 130, 246, 0.6); border-color: rgba(59, 130, 246, 0.8); }
+  @keyframes breathe-gold {
+    0%, 100% {
+      border-color: rgba(197, 160, 89, 0.35);
+      box-shadow:
+        inset 0 0 12px rgba(212, 175, 55, 0.08),
+        0 0 24px -6px rgba(197, 160, 89, 0.18),
+        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+    }
+    50% {
+      border-color: rgba(232, 200, 114, 0.55);
+      box-shadow:
+        inset 0 0 20px rgba(212, 175, 55, 0.14),
+        0 0 36px -4px rgba(212, 175, 55, 0.3),
+        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+    }
   }
 
   .table-tile--cleaning {
-    @apply text-blue-400;
-    animation: breathe 2.5s ease-in-out infinite;
+    color: #c5a059;
+    animation: breathe-gold 2.5s ease-in-out infinite;
   }
   .table-tile--cleaning:hover {
     animation: none;
-    @apply border-blue-500/80;
-    box-shadow: inset 0 0 25px rgba(59, 130, 246, 0.3), 0 0 40px 5px rgba(59, 130, 246, 0.7);
+    border-color: rgba(232, 200, 114, 0.6);
+    box-shadow:
+      inset 0 0 20px rgba(212, 175, 55, 0.14),
+      0 0 38px -4px rgba(212, 175, 55, 0.32),
+      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+  }
+
+  .table-tile--transfer-source {
+    @apply ring-2 ring-[#E8C872] ring-offset-2 ring-offset-[#0e0c08];
+  }
+
+  .table-tile--transfer-target {
+    @apply ring-2 ring-[#D4AF37]/90 ring-offset-2 ring-offset-[#0e0c08];
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .table-tile--transfer-disabled {
+    @apply opacity-35 cursor-not-allowed;
+  }
+
+  .table-tile__total {
+    @apply text-sm font-black leading-none mt-1;
+    color: #f0d78c;
+    text-shadow: 0 0 22px rgba(232, 200, 114, 0.55);
   }
 
   .glass-chip { @apply rounded-lg border border-white/[0.08] bg-navy-surface text-pietra; box-shadow: var(--shadow-premium-sm); }

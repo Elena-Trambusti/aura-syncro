@@ -1,23 +1,24 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Sparkles, Zap, BarChart3, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { BRAND } from '../../lib/brand'
 import { useAuth } from '../../contexts/AuthContext'
+import { resolveDemoMarket } from '../../lib/demoAccounts'
 
 export default function LandingHero() {
   const { t, i18n } = useTranslation()
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isDemoLoading, setIsDemoLoading] = useState(false)
 
   const handleDemoLogin = async () => {
     try {
       setIsDemoLoading(true)
-      const lang = i18n.language || 'it'
-      const email = `admin@demo-${lang}.com`
-      await login(email, 'admin123')
+      const demo = resolveDemoMarket(location.pathname, i18n.language)
+      await login(demo.email, demo.password, demo.slug)
       navigate('/dashboard')
     } catch (error) {
       toast.error(t('landing.hero.demoError'))

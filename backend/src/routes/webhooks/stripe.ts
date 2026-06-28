@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { stripe, pickStripeWebhookSecret } from '../../lib/stripe'
 import { handleCheckoutSessionCompleted } from '../../lib/stripeCheckoutWebhook'
+import { handleCheckoutSessionExpired } from '../../lib/stripeCheckoutExpired'
 import {
   handlePaymentIntentSucceeded,
   handlePaymentIntentFailed,
@@ -36,6 +37,11 @@ async function resolveRestaurantIdFromEvent(event: StripeEventPayload): Promise<
 async function dispatchStripeEvent(event: StripeEventPayload): Promise<void> {
   if (event.type === 'checkout.session.completed') {
     await handleCheckoutSessionCompleted(event.data.object as StripeCheckoutSessionPayload)
+    return
+  }
+
+  if (event.type === 'checkout.session.expired') {
+    await handleCheckoutSessionExpired(event.data.object as StripeCheckoutSessionPayload)
     return
   }
 

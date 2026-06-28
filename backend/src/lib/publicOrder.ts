@@ -4,6 +4,7 @@ import { computeTaxForRestaurant } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { assertMenuItemOrderable } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
+import { occupyTableIfAvailable } from './orderSession'
 
 export const publicOrderSchema = z.object({
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
@@ -106,6 +107,13 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
   })
 
   const order = await prisma.$transaction(async tx => {
+    if (tableId) {
+      const ok = await occupyTableIfAvailable(tx, tableId, restaurantId)
+      if (!ok) {
+        throw new PublicOrderError('Tavolo non disponibile', 409, 'TABLE_UNAVAILABLE')
+      }
+    }
+
     const created = await tx.order.create({
       data: {
         restaurantId,
@@ -137,10 +145,6 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
-
-  if (tableId) {
-    await prisma.table.update({ where: { id: tableId }, data: { status: 'OCCUPIED' } })
-  }
 
   return { order, restaurantId, tableNumber, total }
 }

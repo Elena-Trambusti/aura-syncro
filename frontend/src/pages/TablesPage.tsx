@@ -142,6 +142,7 @@ export default function TablesPage() {
   useRealtimeTables()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [seatedCustomerId, setSeatedCustomerId] = useState<string | null>(null)
   const [transferSourceId, setTransferSourceId] = useState<string | null>(null)
   const [showManage, setShowManage] = useState(false)
   const [showAreaManager, setShowAreaManager] = useState(false)
@@ -188,12 +189,13 @@ export default function TablesPage() {
 
   const seatReservation = useMutation({
     mutationFn: ({ reservationId, tableId }: { reservationId: string; tableId: string }) =>
-      api.post(`/reservations/${reservationId}/confirm`, { tableId }),
-    onSuccess: (_data, { reservationId }) => {
+      api.post(`/reservations/${reservationId}/confirm`, { tableId }).then(r => r.data),
+    onSuccess: (reservation, { reservationId }) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
       const table = reservedTable ?? tables.find(tbl => tbl.reservations?.some(r => r.id === reservationId))
       setReservedTable(null)
+      setSeatedCustomerId(reservation?.customer?.id ?? reservation?.customerId ?? null)
       if (table) {
         setSelectedTableId(table.id)
         setShowOrderModal(true)
@@ -568,7 +570,8 @@ export default function TablesPage() {
       {showOrderModal && selectedTableId && (
         <OrderModal
           tableId={selectedTableId}
-          onClose={() => { setShowOrderModal(false); setSelectedTableId(null) }}
+          prefillCustomerId={seatedCustomerId}
+          onClose={() => { setShowOrderModal(false); setSelectedTableId(null); setSeatedCustomerId(null) }}
           onStartTransfer={canTransferOrder ? handleStartTransfer : undefined}
         />
       )}

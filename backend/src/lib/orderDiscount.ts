@@ -101,22 +101,35 @@ export async function computeOrderTotalsWithDiscount(
   }
 }
 
-/** Apply discount to an existing order and persist */
-export async function applyDiscountToOrder(
+/** Validate discount options without persisting (for checkout preview). */
+export async function validateOrderDiscountOptions(
   orderId: string,
   restaurantId: string,
-  options: {
-    applyLoyalty?: boolean
-    discountCode?: string
-  },
-) {
+  options: { applyLoyalty?: boolean; discountCode?: string },
+): Promise<void> {
   const order = await prisma.order.findFirst({
     where: { id: orderId, restaurantId },
-    include: { items: true },
+    select: { status: true, customerId: true },
   })
   if (!order) throw new Error('ORDER_NOT_FOUND')
   if (['PAID', 'CANCELLED'].includes(order.status)) throw new Error('ORDER_CLOSED')
 
+  if (options.discountCode) {
+    const campaign = await resolveCampaignDiscount(restaurantId, options.discountCode)
+    if (campaign.discountPct <= 0) throw new Error('INVALID_DISCOUNT_CODE')
+    return
+  }
+  if (options.applyLoyalty && order.customerId) {
+    const loyalty = await resolveLoyaltyDiscount(restaurantId, order.customerId)
+    if (loyalty.discountPct <= 0) throw new Error('NO_LOYALTY_DISCOUNT')
+  }
+}
+
+export async function resolveDiscountForOrder(
+  restaurantId: string,
+  order: { customerId: string | null; taxRateApplied: number | null; items: { status: string; unitPrice: number; quantity: number }[] },
+  options: { applyLoyalty?: boolean; discountCode?: string },
+) {
   const activeItems = order.items.filter(i => i.status !== 'CANCELLED')
   const grossTotal = activeItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
 
@@ -136,6 +149,27 @@ export async function applyDiscountToOrder(
     discount.discountPct,
     order.taxRateApplied,
   )
+
+  return { discount, totals }
+}
+
+/** Apply discount to an existing order and persist */
+export async function applyDiscountToOrder(
+  orderId: string,
+  restaurantId: string,
+  options: {
+    applyLoyalty?: boolean
+    discountCode?: string
+  },
+) {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, restaurantId },
+    include: { items: true },
+  })
+  if (!order) throw new Error('ORDER_NOT_FOUND')
+  if (['PAID', 'CANCELLED'].includes(order.status)) throw new Error('ORDER_CLOSED')
+
+  const { totals } = await resolveDiscountForOrder(restaurantId, order, options)
 
   return prisma.order.update({
     where: { id: orderId },

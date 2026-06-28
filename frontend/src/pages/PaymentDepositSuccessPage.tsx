@@ -8,6 +8,8 @@ import { CheckCircle2, CalendarCheck, Loader2 } from 'lucide-react'
 interface DepositSessionData {
   status: string
   amount: number
+  fundsCaptured?: boolean
+  guaranteeAmount?: number
   customerEmail?: string
   reservation?: {
     guestName: string
@@ -64,22 +66,26 @@ export default function PaymentDepositSuccessPage() {
   }
 
   const isPaid = data.status === 'paid'
+  const isCardOnFile = data.status === 'no_payment_required' || data.fundsCaptured === false
 
   return (
     <div className="min-h-screen bg-navy max-w-lg mx-auto">
       <div className={`px-5 pt-10 pb-8 text-white text-center ${isPaid ? 'bg-gradient-to-br from-emerald-900/80 to-emerald-950' : 'bg-gradient-to-br from-aura-gold/20 to-navy-surface'}`}>
         <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-premium-sm">
-          {isPaid ? <CheckCircle2 className="w-10 h-10 text-emerald-400" /> : <CalendarCheck className="w-10 h-10 text-aura-gold" />}
+          {isPaid || isCardOnFile ? <CheckCircle2 className="w-10 h-10 text-emerald-400" /> : <CalendarCheck className="w-10 h-10 text-aura-gold" />}
         </div>
         <h1 className="text-2xl font-black mb-1 text-pietra">
-          {isPaid ? t('depositSuccess.confirmedTitle') : t('depositSuccess.processingTitle')}
+          {isPaid ? t('depositSuccess.confirmedTitle') : isCardOnFile ? t('depositSuccess.cardSavedTitle', { defaultValue: 'Carta salvata a garanzia' }) : t('depositSuccess.processingTitle')}
         </h1>
         <p className="text-fumo text-sm">
-          {isPaid ? t('depositSuccess.confirmedSubtitle') : t('depositSuccess.processingSubtitle')}
+          {isPaid ? t('depositSuccess.confirmedSubtitle') : isCardOnFile ? t('depositSuccess.cardSavedSubtitle', { defaultValue: 'La caparra verrà addebitata solo in caso di no-show.' }) : t('depositSuccess.processingSubtitle')}
         </p>
-        {data.amount > 0 && (
+        {(data.amount > 0 || (data.guaranteeAmount ?? 0) > 0) && (
           <div className="mt-4 bg-white/5 rounded-2xl px-6 py-3 inline-block border border-white/10">
-            <span className="text-3xl font-black text-pietra">{formatCurrency(data.amount)}</span>
+            <span className="text-3xl font-black text-pietra">{formatCurrency(isPaid ? data.amount : (data.guaranteeAmount ?? data.amount))}</span>
+            {isCardOnFile && !isPaid && (
+              <p className="text-xs text-fumo mt-1">{t('depositSuccess.guaranteeHint', { defaultValue: 'Importo garanzia — non ancora addebitato' })}</p>
+            )}
           </div>
         )}
       </div>

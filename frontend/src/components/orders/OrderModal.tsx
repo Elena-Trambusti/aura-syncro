@@ -52,10 +52,12 @@ export default function OrderModal({
   tableId,
   onClose,
   onStartTransfer,
+  prefillCustomerId,
 }: {
   tableId: string
   onClose: () => void
   onStartTransfer?: (tableId: string) => void
+  prefillCustomerId?: string | null
 }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -126,7 +128,7 @@ export default function OrderModal({
         )
       } else {
         result = await submitCreateOrder(
-          { tableId: table.id, type: 'DINE_IN', items: lineItems },
+          { tableId: table.id, type: 'DINE_IN', items: lineItems, customerId: prefillCustomerId ?? undefined },
           { label: tableLabel },
         )
       }

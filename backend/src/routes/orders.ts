@@ -17,6 +17,10 @@ import { resolveOrCreateCustomer } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
 import { acquireIdempotencyLock, getIdempotentResponse, readIdempotencyKey, saveIdempotentResponse } from '../lib/apiIdempotency'
+import {
+  occupyTableIfAvailable,
+  syncOrderStatusFromItemsTx,
+} from '../lib/orderSession'
 
 export const ordersRouter = Router()
 
@@ -39,19 +43,6 @@ const orderInclude = {
 }
 
 const itemStatusSchema = z.enum(['PENDING', 'PREPARING', 'READY', 'SERVED', 'CANCELLED'])
-
-async function syncOrderStatusFromItems(orderId: string): Promise<void> {
-  const items = await prisma.orderItem.findMany({ where: { orderId } })
-  const active = items.filter(i => i.status !== 'CANCELLED')
-  if (active.length === 0) return
-
-  const allServed = active.every(i => i.status === 'SERVED')
-  const allReady = active.every(i => ['READY', 'SERVED'].includes(i.status))
-  const anyInProgress = active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))
-
-  const status = allServed ? 'SERVED' : allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
-  await prisma.order.update({ where: { id: orderId }, data: { status } })
-}
 
 const orderListQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -254,11 +245,8 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   try {
     order = await prisma.$transaction(async tx => {
       if (orderData.tableId) {
-        const tableUpdated = await tx.table.updateMany({
-          where: { id: orderData.tableId, restaurantId: req.restaurantId!, status: 'FREE' },
-          data: { status: 'OCCUPIED' },
-        })
-        if (tableUpdated.count === 0) {
+        const occupied = await occupyTableIfAvailable(tx, orderData.tableId, req.restaurantId!)
+        if (!occupied) {
           throw Object.assign(new Error('Tavolo già occupato o non trovato'), { code: 'TABLE_OCCUPIED' })
         }
       }
@@ -427,17 +415,10 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     const allItems = await tx.orderItem.findMany({ where: { orderId: req.params.orderId } })
     const active = allItems.filter(i => i.status !== 'CANCELLED')
     
-    // 1. Sync order status
-    if (active.length > 0) {
-      const allServed = active.every(i => i.status === 'SERVED')
-      const allReady = active.every(i => ['READY', 'SERVED'].includes(i.status))
-      const anyInProgress = active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))
-      const status = allServed ? 'SERVED' : allReady ? 'READY' : anyInProgress ? 'PREPARING' : 'PENDING'
-      await tx.order.update({ where: { id: req.params.orderId }, data: { status } })
-    }
+    await syncOrderStatusFromItemsTx(tx, req.params.orderId, order.status)
 
-    // 2. Sync order totals if it was cancelled or if we split
-    if (targetStatus === 'CANCELLED') {
+    // 2. Sync order totals if item cancelled (skip fiscal-closed PAID orders)
+    if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
       const fetchedOrder = await tx.order.findUnique({
         where: { id: req.params.orderId },
         include: { items: true },
@@ -528,6 +509,26 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     }
   }
 
+  if (status === 'SERVED' && existingOrder.status === 'PAID') {
+    await prisma.orderItem.updateMany({
+      where: { orderId: req.params.id, status: { not: 'CANCELLED' } },
+      data: { status: 'SERVED' },
+    })
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, restaurantId: req.restaurantId! },
+      include: orderInclude,
+    })
+    if (!order) {
+      res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
+    const releasedTable = await releaseTableIfEmpty(order.tableId)
+    if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
+    io.to(req.restaurantId!).emit('order:updated', order)
+    res.json(order)
+    return
+  }
+
   if (status === 'READY') {
     await prisma.orderItem.updateMany({
       where: { orderId: req.params.id, status: { in: ['PENDING', 'PREPARING'] } },
@@ -549,13 +550,13 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     })
     
     await prisma.$transaction(async tx => {
-      for (const item of items) {
-        await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
-      }
       await tx.orderItem.updateMany({
         where: { orderId: req.params.id },
         data: { status: 'CANCELLED' }
       })
+      for (const item of items) {
+        await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
+      }
     })
   }
 
@@ -568,7 +569,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   if (status === 'CANCELLED') {
     const releasedTable = await releaseTableIfEmpty(order.tableId)
     if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
-  } else if (status === 'SERVED' && existingOrder.status === 'PAID') {
+  } else if (status === 'SERVED') {
     const releasedTable = await releaseTableIfEmpty(order.tableId)
     if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
   }

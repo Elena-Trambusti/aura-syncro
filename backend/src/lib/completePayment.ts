@@ -6,10 +6,12 @@ import {
   type FinalizePaymentInput,
   type SplitBreakdown,
 } from './orderPayment'
+import { occupyTableIfAvailable } from './orderSession'
 import { chargePosCard } from './posCharge'
 import { sendEmail } from './email'
 import { loadRestaurantFiscalConfig } from './taxEngine'
 import { computePosPaymentAmounts } from './tipFiscal'
+import { applyDiscountToOrder, resolveDiscountForOrder } from './orderDiscount'
 
 const posOrderInclude = {
   table: true,
@@ -24,30 +26,51 @@ export async function completeOrderPayment(input: {
   restaurantName?: string
   /** false per ordini guest prepagati Stripe: la cucina deve ancora preparare i piatti */
   serveItemsOnPayment?: boolean
+  /** Applicato solo dopo incasso riuscito (evita sconto su pagamento fallito) */
+  discountOptions?: { applyLoyalty?: boolean; discountCode?: string }
 }) {
   const [orderPreview, fiscal] = await Promise.all([
     prisma.order.findFirst({
       where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+      include: { items: true },
     }),
     loadRestaurantFiscalConfig(input.finalize.restaurantId),
   ])
 
+  let chargeOrder = orderPreview
+  if (input.discountOptions && orderPreview) {
+    const { totals } = await resolveDiscountForOrder(
+      input.finalize.restaurantId,
+      orderPreview,
+      input.discountOptions,
+    )
+    chargeOrder = { ...orderPreview, ...totals }
+  }
+
   let posResult = null
   if (input.finalize.paymentMethod === 'CARD') {
-    const posAmounts = orderPreview
-      ? computePosPaymentAmounts(fiscal, orderPreview, input.finalize.tipAmount)
+    const posAmounts = chargeOrder
+      ? computePosPaymentAmounts(fiscal, chargeOrder, input.finalize.tipAmount)
       : null
 
     posResult = await chargePosCard(
       {
-        taxableAmount: posAmounts?.taxableChargeAmount ?? (orderPreview?.total ?? 0),
+        taxableAmount: posAmounts?.taxableChargeAmount ?? (chargeOrder?.total ?? 0),
         tipAmount: posAmounts?.tipChargeAmount ?? 0,
         totalCustomerAmount: posAmounts?.totalCustomerAmount
-          ?? (orderPreview?.total ?? 0) + (input.finalize.tipAmount ?? 0),
+          ?? (chargeOrder?.total ?? 0) + (input.finalize.tipAmount ?? 0),
         taxRegion: fiscal.taxRegion,
       },
       { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
       input.stripePaymentIntentId,
+    )
+  }
+
+  if (input.discountOptions) {
+    await applyDiscountToOrder(
+      input.finalize.orderId,
+      input.finalize.restaurantId,
+      input.discountOptions,
     )
   }
 
@@ -68,10 +91,23 @@ export async function completeOrderPayment(input: {
     include: posOrderInclude,
   })
 
+  if (updatedOrder?.tableId && input.serveItemsOnPayment === false) {
+    await prisma.$transaction(async tx => {
+      await occupyTableIfAvailable(tx, updatedOrder.tableId!, input.finalize.restaurantId)
+    })
+  }
+
   const releasedTable = await releaseTableIfEmpty(updatedOrder?.tableId)
   if (releasedTable) io.to(input.finalize.restaurantId).emit('table:updated', releasedTable)
-  io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
-  io.to(input.finalize.restaurantId).emit('print:receipt', { type: 'receipt', order: updatedOrder })
+
+  if (updatedOrder) {
+    io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+    if (input.serveItemsOnPayment === false) {
+      io.to(input.finalize.restaurantId).emit('order:created', updatedOrder)
+      io.to(input.finalize.restaurantId).emit('print:kitchen', { type: 'kitchen', order: updatedOrder })
+    }
+    io.to(input.finalize.restaurantId).emit('print:receipt', { type: 'receipt', order: updatedOrder })
+  }
 
   let emailSent = false
   if (input.receiptEmail) {

@@ -15,16 +15,24 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
   })
   if (!order?.customerId) return
 
+  const alreadyProcessed = await prisma.loyaltyTransaction.findFirst({
+    where: { orderId: order.id, type: 'EARNED' },
+    select: { id: true },
+  })
+
   const revenue = order.revenueAmount > 0 ? order.revenueAmount : order.total
   const paidAt = order.paidAt ?? new Date()
 
-  await prisma.customer.update({
-    where: { id: order.customerId },
-    data: {
-      totalVisits: { increment: 1 },
-      totalSpent: { increment: revenue },
-      lastVisit: paidAt,
-    },
-  })
+  if (!alreadyProcessed) {
+    await prisma.customer.update({
+      where: { id: order.customerId },
+      data: {
+        totalVisits: { increment: 1 },
+        totalSpent: { increment: revenue },
+        lastVisit: paidAt,
+      },
+    })
+  }
+
   await earnLoyaltyPointsForOrder(order.customerId, restaurantId, revenue, order.id)
 }

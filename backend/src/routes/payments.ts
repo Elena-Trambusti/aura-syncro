@@ -16,7 +16,7 @@ import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
-import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount } from '../lib/orderDiscount'
+import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount, resolveDiscountForOrder, validateOrderDiscountOptions } from '../lib/orderDiscount'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { verifyDepositReceiptToken, verifyOrderReceiptToken } from '../lib/paymentReceiptToken'
 
@@ -125,11 +125,15 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
+  const discountOptions = discountCode
+    ? { discountCode }
+    : applyLoyaltyDiscount && order.customerId
+      ? { applyLoyalty: true as const }
+      : undefined
+
   try {
-    if (discountCode) {
-      await applyDiscountToOrder(orderId, req.restaurantId!, { discountCode })
-    } else if (applyLoyaltyDiscount && order.customerId) {
-      await applyDiscountToOrder(orderId, req.restaurantId!, { applyLoyalty: true })
+    if (discountOptions) {
+      await validateOrderDiscountOptions(orderId, req.restaurantId!, discountOptions)
     }
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
@@ -154,9 +158,15 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     ? (splitSettlement ?? 'CARD')
     : paymentMethod
 
+  let orderTotalForCheckout = refreshedOrder.total
+  if (discountOptions) {
+    const { totals } = await resolveDiscountForOrder(req.restaurantId!, refreshedOrder, discountOptions)
+    orderTotalForCheckout = totals.total
+  }
+
   let splitBreakdown
   if (paymentMethod === 'SPLIT' && split) {
-    const totalWithTip = refreshedOrder.total + Math.max(0, tipAmount)
+    const totalWithTip = orderTotalForCheckout + Math.max(0, tipAmount)
     splitBreakdown = computeSplitBreakdown(
       refreshedOrder.items.filter((i: any) => i.status !== 'CANCELLED'),
       totalWithTip,
@@ -171,6 +181,10 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     })
     const fiscal = buildFiscalConfig(restaurant?.settings)
 
+    const hasOpenKitchen = refreshedOrder.items.some(
+      (i: { status: string }) => !['SERVED', 'CANCELLED'].includes(i.status),
+    )
+
     const { result, updatedOrder, posResult, emailSent } = await completeOrderPayment({
       finalize: {
         orderId,
@@ -178,11 +192,14 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
         tipAmount,
         tipWaiterId,
         paymentMethod: settlementMethod,
+        executorUserId: req.userId,
       },
       splitBreakdown,
       stripePaymentIntentId,
       receiptEmail: simulateEmail,
       restaurantName: restaurant?.name,
+      serveItemsOnPayment: !hasOpenKitchen,
+      discountOptions,
     })
 
     // Return only the fields required by the frontend CheckoutFinalizeResult
@@ -214,6 +231,14 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     }
     if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
       res.status(402).json({ error: 'Pagamento carta non riuscito', code })
+      return
+    }
+    if (code === 'CASH_SESSION_REQUIRED') {
+      res.status(409).json({ error: 'Apri la cassa prima di incassare contanti.', code })
+      return
+    }
+    if (code === 'CASH_USER_REQUIRED') {
+      res.status(400).json({ error: 'Utente cassa non identificato.', code })
       return
     }
     throw err
@@ -436,6 +461,10 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
     res.json({
       status: session.payment_status,
       amount: session.amount_total ? session.amount_total / 100 : 0,
+      fundsCaptured: reservation.depositPaid === true,
+      guaranteeAmount: session.metadata?.depositAmount
+        ? parseFloat(session.metadata.depositAmount)
+        : undefined,
       customerEmail: session.customer_details?.email,
       reservation: {
         guestName: reservation.guestName,

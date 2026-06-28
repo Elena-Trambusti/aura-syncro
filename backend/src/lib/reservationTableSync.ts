@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { ReservationValidationError, validateReservationSlot } from './reservationRules'
+import { countActiveTableOrders } from './orderSession'
 
 const ACTIVE_RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'SEATED'] as const
 
@@ -12,9 +13,6 @@ export async function releaseTableFromReservation(
 
   const table = await prisma.table.findFirst({
     where: { id: tableId, restaurantId },
-    include: {
-      orders: { where: { status: { notIn: ['PAID', 'CANCELLED'] } }, take: 1 },
-    },
   })
   if (!table) return
 
@@ -28,7 +26,8 @@ export async function releaseTableFromReservation(
   })
 
   if (otherActive > 0) return
-  if (table.orders.length > 0) return
+  const activeOrders = await countActiveTableOrders(tableId, restaurantId)
+  if (activeOrders > 0) return
 
   if (table.status === 'RESERVED' || table.status === 'FREE') {
     await prisma.table.update({
@@ -111,9 +110,6 @@ export async function confirmReservationWithTable(
 
   const table = await prisma.table.findFirst({
     where: { id: tableId, restaurantId },
-    include: {
-      orders: { where: { status: { notIn: ['PAID', 'CANCELLED'] } }, take: 1 },
-    },
   })
   if (!table) {
     throw new ReservationValidationError('Tavolo non trovato', 'TABLE_NOT_FOUND')
@@ -130,7 +126,8 @@ export async function confirmReservationWithTable(
   if (table.status === 'CLEANING') {
     throw new ReservationValidationError('Tavolo in pulizia', 'TABLE_UNAVAILABLE')
   }
-  if (table.orders.length > 0) {
+  const activeOrders = await countActiveTableOrders(tableId, restaurantId)
+  if (activeOrders > 0) {
     throw new ReservationValidationError('Tavolo con ordine attivo', 'TABLE_HAS_ORDER')
   }
 

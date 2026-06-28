@@ -3,6 +3,10 @@ import { prisma } from '../lib/prisma'
 import { verifyAuthToken } from '../lib/jwtAuth'
 import { tenantForbidden } from '../lib/tenant'
 
+function isDemoSandboxEmail(email: string): boolean {
+  return email === 'admin@demo.it' || /^admin@demo-[\w-]+\.com$/.test(email)
+}
+
 export interface AuthRequest extends Request {
   userId?: string
   restaurantId?: string
@@ -62,7 +66,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
 
     // Modalità Sandbox Interattiva: blocchiamo solo le impostazioni (Settings/Tenant) e le cancellazioni distruttive.
     // Questo permette ai prospect di giocare con tavoli, ordini e prenotazioni.
-    if (user.email === 'admin@demo.it' && !['GET', 'OPTIONS'].includes(req.method)) {
+    if (isDemoSandboxEmail(user.email) && !['GET', 'OPTIONS'].includes(req.method)) {
       const isDestructive = req.method === 'DELETE'
       const isSettings = req.path.includes('/settings') || req.path.includes('/users')
       if (isDestructive || isSettings) {

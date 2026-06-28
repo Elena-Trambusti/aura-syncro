@@ -25,11 +25,12 @@ interface BookingInfo {
     reservationSlotMinutes: number
     depositRequired: boolean
     depositAmount: number
+    timezone: string
   }
 }
 
-function combineDateAndTime(date: string, time: string): string {
-  return new Date(`${date}T${time}:00`).toISOString()
+function combineDateAndTime(date: string, time: string): { localDate: string; localTime: string } {
+  return { localDate: date, localTime: time }
 }
 
 
@@ -68,7 +69,7 @@ export default function PublicReservationPage() {
         guestPhone: form.guestPhone.trim(),
         guestEmail: form.guestEmail.trim() || undefined,
         covers: form.covers,
-        date: combineDateAndTime(form.date, form.time),
+        ...combineDateAndTime(form.date, form.time),
         notes: form.notes.trim() || undefined,
       })
       return res.data

@@ -22,6 +22,7 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import ModalPortal from '../components/ModalPortal'
+import { isVipCustomer } from '../lib/customerTags'
 
 type ReservationTab = 'bookings' | 'waitlist'
 
@@ -29,7 +30,7 @@ interface Reservation {
   id: string; guestName: string; guestPhone: string; guestEmail?: string
   covers: number; date: string; duration: number; status: string
   notes?: string; table?: { number: number }
-  customer?: { totalVisits: number }
+  customer?: { totalVisits: number; totalSpent?: number; tags?: string[] }
   depositPaid?: boolean
   depositRequired?: boolean
   depositStripeSessionId?: string | null
@@ -257,7 +258,13 @@ export default function ReservationsPage() {
   const totalCovers = reservations.filter(r => !isArchivedStatus(r.status)).reduce((s, r) => s + r.covers, 0)
 
   const needsDeposit = (res: Reservation) =>
-    (res.depositRequired ?? depositPolicyActive) && !res.depositPaid && !isArchivedStatus(res.status)
+    (res.depositRequired ?? depositPolicyActive)
+    && !res.depositPaid
+    && !res.depositStripeSessionId
+    && !isArchivedStatus(res.status)
+
+  const hasDepositCardOnFile = (res: Reservation) =>
+    Boolean(res.depositStripeSessionId && !res.depositPaid && !res.depositAmountPaid)
 
   const activeReservations = reservations.filter(r => !isArchivedStatus(r.status))
   const archivedReservations = reservations.filter(r => isArchivedStatus(r.status))
@@ -391,8 +398,8 @@ export default function ReservationsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-semibold text-pietra">{res.guestName}</p>
-                    {res.customer && res.customer.totalVisits > 3 && (
-                      <span className="rounded-full border border-violet-200 bg-violet-500/10 px-2 py-0.5 text-xs font-semibold text-violet-400">VIP</span>
+                    {res.customer && isVipCustomer(res.customer) && (
+                      <span className="rounded-full border border-violet-200 bg-violet-500/10 px-2 py-0.5 text-xs font-semibold text-violet-400">{t('crm.filters.vip')}</span>
                     )}
                     <span className={cn('rounded-full border px-2 py-0.5 text-xs font-medium', STATUS_BADGE[res.status])}>
                       {getReservationStatusLabel(res.status)}
@@ -407,9 +414,14 @@ export default function ReservationsPage() {
                         {t('reservations.depositRequired')}
                       </span>
                     )}
+                    {hasDepositCardOnFile(res) && (
+                      <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-400">
+                        {t('reservations.depositCardSaved')}
+                      </span>
+                    )}
                     {res.depositAmountPaid && res.depositAmountPaid > 0 && (
                       <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-                        Penale Incassata ({res.depositAmountPaid}€)
+                        {t('reservations.depositPenaltyCollected', { amount: res.depositAmountPaid })}
                       </span>
                     )}
                   </div>
@@ -433,16 +445,16 @@ export default function ReservationsPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm('Vuoi incassare la penale No-Show dalla carta salvata?')) {
+                        if (confirm(t('reservations.chargeNoShowConfirm'))) {
                           chargeNoShow.mutate(res.id)
                         }
                       }}
                       disabled={chargeNoShow.isPending}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/25 bg-red-500/10 px-2.5 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
-                      title="Addebita penale No-Show"
+                      title={t('reservations.chargeNoShow')}
                     >
                       <CreditCard className="h-4 w-4" />
-                      <span className="hidden md:inline">Incassa Penale</span>
+                      <span className="hidden md:inline">{t('reservations.chargeNoShow')}</span>
                     </button>
                   )}
 

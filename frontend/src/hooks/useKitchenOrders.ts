@@ -192,8 +192,9 @@ export function useKitchenOrders() {
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous)
       toast.error(t('kitchen.orderDismissError', { defaultValue: "Impossibile archiviare l'ordine" }))
     },
-    onSuccess: (_updated, _orderId, ctx) => {
+    onSuccess: (updated, _orderId, ctx) => {
       if (ctx?.skipped) return
+      mergeServerOrder(updated)
       toast.success(
         t('kitchen.orderDismissed', { defaultValue: 'Ordine consegnato e rimosso dalla cucina' }),
       )

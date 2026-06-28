@@ -19,6 +19,6 @@ export function customerDisplayName(c: { firstName?: string; lastName?: string; 
   return full || c.name
 }
 
-export function isVipCustomer(c: { tags?: string[]; totalVisits: number; totalSpent: number }): boolean {
-  return c.tags?.includes('VIP') || c.totalVisits >= 10 || c.totalSpent >= 500
+export function isVipCustomer(c: { tags?: string[]; totalVisits: number; totalSpent?: number }): boolean {
+  return c.tags?.includes('VIP') || c.totalVisits >= 10 || (c.totalSpent ?? 0) >= 500
 }

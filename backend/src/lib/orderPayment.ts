@@ -1,4 +1,4 @@
-import type { Prisma, Table } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
 import { loadRestaurantFiscalConfig } from './taxEngine'
@@ -6,6 +6,7 @@ import { appendFiscalChainLink } from './fiscal/fiscalIntegrityChain'
 import { applyPostPaymentEffects } from './postPayment'
 import { issueInvoiceForOrder, snapshotOrderBillingFromCustomer } from './fiscalInvoice'
 import { decrementInventoryForUnpaidItems } from './inventoryDeduction'
+import { releaseTableIfSessionComplete } from './orderSession'
 
 export interface FinalizePaymentInput {
   orderId: string
@@ -133,21 +134,24 @@ export async function finalizeOrderPayment(
       const openSession = await tx.cashRegisterSession.findFirst({
         where: { restaurantId: input.restaurantId, status: 'OPEN' }
       })
-      const fallbackUser = await tx.user.findFirst({ where: { restaurantId: input.restaurantId } })
-      const resolvedUserId = input.executorUserId || order.waiterId || fallbackUser?.id
-
-      if (openSession && resolvedUserId) {
-        await tx.cashTransaction.create({
-          data: {
-            sessionId: openSession.id,
-            userId: resolvedUserId,
-            type: 'SALE',
-            amount: split.total,
-            reason: `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
-            orderId: order.id
-          }
-        })
+      if (!openSession) {
+        throw new Error('CASH_SESSION_REQUIRED')
       }
+      const resolvedUserId = input.executorUserId || order.waiterId
+      if (!resolvedUserId) {
+        throw new Error('CASH_USER_REQUIRED')
+      }
+
+      await tx.cashTransaction.create({
+        data: {
+          sessionId: openSession.id,
+          userId: resolvedUserId,
+          type: 'SALE',
+          amount: split.total,
+          reason: `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
+          orderId: order.id
+        }
+      })
     }
 
     return paid
@@ -180,21 +184,8 @@ export async function decrementInventoryForOrder(
   await decrementInventoryForUnpaidItems(tx, orderId, restaurantId)
 }
 
-export async function releaseTableIfEmpty(tableId: string | null | undefined): Promise<Table | null> {
-  if (!tableId) return null
-  const activeOrders = await prisma.order.count({
-    where: {
-      tableId,
-      status: { notIn: ['PAID', 'CANCELLED'] },
-    },
-  })
-  if (activeOrders === 0) {
-    return prisma.table.update({
-      where: { id: tableId },
-      data: { status: 'CLEANING' },
-    })
-  }
-  return null
+export async function releaseTableIfEmpty(tableId: string | null | undefined) {
+  return releaseTableIfSessionComplete(tableId)
 }
 
 /** Calcola ripartizione split (solo presentazione — un solo incasso fiscale) */

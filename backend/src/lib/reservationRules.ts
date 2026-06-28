@@ -40,7 +40,7 @@ export async function validateReservationSlot(
   const allReservations = await prisma.reservation.findMany({
     where: {
       restaurantId,
-      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      status: { notIn: ['CANCELLED', 'NO_SHOW', 'COMPLETED'] },
       ...(input.excludeReservationId ? { id: { not: input.excludeReservationId } } : {}),
     },
     select: { id: true, covers: true, tableId: true, date: true, duration: true },

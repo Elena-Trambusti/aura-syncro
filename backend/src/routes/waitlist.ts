@@ -5,17 +5,21 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { createReservation } from '../lib/createReservation'
+import { dayBoundsInTimezone } from '../lib/romeDate'
 
 export const waitlistRouter = Router()
 
 waitlistRouter.get('/', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { date } = req.query
   const where: Record<string, unknown> = { ...tenantWhere(req), status: 'WAITING' }
-  if (date) {
-    const d = new Date(date as string)
-    const next = new Date(d)
-    next.setDate(next.getDate() + 1)
-    where.requestedDate = { gte: d, lt: next }
+  if (date && typeof date === 'string') {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: tenantId(req) },
+      select: { timezone: true },
+    })
+    const { gte, lt } = dayBoundsInTimezone(date, restaurant?.timezone ?? 'Europe/Rome')
+    where.requestedDate = { gte, lt }
   }
   const entries = await prisma.waitlistEntry.findMany({
     where,
@@ -68,10 +72,37 @@ waitlistRouter.patch('/:id/notify', requirePermission('reservations.manage'), as
 })
 
 waitlistRouter.patch('/:id/confirm', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const entry = await updateWaitlistEntry(req, res, { status: 'CONFIRMED' })
-  if (entry) {
-    io.to(tenantId(req)).emit('waitlist:updated', entry)
-    res.json(entry)
+  const entry = await prisma.waitlistEntry.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!entry || entry.status !== 'WAITING') {
+    tenantNotFound(res, 'Voce non trovata')
+    return
+  }
+
+  try {
+    const { reservation } = await createReservation({
+      restaurantId: tenantId(req),
+      guestName: entry.guestName,
+      guestPhone: entry.guestPhone,
+      guestEmail: entry.guestEmail ?? undefined,
+      covers: entry.covers,
+      date: entry.requestedDate,
+      notes: entry.notes ?? undefined,
+      internalNotes: 'Promossa da lista d\'attesa',
+    })
+
+    await prisma.waitlistEntry.update({
+      where: { id: entry.id },
+      data: { status: 'CONFIRMED' },
+    })
+
+    io.to(tenantId(req)).emit('reservation:created', reservation)
+    io.to(tenantId(req)).emit('waitlist:updated', { ...entry, status: 'CONFIRMED' })
+    res.json({ reservation, waitlistEntry: { ...entry, status: 'CONFIRMED' } })
+  } catch (err) {
+    const code = err instanceof Error && 'code' in err ? String((err as { code: string }).code) : 'UNKNOWN'
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Impossibile creare prenotazione', code })
   }
 })
 

@@ -31,20 +31,20 @@ export async function deductInventoryForOrderItem(
     deductions.set(link.inventoryItemId, (deductions.get(link.inventoryItemId) ?? 0) + amount)
   }
 
-  const updates = Array.from(deductions.entries()).map(([inventoryItemId, amount]) =>
-    tx.inventoryItem.updateMany({
-      where: { id: inventoryItemId, restaurantId },
+  for (const [inventoryItemId, amount] of deductions.entries()) {
+    const updated = await tx.inventoryItem.updateMany({
+      where: { id: inventoryItemId, restaurantId, quantity: { gte: amount } },
       data: { quantity: { decrement: amount } },
-    }),
-  )
+    })
+    if (updated.count === 0) {
+      throw Object.assign(new Error('INSUFFICIENT_STOCK'), { code: 'INSUFFICIENT_STOCK' })
+    }
+  }
 
-  await Promise.all([
-    ...updates,
-    tx.orderItem.update({
-      where: { id: orderItemId },
-      data: { inventoryDeducted: true },
-    }),
-  ])
+  await tx.orderItem.update({
+    where: { id: orderItemId },
+    data: { inventoryDeducted: true },
+  })
 }
 
 /** Scala magazzino per tutte le righe non ancora dedotte di un ordine */

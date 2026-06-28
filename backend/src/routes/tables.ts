@@ -23,7 +23,15 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
     where: tenantWhere(req),
     include: {
       orders: {
-        where: { status: { notIn: ['PAID', 'CANCELLED'] } },
+        where: {
+          OR: [
+            { status: { notIn: ['PAID', 'CANCELLED'] } },
+            {
+              status: 'PAID',
+              items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
+            },
+          ],
+        },
         include: {
           items: { include: { menuItem: true } },
           customer: {

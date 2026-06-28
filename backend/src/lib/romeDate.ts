@@ -64,6 +64,28 @@ export function dayBoundsInTimezone(dateStr: string, timeZone = 'Europe/Rome'): 
   return { gte, lt: new Date(hi2) }
 }
 
+/** Converte data+ora locali (YYYY-MM-DD, HH:mm) nel fuso del ristorante → UTC Date. */
+export function parseLocalDateTimeInTimezone(
+  dateStr: string,
+  timeStr: string,
+  timeZone = 'Europe/Rome',
+): Date {
+  const [hh, mm] = timeStr.split(':').map(Number)
+  const targetTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`
+  const { gte, lt } = dayBoundsInTimezone(dateStr, timeZone)
+  let lo = gte.getTime()
+  let hi = lt.getTime() - 1
+  const target = `${dateStr}T${targetTime}`
+  while (hi - lo > 1000) {
+    const mid = Math.floor((lo + hi) / 2)
+    const p = zonedParts(new Date(mid), timeZone)
+    const key = `${p.date}T${p.time}`
+    if (key < target) lo = mid + 1
+    else hi = mid
+  }
+  return new Date(hi)
+}
+
 /** Settimana (7 giorni) a partire da weekStartStr (YYYY-MM-DD) nel fuso indicato. */
 export function weekBoundsInTimezone(weekStartStr: string, timeZone = 'Europe/Rome'): { gte: Date; lt: Date } {
   const { gte } = dayBoundsInTimezone(weekStartStr, timeZone)

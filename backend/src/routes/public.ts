@@ -8,6 +8,7 @@ import { publicCheckoutLimiter, publicOrderLimiter } from '../middleware/rateLim
 import { createReservation, ReservationValidationError } from '../lib/createReservation'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { requiresDeposit } from '../lib/reservationRules'
+import { parseLocalDateTimeInTimezone } from '../lib/romeDate'
 import { enrichCategoriesWithStock } from '../lib/menuStock'
 
 export const publicRouter = Router()
@@ -88,6 +89,7 @@ publicRouter.get('/booking/:slug', async (req: Request, res: Response): Promise<
       reservationSlotMinutes: s?.reservationSlotMinutes ?? 90,
       depositRequired: requiresDeposit(s),
       depositAmount: s?.depositAmount ?? 0,
+      timezone: restaurant.timezone ?? 'Europe/Rome',
     },
   })
 })
@@ -98,9 +100,14 @@ const publicReservationSchema = z.object({
   guestPhone: z.string().min(6),
   guestEmail: z.string().email().optional(),
   covers: z.number().int().positive(),
-  date: z.string().datetime(),
+  date: z.string().datetime().optional(),
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  localTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   notes: z.string().optional(),
-})
+}).refine(
+  data => data.date || (data.localDate && data.localTime),
+  { message: 'Data e ora obbligatorie' },
+)
 
 /** POST /api/public/reservations — Prenotazione tavolo dal cliente */
 publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res: Response): Promise<void> => {
@@ -112,12 +119,25 @@ publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res:
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug: parsed.data.slug },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, timezone: true, settings: true },
   })
   if (!restaurant) {
     res.status(404).json({ error: 'Ristorante non trovato' })
     return
   }
+
+  if (requiresDeposit(restaurant.settings) && !STRIPE_ENABLED) {
+    res.status(503).json({
+      error: 'Prenotazione con caparra non disponibile: pagamenti non configurati.',
+      code: 'DEPOSIT_UNAVAILABLE',
+    })
+    return
+  }
+
+  const timeZone = restaurant.timezone ?? 'Europe/Rome'
+  const reservationDate = parsed.data.date
+    ? new Date(parsed.data.date)
+    : parseLocalDateTimeInTimezone(parsed.data.localDate!, parsed.data.localTime!, timeZone)
 
   try {
     const { reservation, depositRequired } = await createReservation({
@@ -126,7 +146,7 @@ publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res:
       guestPhone: parsed.data.guestPhone,
       guestEmail: parsed.data.guestEmail,
       covers: parsed.data.covers,
-      date: new Date(parsed.data.date),
+      date: reservationDate,
       notes: parsed.data.notes,
       internalNotes: 'Prenotazione online (QR / link pubblico)',
     })
@@ -219,11 +239,6 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
 
   try {
     const result = await createGuestStripeCheckout(parsed.data)
-    io.to(result.order.restaurantId).emit('order:created', result.order)
-    io.to(result.order.restaurantId).emit('print:kitchen', { type: 'kitchen', order: result.order })
-    if (result.order.table) {
-      io.to(result.order.restaurantId).emit('table:updated', { ...result.order.table, status: 'OCCUPIED' })
-    }
     res.json({
       checkoutUrl: result.checkoutUrl,
       sessionId: result.sessionId,

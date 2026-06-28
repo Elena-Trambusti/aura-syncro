@@ -50,8 +50,21 @@ export function computeOrderStatusFromItems(items: KitchenOrderItem[]): string {
 }
 
 export function orderNeedsKitchenAttention(order: KitchenOrder): boolean {
-  if (order.status === 'CANCELLED' || order.status === 'SERVED') return false
+  if (order.status === 'CANCELLED') return false
+  if (order.status === 'SERVED' && !order.items.some(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status))) {
+    return false
+  }
   return order.items.some(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status))
+}
+
+/** Bucket colonna KDS — deriva dagli item, non dallo stato fiscale PAID. */
+export function kitchenColumnForOrder(order: KitchenOrder): 'pending' | 'preparing' | 'ready' | null {
+  if (!orderNeedsKitchenAttention(order)) return null
+  const op = computeOrderStatusFromItems(order.items)
+  if (op === 'PENDING') return 'pending'
+  if (op === 'PREPARING') return 'preparing'
+  if (op === 'READY') return 'ready'
+  return 'pending'
 }
 
 export function filterKitchenOrders(orders: KitchenOrder[]): KitchenOrder[] {
