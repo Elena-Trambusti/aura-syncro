@@ -1269,7 +1269,9 @@
       "title": "El sistema que sincroniza cada instante de tu restaurante",
       "subtitle": "Gestión del régimen especial de las Canarias (REF), cálculo y desglose del IGIC al 7% nativo en los platos y conformidad con Veri*factu local.",
       "ctaPrimary": "Probar ahora",
-      "ctaSecondary": "Acceder"
+      "ctaSecondary": "Acceder",
+      "ctaDemo": "Entrar a la Demo",
+      "demoError": "Error en la demo: no se pudo conectar."
     },
     "features": {
       "title": "Todo lo que necesitas en servicio",

@@ -1269,7 +1269,9 @@
       "title": "El sistema que sincroniza cada instante de tu restaurante",
       "subtitle": "TPV, menú QR y comandas en tiempo real. Generación automática de Factura Simplificada, gestión de propinas y cumplimiento total con el sistema Veri*factu de Hacienda.",
       "ctaPrimary": "Probar ahora",
-      "ctaSecondary": "Acceder"
+      "ctaSecondary": "Acceder",
+      "ctaDemo": "Entrar a la Demo",
+      "demoError": "Error en la demo: no se pudo conectar."
     },
     "features": {
       "title": "Todo lo que necesitas en servicio",

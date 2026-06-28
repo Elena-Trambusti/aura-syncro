@@ -72,14 +72,14 @@ export default function DashboardLayout() {
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar, openCommandPalette }}>
       <div className="pwa-app-shell relative bg-transparent z-0">
-        {/* Sfondo marmo globale */}
-        <div className="fixed inset-0 z-[-5] bg-[url('/assets/marble-bg.png')] bg-cover bg-center bg-no-repeat bg-fixed" />
+        {/* Sfondo ultra-profondo Ossidiana */}
+        <div className="fixed inset-0 z-[-5] bg-[#0A0A0E]" />
         
-        {/* Overlay di Fusione Unificato */}
-        <div className="fixed inset-0 z-[-4] bg-gradient-to-b from-neutral-950/80 via-black/95 to-neutral-950/90" />
+        {/* Effetto Glow Specchiato (Ambient Glow dietro il vetro) */}
+        <div className="fixed inset-0 z-[-4] pointer-events-none bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(197,160,89,0.06)_0%,rgba(255,255,255,0.01)_30%,rgba(0,0,0,0.8)_100%)]" />
         
-        {/* Top gold spotlight attenuato */}
-        <div className="fixed inset-0 z-[-3] pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(197,160,89,0.15)_0%,rgba(0,0,0,0)_60%)]" />
+        {/* Glow ambientale di riflesso dal basso */}
+        <div className="fixed inset-0 z-[-3] pointer-events-none bg-[radial-gradient(ellipse_100%_50%_at_50%_100%,rgba(197,160,89,0.03)_0%,rgba(0,0,0,0)_100%)]" />
         
 
 

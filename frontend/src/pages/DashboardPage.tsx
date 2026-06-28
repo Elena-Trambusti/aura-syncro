@@ -204,8 +204,11 @@ export default function DashboardPage() {
               {formatLongDate()}
             </div>
             {hasProPlan && (
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400/90">
-                <Activity className="h-3 w-3" aria-hidden />
+              <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-fumo/70">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-aura-gold/50 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-aura-gold/80"></span>
+                </span>
                 {t('dashboard.liveSync', { defaultValue: 'Sync live · 30s' })}
               </span>
             )}

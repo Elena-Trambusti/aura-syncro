@@ -162,16 +162,16 @@ export default function Sidebar() {
             </Link>
           </div>
 
-          <div className="flex flex-col items-center justify-center mx-auto w-full gap-3 mt-4 pb-4 border-b border-[#D4AF37]/20">
+          <div className="flex flex-row items-center justify-center w-full gap-2.5 mt-2 pb-4 border-b border-[#D4AF37]/10">
             {restaurant?.logoUrl ? (
-              <img src={restaurant.logoUrl} alt={restaurant.name} className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-[#D4AF37]/60 shadow-[0_0_15px_rgba(212,175,55,0.3)]" />
+              <img src={restaurant.logoUrl} alt={restaurant.name} className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[#D4AF37]/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]" />
             ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#D4AF37]/60 bg-gradient-to-br from-[#D4AF37]/20 to-transparent shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                <UtensilsCrossed className="h-5 w-5 text-[#D4AF37]" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-gradient-to-br from-[#D4AF37]/20 to-transparent shadow-[0_0_10px_rgba(212,175,55,0.2)]">
+                <UtensilsCrossed className="h-4 w-4 text-[#D4AF37]" />
               </div>
             )}
-            <div className="flex items-center justify-center w-full px-2">
-              <p className="truncate text-xl font-bold text-[#F7E7CE] tracking-wider" style={{ fontFamily: 'var(--font-display)', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
+            <div className="flex items-center min-w-0">
+              <p className="truncate text-base font-medium text-[#F7E7CE] tracking-wide" style={{ fontFamily: 'var(--font-display)', textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}>
                 {restaurant?.name || t('common.restaurant')}
               </p>
             </div>

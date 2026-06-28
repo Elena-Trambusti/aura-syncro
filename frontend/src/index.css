@@ -12,21 +12,20 @@
   --color-primary-700: #92710a;
   --color-primary-800: #854d0e;
   --color-primary-900: #713f12;
+  --color-aura-gold: #C5A059;
+  --color-aura-gold-light: #E6D5B8;
+  --color-aura-gold-muted: #9c7b41;
+  --color-champagne: #F5E6CC;
 
-  --color-aura-gold: #D4AF37;
-  --color-aura-gold-light: #E8C547;
-  --color-aura-gold-muted: #B8921F;
-  --color-champagne: #F7E7CE;
+  --color-navy: #0D0D11;
+  --color-navy-mid: #121216;
+  --color-navy-elevated: #16161D;
+  --color-navy-surface: #1C1C24;
+  --color-navy-border: rgba(255, 255, 255, 0.05);
 
-  --color-navy: #0B0E14;
-  --color-navy-mid: #12151C;
-  --color-navy-elevated: #1A1D26;
-  --color-navy-surface: #22262F;
-  --color-navy-border: rgba(255, 255, 255, 0.07);
-
-  --color-obsidian: #0B0E14;
-  --color-graphite: #12151C;
-  --color-graphite-light: #1A1D26;
+  --color-obsidian: #0D0D11;
+  --color-graphite: #121216;
+  --color-graphite-light: #16161D;
   --color-pietra: #F4F4F5;
   --color-fumo: #8B8B9E;
 
@@ -181,11 +180,11 @@
   .saas-stat,
   .glass-stat,
   .aura-kpi {
-    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0B0E14]/85 backdrop-blur-xl;
-    background-image:
-      radial-gradient(ellipse 120% 80% at 100% -20%, rgba(212, 175, 55, 0.09) 0%, transparent 55%),
-      linear-gradient(165deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 38%, transparent 100%);
-    box-shadow: var(--shadow-kpi-depth);
+    @apply relative overflow-hidden rounded-lg bg-[#0D0D11]/40 backdrop-blur-[20px];
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.1), 
+                inset 0 0 0 1px rgba(212, 175, 55, 0.05),
+                0 0 20px rgba(212, 175, 55, 0.05);
   }
 
   .aura-kpi::before {
@@ -193,24 +192,24 @@
   }
 
   .aura-kpi--hero {
-    @apply p-6 sm:p-7 lg:p-8;
+    @apply p-8 sm:p-10 lg:p-12;
   }
 
   .aura-kpi--standard {
-    @apply p-5 sm:p-6;
+    @apply p-6 sm:p-8;
   }
 
   .aura-kpi--compact {
-    @apply p-4 sm:p-5;
+    @apply p-5 sm:p-6;
   }
 
   .premium-kpi {
-    @apply p-5 sm:p-6;
+    @apply p-6 sm:p-8;
   }
 
   .premium-kpi-label,
   .aura-kpi-label {
-    @apply text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] text-fumo/90;
+    @apply text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.25em] text-fumo/80;
   }
 
   .premium-kpi-value {
@@ -218,7 +217,7 @@
   }
 
   .aura-kpi-value {
-    @apply mt-2 font-display font-semibold tracking-tight text-pietra tabular-nums leading-none;
+    @apply mt-2 font-display font-medium tracking-tight text-pietra tabular-nums leading-none;
   }
 
   .aura-kpi-value--hero {
@@ -240,8 +239,7 @@
   }
 
   .aura-kpi-icon {
-    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    @apply flex shrink-0 items-center justify-center;
   }
 
   .premium-kpi-sparkline {
@@ -311,8 +309,15 @@
   }
 
   .premium-sidebar {
-    @apply relative flex shrink-0 flex-col border-r border-[#D4AF37]/30 bg-black/60 backdrop-blur-xl;
-    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.6);
+    @apply relative flex shrink-0 flex-col border-r border-[#D4AF37]/20 backdrop-blur-2xl;
+    background-color: #0D0D11;
+    background-image: 
+      linear-gradient(180deg, rgba(13,13,17,0.8) 0%, rgba(13,13,17,0.9) 100%),
+      url('/assets/marble-bg.png');
+    background-size: auto, cover;
+    background-position: top left, center;
+    background-blend-mode: normal, lighten;
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.8), inset -1px 0 0 rgba(212, 175, 55, 0.05);
   }
 
   .premium-sidebar::after {
@@ -340,22 +345,36 @@
 
   .premium-nav-item {
     @apply relative flex w-full items-center gap-4 rounded-full px-5 py-3 text-left text-[16px] transition-all duration-300;
-    color: #D4AF37;
+    color: var(--color-aura-gold);
     font-family: var(--font-display);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+  }
+
+  .premium-nav-item span.truncate {
+    color: var(--color-aura-gold);
+    text-shadow: 0 0 8px rgba(197, 160, 89, 0.2);
+    transition: all 0.4s ease;
   }
 
   .premium-nav-item:hover {
-    @apply bg-[#D4AF37]/5;
-    color: #E8C547;
+    @apply bg-aura-gold/5;
+  }
+
+  .premium-nav-item:hover span.truncate {
+    color: var(--color-aura-gold-light);
+    text-shadow: 0 0 12px rgba(230, 213, 184, 0.5), 0 0 24px rgba(197, 160, 89, 0.4);
   }
 
   .premium-nav-item--active {
     @apply font-bold;
-    color: #F7E7CE;
-    background: linear-gradient(90deg, rgba(15,15,15,0.9) 0%, rgba(30,30,30,0.9) 50%, rgba(15,15,15,0.9) 100%);
-    border: 1px solid #D4AF37;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15), inset 0 0 15px rgba(0,0,0,0.9);
+    background: linear-gradient(90deg, rgba(15,15,15,0.7) 0%, rgba(30,30,30,0.5) 50%, rgba(15,15,15,0.7) 100%);
+    border: 1px solid var(--color-aura-gold);
+    box-shadow: 0 0 20px rgba(197, 160, 89, 0.15), inset 0 0 15px rgba(0,0,0,0.9);
+  }
+
+  .premium-nav-item--active span.truncate {
+    color: var(--color-champagne);
+    text-shadow: 0 0 12px rgba(245, 230, 204, 0.6), 0 0 24px rgba(197, 160, 89, 0.5);
   }
 
   .premium-nav-item--active::before {

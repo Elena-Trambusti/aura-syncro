@@ -1269,7 +1269,9 @@
       "title": "Die Software, die Ihr Restaurant synchron hält",
       "subtitle": "{{brand}} ist Cloud-Software für strukturierte Gastronomie: schnelles POS, QR-Menü, Echtzeit-Bestellungen und Multi-Länder-Steuercompliance.",
       "ctaPrimary": "Jetzt testen",
-      "ctaSecondary": "Anmelden"
+      "ctaSecondary": "Anmelden",
+      "ctaDemo": "Zur Live-Demo",
+      "demoError": "Demo-Fehler: Verbindung fehlgeschlagen."
     },
     "features": {
       "title": "Alles für den laufenden Betrieb",

@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 const markets = [
   {
     lang: 'it',
-    email: 'admin@demo.it',
+    email: 'admin@demo-it.com',
     name: 'La Bella Italia',
     slug: 'demo-it',
     countryCode: 'IT',
@@ -36,7 +36,7 @@ const markets = [
   },
   {
     lang: 'es',
-    email: 'admin@demo.es',
+    email: 'admin@demo-es.com',
     name: 'El Toro Loco',
     slug: 'demo-es',
     countryCode: 'ES',
@@ -66,7 +66,7 @@ const markets = [
   },
   {
     lang: 'es-cn',
-    email: 'admin@demo.es-cn',
+    email: 'admin@demo-es-cn.com',
     name: 'Canarias Grill',
     slug: 'demo-es-cn',
     countryCode: 'ES',

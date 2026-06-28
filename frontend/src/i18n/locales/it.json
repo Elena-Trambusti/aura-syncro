@@ -851,7 +851,20 @@
     "filterRange": "Intervallo",
     "from": "Da",
     "to": "A",
-    "months": ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"],
+    "months": [
+      "Gennaio",
+      "Febbraio",
+      "Marzo",
+      "Aprile",
+      "Maggio",
+      "Giugno",
+      "Luglio",
+      "Agosto",
+      "Settembre",
+      "Ottobre",
+      "Novembre",
+      "Dicembre"
+    ],
     "transactionsMeta": "{{count}} transazioni · {{period}}",
     "loading": "Caricamento dati fiscali...",
     "loadError": "Errore nel caricamento dei dati fiscali",
@@ -871,19 +884,36 @@
         "tipExemptNote": "*Mancia volontaria esente da IVA",
         "taxLine": "{{taxName}} ({{rate}}%)",
         "cards": {
-          "netRevenue": { "label": "Totale Fatturato Netto", "sub": "Soggetto a imposta (IVA)" },
-          "tips": { "label": "Mance Elettroniche Tracciate", "sub": "Esenti da IVA · Registro per imposta sostitutiva 5%" },
-          "reconciliation": { "label": "Conciliazione Bancaria POS", "sub": "Totale incassato al POS" }
+          "netRevenue": {
+            "label": "Totale Fatturato Netto",
+            "sub": "Soggetto a imposta (IVA)"
+          },
+          "tips": {
+            "label": "Mance Elettroniche Tracciate",
+            "sub": "Esenti da IVA · Registro per imposta sostitutiva 5%"
+          },
+          "reconciliation": {
+            "label": "Conciliazione Bancaria POS",
+            "sub": "Totale incassato al POS"
+          }
         },
         "table": {
-          "date": "Data", "orderId": "ID Comanda", "taxableBase": "Imponibile", "tax": "IVA",
-          "restaurantTotal": "Totale Ristorante", "tip": "Mancia", "collectedTotal": "Totale Incassato",
+          "date": "Data",
+          "orderId": "ID Comanda",
+          "taxableBase": "Imponibile",
+          "tax": "IVA",
+          "restaurantTotal": "Totale Ristorante",
+          "tip": "Mancia",
+          "collectedTotal": "Totale Incassato",
           "paymentMethod": "Metodo POS"
         },
         "pdf": {
           "title": "Libro Registro Mance e Fatturazione — {{restaurant}}",
-          "taxId": "P.IVA", "taxIdPending": "Da configurare", "address": "Sede",
-          "period": "Periodo", "generated": "Generato",
+          "taxId": "P.IVA",
+          "taxIdPending": "Da configurare",
+          "address": "Sede",
+          "period": "Periodo",
+          "generated": "Generato",
           "summaryNet": "Totale Fatturato Netto (Soggetto a IVA)",
           "summaryTips": "Totale Mance Volontarie (Esente da IVA)",
           "summaryElectronicTips": "Mance Elettroniche Tracciate — Registro imposta sostitutiva 5%",
@@ -904,18 +934,35 @@
         "tipExemptNote": "*Propina voluntaria exenta de IGIC",
         "taxLine": "{{taxName}} ({{rate}}%)",
         "cards": {
-          "netRevenue": { "label": "Total Facturado Neto", "sub": "Sujeto a impuesto IGIC (7%)" },
-          "tips": { "label": "Total Propinas Personal", "sub": "Exentas de IGIC · Ripartizione IRPF ordinario" },
-          "reconciliation": { "label": "Conciliación Bancaria POS", "sub": "Total cobrado en TPV" }
+          "netRevenue": {
+            "label": "Total Facturado Neto",
+            "sub": "Sujeto a impuesto IGIC (7%)"
+          },
+          "tips": {
+            "label": "Total Propinas Personal",
+            "sub": "Exentas de IGIC · Ripartizione IRPF ordinario"
+          },
+          "reconciliation": {
+            "label": "Conciliación Bancaria POS",
+            "sub": "Total cobrado en TPV"
+          }
         },
         "table": {
-          "date": "Fecha", "orderId": "ID Comanda", "taxableBase": "Base Imponible", "tax": "IGIC",
-          "restaurantTotal": "Total Restaurante", "tip": "Propina", "collectedTotal": "Total Cobrado"
+          "date": "Fecha",
+          "orderId": "ID Comanda",
+          "taxableBase": "Base Imponible",
+          "tax": "IGIC",
+          "restaurantTotal": "Total Restaurante",
+          "tip": "Propina",
+          "collectedTotal": "Total Cobrado"
         },
         "pdf": {
           "title": "Libro de Registro de Propinas y Facturación — {{restaurant}}",
-          "taxId": "NIF/CIF", "taxIdPending": "Pendiente de configuración", "address": "Domicilio",
-          "period": "Periodo", "generated": "Generado",
+          "taxId": "NIF/CIF",
+          "taxIdPending": "Pendiente de configuración",
+          "address": "Domicilio",
+          "period": "Periodo",
+          "generated": "Generado",
           "summaryNet": "Total Facturado Neto (Sujeto a Impuestos)",
           "summaryTips": "Total Propinas Personal (Exento de IGIC)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
@@ -935,18 +982,35 @@
         "tipExemptNote": "*Propina voluntaria exenta de IVA",
         "taxLine": "{{taxName}} ({{rate}}%)",
         "cards": {
-          "netRevenue": { "label": "Total Facturado Neto", "sub": "Sujeto a IVA" },
-          "tips": { "label": "Total Propinas Personal", "sub": "Exento de IVA · España" },
-          "reconciliation": { "label": "Conciliación Bancaria POS", "sub": "Total cobrado en TPV" }
+          "netRevenue": {
+            "label": "Total Facturado Neto",
+            "sub": "Sujeto a IVA"
+          },
+          "tips": {
+            "label": "Total Propinas Personal",
+            "sub": "Exento de IVA · España"
+          },
+          "reconciliation": {
+            "label": "Conciliación Bancaria POS",
+            "sub": "Total cobrado en TPV"
+          }
         },
         "table": {
-          "date": "Fecha", "orderId": "ID Comanda", "taxableBase": "Base Imponible", "tax": "IVA",
-          "restaurantTotal": "Total Restaurante", "tip": "Propina", "collectedTotal": "Total Cobrado"
+          "date": "Fecha",
+          "orderId": "ID Comanda",
+          "taxableBase": "Base Imponible",
+          "tax": "IVA",
+          "restaurantTotal": "Total Restaurante",
+          "tip": "Propina",
+          "collectedTotal": "Total Cobrado"
         },
         "pdf": {
           "title": "Libro de Registro de Propinas y Facturación — {{restaurant}}",
-          "taxId": "NIF/CIF", "taxIdPending": "Pendiente de configuración", "address": "Domicilio",
-          "period": "Periodo", "generated": "Generado",
+          "taxId": "NIF/CIF",
+          "taxIdPending": "Pendiente de configuración",
+          "address": "Domicilio",
+          "period": "Periodo",
+          "generated": "Generado",
           "summaryNet": "Total Facturado Neto (Sujeto a IVA)",
           "summaryTips": "Total Propinas Personal (Exento de IVA)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
@@ -1422,7 +1486,9 @@
       "ctaSecondary": "Guarda demo",
       "previewKpi1": "Ricavi vs mese scorso",
       "previewKpi2": "Coperti oggi",
-      "previewChart": "Andamento servizio (demo)"
+      "previewChart": "Andamento servizio (demo)",
+      "ctaDemo": "Entra nella Demo Live",
+      "demoError": "Errore avvio demo: impossibile collegarsi."
     },
     "trust": {
       "title": "Scelto dai migliori ristoranti a:"

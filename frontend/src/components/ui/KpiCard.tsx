@@ -17,10 +17,10 @@ interface KpiCardProps {
 }
 
 const ACCENT_ICON = {
-  gold: 'text-aura-gold border-aura-gold/30 bg-aura-gold/[0.08]',
-  emerald: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/[0.08]',
-  blue: 'text-blue-400 border-blue-500/30 bg-blue-500/[0.08]',
-  amber: 'text-amber-400 border-amber-500/30 bg-amber-500/[0.08]',
+  gold: 'text-[#D4AF37]',
+  emerald: 'text-[#34d399]',
+  blue: 'text-[#60a5fa]',
+  amber: 'text-[#fbbf24]',
 } as const
 
 const ACCENT_STROKE = {
@@ -122,8 +122,8 @@ export default function KpiCard({
             )}
           </div>
         </div>
-        <div className={cn('aura-kpi-icon', ACCENT_ICON[accent], size === 'hero' && 'h-12 w-12')}>
-          <Icon className={cn('h-5 w-5', size === 'hero' && 'h-6 w-6')} aria-hidden />
+        <div className={cn('aura-kpi-icon', ACCENT_ICON[accent], size === 'hero' && 'h-10 w-10')}>
+          <Icon className={cn('h-5 w-5', size === 'hero' && 'h-6 w-6')} strokeWidth={1.5} aria-hidden />
         </div>
       </div>
       

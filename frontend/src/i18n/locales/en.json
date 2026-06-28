@@ -1400,7 +1400,9 @@
       "ctaSecondary": "Watch demo",
       "previewKpi1": "Revenue vs last month",
       "previewKpi2": "Covers today",
-      "previewChart": "Service trend (demo)"
+      "previewChart": "Service trend (demo)",
+      "ctaDemo": "Enter Live Demo",
+      "demoError": "Demo launch error: unable to connect."
     },
     "trust": {
       "title": "Chosen by top restaurants in:"

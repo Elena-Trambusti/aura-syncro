@@ -16,12 +16,11 @@ export default function LandingHero() {
     try {
       setIsDemoLoading(true)
       const lang = i18n.language || 'it'
-      // Usiamo le credenziali demo esistenti del seed di Aura Syncro
-      const email = `admin@demo.${lang}`
+      const email = `admin@demo-${lang}.com`
       await login(email, 'admin123')
       navigate('/dashboard')
     } catch (error) {
-      toast.error('Errore avvio demo: impossibile collegarsi.')
+      toast.error(t('landing.hero.demoError'))
       console.error(error)
     } finally {
       setIsDemoLoading(false)
@@ -74,7 +73,7 @@ export default function LandingHero() {
               className="inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl px-8 py-4 text-xs uppercase tracking-[0.15em] font-bold text-white transition-all duration-500 hover:-translate-y-1 hover:bg-white/10 hover:border-aura-gold/50 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)]"
             >
               {isDemoLoading ? <Loader2 className="h-4 w-4 animate-spin text-aura-gold" /> : <Zap className="h-4 w-4 text-aura-gold" />}
-              Entra nella Demo Live
+              {t('landing.hero.ctaDemo')}
             </button>
           </div>
         </div>
