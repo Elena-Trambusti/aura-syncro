@@ -9,11 +9,11 @@ import { requireProPlan } from '../middleware/planTier'
 import {
   computeSplitBreakdown,
   type SplitBreakdown,
+  resolveTipWaiterId,
 } from '../lib/orderPayment'
 import { completeOrderPayment } from '../lib/completePayment'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
-import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
 import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount, resolveDiscountForOrder, validateOrderDiscountOptions } from '../lib/orderDiscount'
@@ -57,7 +57,7 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
     include: {
       table: true,
       customer: { include: { loyaltyTier: true } },
-      items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
+      items: { include: { menuItem: true, modifiers: true }, orderBy: { createdAt: 'asc' } },
     },
   })
 }
@@ -118,6 +118,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   }
 
   const { orderId, tipAmount, tipWaiterId, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount } = parsed.data
+  const receiptEmail = process.env.NODE_ENV !== 'production' ? simulateEmail : undefined
 
   const order = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!order) {
@@ -154,9 +155,33 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
+  if (refreshedOrder.status === 'PAID') {
+    res.json({
+      transactionId: null,
+      order: refreshedOrder,
+      fiscal: { row: null },
+      splitBreakdown: null,
+      receipt: { emailSent: false, emailTo: null },
+      alreadyPaid: true,
+    })
+    return
+  }
+
   const settlementMethod = paymentMethod === 'SPLIT'
     ? (splitSettlement ?? 'CARD')
     : paymentMethod
+
+  let validatedTipWaiterId: string | undefined
+  try {
+    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId)
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'INVALID_TIP_WAITER') {
+      res.status(400).json({ error: 'Cameriere non valido', code })
+      return
+    }
+    throw err
+  }
 
   let orderTotalForCheckout = refreshedOrder.total
   if (discountOptions) {
@@ -168,7 +193,14 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   if (paymentMethod === 'SPLIT' && split) {
     const totalWithTip = orderTotalForCheckout + Math.max(0, tipAmount)
     splitBreakdown = computeSplitBreakdown(
-      refreshedOrder.items.filter((i: any) => i.status !== 'CANCELLED'),
+      refreshedOrder.items
+        .filter(i => i.status !== 'CANCELLED')
+        .map(i => ({
+          id: i.id,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          modifierTotal: i.modifiers?.reduce((s, m) => s + m.price, 0) ?? 0,
+        })),
       totalWithTip,
       split,
     )
@@ -190,13 +222,13 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
         orderId,
         restaurantId: req.restaurantId!,
         tipAmount,
-        tipWaiterId,
+        tipWaiterId: validatedTipWaiterId,
         paymentMethod: settlementMethod,
         executorUserId: req.userId,
       },
       splitBreakdown,
       stripePaymentIntentId,
-      receiptEmail: simulateEmail,
+      receiptEmail: receiptEmail,
       restaurantName: restaurant?.name,
       serveItemsOnPayment: !hasOpenKitchen,
       discountOptions,
@@ -212,7 +244,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       splitBreakdown: result.splitBreakdown,
       receipt: {
         emailSent,
-        emailTo: simulateEmail ?? null,
+        emailTo: receiptEmail ?? null,
       },
     })
   } catch (err) {
@@ -233,12 +265,26 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       res.status(402).json({ error: 'Pagamento carta non riuscito', code })
       return
     }
+    if (
+      code === 'STRIPE_AMOUNT_MISMATCH'
+      || code === 'STRIPE_AMOUNT_OVERPAY'
+      || code === 'STRIPE_PI_ORDER_MISMATCH'
+      || code === 'STRIPE_PI_TENANT_MISMATCH'
+      || code === 'STRIPE_PI_ALREADY_USED'
+    ) {
+      res.status(402).json({ error: 'PaymentIntent non valido per questo ordine', code })
+      return
+    }
     if (code === 'CASH_SESSION_REQUIRED') {
       res.status(409).json({ error: 'Apri la cassa prima di incassare contanti.', code })
       return
     }
     if (code === 'CASH_USER_REQUIRED') {
       res.status(400).json({ error: 'Utente cassa non identificato.', code })
+      return
+    }
+    if (code === 'PAYMENT_IN_PROGRESS') {
+      res.status(409).json({ error: 'Pagamento già in elaborazione. Attendi qualche secondo e riprova.', code })
       return
     }
     throw err
@@ -262,13 +308,25 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
 
   const { orderId, tipAmount, tipWaiterId, paymentMethod } = result.data
 
+  let validatedTipWaiterId: string | undefined
+  try {
+    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId)
+  } catch (err) {
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'INVALID_TIP_WAITER') {
+      res.status(400).json({ error: 'Cameriere non valido', code })
+      return
+    }
+    throw err
+  }
+
   try {
     const { result: payResult, updatedOrder, posResult } = await completeOrderPayment({
       finalize: {
         orderId,
         restaurantId: req.restaurantId!,
         tipAmount,
-        tipWaiterId,
+        tipWaiterId: validatedTipWaiterId,
         paymentMethod,
       },
     })
@@ -295,6 +353,32 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
     }
     if (code === 'ORDER_NOT_FOUND') {
       res.status(404).json({ error: 'Ordine non trovato' })
+      return
+    }
+    if (code === 'ORDER_CANCELLED') {
+      res.status(400).json({ error: 'Ordine annullato' })
+      return
+    }
+    if (code === 'PAYMENT_IN_PROGRESS') {
+      res.status(409).json({ error: 'Pagamento già in elaborazione. Attendi qualche secondo e riprova.', code })
+      return
+    }
+    if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
+      res.status(402).json({ error: 'Pagamento carta non riuscito', code })
+      return
+    }
+    if (
+      code === 'STRIPE_AMOUNT_MISMATCH'
+      || code === 'STRIPE_AMOUNT_OVERPAY'
+      || code === 'STRIPE_PI_ORDER_MISMATCH'
+      || code === 'STRIPE_PI_TENANT_MISMATCH'
+      || code === 'STRIPE_PI_ALREADY_USED'
+    ) {
+      res.status(402).json({ error: 'PaymentIntent non valido per questo ordine', code })
+      return
+    }
+    if (code === 'CASH_SESSION_REQUIRED') {
+      res.status(409).json({ error: 'Apri la cassa prima di incassare contanti.', code })
       return
     }
     throw err
@@ -372,13 +456,14 @@ paymentsRouter.get('/session/:sessionId', async (req: Request, res: Response): P
   }
 
   const orderId = typeof req.query.orderId === 'string' ? req.query.orderId : null
-  const receiptToken = typeof req.query.receipt_token === 'string' ? req.query.receipt_token : null
-  if (!orderId || !receiptToken) {
-    res.status(400).json({ error: 'orderId e receipt_token richiesti' })
+  if (!orderId) {
+    res.status(400).json({ error: 'orderId richiesto' })
     return
   }
-  if (!verifyOrderReceiptToken(receiptToken, orderId)) {
-    res.status(403).json({ error: 'Token ricevuta non valido o scaduto' })
+
+  const receiptToken = typeof req.query.receipt_token === 'string' ? req.query.receipt_token : null
+  if (!receiptToken || !verifyOrderReceiptToken(receiptToken, orderId)) {
+    res.status(403).json({ error: 'Token ricevuta richiesto o non valido' })
     return
   }
 
@@ -407,8 +492,19 @@ paymentsRouter.get('/session/:sessionId', async (req: Request, res: Response): P
     res.json({
       status: session.payment_status,
       amount: session.amount_total ? session.amount_total / 100 : 0,
-      customerEmail: session.customer_details?.email,
-      order,
+      order: {
+        id: order.id,
+        total: order.total,
+        type: order.type,
+        status: order.status,
+        table: order.table ? { number: order.table.number } : null,
+        items: order.items.map(i => ({
+          id: i.id,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          menuItem: { name: i.menuItem.name },
+        })),
+      },
     })
   } catch {
     res.status(404).json({ error: 'Sessione non trovata' })
@@ -479,38 +575,12 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
   }
 })
 
-// ── Deposito caparra (legacy pubblico — preferire POST /api/reservations/:id/deposit-checkout) ──
-paymentsRouter.post('/deposit', depositLimiter, async (req: Request, res: Response): Promise<void> => {
-  const schema = z.object({
-    reservationId: z.string(),
-    slug: z.string(),
+// ── Deposito caparra (legacy — disabilitato, usare flusso pubblico con checkoutUrl) ──
+paymentsRouter.post('/deposit', depositLimiter, async (_req: Request, res: Response): Promise<void> => {
+  res.status(410).json({
+    error: 'Endpoint deprecato. Usa checkoutUrl dalla risposta POST /api/public/reservations.',
+    code: 'DEPOSIT_ENDPOINT_DEPRECATED',
   })
-
-  const result = schema.safeParse(req.body)
-  if (!result.success) {
-    res.status(400).json({ error: 'Dati non validi' })
-    return
-  }
-
-  try {
-    const session = await createDepositCheckoutSession(result.data.reservationId, result.data.slug)
-    res.json(session)
-  } catch (err) {
-    const code = err instanceof Error ? err.message : 'UNKNOWN'
-    if (code === 'NOT_FOUND') {
-      res.status(404).json({ error: 'Prenotazione non trovata' })
-      return
-    }
-    if (code === 'ALREADY_PAID') {
-      res.status(400).json({ error: 'Caparra già pagata' })
-      return
-    }
-    if (code === 'PAYMENTS_DISABLED') {
-      res.status(503).json({ error: 'Pagamenti online non configurati' })
-      return
-    }
-    res.status(500).json({ error: 'Errore creazione checkout caparra' })
-  }
 })
 
 // ── Dashboard pagamenti digitali (protetta) ───────────────────────────────────
@@ -571,13 +641,13 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
     totale: { amount: stripeOrders._sum?.total ?? 0, count: stripeOrders._count._all },
     mese: { amount: monthStats._sum?.total ?? 0, count: monthStats._count._all },
     mensile: Object.values(monthlyData),
-    recentPayments: recentPayments.map((order: any) => ({
+    recentPayments: recentPayments.map(order => ({
       id: order.id,
       total: order.total,
       paidAt: order.paidAt,
       type: order.type,
       table: order.table,
-      items: order.items.map((item: any) => ({
+      items: order.items.map(item => ({
         quantity: item.quantity,
         menuItem: item.menuItem
           ? { name: item.menuItem.name }
@@ -589,7 +659,7 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
   })
 })
 
-paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess, requirePermission('payments.overview'), async (req: AuthRequest, res: Response): Promise<void> => {
   if (!STRIPE_ENABLED) {
     res.status(503).json({ error: 'Stripe non configurato sulla piattaforma' })
     return

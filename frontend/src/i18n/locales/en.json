@@ -1076,7 +1076,18 @@
     "bannerSyncing": "Syncing…",
     "bannerPending": "{{count}} order(s) waiting to send",
     "retryNow": "Retry now",
-    "orderQueued": "Order saved — will send when connection returns"
+    "orderQueued": "Order saved — will send when connection returns",
+    "dropFailed": "Order/action could not be sent: {{message}}"
+  },
+  "cashDrawer": {
+    "openSuccess": "Cash session opened!",
+    "openError": "Could not open cash drawer",
+    "closeBalanced": "Drawer closed — perfect balance!",
+    "closeSurplus": "Drawer closed with surplus of €{{amount}}",
+    "closeShortage": "Shortage detected: €{{amount}}",
+    "closeError": "Could not close cash drawer",
+    "txSuccess": "Transaction recorded",
+    "txError": "Could not record transaction"
   },
   "orderModal": {
     "title": "Table {{number}}",

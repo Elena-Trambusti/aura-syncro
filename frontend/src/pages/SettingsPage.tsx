@@ -29,6 +29,8 @@ interface RestaurantSettings {
   defaultLocale?: string
   noShowDepositRequired?: boolean | null
   depositAmount?: number | null
+  posProviderLabel?: string | null
+  posTerminalId?: string | null
 }
 
 interface RestaurantData {
@@ -144,8 +146,8 @@ export default function SettingsPage() {
       invoicePrefix: restaurantData.settings?.invoicePrefix || 'FATT',
       noShowDepositRequired: restaurantData.settings?.noShowDepositRequired ?? false,
       depositAmount: restaurantData.settings?.depositAmount ?? 20,
-      posProviderLabel: (restaurantData.settings as any)?.posProviderLabel || '',
-      posTerminalId: (restaurantData.settings as any)?.posTerminalId || '',
+      posProviderLabel: restaurantData.settings?.posProviderLabel || '',
+      posTerminalId: restaurantData.settings?.posTerminalId || '',
     })
   }, [restaurantData, restaurant?.name])
 

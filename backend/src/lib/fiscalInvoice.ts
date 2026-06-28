@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { buildFiscalConfig } from './taxEngine'
+import { resolveRevenueAmount } from './fiscalAmounts'
 import { getFiscalStrategyFromConfig } from './fiscal/strategies'
 import type { FiscalRegion } from '@prisma/client'
 
@@ -68,10 +69,13 @@ export async function issueInvoiceForOrder(
   const existing = await tx.invoice.findUnique({ where: { orderId } })
   if (existing) return existing
 
-  const order = await tx.order.findUnique({
-    where: { id: orderId },
+  const order = await tx.order.findFirst({
+    where: { id: orderId, restaurantId },
     select: { revenueAmount: true, total: true, subtotal: true, tax: true, fiscalRegionSnapshot: true },
   })
+  if (!order) {
+    throw new Error('ORDER_NOT_FOUND')
+  }
 
   const settings = await tx.restaurantSettings.findUnique({ where: { restaurantId } })
   const fiscal = buildFiscalConfig(settings)
@@ -79,7 +83,15 @@ export async function issueInvoiceForOrder(
     order?.fiscalRegionSnapshot ?? fiscal.fiscalRegion,
   )
   const allocated = await allocateInvoiceNumber(tx, restaurantId, issuedAt, salePrefix)
-  const importoTotale = order?.revenueAmount ?? order?.total ?? ((order?.subtotal ?? 0) + (order?.tax ?? 0))
+  const importoTotale = order
+    ? resolveRevenueAmount({
+        revenueAmount: order.revenueAmount,
+        total: order.total,
+        subtotal: order.subtotal,
+        tax: order.tax,
+        tipAmount: 0,
+      })
+    : 0
 
   return tx.invoice.create({
     data: {

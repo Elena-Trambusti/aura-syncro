@@ -14,6 +14,7 @@ import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import ModalPortal from '../ModalPortal'
 import CustomerPicker, { type CustomerOption } from '../checkout/CustomerPicker'
+import { findActiveTableOrder } from '../../lib/orderSession'
 
 interface MenuModifierOption { id: string; name: string; price: number }
 interface MenuModifierGroup { id: string; name: string; isRequired: boolean; multiSelect: boolean; minOptions: number; maxOptions: number | null; options: MenuModifierOption[] }
@@ -83,7 +84,7 @@ export default function OrderModal({
   })
 
   const table = tables.find(tbl => tbl.id === tableId)
-  const activeOrder = table?.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
+  const activeOrder = table ? findActiveTableOrder(table.orders) : undefined
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
@@ -115,6 +116,7 @@ export default function OrderModal({
       quantity: i.quantity,
       course: i.course,
       notes: i.notes,
+      ...(i.modifiers?.length ? { modifiers: i.modifiers } : {}),
     }))
     const tableLabel = `T${table.number}`
 

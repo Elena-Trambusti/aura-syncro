@@ -15,6 +15,7 @@ import {
   KITCHEN_HIDDEN_ITEM_STATUSES,
   nextItemStatus,
   kitchenColumnForOrder,
+  orderNeedsKitchenAttention,
 } from '../lib/kitchenOrders'
 
 function useElapsedMinutes(createdAt: string) {
@@ -345,18 +346,21 @@ export default function KitchenDisplayPage() {
 
   useEffect(() => {
     const socket = getSocket()
+    let alertTimer: ReturnType<typeof setTimeout> | null = null
     const onNewOrder = (order: KitchenOrder) => {
-      if (order.status !== 'PENDING' && order.status !== 'CONFIRMED') return
+      if (!orderNeedsKitchenAttention(order)) return
       setNewOrderAlert(true)
       toast('🔔 Nuovo ordine!', {
         style: { background: '#c9a227', color: '#fff', fontWeight: 'bold' },
         duration: 4000,
       })
-      setTimeout(() => setNewOrderAlert(false), 3000)
+      if (alertTimer) clearTimeout(alertTimer)
+      alertTimer = setTimeout(() => setNewOrderAlert(false), 3000)
     }
     socket.on('order:created', onNewOrder)
     return () => {
       socket.off('order:created', onNewOrder)
+      if (alertTimer) clearTimeout(alertTimer)
     }
   }, [])
 

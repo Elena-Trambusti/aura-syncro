@@ -4,21 +4,22 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
-import { canSetOrderStatus, canUpdateOrderItemStatus } from '../lib/permissions'
+import { canSetOrderStatus, canUpdateOrderItemStatus, hasPermission } from '../lib/permissions'
 import { io } from '../index'
-import { parseLocalDate } from '../lib/dates'
-import { completeOrderPayment } from '../lib/completePayment'
+import { dayBoundsInTimezone } from '../lib/romeDate'
 import { releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxFromGrossLines, computeTaxForOrderItems } from '../lib/orderTax'
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
-import { resolveOrCreateCustomer } from '../lib/customerResolver'
+import { resolveOrCreateCustomer, assertCustomerInTenant } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
 import { acquireIdempotencyLock, getIdempotentResponse, readIdempotencyKey, saveIdempotentResponse } from '../lib/apiIdempotency'
 import {
   occupyTableIfAvailable,
+  restaurantActiveOrdersWhere,
+  kitchenActiveOrdersWhere,
   syncOrderStatusFromItemsTx,
 } from '../lib/orderSession'
 
@@ -60,12 +61,12 @@ ordersRouter.get('/', requirePermission('orders.read'), async (req: AuthRequest,
 
   if (status) where.status = status
   if (date) {
-    const d = parseLocalDate(date)
-    if (d) {
-      const next = new Date(d)
-      next.setDate(next.getDate() + 1)
-      where.createdAt = { gte: d, lt: next }
-    }
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: req.restaurantId! },
+      select: { timezone: true },
+    })
+    const { gte, lt } = dayBoundsInTimezone(date, restaurant?.timezone ?? 'Europe/Rome')
+    where.createdAt = { gte, lt }
   }
 
   const orders = await prisma.order.findMany({
@@ -78,17 +79,7 @@ ordersRouter.get('/', requirePermission('orders.read'), async (req: AuthRequest,
 
 ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const orders = await prisma.order.findMany({
-    where: {
-      restaurantId: req.restaurantId!,
-      status: { notIn: ['CANCELLED', 'SERVED'] },
-      OR: [
-        { status: { notIn: ['PAID'] } },
-        {
-          status: 'PAID',
-          items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
-        },
-      ],
-    },
+    where: kitchenActiveOrdersWhere(req.restaurantId!),
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
   })
@@ -169,11 +160,11 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     notes: z.string().optional(),
     items: z.array(z.object({
       menuItemId: z.string(),
-      quantity: z.number().int().positive(),
+      quantity: z.number().int().positive().max(99),
       course: z.number().int().positive().optional().default(1),
       modifiers: z.array(z.string()).optional(),
       notes: z.string().optional(),
-    })).min(1),
+    })).min(1).max(50),
   })
 
   const result = schema.safeParse(req.body)
@@ -185,6 +176,14 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   const { items, customerEmail, customerPhone, customerName, ...orderData } = result.data
 
   let resolvedCustomerId = orderData.customerId
+  if (resolvedCustomerId) {
+    try {
+      await assertCustomerInTenant(resolvedCustomerId, req.restaurantId!)
+    } catch {
+      res.status(404).json({ error: 'Cliente non trovato', code: 'CUSTOMER_NOT_FOUND' })
+      return
+    }
+  }
   if (!resolvedCustomerId && (customerEmail || customerPhone)) {
     resolvedCustomerId = await resolveOrCreateCustomer(req.restaurantId!, {
       email: customerEmail,
@@ -205,8 +204,7 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     itemsWithPrice = items.map(item => {
       const menuItem = menuItems.find(m => m.id === item.menuItemId)
       if (!menuItem) throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
-      void assertMenuItemOrderable(menuItem, item.quantity)
-      
+      assertMenuItemOrderable(menuItem, item.quantity)
       let unitPrice = menuItem.price
       const selectedOptions: Array<{ optionId: string, name: string, price: number }> = []
       
@@ -295,8 +293,12 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
       return created
     })
   } catch (e) {
-    if ((e as any).code === 'TABLE_OCCUPIED') {
+    if ((e as { code?: string }).code === 'TABLE_OCCUPIED') {
       res.status(409).json({ error: 'Il tavolo è stato appena occupato da un altro collega. Aggiorna la pagina.' })
+      return
+    }
+    if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
+      res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
       return
     }
     throw e
@@ -352,6 +354,11 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
   const targetStatus = parsed.data.status
   const readyUnits = parsed.data.units
 
+  if (targetStatus === 'CANCELLED' && !hasPermission(req.userRole, 'orders.cancel')) {
+    res.status(403).json({ error: 'Permessi insufficienti per annullare piatti', code: 'FORBIDDEN' })
+    return
+  }
+
   const order = await prisma.order.findFirst({
     where: { id: req.params.orderId, restaurantId: req.restaurantId! },
     include: { items: { select: { id: true, status: true } } },
@@ -365,6 +372,10 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     return
   }
   if (order.status === 'PAID') {
+    if (targetStatus === 'CANCELLED') {
+      res.status(400).json({ error: 'Non è possibile annullare piatti su ordine già pagato', code: 'ORDER_PAID' })
+      return
+    }
     const kitchenStillActive = order.items.some(
       i => !['SERVED', 'CANCELLED'].includes(i.status),
     )
@@ -380,6 +391,7 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
 
   const orderItem = await prisma.orderItem.findFirst({
     where: { id: req.params.itemId, orderId: req.params.orderId },
+    include: { modifiers: true },
   })
   if (!orderItem) {
     res.status(404).json({ error: 'Piatto non trovato nell\'ordine' })
@@ -391,8 +403,9 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     && orderItem.quantity > 1
     && (readyUnits ?? 1) < orderItem.quantity
 
-  await prisma.$transaction(async tx => {
-    if (splitReady) {
+  try {
+    await prisma.$transaction(async tx => {
+      if (splitReady) {
       const units = readyUnits ?? 1
       await tx.orderItem.update({
         where: { id: orderItem.id },
@@ -406,13 +419,23 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
           unitPrice: orderItem.unitPrice,
           notes: orderItem.notes,
           status: 'READY',
+          modifiers: {
+            create: orderItem.modifiers.map(m => ({
+              optionId: m.optionId,
+              name: m.name,
+              price: m.price,
+            })),
+          },
         },
       })
     } else {
-      await tx.orderItem.update({
-        where: { id: req.params.itemId },
+      const claimed = await tx.orderItem.updateMany({
+        where: { id: req.params.itemId, status: orderItem.status },
         data: { status: targetStatus },
       })
+      if (claimed.count === 0) {
+        throw Object.assign(new Error('ITEM_STATUS_CONFLICT'), { code: 'ITEM_STATUS_CONFLICT' })
+      }
     }
 
     if (targetStatus === 'CANCELLED') {
@@ -443,9 +466,17 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
       }
     }
   })
+  } catch (err) {
+    const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+    if (code === 'ITEM_STATUS_CONFLICT') {
+      res.status(409).json({ error: 'Stato piatto modificato da un altro utente', code })
+      return
+    }
+    throw err
+  }
 
-  // Apply discounts again if totals changed
-  if (targetStatus === 'CANCELLED') {
+  // Apply discounts again if totals changed (never on fiscal-closed PAID orders)
+  if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
     const orderToDiscount = await prisma.order.findUnique({ where: { id: req.params.orderId } })
     if (orderToDiscount && (orderToDiscount.customerId || orderToDiscount.discount > 0)) {
       await applyDiscountToOrder(req.params.orderId, req.restaurantId!, { applyLoyalty: true })
@@ -456,6 +487,16 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
     where: { id: req.params.orderId },
     include: orderInclude,
   })
+
+  if (updatedOrder?.tableId) {
+    const kitchenDone = !updatedOrder.items.some(
+      i => !['SERVED', 'CANCELLED'].includes(i.status),
+    )
+    if (kitchenDone) {
+      const releasedTable = await releaseTableIfEmpty(updatedOrder.tableId)
+      if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
+    }
+  }
 
   io.to(req.restaurantId!).emit('order:updated', updatedOrder)
   res.json(updatedOrder)
@@ -496,27 +537,11 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
   }
 
   if (status === 'PAID') {
-    const paymentMethod = bodyPaymentMethod ?? 'CARD'
-    try {
-      const { updatedOrder } = await completeOrderPayment({
-        finalize: {
-          orderId: req.params.id,
-          restaurantId: req.restaurantId!,
-          tipAmount: bodyTipAmount ?? 0,
-          paymentMethod,
-          executorUserId: req.userId,
-        },
-      })
-      res.json(updatedOrder)
-      return
-    } catch (err) {
-      const code = err instanceof Error ? err.message : 'UNKNOWN'
-      if (code === 'ORDER_ALREADY_PAID') {
-        res.status(400).json({ error: 'Ordine già pagato' })
-        return
-      }
-      throw err
-    }
+    res.status(400).json({
+      error: 'Usa POST /api/payments/finalize per incassare l\'ordine',
+      code: 'USE_PAYMENTS_FINALIZE',
+    })
+    return
   }
 
   if (status === 'SERVED' && existingOrder.status === 'PAID') {
@@ -558,7 +583,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
       where: { orderId: req.params.id, status: { not: 'CANCELLED' } },
       select: { id: true }
     })
-    
+
     await prisma.$transaction(async tx => {
       await tx.orderItem.updateMany({
         where: { orderId: req.params.id },
@@ -567,14 +592,30 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
       for (const item of items) {
         await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
       }
+      await tx.order.update({
+        where: { id: req.params.id },
+        data: { subtotal: 0, tax: 0, total: 0, revenueAmount: 0, discount: 0 },
+      })
     })
   }
 
-  const order = await prisma.order.update({
-    where: { id: req.params.id },
+  const updated = await prisma.order.updateMany({
+    where: { id: req.params.id, restaurantId: req.restaurantId! },
     data: { status: status as OrderStatus },
+  })
+  if (updated.count === 0) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id: req.params.id, restaurantId: req.restaurantId! },
     include: orderInclude,
   })
+  if (!order) {
+    res.status(404).json({ error: 'Ordine non trovato' })
+    return
+  }
 
   if (status === 'CANCELLED') {
     const releasedTable = await releaseTableIfEmpty(order.tableId)
@@ -674,52 +715,64 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
      }
   }
 
-  const { createdItem, orderWithItems } = await prisma.$transaction(async tx => {
-    const newItem = await tx.orderItem.create({
-      data: {
-        orderId: req.params.id,
-        menuItemId: result.data.menuItemId,
-        quantity: result.data.quantity,
-        course: result.data.course,
-        unitPrice: unitPrice,
-        notes: result.data.notes,
-        modifiers: {
-          create: selectedOptions.map(opt => ({
-             optionId: opt.optionId,
-             name: opt.name,
-             price: opt.price
-          }))
-        }
-      },
-      include: { menuItem: true },
-    })
-
-    const fetchedOrder = await tx.order.findFirst({
-      where: scopedWhere(req, req.params.id),
-      include: { items: true },
-    })
-
-    if (fetchedOrder) {
-      const { subtotal, tax, total, taxRateApplied } = await computeTaxForOrderItems(
-        tenantId(req),
-        fetchedOrder.items.map(i => ({
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
-          menuItemId: i.menuItemId,
-          status: i.status,
-        })),
-      )
-      
-      await tx.order.updateMany({
-        where: scopedWhere(req, req.params.id),
-        data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
+  let createdItem
+  let orderWithItems
+  try {
+    const txResult = await prisma.$transaction(async tx => {
+      const newItem = await tx.orderItem.create({
+        data: {
+          orderId: req.params.id,
+          menuItemId: result.data.menuItemId,
+          quantity: result.data.quantity,
+          course: result.data.course,
+          unitPrice: unitPrice,
+          notes: result.data.notes,
+          modifiers: {
+            create: selectedOptions.map(opt => ({
+               optionId: opt.optionId,
+               name: opt.name,
+               price: opt.price
+            }))
+          }
+        },
+        include: { menuItem: true },
       })
+
+      const fetchedOrder = await tx.order.findFirst({
+        where: scopedWhere(req, req.params.id),
+        include: { items: true },
+      })
+
+      if (fetchedOrder) {
+        const { subtotal, tax, total, taxRateApplied } = await computeTaxForOrderItems(
+          tenantId(req),
+          fetchedOrder.items.map(i => ({
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            menuItemId: i.menuItemId,
+            status: i.status,
+          })),
+        )
+        
+        await tx.order.updateMany({
+          where: scopedWhere(req, req.params.id),
+          data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
+        })
+      }
+      
+      await deductInventoryForOrder(tx, req.params.id, tenantId(req))
+      
+      return { createdItem: newItem, orderWithItems: fetchedOrder }
+    }, { timeout: 10000 })
+    createdItem = txResult.createdItem
+    orderWithItems = txResult.orderWithItems
+  } catch (e) {
+    if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
+      res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
+      return
     }
-    
-    await deductInventoryForOrder(tx, req.params.id, tenantId(req))
-    
-    return { createdItem: newItem, orderWithItems: fetchedOrder }
-  }, { timeout: 10000 })
+    throw e
+  }
 
   if (orderWithItems && (orderWithItems.customerId || orderWithItems.discount > 0)) {
     await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })
@@ -765,6 +818,14 @@ ordersRouter.patch('/:id/customer', requirePermission('orders.create'), async (r
   }
 
   let customerId = result.data.customerId
+  if (customerId) {
+    try {
+      await assertCustomerInTenant(customerId, tenantId(req))
+    } catch {
+      res.status(404).json({ error: 'Cliente non trovato', code: 'CUSTOMER_NOT_FOUND' })
+      return
+    }
+  }
   if (!customerId && (result.data.customerEmail || result.data.customerPhone)) {
     customerId = await resolveOrCreateCustomer(tenantId(req), {
       email: result.data.customerEmail,

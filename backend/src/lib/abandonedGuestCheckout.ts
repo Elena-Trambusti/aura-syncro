@@ -2,13 +2,19 @@ import { prisma } from './prisma'
 import { restoreInventoryForOrderItem } from './inventoryDeduction'
 import { releaseTableIfSessionComplete } from './orderSession'
 
+export type CancelledGuestOrderInfo = {
+  restaurantId: string
+  orderId: string
+  tableId: string | null
+}
+
 /** Annulla ordine guest Stripe non pagato e ripristina stock/tavolo. */
-export async function cancelAbandonedGuestOrder(orderId: string): Promise<boolean> {
+export async function cancelAbandonedGuestOrder(orderId: string): Promise<CancelledGuestOrderInfo | null> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: { select: { id: true, status: true } } },
   })
-  if (!order || order.status === 'PAID' || order.status === 'CANCELLED') return false
+  if (!order || order.status === 'PAID' || order.status === 'CANCELLED') return null
 
   await prisma.$transaction(async tx => {
     await tx.orderItem.updateMany({
@@ -25,5 +31,10 @@ export async function cancelAbandonedGuestOrder(orderId: string): Promise<boolea
   })
 
   await releaseTableIfSessionComplete(order.tableId)
-  return true
+
+  return {
+    restaurantId: order.restaurantId,
+    orderId: order.id,
+    tableId: order.tableId,
+  }
 }

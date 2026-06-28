@@ -4,6 +4,7 @@ import { computeTaxForRestaurant } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { assertMenuItemOrderable } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
+import { acquireIdempotencyLock, getIdempotentResponse, saveIdempotentResponse } from './apiIdempotency'
 import { occupyTableIfAvailable } from './orderSession'
 
 export const publicOrderSchema = z.object({
@@ -15,9 +16,10 @@ export const publicOrderSchema = z.object({
   guestName: z.string().min(2).optional(),
   items: z.array(z.object({
     menuItemId: z.string(),
-    quantity: z.number().int().positive(),
+    quantity: z.number().int().positive().max(99),
     notes: z.string().optional(),
-  })).min(1),
+  })).min(1).max(50),
+  clientRequestId: z.string().min(8).max(128).optional(),
 })
 
 export type PublicOrderInput = z.infer<typeof publicOrderSchema>
@@ -81,10 +83,42 @@ export async function resolveGuestItemsWithStock(
  * `restaurantId` deve provenire dal tenant risolto via slug (route pubblica).
  */
 export async function createPublicOrder(restaurantId: string, input: PublicOrderInput) {
-  const { items, tableNumber, guestEmail, guestPhone, guestName, ...orderData } = input
+  const { items, tableNumber, guestEmail, guestPhone, guestName, clientRequestId, ...orderData } = input
 
   if (!restaurantId) {
     throw new PublicOrderError('Ristorante non trovato', 404, 'RESTAURANT_NOT_FOUND')
+  }
+
+  if (clientRequestId) {
+    const idemKey = `guest-order:${clientRequestId}`
+    const cached = await getIdempotentResponse(restaurantId, idemKey)
+    if (cached && cached.statusCode === 201) {
+      const body = cached.responseBody as {
+        order: Awaited<ReturnType<typeof prisma.order.findFirst>>
+        restaurantId: string
+        tableNumber?: number
+        total: number
+      }
+      if (body?.order) {
+        return { order: body.order, restaurantId: body.restaurantId, tableNumber: body.tableNumber, total: body.total }
+      }
+    }
+    const locked = await acquireIdempotencyLock(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
+    if (!locked) {
+      const retry = await getIdempotentResponse(restaurantId, idemKey)
+      if (retry?.statusCode === 201) {
+        const body = retry.responseBody as {
+          order: Awaited<ReturnType<typeof prisma.order.findFirst>>
+          restaurantId: string
+          tableNumber?: number
+          total: number
+        }
+        if (body?.order) {
+          return { order: body.order, restaurantId: body.restaurantId, tableNumber: body.tableNumber, total: body.total }
+        }
+      }
+      throw new PublicOrderError('Ordine già in elaborazione', 409, 'ORDER_IN_PROGRESS')
+    }
   }
 
   const itemsWithPrice = await resolveGuestItemsWithStock(restaurantId, items)
@@ -94,7 +128,10 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     const table = await prisma.table.findUnique({
       where: { restaurantId_number: { restaurantId, number: tableNumber } },
     })
-    if (table) tableId = table.id
+    if (!table) {
+      throw new PublicOrderError('Tavolo non trovato', 404, 'TABLE_NOT_FOUND')
+    }
+    tableId = table.id
   }
 
   const grossTotal = itemsWithPrice.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
@@ -146,5 +183,15 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     return created
   })
 
-  return { order, restaurantId, tableNumber, total }
+  const result = { order, restaurantId, tableNumber, total }
+  if (clientRequestId) {
+    await saveIdempotentResponse(
+      restaurantId,
+      `guest-order:${clientRequestId}`,
+      'PUBLIC_GUEST_ORDER',
+      201,
+      result,
+    )
+  }
+  return result
 }

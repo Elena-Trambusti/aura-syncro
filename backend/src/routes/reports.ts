@@ -1,10 +1,13 @@
 import { Router, Response } from 'express'
+import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { AuthRequest, requireRole } from '../middleware/auth'
 import { requireProPlan } from '../middleware/planTier'
 import { requirePermission } from '../middleware/permissions'
 import {
   buildDateRange,
+  buildDateRangeForTimezone,
   buildMonthRange,
   calendarDateInTimezone,
   dayRangeInTimezone,
@@ -30,6 +33,7 @@ const fiscalOrderSelect = {
   revenueAmount: true,
   tipAmount: true,
   total: true,
+  discount: true,
   paymentMethod: true,
   fiscalIntegrityHash: true,
   fiscalPrevHash: true,
@@ -76,6 +80,13 @@ async function resolveChainInitialPrevHash(
 reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query
   const restaurantId = req.restaurantId!
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    include: { settings: true },
+  })
+  const fiscal = buildFiscalConfig(restaurant?.settings)
+  const timeZone = restaurant?.timezone ?? fiscal.timezone
 
   const y = Number(year)
   const m = Number(month)
@@ -144,7 +155,7 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
   const dailyMap: Record<string, { revenue: number; tips: number; collected: number; orders: number; discount: number }> = {}
   for (const o of dailyOrders) {
     const paid = effectivePaidAt(o.paidAt, o.createdAt)
-    const key = paid.toISOString().split('T')[0]
+    const key = calendarDateInTimezone(timeZone, paid)
     if (!dailyMap[key]) dailyMap[key] = { revenue: 0, tips: 0, collected: 0, orders: 0, discount: 0 }
     const food = o.revenueAmount ?? (o.subtotal + o.tax)
     dailyMap[key].revenue += food
@@ -247,26 +258,27 @@ reportsRouter.get('/categories', requirePermission('reports.read'), async (req: 
   since.setDate(since.getDate() - Number(days))
   const until = endOfLocalDay(new Date())
 
-  const data = await prisma.orderItem.groupBy({
-    by: ['menuItemId'],
-    where: { order: paidOrdersInPeriodWhere(restaurantId, since, until) },
-    _sum: { quantity: true },
-    _count: { id: true },
-  })
-
-  const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: data.map((d: { menuItemId: string }) => d.menuItemId) } },
-    include: { category: true },
+  const orderItems = await prisma.orderItem.findMany({
+    where: {
+      status: { not: 'CANCELLED' },
+      order: paidOrdersInPeriodWhere(restaurantId, since, until),
+    },
+    select: {
+      quantity: true,
+      unitPrice: true,
+      modifiers: { select: { price: true } },
+      menuItem: { select: { category: { select: { name: true } } } },
+    },
   })
 
   const categoryMap: Record<string, { name: string; revenue: number; qty: number }> = {}
-  for (const item of data) {
-    const mi = menuItems.find((m: { id: string }) => m.id === item.menuItemId)
-    if (!mi) continue
-    const catName = mi.category.name
+  for (const item of orderItems) {
+    const catName = item.menuItem.category.name
+    const modifierTotal = item.modifiers.reduce((s, m) => s + m.price, 0)
+    const lineRevenue = (item.unitPrice + modifierTotal) * item.quantity
     if (!categoryMap[catName]) categoryMap[catName] = { name: catName, revenue: 0, qty: 0 }
-    categoryMap[catName].qty += item._sum.quantity || 0
-    categoryMap[catName].revenue += mi.price * (item._sum.quantity || 0)
+    categoryMap[catName].qty += item.quantity
+    categoryMap[catName].revenue += lineRevenue
   }
 
   const result = Object.values(categoryMap)
@@ -326,21 +338,24 @@ reportsRouter.get('/yearly', requirePermission('reports.read'), async (req: Auth
 
 reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
-  const mode = (req.query.mode as string) || 'month'
-
-  const range = buildDateRange(req.query as Record<string, string | undefined>)
-  if (!range) {
-    res.status(400).json({ error: 'Filtro date non valido' })
+  const fiscalQuerySchema = z.object({
+    mode: z.enum(['day', 'month', 'range']).optional(),
+    year: z.string().optional(),
+    month: z.string().optional(),
+    date: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+  })
+  const parsedQuery = fiscalQuerySchema.safeParse(req.query)
+  if (!parsedQuery.success) {
+    res.status(400).json({ error: 'Parametri query non validi' })
     return
   }
 
-  const [restaurant, orders] = await Promise.all([
-    prisma.restaurant.findUnique({
-      where: { id: restaurantId },
-      include: { settings: true },
-    }),
-    fetchPaidOrdersInPeriod(restaurantId, range.start, range.end),
-  ])
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    include: { settings: true },
+  })
 
   if (!restaurant) {
     res.status(404).json({ error: 'Ristorante non trovato' })
@@ -348,6 +363,15 @@ reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, as
   }
 
   const fiscal = buildFiscalConfig(restaurant.settings)
+  const timeZone = restaurant.timezone ?? fiscal.timezone
+  const queryData = parsedQuery.data
+  const range = buildDateRangeForTimezone(queryData as Record<string, string | undefined>, timeZone)
+  if (!range) {
+    res.status(400).json({ error: 'Filtro date non valido' })
+    return
+  }
+
+  const orders = await fetchPaidOrdersInPeriod(restaurantId, range.start, range.end)
   const strategy = getFiscalStrategyFromConfig(fiscal)
 
   const rows = orders.map(o => {
@@ -405,7 +429,7 @@ reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, as
       email: restaurant.email,
       taxId: restaurant.settings?.taxId || null,
     },
-    period: { mode, start: range.start.toISOString(), end: range.end.toISOString() },
+    period: { mode: queryData.mode ?? 'month', start: range.start.toISOString(), end: range.end.toISOString() },
     rows,
     summary: {
       totalFacturadoNeto: summary.totalFacturadoNeto,
@@ -543,20 +567,33 @@ reportsRouter.post('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, asy
     }
   }
 
-  // 3. Genera il record di Chiusura
-  const closure = await prisma.fiscalClosure.create({
-    data: {
-      restaurantId,
-      date: new Date(),
-      totalRevenue,
-      totalTax,
-      totalCash,
-      totalCard: totalCard + totalStripe + totalDigital + totalVoucher,
-      totalTip,
-      orderCount: orders.length,
-      status: 'GENERATED',
-    },
-  })
+  // 3. Genera il record di Chiusura (unique su calendarDay → anti-race)
+  let closure
+  try {
+    closure = await prisma.fiscalClosure.create({
+      data: {
+        restaurantId,
+        calendarDay: dayKey,
+        date: new Date(),
+        totalRevenue,
+        totalTax,
+        totalCash,
+        totalCard,
+        totalStripe,
+        totalDigital,
+        totalVoucher,
+        totalTip,
+        orderCount: orders.length,
+        status: 'GENERATED',
+      },
+    })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(409).json({ error: 'Chiusura fiscale già effettuata per oggi.' })
+      return
+    }
+    throw err
+  }
 
   res.json({ ...closure, calendarDay: dayKey, paymentSplit: { totalCash, totalCard, totalStripe, totalDigital, totalVoucher } })
 })

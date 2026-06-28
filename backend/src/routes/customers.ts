@@ -65,7 +65,15 @@ customersRouter.get('/stats', requirePermission('customers.read'), async (req: A
 })
 
 customersRouter.get('/', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { search } = req.query
+  const searchSchema = z.object({
+    search: z.string().trim().min(1).max(100).optional(),
+  })
+  const parsed = searchSchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Parametri di ricerca non validi' })
+    return
+  }
+  const { search } = parsed.data
   const customers = await prisma.customer.findMany({
     where: {
       restaurantId: req.restaurantId!,

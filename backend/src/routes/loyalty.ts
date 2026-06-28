@@ -122,25 +122,33 @@ loyaltyRouter.post('/redeem', requirePermission('loyalty.manage'), async (req: A
   if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }
 
   const { customerId, points, description } = result.data
+  const restaurantId = tenantId(req)
 
-  const customer = await prisma.customer.findFirst({
-    where: { id: customerId, restaurantId: tenantId(req) },
-  })
-  if (!customer || customer.loyaltyPoints < points) {
-    res.status(400).json({ error: 'Punti insufficienti' }); return
+  try {
+    const [tx, updatedCustomer] = await prisma.$transaction(async tx => {
+      const claimed = await tx.customer.updateMany({
+        where: { id: customerId, restaurantId, loyaltyPoints: { gte: points } },
+        data: { loyaltyPoints: { decrement: points } },
+      })
+      if (claimed.count === 0) {
+        throw Object.assign(new Error('INSUFFICIENT_POINTS'), { code: 'INSUFFICIENT_POINTS' })
+      }
+      const transaction = await tx.loyaltyTransaction.create({
+        data: { customerId, restaurantId, type: 'REDEEMED', points: -points, description },
+      })
+      const updated = await tx.customer.findFirstOrThrow({ where: { id: customerId } })
+      return [transaction, updated] as const
+    }, { isolationLevel: 'Serializable' })
+
+    res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
+  } catch (err) {
+    const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+    if (code === 'INSUFFICIENT_POINTS') {
+      res.status(400).json({ error: 'Punti insufficienti', code })
+      return
+    }
+    throw err
   }
-
-  const [tx, updatedCustomer] = await prisma.$transaction([
-    prisma.loyaltyTransaction.create({
-      data: { customerId, restaurantId: tenantId(req), type: 'REDEEMED', points: -points, description },
-    }),
-    prisma.customer.update({
-      where: { id: customerId },
-      data: { loyaltyPoints: { decrement: points } },
-    }),
-  ])
-
-  res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
 })
 
 loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -159,6 +167,11 @@ loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: A
     where: { id: customerId, restaurantId },
   })
   if (!customer) { tenantNotFound(res, 'Cliente non trovato'); return }
+
+  if (customer.loyaltyPoints + points < 0) {
+    res.status(400).json({ error: 'Saldo punti insufficiente', code: 'INSUFFICIENT_POINTS' })
+    return
+  }
 
   const [tx, updatedCustomer] = await prisma.$transaction([
     prisma.loyaltyTransaction.create({

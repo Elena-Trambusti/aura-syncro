@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { formatCurrency, formatLongDate, getIntlLocale } from '../lib/utils'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { usePlanTier } from '../hooks/usePlanTier'
+import { useRole } from '../hooks/useRole'
 import { tq } from '../lib/queryKeys'
 import { BRAND } from '../lib/brand'
 import {
@@ -125,31 +126,34 @@ export default function DashboardPage() {
   const { restaurant } = useAuth()
   const tk = useTenantQueryKey()
   const { hasProPlan } = usePlanTier()
+  const { can } = useRole()
+  const canAnalytics = can('analytics.read')
   const locale = getIntlLocale()
 
   const { data: dashboard, isError: summaryError, isLoading: summaryLoading } = useQuery<DashboardData>({
     queryKey: tq(tk, 'analytics', 'summary'),
     queryFn: () => api.get('/analytics/summary').then(r => r.data),
     refetchInterval: 30_000,
+    enabled: canAnalytics,
   })
-  const showSummarySkeleton = useShowQuerySkeleton(summaryLoading, dashboard != null)
+  const showSummarySkeleton = canAnalytics && useShowQuerySkeleton(summaryLoading, dashboard != null)
 
   const { data: revenueData, isError: revenueError } = useQuery({
     queryKey: tq(tk, 'analytics', 'revenue', '7d'),
     queryFn: () => api.get('/analytics/revenue?period=7d').then(r => r.data),
-    enabled: hasProPlan,
+    enabled: hasProPlan && canAnalytics,
   })
 
   const { data: topItems, isError: topItemsError } = useQuery({
     queryKey: tq(tk, 'analytics', 'top-items'),
     queryFn: () => api.get('/analytics/top-items').then(r => r.data),
-    enabled: hasProPlan,
+    enabled: hasProPlan && canAnalytics,
   })
 
   const { data: hourlyData } = useQuery({
     queryKey: tq(tk, 'analytics', 'hourly'),
     queryFn: () => api.get('/analytics/hourly').then(r => r.data),
-    enabled: hasProPlan,
+    enabled: hasProPlan && canAnalytics,
   })
 
   const revenueSparkline = useMemo(
@@ -222,13 +226,14 @@ export default function DashboardPage() {
         <PageSkeleton variant="cards" count={4} />
       ) : (
         <>
-      {summaryError && (
+      {canAnalytics && summaryError && (
         <div className="premium-alert-error">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
           <p className="text-sm text-red-300">{t('common.loadError')}</p>
         </div>
       )}
 
+      {canAnalytics && (
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           <KpiCard
@@ -269,9 +274,11 @@ export default function DashboardPage() {
           />
         </div>
       </section>
+      )}
 
       <LiveCommandCenter />
 
+      {canAnalytics && (
       <section aria-label={t('dashboard.operationalStatus', { defaultValue: 'Stato operativo' })}>
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="aura-section-eyebrow">
@@ -280,7 +287,9 @@ export default function DashboardPage() {
         </div>
         <OperationalPulse items={opsItems} />
       </section>
+      )}
 
+      {canAnalytics && (
       <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" aria-label={t('dashboard.secondaryMetrics', { defaultValue: 'Metriche secondarie' })}>
         <KpiCard
           title={t('dashboard.totalCustomers')}
@@ -308,8 +317,9 @@ export default function DashboardPage() {
           className="col-span-2 lg:col-span-1"
         />
       </section>
+      )}
 
-      {hasProPlan && (
+      {hasProPlan && canAnalytics && (
         <section className="aura-dashboard-bento" aria-label={t('dashboard.analyticsSection', { defaultValue: 'Analytics' })}>
           <div className="aura-module-frame aura-module-frame--hero aura-bento-span-8 p-5 sm:p-6 lg:p-7">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">

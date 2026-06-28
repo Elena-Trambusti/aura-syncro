@@ -167,13 +167,18 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.success(t('waitlist.notified'))
     },
+    onError: () => toast.error(t('waitlist.notifyError', { defaultValue: 'Notifica non riuscita' })),
   })
 
   const confirmGuest = useMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/confirm`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
       toast.success(t('waitlist.confirmed'))
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error ?? t('waitlist.confirmError', { defaultValue: 'Conferma non riuscita' }))
     },
   })
 

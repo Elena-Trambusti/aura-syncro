@@ -44,6 +44,30 @@ export interface FinalizePaymentResult {
 
 export { computePaymentSplit }
 
+const TIP_ELIGIBLE_ROLES = ['WAITER', 'MANAGER', 'OWNER', 'HOST', 'BARTENDER'] as const
+
+/** Valida che il cameriere delle mance appartenga al tenant ed sia attivo. */
+export async function resolveTipWaiterId(
+  restaurantId: string,
+  tipWaiterId?: string,
+): Promise<string | undefined> {
+  if (!tipWaiterId) return undefined
+
+  const waiter = await prisma.user.findFirst({
+    where: {
+      id: tipWaiterId,
+      restaurantId,
+      active: true,
+      role: { in: [...TIP_ELIGIBLE_ROLES] },
+    },
+    select: { id: true },
+  })
+  if (!waiter) {
+    throw new Error('INVALID_TIP_WAITER')
+  }
+  return waiter.id
+}
+
 function generateTransactionId(): string {
   return `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10).toUpperCase()}`
 }
@@ -190,7 +214,7 @@ export async function releaseTableIfEmpty(tableId: string | null | undefined) {
 
 /** Calcola ripartizione split (solo presentazione — un solo incasso fiscale) */
 export function computeSplitBreakdown(
-  items: Array<{ id: string; quantity: number; unitPrice: number }>,
+  items: Array<{ id: string; quantity: number; unitPrice: number; modifierTotal?: number }>,
   totalWithTip: number,
   config: {
     mode: 'equal' | 'by_items'
@@ -199,9 +223,11 @@ export function computeSplitBreakdown(
   },
 ): SplitBreakdown {
   const guestCount = Math.max(1, config.guestCount)
+  const lineGross = (item: { quantity: number; unitPrice: number; modifierTotal?: number }) =>
+    item.quantity * item.unitPrice + (item.modifierTotal ?? 0)
   const lineTotal = (id: string) => {
     const item = items.find(i => i.id === id)
-    return item ? item.quantity * item.unitPrice : 0
+    return item ? lineGross(item) : 0
   }
 
   if (config.mode === 'equal') {
@@ -213,7 +239,7 @@ export function computeSplitBreakdown(
         guestIndex: i,
         label: `Guest ${i + 1}`,
         itemIds: items.map(it => it.id),
-        subtotal: items.reduce((s, it) => s + it.quantity * it.unitPrice, 0),
+        subtotal: items.reduce((s, it) => s + lineGross(it), 0),
         share: i === guestCount - 1
           ? Math.round((totalWithTip - share * (guestCount - 1)) * 100) / 100
           : share,
@@ -238,10 +264,10 @@ export function computeSplitBreakdown(
     const gi = assignmentMap.get(item.id) ?? 0
     const idx = Math.min(Math.max(0, gi), guestCount - 1)
     guests[idx].itemIds.push(item.id)
-    guests[idx].subtotal += item.quantity * item.unitPrice
+    guests[idx].subtotal += lineGross(item)
   }
 
-  const foodTotal = items.reduce((s, it) => s + it.quantity * it.unitPrice, 0)
+  const foodTotal = items.reduce((s, it) => s + lineGross(it), 0)
   for (const g of guests) {
     g.share = foodTotal > 0
       ? Math.round((g.subtotal / foodTotal) * totalWithTip * 100) / 100

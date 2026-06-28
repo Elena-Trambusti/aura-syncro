@@ -1,4 +1,6 @@
 /** Parse YYYY-MM-DD as local calendar date (avoids UTC shift from `new Date('YYYY-MM-DD')`). */
+import { dayBoundsInTimezone } from './romeDate'
+
 export function parseLocalDate(dateStr: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim())
   if (!match) return null
@@ -113,6 +115,42 @@ export function buildDateRange(query: Record<string, string | undefined>): { sta
   }
 
   return null
+}
+
+/** Like buildDateRange but month/day buckets use tenant timezone calendar dates. */
+export function buildDateRangeForTimezone(
+  query: Record<string, string | undefined>,
+  timeZone: string,
+): { start: Date; end: Date } | null {
+  const mode = query.mode || 'month'
+
+  if (mode === 'day') {
+    if (!query.date) return null
+    const { gte, lt } = dayBoundsInTimezone(query.date, timeZone)
+    return { start: gte, end: new Date(lt.getTime() - 1) }
+  }
+
+  if (mode === 'month') {
+    const y = Number(query.year || new Date().getFullYear())
+    const m = Number(query.month || new Date().getMonth() + 1)
+    if (m < 1 || m > 12) return null
+    const monthStr = `${y}-${String(m).padStart(2, '0')}-01`
+    const { gte } = dayBoundsInTimezone(monthStr, timeZone)
+    const nextM = m === 12 ? 1 : m + 1
+    const nextY = m === 12 ? y + 1 : y
+    const nextStr = `${nextY}-${String(nextM).padStart(2, '0')}-01`
+    const { gte: nextStart } = dayBoundsInTimezone(nextStr, timeZone)
+    return { start: gte, end: new Date(nextStart.getTime() - 1) }
+  }
+
+  if (mode === 'range') {
+    if (!query.from || !query.to) return null
+    const { gte: start } = dayBoundsInTimezone(query.from, timeZone)
+    const { lt } = dayBoundsInTimezone(query.to, timeZone)
+    return { start, end: new Date(lt.getTime() - 1) }
+  }
+
+  return buildDateRange(query)
 }
 
 /** Date used for fiscal/report filtering: paidAt when set, otherwise createdAt. */

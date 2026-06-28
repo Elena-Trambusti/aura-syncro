@@ -11,6 +11,11 @@ const STORAGE_KEY = 'aura-lang'
 
 const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
 const supported = ['it', 'en', 'es', 'es-cn', 'fr', 'de'] as const
+type SupportedLocale = (typeof supported)[number]
+
+function isSupportedLocale(code: string): code is SupportedLocale {
+  return (supported as readonly string[]).includes(code)
+}
 
 // Auto-detect browser language if not saved
 const getBrowserLang = () => {
@@ -24,7 +29,7 @@ const getBrowserLang = () => {
   }
   
   const shortCode = browserLang.split('-')[0]
-  return supported.includes(shortCode as any) ? shortCode : 'it'
+  return isSupportedLocale(shortCode) ? shortCode : 'it'
 }
 
 const initial = saved && supported.includes(saved as (typeof supported)[number]) ? saved : getBrowserLang()

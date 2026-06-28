@@ -5,7 +5,7 @@
  * Software proprietario e riservato. Vedere LICENSE per i dettagli.
  * CONFIDENZIALE  NON DISTRIBUIRE
  */
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useLayoutEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { isDemoUserEmail } from './lib/demoAccounts'
@@ -62,12 +62,14 @@ import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
+  const location = useLocation()
   if (isLoading) return <AuthLoadingScreen />
-  return user ? <>{children}</> : <Navigate to="/login" replace />
+  return user ? <>{children}</> : <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth()
+  const location = useLocation()
 
   useLayoutEffect(() => {
     if (user && isDemoUserEmail(user.email)) {
@@ -76,7 +78,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }, [user, logout])
 
   if (isLoading) return <AuthLoadingScreen />
-  if (user && !isDemoUserEmail(user.email)) return <Navigate to="/dashboard" replace />
+  if (user && !isDemoUserEmail(user.email)) {
+    const from = (location.state as { from?: string } | null)?.from
+    const target = from && from !== '/login' ? from : '/dashboard'
+    return <Navigate to={target} replace />
+  }
   return <>{children}</>
 }
 
@@ -133,16 +139,16 @@ function AppRoutes() {
         <Route path="cassa" element={<RequirePermission permissions={['orders.pay']}><CashDrawerPage /></RequirePermission>} />
         <Route path="menu" element={<RequirePermission permissions={['menu.read']}><MenuPage /></RequirePermission>} />
         <Route path="prenotazioni" element={<RequirePermission permissions={['reservations.read']}><ReservationsPage /></RequirePermission>} />
-        <Route path="crm" element={<RequireProPlan><CrmPage /></RequireProPlan>} />
+        <Route path="crm" element={<RequireProPlan><RequirePermission permissions={['customers.read']}><CrmPage /></RequirePermission></RequireProPlan>} />
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
         <Route path="dashboard/onboarding" element={<OnboardingPage />} />
         <Route path="dashboard/billing" element={<BillingPage />} />
         <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<RequirePermission permissions={['inventory.read']}><InventoryPage /></RequirePermission>} />
-        <Route path="analytics" element={<RequireProPlan><AnalyticsPage /></RequireProPlan>} />
-        <Route path="fedelta" element={<RequireProPlan><LoyaltyPage /></RequireProPlan>} />
-        <Route path="marketing" element={<RequireProPlan><MarketingPage /></RequireProPlan>} />
+        <Route path="analytics" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AnalyticsPage /></RequirePermission></RequireProPlan>} />
+        <Route path="fedelta" element={<RequireProPlan><RequirePermission permissions={['loyalty.manage']}><LoyaltyPage /></RequirePermission></RequireProPlan>} />
+        <Route path="marketing" element={<RequireProPlan><RequirePermission permissions={['marketing.manage']}><MarketingPage /></RequirePermission></RequireProPlan>} />
         <Route path="report" element={<Outlet />}>
           <Route index element={<RequirePermission permissions={['reports.read']}><ReportsPage /></RequirePermission>} />
           <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />

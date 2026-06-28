@@ -6,7 +6,7 @@
  * ogni alert espone `context` + `ruleId` come payload per prompt downstream.
  */
 
-export type WeatherCondition = 'sunny' | 'cloudy' | 'rain'
+export type WeatherCondition = 'sunny' | 'cloudy' | 'rain' | 'unknown'
 export type AlertSeverity = 'critical' | 'optimization' | 'opportunity'
 
 export interface PastSaleRecord {
@@ -110,6 +110,7 @@ const WEATHER_IMPACT: Record<WeatherCondition, number> = {
   sunny: 1,
   cloudy: 0.92,
   rain: 0.75,
+  unknown: 1,
 }
 
 const DEFAULT_WEEKEND_DAYS = [0, 6] // domenica, sabato
@@ -296,7 +297,7 @@ export function buildWeatherForecast(daysAhead = 7, startOffset = 1): WeatherFor
     forecast.push({
       date: date.toISOString().split('T')[0]!,
       dayOfWeek: date.getDay(),
-      condition: 'unknown' as any,
+      condition: 'unknown',
     })
   }
 

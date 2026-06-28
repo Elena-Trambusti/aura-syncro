@@ -46,7 +46,7 @@ import { requirePermission } from './middleware/permissions'
 import { setupSocketHandlers } from './socket/handlers'
 import { validateEnv } from './lib/env'
 import { getVapidPublicKey } from './lib/webPush'
-import { globalApiLimiter } from './middleware/rateLimit'
+import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
 
 // In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
@@ -72,7 +72,9 @@ Sentry.init({
           data.password = '[FILTERED]';
           event.request.data = JSON.stringify(data);
         }
-      } catch (e) {}
+      } catch {
+        delete event.request?.data
+      }
     }
     return event;
   }
@@ -113,7 +115,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 /** Chiave VAPID pubblica — endpoint pubblico (necessaria prima della subscribe push) */
-app.get('/api/push/vapid-public-key', (_req, res) => {
+app.get('/api/push/vapid-public-key', vapidPublicKeyLimiter, (_req, res) => {
   res.json({ publicKey: getVapidPublicKey() })
 })
 

@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { STRIPE_ENABLED } from '../lib/stripe'
 import { io } from '../index'
-import { publicCheckoutLimiter, publicOrderLimiter } from '../middleware/rateLimit'
+import { publicCheckoutLimiter, publicMenuLimiter, publicOrderLimiter, publicReservationLimiter } from '../middleware/rateLimit'
 import { createReservation, ReservationValidationError } from '../lib/createReservation'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { requiresDeposit } from '../lib/reservationRules'
@@ -19,7 +19,7 @@ import { createGuestStripeCheckout, guestCheckoutSchema } from '../lib/publicChe
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 
 /** GET /api/public/menu/:slug — Menu digitale (solo consultazione) */
-publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<void> => {
+publicRouter.get('/menu/:slug', publicMenuLimiter, async (req: Request, res: Response): Promise<void> => {
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug: req.params.slug },
     include: {
@@ -51,7 +51,7 @@ publicRouter.get('/menu/:slug', async (req: Request, res: Response): Promise<voi
       description: restaurant.description,
       colorTheme: restaurant.colorTheme,
       slug: restaurant.slug,
-      fiscal: fiscalConfigPayload(fiscal, restaurant.settings?.taxId),
+      fiscal: fiscalConfigPayload(fiscal),
     },
     categories: categories.filter(cat => cat.items.length > 0),
     guestOrderingEnabled: isGuestOrderingEnabled(),
@@ -110,7 +110,7 @@ const publicReservationSchema = z.object({
 )
 
 /** POST /api/public/reservations — Prenotazione tavolo dal cliente */
-publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res: Response): Promise<void> => {
+publicRouter.post('/reservations', publicReservationLimiter, async (req: Request, res: Response): Promise<void> => {
   const parsed = publicReservationSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
@@ -170,6 +170,11 @@ publicRouter.post('/reservations', publicOrderLimiter, async (req: Request, res:
       res.status(409).json({ error: err.message, code: err.code })
       return
     }
+    const prismaCode = (err as { code?: string })?.code
+    if (prismaCode === 'P2002') {
+      res.status(409).json({ error: 'Slot o tavolo non più disponibile', code: 'SLOT_CONFLICT' })
+      return
+    }
     console.error('[public/reservations]', err)
     res.status(500).json({ error: 'Errore durante la prenotazione' })
   }
@@ -202,8 +207,9 @@ publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Respo
     const { order, restaurantId, tableNumber, total } = await createPublicOrder(restaurant.id, parsed.data)
     io.to(restaurantId).emit('order:created', order)
     io.to(restaurantId).emit('print:kitchen', { type: 'kitchen', order })
-    if (order.table) {
-      io.to(restaurantId).emit('table:updated', { ...order.table, status: 'OCCUPIED' })
+    if (order.tableId) {
+      const table = await prisma.table.findUnique({ where: { id: order.tableId } })
+      if (table) io.to(restaurantId).emit('table:updated', table)
     }
 
     const tableLabel = tableNumber ? `tavolo ${tableNumber}` : parsed.data.type.toLowerCase()
@@ -217,6 +223,10 @@ publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Respo
   } catch (err) {
     if (err instanceof PublicOrderError) {
       res.status(err.statusCode).json({ error: err.message, code: err.code })
+      return
+    }
+    if ((err as { code?: string }).code === 'INSUFFICIENT_STOCK') {
+      res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
       return
     }
     console.error('[public/orders]', err)

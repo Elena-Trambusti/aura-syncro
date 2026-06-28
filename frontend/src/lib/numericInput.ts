@@ -1,7 +1,7 @@
 export type NumericField = number | ''
 
 export function parseNumericInput(raw: string, mode: 'int' | 'float'): NumericField {
-  const trimmed = raw.trim()
+  const trimmed = raw.trim().replace(',', '.')
   if (trimmed === '') return ''
   const n = mode === 'int' ? parseInt(trimmed, 10) : parseFloat(trimmed)
   return Number.isNaN(n) ? '' : n

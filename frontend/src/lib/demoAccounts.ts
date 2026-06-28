@@ -38,6 +38,10 @@ export function resolveDemoMarket(pathname: string, uiLang?: string | null): Dem
 
 export function isDemoUserEmail(email?: string | null): boolean {
   if (!email) return false
-  if (email === 'admin@demo.it') return true
-  return /^admin@demo-[\w-]+\.com$/.test(email)
+  const normalized = email.trim().toLowerCase()
+  if (normalized === 'admin@demo.it') return true
+  if (/^admin@demo-[\w-]+\.com$/.test(normalized)) return true
+  if (/^staff\d+@demo-[\w-]+\.demo$/.test(normalized)) return true
+  if (normalized === 'demo@aurasyncro.it') return true
+  return false
 }

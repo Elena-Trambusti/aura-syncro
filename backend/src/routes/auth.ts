@@ -12,6 +12,7 @@ import { resolvePrimaryFrontendUrl } from '../lib/frontendUrl'
 import { ensureDefaultTables } from '../lib/defaultTables'
 import { bootstrapLoyaltyProgram } from '../lib/loyaltyHelpers'
 import { signAuthToken, verifyAuthToken } from '../lib/jwtAuth'
+import { setSessionCookie, clearSessionCookie, extractBearerToken } from '../lib/sessionCookie'
 import { asyncHandler } from '../lib/asyncHandler'
 import {
   authForgotPasswordLimiter,
@@ -73,6 +74,20 @@ function issueAuthResponse(user: {
   }
 }
 
+function sendAuthResponse(res: Response, user: {
+  id: string
+  name: string
+  email: string
+  role: string
+  restaurantId: string
+  tokenVersion: number
+  restaurant: Parameters<typeof restaurantPayload>[0]
+}, status = 200) {
+  const payload = issueAuthResponse(user)
+  setSessionCookie(res, payload.token)
+  res.status(status).json(payload)
+}
+
 authRouter.post('/register', authRegisterLimiter, asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const result = registerSchema.safeParse(req.body)
   if (!result.success) {
@@ -122,10 +137,10 @@ authRouter.post('/register', authRegisterLimiter, asyncHandler(async (req: Reque
   await ensureDefaultTables(restaurant.id)
   await bootstrapLoyaltyProgram(restaurant.id)
 
-  res.status(201).json(issueAuthResponse({
+  sendAuthResponse(res, {
     ...user,
     restaurant,
-  }))
+  }, 201)
 }))
 
 authRouter.post('/login', authLoginLimiter, asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -173,17 +188,27 @@ authRouter.post('/login', authLoginLimiter, asyncHandler(async (req: Request, re
     return
   }
 
-  res.json(issueAuthResponse(user))
+  sendAuthResponse(res, user)
 }))
 
+authRouter.post('/logout', (_req: Request, res: Response): void => {
+  clearSessionCookie(res)
+  res.json({ success: true })
+})
+
 authRouter.get('/me', asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) {
+  const token = extractBearerToken(req)
+  if (!token) {
     res.status(401).json({ error: 'Token mancante' })
     return
   }
-  const token = authHeader.split(' ')[1]
-  const payload = verifyAuthToken(token)
+  let payload
+  try {
+    payload = verifyAuthToken(token)
+  } catch {
+    res.status(401).json({ error: 'Token non valido', code: 'SESSION_INVALID' })
+    return
+  }
   const user = await findUserWithRestaurant(payload.userId, payload.restaurantId)
   if (!user) {
     res.status(401).json({ error: 'Sessione non valida', code: 'SESSION_INVALID' })

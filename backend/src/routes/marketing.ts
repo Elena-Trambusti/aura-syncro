@@ -97,7 +97,7 @@ marketingRouter.put('/:id', requirePermission('marketing.manage'), async (req: A
     scheduledAt: z.string().datetime().optional().nullable(),
     discountCode: z.string().optional().nullable(),
     discountPct: z.number().min(0).max(100).optional().nullable(),
-    status: z.enum(['DRAFT', 'SCHEDULED', 'SENT', 'CANCELLED']).optional(),
+    status: z.enum(['DRAFT', 'SCHEDULED', 'CANCELLED']).optional(),
   })
   const result = schema.safeParse(req.body)
   if (!result.success) { res.status(400).json({ error: 'Dati non validi' }); return }

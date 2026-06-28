@@ -5,10 +5,8 @@ import { tenantId, tenantNotFound } from '../lib/tenant'
 
 /** API raggiungibili in anteprima free (tenant registrato, senza abbonamento) */
 export const FREE_TIER_API_PREFIXES = [
-  '/api/analytics',
   '/api/orders',
   '/api/menu',
-  '/api/reports',
   '/api/payments',
   '/api/push',
   '/api/tables',

@@ -1,18 +1,19 @@
 import axios from 'axios'
 import { resolveBackendUrl } from './backendUrl'
 
-const ADMIN_KEY_STORAGE = 'aura_platform_admin_key'
+/** Chiave admin solo in memoria (non persistita — si perde al refresh). */
+let inMemoryAdminKey: string | null = null
 
 export function getStoredAdminKey(): string | null {
-  return sessionStorage.getItem(ADMIN_KEY_STORAGE)
+  return inMemoryAdminKey
 }
 
 export function setStoredAdminKey(key: string): void {
-  sessionStorage.setItem(ADMIN_KEY_STORAGE, key)
+  inMemoryAdminKey = key
 }
 
 export function clearStoredAdminKey(): void {
-  sessionStorage.removeItem(ADMIN_KEY_STORAGE)
+  inMemoryAdminKey = null
 }
 
 function adminBase() {
@@ -91,17 +92,18 @@ export async function fetchPendingSetup(adminKey: string): Promise<PendingSetupR
   return data
 }
 
-export async function completeSetup(
+export async function markSetupComplete(
   adminKey: string,
-  payload: { ownerEmail?: string; slug?: string; restaurantId?: string },
+  body: { restaurantId?: string; slug?: string; ownerEmail?: string },
 ): Promise<SetupCompleteResponse> {
-  const { data } = await axios.post<SetupCompleteResponse>(
-    `${adminBase()}/api/admin/setup-complete`,
-    payload,
-    { headers: { ...adminHeaders(adminKey), 'Content-Type': 'application/json' } },
-  )
+  const { data } = await axios.post<SetupCompleteResponse>(`${adminBase()}/api/admin/setup-complete`, body, {
+    headers: { ...adminHeaders(adminKey), 'Content-Type': 'application/json' },
+  })
   return data
 }
+
+/** @deprecated alias */
+export const completeSetup = markSetupComplete
 
 export async function deleteRestaurant(
   adminKey: string,
@@ -113,4 +115,10 @@ export async function deleteRestaurant(
     { headers: { ...adminHeaders(adminKey), 'Content-Type': 'application/json' } },
   )
   return data
+}
+
+export async function downgradePlan(adminKey: string, restaurantId: string): Promise<void> {
+  await axios.post(`${adminBase()}/api/admin/plan-downgrade`, { restaurantId }, {
+    headers: adminHeaders(adminKey),
+  })
 }

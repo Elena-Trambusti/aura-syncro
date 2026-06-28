@@ -123,6 +123,14 @@ export async function earnLoyaltyPointsForOrder(
   if (existing) return customer.loyaltyPoints
 
   const updated = await prisma.$transaction(async tx => {
+    const dup = await tx.loyaltyTransaction.findFirst({
+      where: { orderId, restaurantId, type: 'EARNED' },
+    })
+    if (dup) {
+      const current = await tx.customer.findUnique({ where: { id: customerId } })
+      return current!
+    }
+
     await tx.loyaltyTransaction.create({
       data: {
         customerId,
@@ -137,7 +145,7 @@ export async function earnLoyaltyPointsForOrder(
       where: { id: customerId },
       data: { loyaltyPoints: { increment: points } },
     })
-  })
+  }, { isolationLevel: 'Serializable' })
 
   await updateCustomerTier(restaurantId, customerId, updated.loyaltyPoints)
   return updated.loyaltyPoints

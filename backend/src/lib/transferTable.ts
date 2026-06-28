@@ -1,7 +1,6 @@
-import { Prisma, OrderStatus, type Order, type Table } from '@prisma/client'
+import { Prisma, type Order, type Table } from '@prisma/client'
 import { prisma } from './prisma'
-
-const CLOSED_ORDER_STATUSES: OrderStatus[] = ['PAID', 'CANCELLED']
+import { activeTableOrderWhere, countActiveTableOrders } from './orderSession'
 
 type TransferResult = {
   order: Order
@@ -19,11 +18,7 @@ async function findActiveOrderOnTable(
   restaurantId: string,
 ): Promise<Order | null> {
   return tx.order.findFirst({
-    where: {
-      restaurantId,
-      tableId,
-      status: { notIn: CLOSED_ORDER_STATUSES },
-    },
+    where: activeTableOrderWhere(tableId, restaurantId),
     orderBy: { createdAt: 'desc' },
   })
 }
@@ -59,6 +54,14 @@ export async function transferOrderBetweenTables(
       throw newTransferError('TABLE_TRANSFER_TARGET_UNAVAILABLE', 'Tavolo destinazione non disponibile')
     }
 
+    const claimed = await tx.table.updateMany({
+      where: { id: targetTable.id, restaurantId, status: 'FREE' },
+      data: { status: 'OCCUPIED' },
+    })
+    if (claimed.count === 0) {
+      throw newTransferError('TABLE_TRANSFER_TARGET_UNAVAILABLE', 'Tavolo destinazione non disponibile')
+    }
+
     const targetActiveOrder = await findActiveOrderOnTable(tx, targetTable.id, restaurantId)
     if (targetActiveOrder) {
       throw newTransferError('TABLE_TRANSFER_TARGET_OCCUPIED', 'Il tavolo destinazione ha già un ordine attivo')
@@ -69,19 +72,10 @@ export async function transferOrderBetweenTables(
         where: { id: activeOrder.id },
         data: { tableId: targetTable.id },
       }),
-      tx.table.update({
-        where: { id: targetTable.id },
-        data: { status: 'OCCUPIED' },
-      }),
+      tx.table.findFirst({ where: { id: targetTable.id } }),
     ])
 
-    const sourceStillHasActiveOrders = await tx.order.count({
-      where: {
-        restaurantId,
-        tableId: sourceTable.id,
-        status: { notIn: CLOSED_ORDER_STATUSES },
-      },
-    })
+    const sourceStillHasActiveOrders = await countActiveTableOrders(sourceTable.id, restaurantId, tx)
 
     const updatedSourceTable = await tx.table.update({
       where: { id: sourceTable.id },
@@ -91,7 +85,7 @@ export async function transferOrderBetweenTables(
     return {
       order,
       sourceTable: updatedSourceTable,
-      targetTable: updatedTargetTable,
+      targetTable: updatedTargetTable ?? { ...targetTable, status: 'OCCUPIED' as const },
     }
-  })
+  }, { isolationLevel: 'Serializable' })
 }

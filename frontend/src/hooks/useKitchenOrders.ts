@@ -36,7 +36,7 @@ export function useKitchenOrders() {
     staleTime: 30_000,
     refetchInterval: () => {
       const socket = getSocket()
-      return socket.connected ? false : SOCKET_FALLBACK_REFETCH_MS
+      return socket.connected ? 60_000 : SOCKET_FALLBACK_REFETCH_MS
     },
   })
 

@@ -10,6 +10,9 @@ dotenv.config()
 const WEBHOOK_URL = 'https://aura-syncro-s98ae.ondigitalocean.app/api/webhooks/stripe'
 const EVENTS = [
   'checkout.session.completed',
+  'checkout.session.expired',
+  'payment_intent.succeeded',
+  'payment_intent.payment_failed',
   'customer.subscription.updated',
   'customer.subscription.deleted',
   'invoice.paid',

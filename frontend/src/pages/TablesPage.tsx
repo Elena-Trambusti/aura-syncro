@@ -15,6 +15,7 @@ import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeTables } from '../hooks/useRealtimeInvalidation'
+import { useSocketStatus } from '../hooks/useSocketStatus'
 import { useRole } from '../hooks/useRole'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -24,6 +25,7 @@ import PageSkeleton from '../components/ui/PageSkeleton'
 import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 import KpiStatCard from '../components/ui/KpiStatCard'
 import FilterPills from '../components/ui/FilterPills'
+import { findActiveTableOrder } from '../lib/orderSession'
 import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -140,6 +142,7 @@ export default function TablesPage() {
   const canManageTables = can('tables.manage')
   const canTransferOrder = can('orders.items')
   useRealtimeTables()
+  const socketConnected = useSocketStatus()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [seatedCustomerId, setSeatedCustomerId] = useState<string | null>(null)
@@ -155,6 +158,7 @@ export default function TablesPage() {
   const { data: tablesData, isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
+    refetchInterval: socketConnected ? false : 15_000,
   })
   const showTablesSkeleton = useShowQuerySkeleton(isLoading, tablesData !== undefined)
   const tables = tablesData ?? []
@@ -211,6 +215,13 @@ export default function TablesPage() {
       const table = tables.find(tbl => tbl.id === id)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
     },
+    onError: (err: { response?: { data?: { code?: string } } }) => {
+      if (err.response?.data?.code === 'TABLE_HAS_ACTIVE_ORDER') {
+        toast.error(t('tables.cannotFreeActiveOrder', { defaultValue: 'Impossibile liberare: ordine o conto ancora aperti' }))
+        return
+      }
+      toast.error(t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+    },
   })
 
   const transferOrder = useMutation({
@@ -251,7 +262,7 @@ export default function TablesPage() {
     cleaning: t('tables.cleaning'),
   }
 
-  const getActiveOrder = (table: Table) => table.orders?.find(o => !['PAID', 'CANCELLED'].includes(o.status))
+  const getActiveOrder = (table: Table) => findActiveTableOrder(table.orders)
 
   const transferSourceTable = transferSourceId
     ? tables.find(tbl => tbl.id === transferSourceId)

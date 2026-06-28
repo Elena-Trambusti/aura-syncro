@@ -1,5 +1,7 @@
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { loadRestaurantPosConfig } from './posIntegration'
+import { isProduction } from './env'
+import { prisma } from './prisma'
 
 export interface PosChargeBreakdown {
   taxableAmount: number
@@ -71,14 +73,41 @@ function normalizeBreakdown(
 export async function verifyStripePaymentIntent(
   paymentIntentId: string,
   expectedAmountEur: number,
-): Promise<boolean> {
-  if (!STRIPE_ENABLED) return false
-  try {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
-    const expectedCents = Math.round(expectedAmountEur * 100)
-    return intent.status === 'succeeded' && intent.amount >= expectedCents
-  } catch {
-    return false
+  context: { orderId: string; restaurantId: string },
+): Promise<void> {
+  if (!STRIPE_ENABLED) {
+    throw new Error('STRIPE_PAYMENT_FAILED')
+  }
+
+  const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
+  if (intent.status !== 'succeeded') {
+    throw new Error('STRIPE_PAYMENT_FAILED')
+  }
+
+  const expectedCents = Math.round(expectedAmountEur * 100)
+  if (intent.amount < expectedCents) {
+    throw new Error('STRIPE_AMOUNT_MISMATCH')
+  }
+  if (intent.amount > expectedCents + 1) {
+    throw new Error('STRIPE_AMOUNT_OVERPAY')
+  }
+
+  if (intent.metadata?.orderId !== context.orderId) {
+    throw new Error('STRIPE_PI_ORDER_MISMATCH')
+  }
+  if (intent.metadata?.restaurantId !== context.restaurantId) {
+    throw new Error('STRIPE_PI_TENANT_MISMATCH')
+  }
+
+  const reused = await prisma.order.findFirst({
+    where: {
+      stripePaymentIntent: paymentIntentId,
+      id: { not: context.orderId },
+    },
+    select: { id: true },
+  })
+  if (reused) {
+    throw new Error('STRIPE_PI_ALREADY_USED')
   }
 }
 
@@ -108,21 +137,19 @@ export async function chargePosCard(
   }
 
   if (stripePaymentIntentId && STRIPE_ENABLED) {
-    const ok = await verifyStripePaymentIntent(
+    await verifyStripePaymentIntent(
       stripePaymentIntentId,
       breakdown.totalCustomerAmount,
+      { orderId: metadata.orderId, restaurantId: metadata.restaurantId },
     )
-    if (ok) {
-      return {
-        success: true,
-        transactionId: stripePaymentIntentId,
-        terminalId: posConfig.terminalId || 'STRIPE-POS',
-        provider: 'stripe',
-        stripePaymentIntentId,
-        breakdown,
-      }
+    return {
+      success: true,
+      transactionId: stripePaymentIntentId,
+      terminalId: posConfig.terminalId || 'STRIPE-POS',
+      provider: 'stripe',
+      stripePaymentIntentId,
+      breakdown,
     }
-    throw new Error('STRIPE_PAYMENT_FAILED')
   }
 
   if (posConfig.mode === 'EXTERNAL') {
@@ -135,6 +162,9 @@ export async function chargePosCard(
   }
 
   if (posConfig.isCardChargeSimulated) {
+    if (isProduction() && process.env.POS_ALLOW_SIMULATION !== 'true') {
+      throw new Error('POS_SIMULATION_NOT_ALLOWED')
+    }
     void enrichedMeta
     return simulatePosTerminal(breakdown, posConfig.terminalId)
   }

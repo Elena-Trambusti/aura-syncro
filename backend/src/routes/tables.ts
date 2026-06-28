@@ -6,6 +6,7 @@ import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { transferOrderBetweenTables } from '../lib/transferTable'
+import { countActiveTableOrders } from '../lib/orderSession'
 import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
 
 export const tablesRouter = Router()
@@ -32,8 +33,19 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
             },
           ],
         },
-        include: {
-          items: { include: { menuItem: true } },
+        select: {
+          id: true,
+          status: true,
+          total: true,
+          type: true,
+          items: {
+            select: {
+              id: true,
+              status: true,
+              quantity: true,
+              menuItem: { select: { name: true } },
+            },
+          },
           customer: {
             select: {
               id: true,
@@ -239,6 +251,17 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
     return
   }
   const { status } = parsed.data
+
+  if (status === 'FREE') {
+    const activeCount = await countActiveTableOrders(req.params.id, tenantId(req))
+    if (activeCount > 0) {
+      res.status(409).json({
+        error: 'Impossibile liberare il tavolo: ordine o conto ancora aperti',
+        code: 'TABLE_HAS_ACTIVE_ORDER',
+      })
+      return
+    }
+  }
 
   const updated = await prisma.table.updateMany({
     where: scopedWhere(req, req.params.id),

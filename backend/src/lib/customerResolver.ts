@@ -69,6 +69,20 @@ export async function resolveOrCreateCustomer(
   return customerId
 }
 
+/** Verifica che il cliente appartenga al tenant prima di collegarlo a un ordine. */
+export async function assertCustomerInTenant(
+  customerId: string,
+  restaurantId: string,
+): Promise<void> {
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, restaurantId },
+    select: { id: true },
+  })
+  if (!customer) {
+    throw Object.assign(new Error('CUSTOMER_NOT_FOUND'), { code: 'CUSTOMER_NOT_FOUND' })
+  }
+}
+
 /** Collega cliente a ordine se email/nome disponibili (es. webhook Stripe guest) */
 export async function linkCustomerToOrder(
   orderId: string,

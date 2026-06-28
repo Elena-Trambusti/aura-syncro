@@ -19,6 +19,14 @@ export function orderHasActiveKitchenItems(items: Array<{ status: string }>): bo
   return items.some(i => !KITCHEN_DONE_ITEM_STATUSES.has(i.status))
 }
 
+const ACTIVE_SESSION_OR: Prisma.OrderWhereInput['OR'] = [
+  { status: { notIn: ['PAID', 'CANCELLED'] } },
+  {
+    status: 'PAID',
+    items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
+  },
+]
+
 /** Ordini che tengono aperta la sessione al tavolo (cucina o conto non chiusi). */
 export function activeTableOrderWhere(
   tableId: string,
@@ -27,13 +35,32 @@ export function activeTableOrderWhere(
   return {
     tableId,
     restaurantId,
-    OR: [
-      { status: { notIn: ['PAID', 'CANCELLED'] } },
-      {
-        status: 'PAID',
-        items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
-      },
-    ],
+    OR: ACTIVE_SESSION_OR,
+  }
+}
+
+/** Ordini attivi in sala per un ristorante (lista ordini / KPI operativi). */
+export function restaurantActiveOrdersWhere(restaurantId: string): Prisma.OrderWhereInput {
+  return {
+    restaurantId,
+    status: { notIn: ['CANCELLED'] },
+    OR: ACTIVE_SESSION_OR,
+  }
+}
+
+/**
+ * Ordini visibili in cucina e lista "attivi" cameriere.
+ * Esclude checkout Stripe non pagato (PENDING + stripeSessionId) — la cucina non deve preparare prima dell'incasso.
+ */
+export function kitchenActiveOrdersWhere(restaurantId: string): Prisma.OrderWhereInput {
+  return {
+    restaurantId,
+    status: { notIn: ['CANCELLED'] },
+    OR: ACTIVE_SESSION_OR,
+    NOT: {
+      status: 'PENDING',
+      stripeSessionId: { not: null },
+    },
   }
 }
 
@@ -107,5 +134,43 @@ export async function occupyTableIfAvailable(
     return updated.count > 0
   }
 
-  return table.status === 'OCCUPIED'
+  if (table.status === 'OCCUPIED') {
+    const updated = await tx.table.updateMany({
+      where: { id: tableId, restaurantId, status: 'OCCUPIED' },
+      data: { status: 'OCCUPIED' },
+    })
+    return updated.count > 0
+  }
+
+  return false
+}
+
+/**
+ * Occupa tavolo dopo pagamento guest Stripe: l'ordine PAID appena creato conta già come sessione attiva,
+ * quindi occupyTableIfAvailable fallirebbe. Esclude l'ordine corrente dal conteggio.
+ */
+export async function occupyTableForSessionOrder(
+  tx: Prisma.TransactionClient,
+  tableId: string,
+  restaurantId: string,
+  orderId: string,
+): Promise<Awaited<ReturnType<typeof prisma.table.update>> | null> {
+  const otherActive = await tx.order.count({
+    where: {
+      ...activeTableOrderWhere(tableId, restaurantId),
+      id: { not: orderId },
+    },
+  })
+  if (otherActive > 0) return null
+
+  const table = await tx.table.findFirst({ where: { id: tableId, restaurantId } })
+  if (!table || table.status === 'CLEANING') return null
+
+  if (table.status === 'FREE' || table.status === 'RESERVED' || table.status === 'OCCUPIED') {
+    return tx.table.update({
+      where: { id: tableId },
+      data: { status: 'OCCUPIED' },
+    })
+  }
+  return null
 }

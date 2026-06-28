@@ -980,6 +980,13 @@
     "orderReady": "¡Pedido listo para servir!",
     "orderReadyError": "No se puede marcar el pedido como listo"
   },
+  "offline": {
+    "bannerOffline": "Sin conexión — los pedidos se enviarán cuando vuelva la conexión",
+    "bannerSyncing": "Sincronizando…",
+    "bannerPending": "{{count}} pedido(s) pendiente(s) de envío",
+    "retryNow": "Reintentar ahora",
+    "orderQueued": "Pedido guardado — se enviará cuando vuelva la conexión"
+  },
   "orderModal": {
     "title": "Mesa {{number}}",
     "seats": "{{count}} plazas",

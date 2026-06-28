@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { startOfLocalDay } from './dates'
+import { kitchenActiveOrdersWhere } from './orderSession'
 
 function sumFoodFromAggregate(agg: {
   _sum: {
@@ -62,7 +63,7 @@ export async function buildDashboardSummary(restaurantId: string) {
     prisma.reservation.count({
       where: { restaurantId, date: { gte: today, lt: tomorrow }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } },
     }),
-    prisma.order.count({ where: { restaurantId, status: { notIn: ['PAID', 'CANCELLED'] } } }),
+    prisma.order.count({ where: kitchenActiveOrdersWhere(restaurantId) }),
     prisma.inventoryItem.count({
       where: { restaurantId, quantity: { lte: prisma.inventoryItem.fields.minQuantity } },
     }),

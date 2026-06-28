@@ -5,6 +5,7 @@ import { isPublicAppRoute } from './publicRoutes'
 import { readAuthCache } from './authCache'
 import { isDemoUserEmail } from './demoAccounts'
 import { isDemoMutationAllowed } from './demoRestrictions'
+import { getSessionToken, clearSessionToken } from './sessionToken'
 
 const RESTAURANT_ID_KEY = 'restaurantId'
 
@@ -18,6 +19,7 @@ export const api = axios.create({
   baseURL: getApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
+  withCredentials: true,
 })
 
 export function setTenantHeader(restaurantId: string | null) {
@@ -29,7 +31,7 @@ export function setTenantHeader(restaurantId: string | null) {
 }
 
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
+  const token = getSessionToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
 
   const restaurantId = localStorage.getItem(RESTAURANT_ID_KEY)
@@ -62,7 +64,7 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
+      clearSessionToken()
       localStorage.removeItem(RESTAURANT_ID_KEY)
       localStorage.removeItem('aura-auth-cache')
 

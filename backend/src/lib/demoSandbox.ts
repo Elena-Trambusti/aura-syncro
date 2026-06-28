@@ -1,6 +1,11 @@
 /** Account demo live (prospect sandbox). */
 export function isDemoUserEmail(email: string): boolean {
-  return email === 'admin@demo.it' || /^admin@demo-[\w-]+\.com$/.test(email)
+  const normalized = email.trim().toLowerCase()
+  if (normalized === 'admin@demo.it') return true
+  if (/^admin@demo-[\w-]+\.com$/.test(normalized)) return true
+  if (/^staff\d+@demo-[\w-]+\.demo$/.test(normalized)) return true
+  if (normalized === 'demo@aurasyncro.it') return true
+  return false
 }
 
 /** API consentite in scrittura durante la demo (flusso tavoli + comanda + incasso). */

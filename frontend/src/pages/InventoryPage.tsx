@@ -122,21 +122,27 @@ export default function InventoryPage() {
   const categories = [allCategoriesKey, ...Array.from(new Set(items.map(i => i.category || otherCategoryKey).filter(Boolean)))]
   const filtered = filterCategory === allCategoriesKey ? items : items.filter(i => (i.category || otherCategoryKey) === filterCategory)
 
+  const inventoryError = () => toast.error(t('inventory.saveError', { defaultValue: 'Operazione magazzino non riuscita' }))
+
   const create = useMutation({
     mutationFn: (d: Record<string, unknown>) => api.post('/inventory', d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setShowForm(false); toast.success(t('inventory.added')) },
+    onError: inventoryError,
   })
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/inventory/${id}`, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setEditingItem(null); toast.success(t('inventory.updated')) },
+    onError: inventoryError,
   })
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/inventory/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); toast.success(t('inventory.deleted')) },
+    onError: inventoryError,
   })
   const adjustQty = useMutation({
     mutationFn: ({ id, delta }: { id: string; delta: number }) => api.patch(`/inventory/${id}/quantity`, { delta, operation: 'add' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }),
+    onError: inventoryError,
   })
 
   const totalValue = items.reduce((s, i) => s + i.quantity * i.cost, 0)

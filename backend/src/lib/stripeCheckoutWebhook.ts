@@ -55,10 +55,13 @@ export async function handleCheckoutSessionCompleted(
           : typeof session.payment_intent === 'object' && session.payment_intent && 'id' in session.payment_intent
             ? String((session.payment_intent as { id: string }).id)
             : null
-      const completed = await completeGuestStripePayment(orderId, paymentIntentId)
+      const completed = await completeGuestStripePayment(
+        orderId,
+        paymentIntentId,
+        session.amount_total ?? null,
+      )
       if (completed?.updatedOrder) {
         console.info('[stripe-webhook] Ordine guest pagato', orderId)
-        io.to(completed.updatedOrder.restaurantId).emit('order:updated', completed.updatedOrder)
       }
     } else {
       console.warn('[stripe-webhook] Sessione guest non pagata, ordine non finalizzato:', orderId)

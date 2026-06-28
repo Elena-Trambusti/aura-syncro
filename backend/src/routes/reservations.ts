@@ -6,7 +6,7 @@ import { stripe } from '../lib/stripe'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
-import { ReservationValidationError, requiresDeposit } from '../lib/reservationRules'
+import { ReservationValidationError, requiresDeposit, validateReservationSlot } from '../lib/reservationRules'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { createReservation } from '../lib/createReservation'
@@ -221,6 +221,36 @@ reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (
     return
   }
 
+  const existing = await prisma.reservation.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!existing) {
+    tenantNotFound(res, 'Prenotazione non trovata')
+    return
+  }
+
+  const nextDate = result.data.date ? new Date(result.data.date) : existing.date
+  const nextCovers = result.data.covers ?? existing.covers
+  const nextDuration = result.data.duration ?? existing.duration
+
+  if (result.data.date || result.data.covers || result.data.duration) {
+    try {
+      await validateReservationSlot(tenantId(req), {
+        date: nextDate,
+        covers: nextCovers,
+        duration: nextDuration,
+        tableId: existing.tableId,
+        excludeReservationId: req.params.id,
+      })
+    } catch (err) {
+      if (err instanceof ReservationValidationError) {
+        res.status(409).json({ error: err.message, code: err.code })
+        return
+      }
+      throw err
+    }
+  }
+
   const updated = await prisma.reservation.updateMany({
     where: scopedWhere(req, req.params.id),
     data: {
@@ -251,13 +281,39 @@ reservationsRouter.patch('/:id/status', requirePermission('reservations.manage')
   }
   const { status } = parsed.data
 
+  if (status === 'SEATED') {
+    res.status(400).json({
+      error: 'Usa POST /reservations/:id/confirm per accomodare al tavolo',
+      code: 'USE_CONFIRM_ENDPOINT',
+    })
+    return
+  }
+
   const existing = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
-    select: { id: true, tableId: true, status: true },
+    select: { id: true, tableId: true, status: true, date: true, covers: true, duration: true },
   })
   if (!existing) {
     tenantNotFound(res, 'Prenotazione non trovata')
     return
+  }
+
+  if (status === 'CONFIRMED' && existing.status !== 'CONFIRMED') {
+    try {
+      await validateReservationSlot(tenantId(req), {
+        date: existing.date,
+        covers: existing.covers,
+        duration: existing.duration,
+        tableId: existing.tableId,
+        excludeReservationId: req.params.id,
+      })
+    } catch (err) {
+      if (err instanceof ReservationValidationError) {
+        res.status(409).json({ error: err.message, code: err.code })
+        return
+      }
+      throw err
+    }
   }
 
   await prisma.reservation.updateMany({
@@ -300,8 +356,22 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
     return
   }
 
-  if (reservation.depositAmountPaid && reservation.depositAmountPaid > 0) {
-    res.status(400).json({ error: 'Penale già addebitata in precedenza.' })
+  if (reservation.depositAmountPaid != null && reservation.depositAmountPaid > 0) {
+    res.status(409).json({ error: 'Penale già addebitata in precedenza.', code: 'ALREADY_CHARGED' })
+    return
+  }
+
+  const claimed = await prisma.reservation.updateMany({
+    where: {
+      id: reservation.id,
+      restaurantId: tenantId(req),
+      status: 'NO_SHOW',
+      OR: [{ depositAmountPaid: null }, { depositAmountPaid: 0 }],
+    },
+    data: { depositAmountPaid: 0 },
+  })
+  if (claimed.count === 0) {
+    res.status(409).json({ error: 'Penale già in elaborazione o addebitata.', code: 'ALREADY_CHARGED' })
     return
   }
 
@@ -334,9 +404,11 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
       confirm: true,
       description: `Penale No-Show - Prenotazione #${reservation.id.slice(-4).toUpperCase()} (${reservation.restaurant.name})`,
       ...(settings?.stripeConnectAccountId ? {
-        application_fee_amount: Math.round(penaltyAmount * 100 * 0.05), // Assuming 5% fee for this example, or use constant
+        application_fee_amount: Math.round(penaltyAmount * 100 * 0.05),
         transfer_data: { destination: settings.stripeConnectAccountId },
-      } : {})
+      } : {}),
+    }, {
+      idempotencyKey: `no-show:${reservation.id}`,
     })
 
     if (paymentIntent.status === 'succeeded') {
@@ -347,9 +419,17 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
       io.to(tenantId(req)).emit('reservation:updated', updated)
       res.json(updated)
     } else {
+      await prisma.reservation.updateMany({
+        where: { id: reservation.id, depositAmountPaid: 0 },
+        data: { depositAmountPaid: null },
+      })
       res.status(400).json({ error: 'Addebito fallito o richiede autenticazione (3D Secure).' })
     }
   } catch (err) {
+    await prisma.reservation.updateMany({
+      where: { id: reservation.id, depositAmountPaid: 0 },
+      data: { depositAmountPaid: null },
+    })
     console.error('[stripe] Errore addebito No-Show:', err)
     res.status(500).json({ error: 'Errore durante l\'addebito della penale.' })
   }

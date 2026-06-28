@@ -97,8 +97,8 @@ cashRouter.post('/session/close', requirePermission('orders.pay'), async (req: A
 
   const difference = result.data.closingBalance - expectedBalance
 
-  const closed = await prisma.cashRegisterSession.update({
-    where: { id: session.id },
+  const closedCount = await prisma.cashRegisterSession.updateMany({
+    where: { id: session.id, restaurantId: tenantId(req), status: 'OPEN' },
     data: {
       status: 'CLOSED',
       closedAt: new Date(),
@@ -108,6 +108,15 @@ cashRouter.post('/session/close', requirePermission('orders.pay'), async (req: A
       difference,
       notes: result.data.notes ? `${session.notes ? session.notes + '\n' : ''}Chiusura: ${result.data.notes}` : session.notes,
     },
+  })
+
+  if (closedCount.count === 0) {
+    res.status(409).json({ error: 'Turno cassa già chiuso da un altro operatore.', code: 'ALREADY_CLOSED' })
+    return
+  }
+
+  const closed = await prisma.cashRegisterSession.findFirst({
+    where: { id: session.id, restaurantId: tenantId(req) },
   })
   
   res.json(closed)

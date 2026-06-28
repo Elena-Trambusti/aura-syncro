@@ -42,7 +42,7 @@ export function orderActionKey(orderId: string, action: 'ready' | 'dismiss'): st
 /** Allinea lo stato ordine agli item (stessa logica del backend syncOrderStatusFromItems). */
 export function computeOrderStatusFromItems(items: KitchenOrderItem[]): string {
   const active = items.filter(i => i.status !== 'CANCELLED')
-  if (active.length === 0) return 'PENDING'
+  if (active.length === 0) return 'CANCELLED'
   if (active.every(i => i.status === 'SERVED')) return 'SERVED'
   if (active.every(i => ['READY', 'SERVED'].includes(i.status))) return 'READY'
   if (active.some(i => ['PREPARING', 'READY', 'SERVED'].includes(i.status))) return 'PREPARING'

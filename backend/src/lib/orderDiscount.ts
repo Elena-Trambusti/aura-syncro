@@ -50,7 +50,7 @@ export async function resolveCampaignDiscount(
     where: {
       restaurantId,
       discountCode: code.trim().toUpperCase(),
-      status: { in: ['SENT', 'SCHEDULED', 'DRAFT'] },
+      status: { in: ['SENT'] },
       discountPct: { gt: 0 },
     },
     orderBy: { updatedAt: 'desc' },

@@ -1,6 +1,6 @@
 import { CountryCode, TaxRegion } from '@prisma/client'
 import type { FiscalConfig, TipTaxTreatment } from './taxEngine'
-import { computeOrderTaxForRegime, getTipTaxTreatment, roundMoney } from './taxEngine'
+import { computeOrderTaxForRegime, getTipTaxTreatment, roundMoney, scorporoTaxFromGross } from './taxEngine'
 import { resolveRevenueAmount, resolveTipAmount, resolveOrderTotal } from './fiscalAmounts'
 import type { FiscalTransactionRow } from './fiscal/fiscalReportTypes'
 
@@ -92,16 +92,27 @@ export function buildFiscalTransactionRow(order: {
   revenueAmount: number | null
   tipAmount?: number | null
   total: number
+  discount?: number
   paymentMethod?: string | null
   fiscalIntegrityHash?: string | null
   fiscalPrevHash?: string | null
-}, paidAt: Date): FiscalTransactionRow {  const revenueAmount = roundMoney(resolveRevenueAmount(order))
+}, paidAt: Date): FiscalTransactionRow {
+  const revenueAmount = roundMoney(resolveRevenueAmount(order))
   const tipAmount = roundMoney(resolveTipAmount(order.tipAmount))
+  const taxRate = order.taxRateApplied ?? 10
+  const foodGross = roundMoney(order.subtotal + order.tax)
+  const useRevenueSplit = (order.discount ?? 0) > 0 || Math.abs(foodGross - revenueAmount) > 0.02
+  const baseImponible = useRevenueSplit
+    ? scorporoTaxFromGross(revenueAmount, taxRate).subtotal
+    : roundMoney(order.subtotal)
+  const tax = useRevenueSplit
+    ? scorporoTaxFromGross(revenueAmount, taxRate).tax
+    : roundMoney(order.tax)
   return {
     fecha: paidAt,
     orderId: order.id,
-    baseImponible: roundMoney(order.subtotal),
-    tax: roundMoney(order.tax),
+    baseImponible,
+    tax,
     taxRateApplied: order.taxRateApplied ?? null,
     revenueAmount,
     tipAmount,

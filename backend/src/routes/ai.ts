@@ -25,25 +25,43 @@ function daysAgo(n: number) {
 aiRouter.get('/forecast', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
-  // Ultimi 12 settimane di ordini (escluso cancellati)
-  const orders = await prisma.order.findMany({
+  // Ultimi 12 settimane — aggregato SQL per giorno settimana (meno RAM)
+  type DowRow = { dow: number; totalRevenue: number; totalCovers: number; count: number }
+  const since = weeksAgo(12)
+  const grouped = await prisma.$queryRaw<DowRow[]>`
+    SELECT
+      EXTRACT(DOW FROM o."createdAt")::int AS dow,
+      COALESCE(SUM(o.total), 0)::float AS "totalRevenue",
+      COALESCE(SUM(oi.qty), 0)::int AS "totalCovers",
+      COUNT(o.id)::int AS count
+    FROM "Order" o
+    LEFT JOIN (
+      SELECT "orderId", SUM(quantity) AS qty FROM "OrderItem" GROUP BY "orderId"
+    ) oi ON oi."orderId" = o.id
+    WHERE o."restaurantId" = ${restaurantId}
+      AND o."createdAt" >= ${since}
+      AND o.status <> 'CANCELLED'
+    GROUP BY 1
+  `
+
+  const momentumOrders = await prisma.order.findMany({
     where: {
       restaurantId,
-      createdAt: { gte: weeksAgo(12) },
+      createdAt: { gte: since },
       status: { notIn: ['CANCELLED'] },
     },
-    select: { createdAt: true, total: true, items: { select: { quantity: true } } },
+    select: { createdAt: true, total: true },
   })
 
   // Raggruppa per giorno della settimana (0=dom … 6=sab)
   const byDow: Record<number, { totalRevenue: number; totalCovers: number; count: number }> = {}
   for (let i = 0; i < 7; i++) byDow[i] = { totalRevenue: 0, totalCovers: 0, count: 0 }
-
-  for (const order of orders) {
-    const dow = order.createdAt.getDay()
-    byDow[dow].totalRevenue += order.total
-    byDow[dow].totalCovers += order.items.reduce((s, it) => s + it.quantity, 0)
-    byDow[dow].count += 1
+  for (const row of grouped) {
+    byDow[row.dow] = {
+      totalRevenue: row.totalRevenue,
+      totalCovers: row.totalCovers,
+      count: row.count,
+    }
   }
 
   // Previsione prossimi 7 giorni
@@ -57,11 +75,11 @@ aiRouter.get('/forecast', requirePermission('analytics.read'), async (req: AuthR
     const avgCovers = stats.totalCovers / weeks
 
     // Trend delle ultime 4 settimane vs 8 settimane precedenti (momentum)
-    const recent4 = orders.filter(o => {
+    const recent4 = momentumOrders.filter(o => {
       const d = o.createdAt.getDay()
       return d === dow && o.createdAt >= weeksAgo(4)
     })
-    const prev8 = orders.filter(o => {
+    const prev8 = momentumOrders.filter(o => {
       const d = o.createdAt.getDay()
       return d === dow && o.createdAt >= weeksAgo(12) && o.createdAt < weeksAgo(4)
     })

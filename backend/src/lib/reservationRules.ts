@@ -37,10 +37,14 @@ export async function validateReservationSlot(
   const requestStart = input.date.getTime()
   const requestEnd = requestStart + input.duration * 60_000
 
+  const windowStart = new Date(requestStart - 24 * 60 * 60_000)
+  const windowEnd = new Date(requestEnd + 24 * 60 * 60_000)
+
   const allReservations = await prisma.reservation.findMany({
     where: {
       restaurantId,
       status: { notIn: ['CANCELLED', 'NO_SHOW', 'COMPLETED'] },
+      date: { gte: windowStart, lte: windowEnd },
       ...(input.excludeReservationId ? { id: { not: input.excludeReservationId } } : {}),
     },
     select: { id: true, covers: true, tableId: true, date: true, duration: true },

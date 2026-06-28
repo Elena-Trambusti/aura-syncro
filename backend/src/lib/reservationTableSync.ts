@@ -37,6 +37,19 @@ export async function releaseTableFromReservation(
   }
 }
 
+async function isTableSuitableForReservation(
+  table: { id: string; seats: number; status: string },
+  reservationCovers: number,
+  overlappingTableIds: Set<string>,
+  restaurantId: string,
+): Promise<boolean> {
+  if (table.seats < reservationCovers) return false
+  if (overlappingTableIds.has(table.id)) return false
+  if (!['FREE', 'RESERVED'].includes(table.status)) return false
+  const activeOrders = await countActiveTableOrders(table.id, restaurantId)
+  return activeOrders === 0
+}
+
 export async function getAvailableTablesForReservation(
   restaurantId: string,
   reservationId: string,
@@ -75,18 +88,22 @@ export async function getAvailableTablesForReservation(
     }
   }
 
-  return tables
-    .filter(t => t.seats >= reservation.covers)
-    .filter(t => !overlappingTableIds.has(t.id) || t.id === reservation.tableId)
-    .map(t => ({
-      id: t.id,
-      number: t.number,
-      seats: t.seats,
-      area: t.area,
-      status: t.status,
-      suitable:
-        t.seats >= reservation.covers
-        && !overlappingTableIds.has(t.id),
+  const suitability = await Promise.all(
+    tables.map(async t => ({
+      table: t,
+      suitable: await isTableSuitableForReservation(t, reservation.covers, overlappingTableIds, restaurantId),
+    })),
+  )
+
+  return suitability
+    .filter(({ table, suitable }) => suitable || table.id === reservation.tableId)
+    .map(({ table, suitable }) => ({
+      id: table.id,
+      number: table.number,
+      seats: table.seats,
+      area: table.area,
+      status: table.status,
+      suitable,
     }))
 }
 
@@ -95,68 +112,78 @@ export async function confirmReservationWithTable(
   reservationId: string,
   tableId: string,
 ) {
-  const reservation = await prisma.reservation.findFirst({
-    where: { id: reservationId, restaurantId },
-  })
-  if (!reservation) {
-    throw new ReservationValidationError('Prenotazione non trovata', 'NOT_FOUND')
-  }
-  if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
-    throw new ReservationValidationError(
-      'Solo prenotazioni in attesa o confermate possono essere accomodate',
-      'INVALID_STATUS',
-    )
-  }
+  return prisma.$transaction(async tx => {
+    const reservation = await tx.reservation.findFirst({
+      where: { id: reservationId, restaurantId },
+    })
+    if (!reservation) {
+      throw new ReservationValidationError('Prenotazione non trovata', 'NOT_FOUND')
+    }
+    if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
+      throw new ReservationValidationError(
+        'Solo prenotazioni in attesa o confermate possono essere accomodate',
+        'INVALID_STATUS',
+      )
+    }
 
-  const table = await prisma.table.findFirst({
-    where: { id: tableId, restaurantId },
-  })
-  if (!table) {
-    throw new ReservationValidationError('Tavolo non trovato', 'TABLE_NOT_FOUND')
-  }
-  if (table.seats < reservation.covers) {
-    throw new ReservationValidationError(
-      `Il tavolo ha solo ${table.seats} posti`,
-      'TABLE_TOO_SMALL',
-    )
-  }
-  if (table.status === 'OCCUPIED' && table.id !== reservation.tableId) {
-    throw new ReservationValidationError('Tavolo non disponibile', 'TABLE_UNAVAILABLE')
-  }
-  if (table.status === 'CLEANING') {
-    throw new ReservationValidationError('Tavolo in pulizia', 'TABLE_UNAVAILABLE')
-  }
-  const activeOrders = await countActiveTableOrders(tableId, restaurantId)
-  if (activeOrders > 0) {
-    throw new ReservationValidationError('Tavolo con ordine attivo', 'TABLE_HAS_ORDER')
-  }
+    const table = await tx.table.findFirst({
+      where: { id: tableId, restaurantId },
+    })
+    if (!table) {
+      throw new ReservationValidationError('Tavolo non trovato', 'TABLE_NOT_FOUND')
+    }
+    if (table.seats < reservation.covers) {
+      throw new ReservationValidationError(
+        `Il tavolo ha solo ${table.seats} posti`,
+        'TABLE_TOO_SMALL',
+      )
+    }
+    if (table.status === 'CLEANING') {
+      throw new ReservationValidationError('Tavolo in pulizia', 'TABLE_UNAVAILABLE')
+    }
+    if (!['FREE', 'RESERVED', 'OCCUPIED'].includes(table.status) && table.id !== reservation.tableId) {
+      throw new ReservationValidationError('Tavolo non disponibile', 'TABLE_UNAVAILABLE')
+    }
 
-  await validateReservationSlot(restaurantId, {
-    date: reservation.date,
-    covers: reservation.covers,
-    duration: reservation.duration,
-    tableId,
-    excludeReservationId: reservationId,
-  })
+    const activeOrders = await countActiveTableOrders(tableId, restaurantId, tx)
+    if (activeOrders > 0 && table.id !== reservation.tableId) {
+      throw new ReservationValidationError('Tavolo con ordine attivo', 'TABLE_HAS_ORDER')
+    }
 
-  const previousTableId = reservation.tableId
+    await validateReservationSlot(restaurantId, {
+      date: reservation.date,
+      covers: reservation.covers,
+      duration: reservation.duration,
+      tableId,
+      excludeReservationId: reservationId,
+    })
 
-  const updated = await prisma.reservation.update({
-    where: { id: reservationId },
-    data: { status: 'SEATED', tableId },
-    include: { table: true, customer: true },
-  })
+    const claimed = await tx.table.updateMany({
+      where: {
+        id: tableId,
+        restaurantId,
+        status: { in: ['FREE', 'RESERVED'] },
+      },
+      data: { status: 'OCCUPIED' },
+    })
+    if (claimed.count === 0 && table.status !== 'OCCUPIED') {
+      throw new ReservationValidationError('Tavolo non disponibile', 'TABLE_UNAVAILABLE')
+    }
 
-  await prisma.table.update({
-    where: { id: tableId },
-    data: { status: 'OCCUPIED' },
-  })
+    const previousTableId = reservation.tableId
 
-  if (previousTableId && previousTableId !== tableId) {
-    await releaseTableFromReservation(restaurantId, previousTableId, reservationId)
-  }
+    const updated = await tx.reservation.update({
+      where: { id: reservationId },
+      data: { status: 'SEATED', tableId },
+      include: { table: true, customer: true },
+    })
 
-  return updated
+    if (previousTableId && previousTableId !== tableId) {
+      await releaseTableFromReservation(restaurantId, previousTableId, reservationId)
+    }
+
+    return updated
+  }, { isolationLevel: 'Serializable' })
 }
 
 export async function syncTableOnReservationStatus(

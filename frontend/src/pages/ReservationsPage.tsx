@@ -86,7 +86,10 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
                 min={1}
                 max={20}
                 value={form.covers}
-                onChange={e => update('covers', parseInt(e.target.value))}
+                onChange={e => {
+                  const n = parseInt(e.target.value, 10)
+                  update('covers', Number.isNaN(n) ? 1 : Math.min(20, Math.max(1, n)))
+                }}
                 className={ui.input}
               />
             </div>
@@ -126,7 +129,24 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
           </button>
           <button
             type="button"
-            onClick={() => onSave({ ...form, date: new Date(form.date).toISOString() })}
+            onClick={() => {
+              const name = form.guestName.trim()
+              const phone = form.guestPhone.trim()
+              const covers = typeof form.covers === 'number' && !Number.isNaN(form.covers) ? form.covers : 0
+              if (name.length < 2) {
+                toast.error(t('reservations.validationName', { defaultValue: 'Inserisci il nome dell\'ospite' }))
+                return
+              }
+              if (phone.length < 6) {
+                toast.error(t('reservations.validationPhone', { defaultValue: 'Inserisci un numero di telefono valido' }))
+                return
+              }
+              if (covers < 1) {
+                toast.error(t('reservations.validationCovers', { defaultValue: 'Inserisci un numero valido di coperti' }))
+                return
+              }
+              onSave({ ...form, guestName: name, guestPhone: phone, covers, date: new Date(form.date).toISOString() })
+            }}
             className="flex-1 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-navy hover:bg-aura-gold-light"
           >
             {t('reservations.formConfirm')}
@@ -177,7 +197,7 @@ export default function ReservationsPage() {
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   const { restaurant } = useAuth()
-  const { can } = useRole()
+  const { can, canAccessAdminNav } = useRole()
   const canManageReservations = can('reservations.manage')
   useRealtimeReservations()
   const [activeTab, setActiveTab] = useState<ReservationTab>('bookings')
@@ -193,6 +213,7 @@ export default function ReservationsPage() {
   const { data: restaurantProfile } = useQuery<RestaurantProfile>({
     queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
+    enabled: canAccessAdminNav(),
   })
 
   const depositPolicyActive = requiresDepositFromSettings(restaurantProfile?.settings)

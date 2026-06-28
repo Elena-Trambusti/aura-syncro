@@ -13,6 +13,19 @@ export const staffRouter = Router()
 
 const assignableRoles = ['MANAGER', 'WAITER', 'CHEF', 'BARTENDER', 'HOST'] as const
 
+staffRouter.get('/tip-recipients', requirePermission('orders.pay'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const staff = await prisma.user.findMany({
+    where: {
+      ...tenantWhere(req),
+      active: true,
+      role: { in: ['WAITER', 'MANAGER', 'OWNER', 'HOST', 'BARTENDER'] },
+    },
+    select: { id: true, name: true, role: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json(staff)
+}))
+
 staffRouter.get('/', requirePermission('staff.manage'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const staff = await prisma.user.findMany({
     where: tenantWhere(req),
@@ -29,7 +42,7 @@ staffRouter.post('/', requirePermission('staff.manage'), asyncHandler(async (req
   const schema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
-    password: z.string().min(6),
+    password: z.string().min(8),
     role: z.enum(assignableRoles),
     phone: z.string().optional(),
   })
@@ -81,7 +94,10 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
   }
 
   const updateData: Record<string, unknown> = { ...result.data }
-  if (result.data.password) updateData.password = await bcrypt.hash(result.data.password, 12)
+  if (result.data.password) {
+    updateData.password = await bcrypt.hash(result.data.password, 12)
+    updateData.tokenVersion = { increment: 1 }
+  }
 
   const updated = await prisma.user.updateMany({
     where: scopedWhere(req, req.params.id),

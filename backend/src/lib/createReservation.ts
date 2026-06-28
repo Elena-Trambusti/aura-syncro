@@ -36,44 +36,47 @@ export async function createReservation(input: CreateReservationInput) {
   })
 
   const duration = input.duration ?? 90
-  const slot = await validateReservationSlot(input.restaurantId, {
-    date: input.date,
-    covers: input.covers,
-    duration,
-    tableId: input.tableId,
-  })
 
-  const settings = await prisma.restaurantSettings.findUnique({
-    where: { restaurantId: input.restaurantId },
-  })
-
-  const reservation = await prisma.reservation.create({
-    data: {
-      restaurantId: input.restaurantId,
-      guestName: input.guestName,
-      guestPhone: input.guestPhone,
-      guestEmail: input.guestEmail,
-      covers: input.covers,
+  return prisma.$transaction(async () => {
+    const slot = await validateReservationSlot(input.restaurantId, {
       date: input.date,
+      covers: input.covers,
       duration,
       tableId: input.tableId,
-      notes: input.notes,
-      internalNotes: input.internalNotes,
-      status: slot.status,
-      customerId,
-    },
-    include: { table: true, customer: true, restaurant: { select: { slug: true, name: true } } },
-  })
+    })
 
-  if (reservation.tableId) {
-    await syncTableReservedForReservation(reservation.tableId, input.restaurantId)
-  }
+    const settings = await prisma.restaurantSettings.findUnique({
+      where: { restaurantId: input.restaurantId },
+    })
 
-  return {
-    reservation,
-    depositRequired: requiresDeposit(settings),
-    depositAmount: settings?.depositAmount ?? 0,
-  }
+    const reservation = await prisma.reservation.create({
+      data: {
+        restaurantId: input.restaurantId,
+        guestName: input.guestName,
+        guestPhone: input.guestPhone,
+        guestEmail: input.guestEmail,
+        covers: input.covers,
+        date: input.date,
+        duration,
+        tableId: input.tableId,
+        notes: input.notes,
+        internalNotes: input.internalNotes,
+        status: slot.status,
+        customerId,
+      },
+      include: { table: true, customer: true, restaurant: { select: { slug: true, name: true } } },
+    })
+
+    if (reservation.tableId) {
+      await syncTableReservedForReservation(reservation.tableId, input.restaurantId)
+    }
+
+    return {
+      reservation,
+      depositRequired: requiresDeposit(settings),
+      depositAmount: settings?.depositAmount ?? 0,
+    }
+  }, { isolationLevel: 'Serializable' })
 }
 
 export async function syncTableReservedForReservation(

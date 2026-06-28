@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 import { verifyAuthToken } from '../lib/jwtAuth'
+import { extractBearerToken } from '../lib/sessionCookie'
 import { tenantForbidden } from '../lib/tenant'
 import { isDemoUserEmail, isDemoWritePathAllowed } from '../lib/demoSandbox'
 
@@ -21,13 +22,11 @@ export function normalizeRole(role: string): string {
 }
 
 export async function authenticate(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) {
+  const token = extractBearerToken(req)
+  if (!token) {
     res.status(401).json({ error: 'Token mancante', code: 'AUTH_REQUIRED' })
     return
   }
-
-  const token = authHeader.split(' ')[1]
   try {
     const payload = verifyAuthToken(token)
 
@@ -92,6 +91,8 @@ export async function verifySocketToken(token: string): Promise<{
   userId: string
   restaurantId: string
   role: string
+  email: string
+  tokenVersion: number
 } | null> {
   try {
     const payload = verifyAuthToken(token)
@@ -101,13 +102,15 @@ export async function verifySocketToken(token: string): Promise<{
         restaurantId: payload.restaurantId,
         active: true,
       },
-      select: { id: true, role: true, tokenVersion: true },
+      select: { id: true, role: true, tokenVersion: true, email: true },
     })
     if (!user || user.tokenVersion !== (payload.tv ?? 0)) return null
     return {
       userId: user.id,
       restaurantId: payload.restaurantId,
       role: normalizeRole(user.role),
+      email: user.email,
+      tokenVersion: user.tokenVersion,
     }
   } catch {
     return null

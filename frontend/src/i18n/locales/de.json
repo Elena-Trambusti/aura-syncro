@@ -980,6 +980,13 @@
     "orderReady": "Bestellung servierbereit!",
     "orderReadyError": "Bestellung konnte nicht als fertig markiert werden"
   },
+  "offline": {
+    "bannerOffline": "Offline — Bestellungen werden gesendet, sobald die Verbindung wiederhergestellt ist",
+    "bannerSyncing": "Synchronisierung…",
+    "bannerPending": "{{count}} Bestellung(en) warten auf den Versand",
+    "retryNow": "Jetzt erneut versuchen",
+    "orderQueued": "Bestellung gespeichert — wird gesendet, sobald die Verbindung wiederhergestellt ist"
+  },
   "orderModal": {
     "title": "Tisch {{number}}",
     "seats": "{{count}} Plätze",

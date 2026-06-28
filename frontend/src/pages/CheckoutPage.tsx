@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
-import { formatCurrency, cn } from '../lib/utils'
+import { formatCurrency, cn, ORDER_STATUS_LABELS } from '../lib/utils'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
@@ -88,14 +88,14 @@ export default function CheckoutPage() {
   })
 
   const { data: staff } = useQuery<{ id: string; name: string; role: string }[]>({
-    queryKey: tq(tk, 'staff'),
-    queryFn: () => api.get('/staff').then(r => r.data),
+    queryKey: tq(tk, 'staff', 'tip-recipients'),
+    queryFn: () => api.get('/staff/tip-recipients').then(r => r.data),
   })
 
   const order = data?.order
   const needsCashSession = (paymentMethod === 'CASH' || (paymentMethod === 'SPLIT' && splitSettlement === 'CASH'))
     && cashSession === null
-  const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount) || 0) : 0
+  const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount.replace(',', '.')) || 0) : 0
   const grandTotal = (order?.total ?? 0) + parsedTip
   const loyaltyDiscount = data?.loyaltyDiscount
   const posStatus = data?.posStatus
@@ -187,14 +187,46 @@ export default function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reports', 'fiscal') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
       setFinalizeResult(result)
-      toast.success(t('checkout.paymentSuccess'))
+      toast.success(
+        (result as CheckoutFinalizeResult & { alreadyPaid?: boolean }).alreadyPaid
+          ? t('checkout.alreadyPaid', { defaultValue: 'Pagamento già registrato' })
+          : t('checkout.paymentSuccess'),
+      )
     },
-    onError: (err: any) => {
-      console.error("FINALIZE ERROR:", err.response?.data || err.message)
-      const serverMsg = err.response?.data?.error || err.message || t('checkout.paymentError')
-      const details = err.response?.data?.details ? JSON.stringify(err.response?.data?.details) : ''
-      toast.error(`${serverMsg} ${details}`)
+    onError: async (err: { response?: { data?: { error?: string } }; message?: string }) => {
+      const serverMsg = err.response?.data?.error ?? err.message ?? t('checkout.paymentError')
+      if (serverMsg.toLowerCase().includes('già pagato') || serverMsg.toLowerCase().includes('already paid')) {
+        try {
+          const checkout = await api.get(`/payments/checkout/${orderId}`).then(r => r.data)
+          if (checkout.order?.status === 'PAID') {
+            const paidOrder = checkout.order
+            setFinalizeResult({
+              order: paidOrder,
+              transactionId: '',
+              fiscal: {
+                row: {
+                  baseImponible: paidOrder.subtotal ?? 0,
+                  tax: paidOrder.tax ?? 0,
+                  revenueAmount: paidOrder.revenueAmount ?? paidOrder.total,
+                  tipAmount: paidOrder.tipAmount ?? 0,
+                  total: paidOrder.total,
+                  paymentMethod: paidOrder.paymentMethod,
+                },
+              },
+              receipt: { simulatedEmailSent: false, emailTo: null },
+            })
+            toast.success(t('checkout.alreadyPaid', { defaultValue: 'Pagamento già registrato' }))
+            return
+          }
+        } catch {
+          /* fallback to generic error */
+        }
+      }
+      console.error('FINALIZE ERROR:', err.response?.data || err.message)
+      toast.error(serverMsg)
     },
   })
 
@@ -318,7 +350,7 @@ export default function CheckoutPage() {
                     {item.quantity}
                   </span>
                   <span className="truncate text-sm font-medium text-pietra">{item.menuItem.name}</span>
-                  <span className="text-xs text-fumo">{item.status}</span>
+                  <span className="text-xs text-fumo">{ORDER_STATUS_LABELS[item.status] ?? item.status}</span>
                 </div>
                 <span className="shrink-0 text-sm font-medium tabular-nums text-pietra">
                   {formatCurrency(item.unitPrice * item.quantity)}

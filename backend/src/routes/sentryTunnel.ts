@@ -25,6 +25,19 @@ sentryTunnelRouter.post(
   express.raw({ type: () => true, limit: '2mb' }),
   async (req: Request, res: Response) => {
     try {
+      const tunnelSecret = process.env.SENTRY_TUNNEL_SECRET?.trim()
+      if (process.env.NODE_ENV === 'production' && !tunnelSecret) {
+        res.status(503).end()
+        return
+      }
+      if (tunnelSecret) {
+        const provided = req.headers['x-sentry-tunnel-secret']
+        if (provided !== tunnelSecret) {
+          res.status(403).end()
+          return
+        }
+      }
+
       const envelope = req.body
       if (!Buffer.isBuffer(envelope) || envelope.length === 0) {
         res.status(400).end()

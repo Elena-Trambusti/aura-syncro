@@ -21,6 +21,7 @@ import type {
   StripePaymentIntentPayload,
 } from '../../lib/stripeTypes'
 import { asyncHandler } from '../../lib/asyncHandler'
+import { prisma } from '../../lib/prisma'
 
 export const stripeWebhookRouter = Router()
 
@@ -160,9 +161,17 @@ stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): 
   const claim = await claimStripeWebhookEvent(event, restaurantId)
 
   if (claim.duplicate) {
-    console.info('[stripe-webhook] Evento duplicato ignorato:', event.id, claim.status)
-    res.status(200).json({ received: true, duplicate: true, status: claim.status })
-    return
+    if (claim.status === 'failed') {
+      await prisma.stripeWebhookEvent.update({
+        where: { stripeEventId: event.id },
+        data: { status: 'processing' },
+      })
+      console.info('[stripe-webhook] Re-elaborazione evento fallito:', event.id)
+    } else {
+      console.info('[stripe-webhook] Evento duplicato ignorato:', event.id, claim.status)
+      res.status(200).json({ received: true, duplicate: true, status: claim.status })
+      return
+    }
   }
 
   try {

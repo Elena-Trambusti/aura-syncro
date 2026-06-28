@@ -1,15 +1,18 @@
 import type { AxiosError } from 'axios'
 import toast from 'react-hot-toast'
+import i18n from '../i18n'
 import { api } from './api'
 import {
   type AddOrderItemsPayload,
   type CreateOrderPayload,
   type OfflineMutation,
+  type OrderLinePayload,
   createMutationId,
   enqueueMutation,
   listPendingMutations,
   removeMutation,
   updateMutationFailure,
+  updateMutationPayload,
 } from './offlineQueue'
 
 export type SubmitResult = 'synced' | 'queued'
@@ -50,7 +53,24 @@ export function isPermanentClientError(err: unknown): boolean {
   const ax = err as AxiosError<{ code?: string }>
   if (!ax.response) return false
   const status = ax.response.status
-  return status === 400 || status === 401 || status === 403 || status === 404 || status === 409
+  const code = ax.response.data?.code
+  if (status === 400 || status === 401 || status === 403 || status === 404 || status === 409) return true
+  if (code === 'MENU_ITEM_SOLD_OUT' || code === 'MENU_ITEM_UNAVAILABLE' || code === 'TABLE_OCCUPIED') return true
+  return false
+}
+
+async function postOrderItem(orderId: string, item: OrderLinePayload, itemKey: string): Promise<void> {
+  await api.post(
+    `/orders/${orderId}/items`,
+    {
+      menuItemId: item.menuItemId,
+      quantity: item.quantity,
+      course: item.course,
+      modifiers: item.modifiers,
+      notes: item.notes,
+    },
+    { headers: { 'X-Idempotency-Key': itemKey } },
+  )
 }
 
 async function executeMutation(mutation: OfflineMutation): Promise<void> {
@@ -63,6 +83,7 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
       {
         tableId: payload.tableId,
         type: payload.type,
+        customerId: payload.customerId,
         items: payload.items.map(i => ({
           menuItemId: i.menuItemId,
           quantity: i.quantity,
@@ -77,22 +98,38 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
   }
 
   const payload = mutation.payload as AddOrderItemsPayload
-  await Promise.all(
-    payload.items.map(item => {
-      const itemKey = `${mutation.id}:${item.menuItemId}`
-      return api.post(
-        `/orders/${payload.orderId}/items`,
-        {
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          course: item.course,
-          modifiers: item.modifiers,
-          notes: item.notes,
-        },
-        idempotencyHeader(itemKey),
-      )
-    })
-  )
+  for (const item of payload.items) {
+    const itemKey = `${mutation.id}:${item.menuItemId}`
+    await postOrderItem(payload.orderId, item, itemKey)
+  }
+}
+
+async function executeMutationPartial(mutation: OfflineMutation): Promise<'done' | 'partial' | 'failed'> {
+  if (mutation.kind === 'CREATE_ORDER') {
+    await executeMutation(mutation)
+    return 'done'
+  }
+
+  const payload = mutation.payload as AddOrderItemsPayload
+  const remaining: OrderLinePayload[] = []
+
+  for (const item of payload.items) {
+    const itemKey = `${mutation.id}:${item.menuItemId}`
+    try {
+      await postOrderItem(payload.orderId, item, itemKey)
+    } catch (err) {
+      if (isPermanentClientError(err)) {
+        remaining.push(item)
+      } else {
+        throw err
+      }
+    }
+  }
+
+  if (remaining.length === 0) return 'done'
+  if (remaining.length === payload.items.length) return 'failed'
+  await updateMutationPayload(mutation.id, { ...payload, items: remaining })
+  return 'partial'
 }
 
 export async function flushOfflineQueue(): Promise<{ synced: number; failed: number }> {
@@ -111,12 +148,23 @@ export async function flushOfflineQueue(): Promise<{ synced: number; failed: num
 
     for (const mutation of pending) {
       try {
-        await executeMutation(mutation)
-        await removeMutation(mutation.id)
-        synced++
+        const result = await executeMutationPartial(mutation)
+        if (result === 'done') {
+          await removeMutation(mutation.id)
+          synced++
+        } else if (result === 'partial') {
+          failed++
+          toast.error(i18n.t('offline.partialSync'), { duration: 5000 })
+        } else {
+          failed++
+        }
       } catch (err) {
         if (isRetryableNetworkError(err)) {
-          break
+          await updateMutationFailure(
+            mutation.id,
+            err instanceof Error ? err.message : 'NETWORK_ERROR',
+          )
+          continue
         }
 
         const message =
@@ -126,7 +174,7 @@ export async function flushOfflineQueue(): Promise<{ synced: number; failed: num
         failed++
         if (isPermanentClientError(err)) {
           console.error(`[Offline] Dropping mutation ${mutation.id} permanently:`, message)
-          toast.error(`Ordine/Azione non inviabile: ${message}`, { duration: 6000 })
+          toast.error(i18n.t('offline.dropFailed', { message }), { duration: 6000 })
           await removeMutation(mutation.id)
         } else {
           await updateMutationFailure(mutation.id, message)

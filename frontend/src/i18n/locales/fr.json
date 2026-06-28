@@ -980,6 +980,13 @@
     "orderReady": "Commande prête à servir !",
     "orderReadyError": "Impossible de marquer la commande comme prête"
   },
+  "offline": {
+    "bannerOffline": "Hors ligne — les commandes seront envoyées dès le retour de la connexion",
+    "bannerSyncing": "Synchronisation…",
+    "bannerPending": "{{count}} commande(s) en attente d'envoi",
+    "retryNow": "Réessayer maintenant",
+    "orderQueued": "Commande enregistrée — envoi dès le retour de la connexion"
+  },
   "orderModal": {
     "title": "Table {{number}}",
     "seats": "{{count}} couverts",

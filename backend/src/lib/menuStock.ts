@@ -79,16 +79,20 @@ export async function loadRecipeLinksMap(
 export async function enrichCategoriesWithStock<T extends { items: Array<{ id: string; available: boolean }> }>(
   categories: T[],
   restaurantId: string,
-): Promise<Array<T & { items: Array<T['items'][number] & MenuStockFields> }>> {
+): Promise<Array<T & { items: Array<T['items'][number] & Pick<MenuStockFields, 'soldOut' | 'orderable'>> }>> {
   const itemIds = categories.flatMap(c => c.items.map(i => i.id))
   const linksMap = await loadRecipeLinksMap(restaurantId, itemIds)
 
   return categories.map(cat => ({
     ...cat,
-    items: cat.items.map(item => ({
-      ...item,
-      ...computeMenuStockFields(item, linksMap.get(item.id) ?? []),
-    })),
+    items: cat.items.map(item => {
+      const fields = computeMenuStockFields(item, linksMap.get(item.id) ?? [])
+      return {
+        ...item,
+        soldOut: fields.soldOut,
+        orderable: fields.orderable,
+      }
+    }),
   }))
 }
 

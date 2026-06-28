@@ -21,7 +21,7 @@ export function signAuthToken(user: {
       tv: user.tokenVersion ?? 0,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: '7d' },
+    { expiresIn: '24h' },
   )
 }
 

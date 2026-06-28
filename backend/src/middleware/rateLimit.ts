@@ -78,6 +78,48 @@ export const depositLimiter = rateLimit({
   message: message('Troppe richieste di caparra. Riprova tra qualche minuto.'),
 })
 
+export const publicReservationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => {
+    const slug = typeof req.body?.slug === 'string' ? req.body.slug : 'unknown'
+    return `${req.ip ?? 'unknown'}:${slug}`
+  },
+  message: message('Troppe prenotazioni. Riprova tra qualche minuto.'),
+})
+
+export const adminApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => req.ip ?? 'unknown',
+  message: message('Troppe richieste admin. Riprova tra un minuto.'),
+})
+
+export const publicMenuLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => {
+    const slug = typeof req.params?.slug === 'string' ? req.params.slug : 'unknown'
+    return `${req.ip ?? 'unknown'}:${slug}`
+  },
+  message: message('Troppe richieste al menu. Riprova tra un minuto.'),
+})
+
+export const vapidPublicKeyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste. Riprova tra un minuto.'),
+})
+
 /** Limite generale API (per IP) — esclude webhook Stripe */
 export const globalApiLimiter = rateLimit({
   windowMs: 60 * 1000,

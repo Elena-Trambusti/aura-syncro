@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatTime } from '../lib/utils'
+import { useTenantQueryKey } from '../contexts/AuthContext'
+import { tq } from '../lib/queryKeys'
 import { Wallet, Plus, Lock, Unlock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -31,6 +34,8 @@ interface CashTx {
 }
 
 export default function CashDrawerPage() {
+  const { t } = useTranslation()
+  const tk = useTenantQueryKey()
   const queryClient = useQueryClient()
   const [showOpenModal, setShowOpenModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
@@ -41,12 +46,12 @@ export default function CashDrawerPage() {
   const [txType, setTxType] = useState<'PAYIN'|'PAYOUT'>('PAYOUT')
 
   const { data: session } = useQuery<CashSession | null>({
-    queryKey: ['cash', 'current'],
+    queryKey: tq(tk, 'cash', 'current'),
     queryFn: () => api.get('/cash/session/current').then(r => r.data),
   })
 
   const { data: txs = [] } = useQuery<CashTx[]>({
-    queryKey: ['cash', 'transactions'],
+    queryKey: tq(tk, 'cash', 'transactions'),
     queryFn: () => api.get('/cash/transactions').then(r => r.data),
     enabled: !!session,
   })
@@ -54,31 +59,34 @@ export default function CashDrawerPage() {
   const openSession = useMutation({
     mutationFn: () => api.post('/cash/session/open', { openingBalance: amount }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cash'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
       setShowOpenModal(false)
-      toast.success('Turno cassa aperto!')
-    }
+      toast.success(t('cashDrawer.openSuccess'))
+    },
+    onError: () => toast.error(t('cashDrawer.openError')),
   })
 
   const closeSession = useMutation({
     mutationFn: () => api.post('/cash/session/close', { closingBalance: amount }),
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['cash'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
       setShowCloseModal(false)
       const diff = res.data.difference
-      if (diff === 0) toast.success('Cassa chiusa in perfetto pareggio!')
-      else if (diff > 0) toast.success(`Cassa chiusa con eccedenza di ${diff}€`)
-      else toast.error(`Ammanco rilevato: ${diff}€`)
-    }
+      if (diff === 0) toast.success(t('cashDrawer.closeBalanced'))
+      else if (diff > 0) toast.success(t('cashDrawer.closeSurplus', { amount: diff }))
+      else toast.error(t('cashDrawer.closeShortage', { amount: diff }))
+    },
+    onError: () => toast.error(t('cashDrawer.closeError')),
   })
 
   const addTx = useMutation({
     mutationFn: () => api.post('/cash/transactions', { type: txType, amount, reason }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cash'] })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
       setShowTxModal(false)
-      toast.success('Movimento registrato')
-    }
+      toast.success(t('cashDrawer.txSuccess'))
+    },
+    onError: () => toast.error(t('cashDrawer.txError')),
   })
 
   const sales = txs.filter(t => t.type === 'SALE' || t.type === 'PAYIN').reduce((sum, t) => sum + t.amount, 0)

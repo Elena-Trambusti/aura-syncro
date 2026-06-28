@@ -218,7 +218,10 @@ export default function MarketingPage() {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'automations') })
       toast.success(t('marketing.automations.saved'))
     },
-    onError: () => toast.error(t('marketing.automations.saveError')),
+    onError: () => {
+      qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'automations') })
+      toast.error(t('marketing.automations.saveError'))
+    },
   })
 
   const createCampaign = useMutation({

@@ -109,6 +109,14 @@ export async function updateMutationFailure(id: string, error: string): Promise<
   })
 }
 
+export async function updateMutationPayload(id: string, payload: OfflineMutation['payload']): Promise<void> {
+  if (!isOfflineQueueSupported()) return
+  const rows = await listPendingMutations()
+  const row = rows.find(r => r.id === id)
+  if (!row) return
+  await enqueueMutation({ ...row, payload })
+}
+
 export function createMutationId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()

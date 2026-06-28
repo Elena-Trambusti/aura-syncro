@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime } from '../lib/utils'
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime, toLocalDateInput } from '../lib/utils'
 import { printReceipt, downloadOrdersPdf } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
@@ -42,20 +43,14 @@ interface Order {
   items: OrderItem[]
 }
 
-const STATUS_FLOW: Record<string, string> = {
-  PENDING: 'CONFIRMED',
-  CONFIRMED: 'PREPARING',
-  PREPARING: 'READY',
-  READY: 'SERVED',
-  SERVED: 'PAID',
-}
+const CANCELLABLE_STATUSES = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'SERVED'] as const
 
 export default function OrdersPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { restaurant } = useAuth()
   const tk = useTenantQueryKey()
-  const { canSetOrderStatus, can } = useRole()
+  const { can } = useRole()
   const [filter, setFilter] = useState<string>('active')
 
   useRealtimeOrders()
@@ -64,11 +59,10 @@ export default function OrdersPage() {
     queryKey: tq(tk, 'orders', filter),
     queryFn: () => {
       if (filter === 'active') return api.get('/orders/active').then(r => r.data)
-      if (filter === 'today') return api.get(`/orders?date=${new Date().toISOString().split('T')[0]}`).then(r => r.data)
+      if (filter === 'today') return api.get(`/orders?date=${toLocalDateInput()}`).then(r => r.data)
       return api.get(`/orders?status=${filter}`).then(r => r.data)
     },
     refetchInterval: filter === 'active' ? 10_000 : undefined,
-    placeholderData: (previous) => previous,
   })
   const showOrdersSkeleton = useShowQuerySkeleton(isLoading, ordersData !== undefined)
   const orders = ordersData ?? []
@@ -79,7 +73,11 @@ export default function OrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
       toast.success(t('orders.statusUpdated'))
+    },
+    onError: (err: { response?: { data?: { error?: string } } }) => {
+      toast.error(err.response?.data?.error ?? t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
     },
   })
 
@@ -193,14 +191,13 @@ export default function OrdersPage() {
               </div>
 
               <div className="flex gap-2">
-                {STATUS_FLOW[order.status] && canSetOrderStatus(STATUS_FLOW[order.status]) && (
-                  <button
-                    onClick={() => updateStatus.mutate({ id: order.id, status: STATUS_FLOW[order.status] })}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-aura-gold hover:bg-aura-gold text-navy font-semibold text-xs font-semibold py-2 rounded-lg transition-colors"
+                {can('orders.pay') && CANCELLABLE_STATUSES.includes(order.status as typeof CANCELLABLE_STATUSES[number]) && (
+                  <Link
+                    to={`/dashboard/checkout/${order.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-aura-gold hover:bg-aura-gold-light text-navy font-semibold text-xs py-2 rounded-lg transition-colors"
                   >
-                    <ChefHat className="w-3.5 h-3.5" />
-                    {ORDER_STATUS_LABELS[STATUS_FLOW[order.status]]}
-                  </button>
+                    {t('orders.checkout', { defaultValue: 'Incassa' })}
+                  </Link>
                 )}
                 {can('orders.cancel') && !['PAID', 'CANCELLED'].includes(order.status) && (
                   <button

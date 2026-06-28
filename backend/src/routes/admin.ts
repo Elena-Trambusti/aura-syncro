@@ -2,10 +2,12 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { requireAdminKey } from '../middleware/adminAuth'
+import { adminApiLimiter } from '../middleware/rateLimit'
 import { formatRomeDate, formatRomeDateTime } from '../lib/romeDate'
 
 export const adminRouter = Router()
 
+adminRouter.use(adminApiLimiter)
 adminRouter.use(requireAdminKey)
 
 const setupCompleteSchema = z.object({

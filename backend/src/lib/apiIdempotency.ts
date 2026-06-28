@@ -25,11 +25,13 @@ export async function getIdempotentResponse(
   return { statusCode: row.statusCode, responseBody: row.responseBody }
 }
 
+const STALE_LOCK_MS = 5 * 60 * 1000
+
 /** Tenta di registrare subito la chiave. Se fallisce, un'altra richiesta l'ha già presa. */
 export async function acquireIdempotencyLock(
   restaurantId: string,
   key: string,
-  route: string
+  route: string,
 ): Promise<boolean> {
   try {
     await prisma.apiIdempotencyRecord.create({
@@ -43,7 +45,47 @@ export async function acquireIdempotencyLock(
     })
     return true
   } catch {
+    const existing = await prisma.apiIdempotencyRecord.findUnique({
+      where: { restaurantId_key: { restaurantId, key } },
+      select: { statusCode: true, createdAt: true },
+    })
+    if (
+      existing?.statusCode === 202
+      && Date.now() - existing.createdAt.getTime() > STALE_LOCK_MS
+    ) {
+      await prisma.apiIdempotencyRecord.delete({
+        where: { restaurantId_key: { restaurantId, key } },
+      })
+      try {
+        await prisma.apiIdempotencyRecord.create({
+          data: {
+            restaurantId,
+            key,
+            route,
+            statusCode: 202,
+            responseBody: { message: 'processing' },
+          },
+        })
+        return true
+      } catch {
+        return false
+      }
+    }
     return false
+  }
+}
+
+/** Rilascia lock idempotency dopo errore (es. pagamento fallito). */
+export async function releaseIdempotencyLock(
+  restaurantId: string,
+  key: string,
+): Promise<void> {
+  try {
+    await prisma.apiIdempotencyRecord.delete({
+      where: { restaurantId_key: { restaurantId, key } },
+    })
+  } catch {
+    /* lock già assente */
   }
 }
 

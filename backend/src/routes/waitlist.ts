@@ -10,9 +10,14 @@ import { dayBoundsInTimezone } from '../lib/romeDate'
 
 export const waitlistRouter = Router()
 
+const ACTIVE_WAITLIST_STATUSES = ['WAITING', 'NOTIFIED'] as const
+
 waitlistRouter.get('/', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { date } = req.query
-  const where: Record<string, unknown> = { ...tenantWhere(req), status: 'WAITING' }
+  const where: Record<string, unknown> = {
+    ...tenantWhere(req),
+    status: { in: [...ACTIVE_WAITLIST_STATUSES] },
+  }
   if (date && typeof date === 'string') {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: tenantId(req) },
@@ -64,7 +69,7 @@ async function updateWaitlistEntry(req: AuthRequest, res: Response, data: Record
 }
 
 waitlistRouter.patch('/:id/notify', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const entry = await updateWaitlistEntry(req, res, { status: 'NOTIFIED', notifiedAt: new Date() })
+  const entry = await updateWaitlistEntry(req, res, { notifiedAt: new Date(), status: 'NOTIFIED' })
   if (entry) {
     io.to(tenantId(req)).emit('waitlist:updated', entry)
     res.json(entry)
@@ -72,17 +77,37 @@ waitlistRouter.patch('/:id/notify', requirePermission('reservations.manage'), as
 })
 
 waitlistRouter.patch('/:id/confirm', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = tenantId(req)
+  const entryId = req.params.id
+
   const entry = await prisma.waitlistEntry.findFirst({
-    where: scopedWhere(req, req.params.id),
+    where: scopedWhere(req, entryId),
   })
-  if (!entry || entry.status !== 'WAITING') {
+  if (!entry) {
     tenantNotFound(res, 'Voce non trovata')
+    return
+  }
+  if (entry.status === 'CONFIRMED') {
+    res.json({ waitlistEntry: entry, duplicate: true })
+    return
+  }
+  if (!ACTIVE_WAITLIST_STATUSES.includes(entry.status as typeof ACTIVE_WAITLIST_STATUSES[number])) {
+    res.status(400).json({ error: 'Voce non confermabile', code: 'INVALID_STATUS' })
+    return
+  }
+
+  const locked = await prisma.waitlistEntry.updateMany({
+    where: { id: entryId, restaurantId, status: { in: [...ACTIVE_WAITLIST_STATUSES] } },
+    data: { status: 'CONFIRMED' },
+  })
+  if (locked.count === 0) {
+    res.status(409).json({ error: 'Voce già elaborata', code: 'ALREADY_PROCESSED' })
     return
   }
 
   try {
     const { reservation } = await createReservation({
-      restaurantId: tenantId(req),
+      restaurantId,
       guestName: entry.guestName,
       guestPhone: entry.guestPhone,
       guestEmail: entry.guestEmail ?? undefined,
@@ -92,15 +117,15 @@ waitlistRouter.patch('/:id/confirm', requirePermission('reservations.manage'), a
       internalNotes: 'Promossa da lista d\'attesa',
     })
 
-    await prisma.waitlistEntry.update({
-      where: { id: entry.id },
-      data: { status: 'CONFIRMED' },
-    })
-
-    io.to(tenantId(req)).emit('reservation:created', reservation)
-    io.to(tenantId(req)).emit('waitlist:updated', { ...entry, status: 'CONFIRMED' })
-    res.json({ reservation, waitlistEntry: { ...entry, status: 'CONFIRMED' } })
+    const waitlistEntry = { ...entry, status: 'CONFIRMED' as const }
+    io.to(restaurantId).emit('reservation:created', reservation)
+    io.to(restaurantId).emit('waitlist:updated', waitlistEntry)
+    res.json({ reservation, waitlistEntry })
   } catch (err) {
+    await prisma.waitlistEntry.updateMany({
+      where: { id: entryId, restaurantId, status: 'CONFIRMED' },
+      data: { status: entry.status },
+    })
     const code = err instanceof Error && 'code' in err ? String((err as { code: string }).code) : 'UNKNOWN'
     res.status(400).json({ error: err instanceof Error ? err.message : 'Impossibile creare prenotazione', code })
   }

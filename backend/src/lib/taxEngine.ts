@@ -196,7 +196,14 @@ export function computeOrderTaxFromLines(
     }
   }
 
-  return { subtotal, tax, total, taxRateApplied: dominantRate }
+  // Penny adjustment: allinea subtotal+tax al totale arrotondato
+  const roundedTotal = roundMoney(total)
+  const drift = roundMoney(roundedTotal - roundMoney(subtotal + tax))
+  if (drift !== 0 && lines.length > 0) {
+    tax = roundMoney(tax + drift)
+  }
+
+  return { subtotal, tax, total: roundedTotal, taxRateApplied: dominantRate }
 }
 
 /**

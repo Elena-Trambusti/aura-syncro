@@ -101,11 +101,16 @@ model FiscalClosure {
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   date         DateTime   @default(now())
+  /** Giorno calendario tenant (YYYY-MM-DD) — vincolo unicità anti-race Zeta */
+  calendarDay  String
 
   totalRevenue Float // Incasso lordo totale
   totalTax     Float // IVA totale 
   totalCash    Float // Totale contanti dichiarati o calcolati
-  totalCard    Float // Totale carte calcolate
+  totalCard    Float // Totale carte POS fisico
+  totalStripe  Float @default(0)
+  totalDigital Float @default(0)
+  totalVoucher Float @default(0)
   totalTip     Float @default(0) // Mance totali
 
   orderCount Int // Numero di ordini chiusi
@@ -115,6 +120,7 @@ model FiscalClosure {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([restaurantId, calendarDay])
   @@index([restaurantId])
 }
 
@@ -437,6 +443,9 @@ model Order {
   items            OrderItem[]
   invoice          Invoice?
   cashTransactions CashTransaction[]
+
+  @@index([restaurantId, status, paidAt])
+  @@index([restaurantId, createdAt])
 }
 
 model OrderItem {

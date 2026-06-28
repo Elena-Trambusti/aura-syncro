@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import i18n from '../i18n'
 import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
+import { bootstrapSessionToken, clearSessionToken, getSessionToken, setSessionToken } from '../lib/sessionToken'
 import { applyTenantCssVars } from '../lib/tenantTheme'
 import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
 import { clearAuthCache, readAuthCache, writeAuthCache } from '../lib/authCache'
@@ -108,12 +109,12 @@ function shouldDiscardStaleDemoSession(pathname: string, cachedEmail?: string | 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
-  const storedToken = localStorage.getItem('token')
+  const storedToken = bootstrapSessionToken()
   const cachedBoot = storedToken ? readAuthCache() : null
   const discardDemoSession = shouldDiscardStaleDemoSession(pathname, cachedBoot?.user.email)
 
   if (discardDemoSession) {
-    localStorage.removeItem('token')
+    clearSessionToken()
     clearAuthCache()
     clearDemoSession()
   }
@@ -141,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setAuth = useCallback((data: { token: string; user: User; restaurant: Record<string, unknown> }) => {
     const normalized = normalizeRestaurant(data.restaurant)
-    localStorage.setItem('token', data.token)
+    setSessionToken(data.token)
     queryClient.clear()
     setToken(data.token)
     setUser(data.user)
@@ -152,7 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [commitRestaurant])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
+    void api.post('/auth/logout').catch(() => {})
+    clearSessionToken()
     clearAuthCache()
     clearDemoSession()
     setTenantHeader(null)
@@ -183,8 +185,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [commitRestaurant])
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
-    if (!storedToken) {
+    if (token) connectSocket(token)
+  }, [token])
+
+  useEffect(() => {
+    const bootToken = getSessionToken()
+    if (!bootToken) {
       setIsLoading(false)
       clearAuthCache()
       return
@@ -194,7 +200,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (cached) {
       setTenantHeader(cached.restaurant.id)
       applyTenantCssVars(cached.restaurant.colorTheme)
-      connectSocket(storedToken)
     }
 
     api.get('/auth/me')
@@ -203,7 +208,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const normalized = normalizeRestaurant(res.data.restaurant)
         commitRestaurant(normalized, false)
         writeAuthCache(res.data.user, normalized)
-        if (!cached) connectSocket(storedToken)
       })
       .catch(() => logout())
       .finally(() => setIsLoading(false))

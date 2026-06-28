@@ -3,9 +3,11 @@ import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
 import { computeTaxForRestaurant } from './orderTax'
 import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
+import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { signOrderReceiptToken } from './paymentReceiptToken'
+import { deductInventoryForOrder } from './inventoryDeduction'
 
 export const guestCheckoutSchema = z.object({
   slug: z.string().min(1),
@@ -16,9 +18,9 @@ export const guestCheckoutSchema = z.object({
   customerEmail: z.string().email().optional(),
   items: z.array(z.object({
     menuItemId: z.string(),
-    quantity: z.number().int().positive(),
+    quantity: z.number().int().positive().max(99),
     notes: z.string().optional(),
-  })).min(1),
+  })).min(1).max(50),
 })
 
 export type GuestCheckoutInput = z.infer<typeof guestCheckoutSchema>
@@ -68,7 +70,10 @@ export async function createGuestStripeCheckout(
     const table = await prisma.table.findUnique({
       where: { restaurantId_number: { restaurantId, number: tableNumber } },
     })
-    if (table) tableId = table.id
+    if (!table) {
+      throw new PublicOrderError('Tavolo non trovato', 404, 'TABLE_NOT_FOUND')
+    }
+    tableId = table.id
   }
 
   const itemsWithPriceRaw = await resolveGuestItemsWithStock(restaurantId, items)
@@ -88,6 +93,21 @@ export async function createGuestStripeCheckout(
     email: customerEmail,
     name: customerName,
   })
+
+  if (tableId) {
+    const staleCheckouts = await prisma.order.findMany({
+      where: {
+        restaurantId,
+        tableId,
+        status: 'PENDING',
+        stripeSessionId: { not: null },
+      },
+      select: { id: true },
+    })
+    for (const stale of staleCheckouts) {
+      await cancelAbandonedGuestOrder(stale.id)
+    }
+  }
 
   const order = await prisma.$transaction(async tx => {
     const created = await tx.order.create({
@@ -118,7 +138,7 @@ export async function createGuestStripeCheckout(
         items: { include: { menuItem: true } },
       },
     })
-    // Stock e tavolo: solo dopo pagamento Stripe (webhook) — evita leak su checkout abbandonato
+    await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
 
