@@ -12,7 +12,7 @@ import { releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxForRestaurant } from '../lib/orderTax'
 import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
-import { restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
+import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
@@ -268,6 +268,9 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
         },
         include: orderInclude,
       })
+      
+      await deductInventoryForOrder(tx, created.id, req.restaurantId!)
+      
       return created
     })
   } catch (e) {
@@ -461,6 +464,7 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
           restaurantId: req.restaurantId!,
           tipAmount: Number(req.body.tipAmount) || 0,
           paymentMethod,
+          executorUserId: req.userId,
         },
       })
       res.json(updatedOrder)
@@ -618,6 +622,8 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
         data: { subtotal, tax, total, taxRateApplied, revenueAmount: total },
       })
     }
+    
+    await deductInventoryForOrder(tx, req.params.id, tenantId(req))
     
     return { createdItem: newItem, orderWithItems: fetchedOrder }
   }, { timeout: 10000 })

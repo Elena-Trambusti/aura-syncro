@@ -14,6 +14,7 @@ import {
   confirmReservationWithTable,
   getAvailableTablesForReservation,
   syncTableOnReservationStatus,
+  releaseTableFromReservation,
 } from '../lib/reservationTableSync'
 
 export const reservationsRouter = Router()
@@ -348,11 +349,20 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
 })
 
 reservationsRouter.delete('/:id', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await prisma.reservation.deleteMany({ where: scopedWhere(req, req.params.id) })
-  if (deleted.count === 0) {
+  const reservation = await prisma.reservation.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!reservation) {
     tenantNotFound(res, 'Prenotazione non trovata')
     return
   }
+
+  await prisma.reservation.delete({ where: { id: reservation.id } })
+  
+  if (reservation.tableId) {
+    await releaseTableFromReservation(tenantId(req), reservation.tableId)
+    const table = await prisma.table.findUnique({ where: { id: reservation.tableId } })
+    if (table) io.to(tenantId(req)).emit('table:updated', table)
+  }
+
   io.to(tenantId(req)).emit('reservation:deleted', { id: req.params.id })
   res.status(204).send()
 })

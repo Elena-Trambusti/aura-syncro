@@ -12,6 +12,7 @@ export interface FinalizePaymentInput {
   restaurantId: string
   tipAmount?: number
   tipWaiterId?: string
+  executorUserId?: string
   /** Metodo di incasso effettivo (registrato nel Libro Fiscale) */
   paymentMethod: 'CASH' | 'CARD' | 'STRIPE' | 'VOUCHER' | 'DIGITAL'
 }
@@ -82,6 +83,15 @@ export async function finalizeOrderPayment(
       data: { status: 'SERVED' },
     })
 
+    const lock = await tx.order.updateMany({
+      where: { id: order.id, status: { not: 'PAID' } },
+      data: { status: 'PAID' }
+    })
+    
+    if (lock.count === 0) {
+      throw new Error('ORDER_ALREADY_PAID')
+    }
+
     const chainLink = await appendFiscalChainLink(tx, input.restaurantId, {
       orderId: order.id,
       closedAt: paidAt,
@@ -114,6 +124,28 @@ export async function finalizeOrderPayment(
     await issueInvoiceForOrder(tx, order.id, input.restaurantId, paidAt)
 
     await decrementInventoryForUnpaidItems(tx, order.id, input.restaurantId)
+
+    if (input.paymentMethod === 'CASH') {
+      const openSession = await tx.cashRegisterSession.findFirst({
+        where: { restaurantId: input.restaurantId, status: 'OPEN' }
+      })
+      const fallbackUser = await tx.user.findFirst({ where: { restaurantId: input.restaurantId } })
+      const resolvedUserId = input.executorUserId || order.waiterId || fallbackUser?.id
+
+      if (openSession && resolvedUserId) {
+        await tx.cashTransaction.create({
+          data: {
+            sessionId: openSession.id,
+            userId: resolvedUserId,
+            type: 'SALE',
+            amount: split.total,
+            reason: `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
+            orderId: order.id
+          }
+        })
+      }
+    }
+
     return paid
   }, { timeout: 20000 })
 
