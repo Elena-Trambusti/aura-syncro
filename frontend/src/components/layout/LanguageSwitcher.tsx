@@ -6,11 +6,8 @@ import { cn } from '../../lib/utils'
 
 const LANGUAGES = [
   { code: 'it', name: 'Italiano' },
-  { code: 'en', name: 'English' },
   { code: 'es', name: 'Español' },
   { code: 'es-cn', name: 'Español (Canarias)' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
 ] as const
 
 const STORAGE_KEY = 'aura-lang'

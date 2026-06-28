@@ -16,7 +16,7 @@ import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/in
 import { resolveOrCreateCustomer } from '../lib/customerResolver'
 import { assertMenuItemOrderable } from '../lib/menuStock'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
-import { getIdempotentResponse, readIdempotencyKey, saveIdempotentResponse } from '../lib/apiIdempotency'
+import { acquireIdempotencyLock, getIdempotentResponse, readIdempotencyKey, saveIdempotentResponse } from '../lib/apiIdempotency'
 
 export const ordersRouter = Router()
 
@@ -137,7 +137,16 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   if (idempotencyKey && req.restaurantId) {
     const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey)
     if (cached) {
+      if (cached.statusCode === 202) {
+        res.status(409).json({ error: 'Richiesta già in elaborazione (Idempotency Lock)' })
+        return
+      }
       res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+    const locked = await acquireIdempotencyLock(req.restaurantId, idempotencyKey, 'POST /orders')
+    if (!locked) {
+      res.status(409).json({ error: 'Richiesta duplicata bloccata dal sistema' })
       return
     }
   }
@@ -493,6 +502,23 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     })
   }
 
+  if (status === 'CANCELLED') {
+    const items = await prisma.orderItem.findMany({
+      where: { orderId: req.params.id, status: { not: 'CANCELLED' } },
+      select: { id: true }
+    })
+    
+    await prisma.$transaction(async tx => {
+      for (const item of items) {
+        await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
+      }
+      await tx.orderItem.updateMany({
+        where: { orderId: req.params.id },
+        data: { status: 'CANCELLED' }
+      })
+    })
+  }
+
   const order = await prisma.order.update({
     where: { id: req.params.id },
     data: { status: status as OrderStatus },
@@ -513,7 +539,16 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
   if (idempotencyKey && req.restaurantId) {
     const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey)
     if (cached) {
+      if (cached.statusCode === 202) {
+        res.status(409).json({ error: 'Richiesta già in elaborazione' })
+        return
+      }
       res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+    const locked = await acquireIdempotencyLock(req.restaurantId, idempotencyKey, `POST /orders/${req.params.id}/items`)
+    if (!locked) {
+      res.status(409).json({ error: 'Richiesta duplicata bloccata' })
       return
     }
   }

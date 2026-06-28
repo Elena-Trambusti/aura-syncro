@@ -30,27 +30,32 @@ cashRouter.post('/session/open', requirePermission('orders.pay'), async (req: Au
     return
   }
 
-  // Check if one is already open
-  const existing = await prisma.cashRegisterSession.findFirst({
-    where: { restaurantId: tenantId(req), status: 'OPEN' },
-  })
-  
-  if (existing) {
-    res.status(400).json({ error: 'C' + 'è già un turno cassa aperto.' })
-    return
-  }
+  try {
+    const session = await prisma.$transaction(async (tx) => {
+      const existing = await tx.cashRegisterSession.findFirst({
+        where: { restaurantId: tenantId(req), status: 'OPEN' },
+      })
+      if (existing) throw new Error('ALREADY_OPEN')
 
-  const session = await prisma.cashRegisterSession.create({
-    data: {
-      restaurantId: tenantId(req),
-      openedById: req.userId!,
-      openingBalance: result.data.openingBalance,
-      notes: result.data.notes,
-      status: 'OPEN',
-    },
-  })
-  
-  res.status(201).json(session)
+      return tx.cashRegisterSession.create({
+        data: {
+          restaurantId: tenantId(req),
+          openedById: req.userId!,
+          openingBalance: result.data.openingBalance,
+          notes: result.data.notes,
+          status: 'OPEN',
+        },
+      })
+    }, { isolationLevel: 'Serializable' })
+
+    res.status(201).json(session)
+  } catch (err: any) {
+    if (err.message === 'ALREADY_OPEN') {
+      res.status(400).json({ error: 'C\'è già un turno cassa aperto.' })
+      return
+    }
+    throw err
+  }
 })
 
 // POST /cash/session/close - Close current session (Blind Drop)

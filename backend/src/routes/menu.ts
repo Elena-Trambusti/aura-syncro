@@ -40,7 +40,6 @@ async function assertCategoryBelongsToTenant(req: AuthRequest, categoryId: strin
 const activeMenuItemWhere = { archived: false } as const
 
 async function removeMenuItem(tx: Prisma.TransactionClient, itemId: string): Promise<'deleted' | 'archived'> {
-  await tx.inventoryItemLink.deleteMany({ where: { menuItemId: itemId } })
   const orderCount = await tx.orderItem.count({ where: { menuItemId: itemId } })
   if (orderCount > 0) {
     await tx.menuItem.update({
@@ -49,6 +48,7 @@ async function removeMenuItem(tx: Prisma.TransactionClient, itemId: string): Pro
     })
     return 'archived'
   }
+  await tx.inventoryItemLink.deleteMany({ where: { menuItemId: itemId } })
   await tx.menuItem.delete({ where: { id: itemId } })
   return 'deleted'
 }

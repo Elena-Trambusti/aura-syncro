@@ -25,6 +25,28 @@ export async function getIdempotentResponse(
   return { statusCode: row.statusCode, responseBody: row.responseBody }
 }
 
+/** Tenta di registrare subito la chiave. Se fallisce, un'altra richiesta l'ha già presa. */
+export async function acquireIdempotencyLock(
+  restaurantId: string,
+  key: string,
+  route: string
+): Promise<boolean> {
+  try {
+    await prisma.apiIdempotencyRecord.create({
+      data: {
+        restaurantId,
+        key,
+        route,
+        statusCode: 202,
+        responseBody: { message: 'processing' },
+      },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function saveIdempotentResponse(
   restaurantId: string,
   key: string,
@@ -33,17 +55,16 @@ export async function saveIdempotentResponse(
   responseBody: unknown,
 ): Promise<void> {
   try {
-    await prisma.apiIdempotencyRecord.create({
+    await prisma.apiIdempotencyRecord.update({
+      where: { restaurantId_key: { restaurantId, key } },
       data: {
-        restaurantId,
-        key,
         route,
         statusCode,
         responseBody: responseBody as object,
       },
     })
   } catch {
-    // Race: un retry parallelo ha già salvato la stessa chiave.
+    // Ignora se la chiave per qualche motivo non c'è
   }
 }
 
@@ -60,7 +81,16 @@ export async function withIdempotency(
   if (key && restaurantId) {
     const cached = await getIdempotentResponse(restaurantId, key)
     if (cached) {
+      if (cached.statusCode === 202) {
+        res.status(409).json({ error: 'Richiesta già in elaborazione' })
+        return
+      }
       res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+    const locked = await acquireIdempotencyLock(restaurantId, key, route)
+    if (!locked) {
+      res.status(409).json({ error: 'Richiesta duplicata' })
       return
     }
   }

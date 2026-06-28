@@ -3,9 +3,11 @@ import { cn } from '../../lib/utils'
 
 const PUBLIC_LANGUAGES = [
   { code: 'it', label: 'IT', name: 'Italiano' },
+  { code: 'en', label: 'EN', name: 'English' },
   { code: 'es', label: 'ES', name: 'Español' },
   { code: 'es-cn', label: 'ES-CN', name: 'Español (Canarias)' },
-  { code: 'en', label: 'EN', name: 'English' },
+  { code: 'fr', label: 'FR', name: 'Français' },
+  { code: 'de', label: 'DE', name: 'Deutsch' },
 ] as const
 
 const STORAGE_KEY = 'aura-lang'

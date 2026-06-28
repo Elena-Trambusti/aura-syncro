@@ -287,6 +287,16 @@ tablesRouter.post(
 )
 
 tablesRouter.delete('/:id', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!table) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+  if (table.status !== 'FREE') {
+    res.status(409).json({ error: 'Impossibile eliminare un tavolo attualmente occupato o riservato. Libera prima il tavolo.' })
+    return
+  }
+
   const deleted = await prisma.table.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Tavolo non trovato')
