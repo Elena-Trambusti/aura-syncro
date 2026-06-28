@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
+import { signDepositReceiptToken } from './paymentReceiptToken'
 
 export async function createDepositCheckoutSession(
   reservationId: string,
@@ -47,6 +48,7 @@ export async function createDepositCheckoutSession(
   const frontendUrl = resolvePrimaryFrontendUrl()
 
   const depositTotal = depositAmount * reservation.covers
+  const receiptToken = signDepositReceiptToken(reservation.id)
 
   const session = await stripe.checkout.sessions.create({
     mode: 'setup',
@@ -62,7 +64,7 @@ export async function createDepositCheckoutSession(
         message: `La carta verrà salvata a garanzia di ${depositTotal.toFixed(2)}€ e addebitata SOLO in caso di no-show.`,
       }
     },
-    success_url: `${frontendUrl}/payment/deposit-success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${frontendUrl}/payment/deposit-success?session_id={CHECKOUT_SESSION_ID}&receipt_token=${encodeURIComponent(receiptToken)}`,
     cancel_url: `${frontendUrl}/payment/cancel?reason=deposit`,
   })
 

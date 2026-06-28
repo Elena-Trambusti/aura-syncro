@@ -78,7 +78,6 @@ export async function getAvailableTablesForReservation(
 
   return tables
     .filter(t => t.seats >= reservation.covers)
-    .filter(t => t.status === 'FREE' || t.id === reservation.tableId)
     .filter(t => !overlappingTableIds.has(t.id) || t.id === reservation.tableId)
     .map(t => ({
       id: t.id,
@@ -88,7 +87,6 @@ export async function getAvailableTablesForReservation(
       status: t.status,
       suitable:
         t.seats >= reservation.covers
-        && (t.status === 'FREE' || t.id === reservation.tableId)
         && !overlappingTableIds.has(t.id),
     }))
 }

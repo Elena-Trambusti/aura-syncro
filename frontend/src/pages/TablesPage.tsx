@@ -184,8 +184,9 @@ export default function TablesPage() {
   })
 
   const seatReservation = useMutation({
-    mutationFn: (reservationId: string) => api.patch(`/reservations/${reservationId}/status`, { status: 'SEATED' }),
-    onSuccess: (_data, reservationId) => {
+    mutationFn: ({ reservationId, tableId }: { reservationId: string; tableId: string }) =>
+      api.post(`/reservations/${reservationId}/confirm`, { tableId }),
+    onSuccess: (_data, { reservationId }) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
       const table = reservedTable ?? tables.find(tbl => tbl.reservations?.some(r => r.id === reservationId))
@@ -544,7 +545,10 @@ export default function TablesPage() {
             <div className="mt-6 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => seatReservation.mutate(reservedTable.reservations![0].id)}
+                onClick={() => seatReservation.mutate({
+                  reservationId: reservedTable.reservations![0].id,
+                  tableId: reservedTable.id,
+                })}
                 disabled={seatReservation.isPending}
                 className={`w-full py-2.5 ${ui.btnPrimary} text-sm`}
               >

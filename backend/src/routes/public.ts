@@ -179,8 +179,12 @@ publicRouter.post('/orders', publicOrderLimiter, async (req: Request, res: Respo
   }
 
   try {
-    const { order, restaurantId, tableNumber, total } = await createPublicOrder(parsed.data)
+    const { order, restaurantId, tableNumber, total } = await createPublicOrder(restaurant.id, parsed.data)
     io.to(restaurantId).emit('order:created', order)
+    io.to(restaurantId).emit('print:kitchen', { type: 'kitchen', order })
+    if (order.table) {
+      io.to(restaurantId).emit('table:updated', { ...order.table, status: 'OCCUPIED' })
+    }
 
     const tableLabel = tableNumber ? `tavolo ${tableNumber}` : parsed.data.type.toLowerCase()
     void broadcastNewOrderNotification(
@@ -215,7 +219,16 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
 
   try {
     const result = await createGuestStripeCheckout(parsed.data)
-    res.json(result)
+    io.to(result.order.restaurantId).emit('order:created', result.order)
+    io.to(result.order.restaurantId).emit('print:kitchen', { type: 'kitchen', order: result.order })
+    if (result.order.table) {
+      io.to(result.order.restaurantId).emit('table:updated', { ...result.order.table, status: 'OCCUPIED' })
+    }
+    res.json({
+      checkoutUrl: result.checkoutUrl,
+      sessionId: result.sessionId,
+      orderId: result.orderId,
+    })
   } catch (err) {
     if (err instanceof PublicOrderError) {
       res.status(err.statusCode).json({ error: err.message, code: err.code })

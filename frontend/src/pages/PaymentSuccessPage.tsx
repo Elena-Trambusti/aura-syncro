@@ -30,16 +30,17 @@ export default function PaymentSuccessPage() {
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
   const orderId = params.get('order_id')
+  const receiptToken = params.get('receipt_token')
   const [data, setData] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(!!sessionId)
-  const [error, setError] = useState(!sessionId || !orderId)
+  const [error, setError] = useState(!sessionId || !orderId || !receiptToken)
 
   useEffect(() => {
-    if (!sessionId || !orderId) return
-    api.get(`/payments/session/${sessionId}`, { params: { orderId } })
+    if (!sessionId || !orderId || !receiptToken) return
+    api.get(`/payments/session/${sessionId}`, { params: { orderId, receipt_token: receiptToken } })
       .then(r => { setData(r.data); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
-  }, [sessionId, orderId])
+  }, [sessionId, orderId, receiptToken])
 
   if (loading) return (
     <div className="aura-auth-shell flex min-h-screen items-center justify-center">

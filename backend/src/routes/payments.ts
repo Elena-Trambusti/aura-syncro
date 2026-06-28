@@ -18,6 +18,7 @@ import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
 import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount } from '../lib/orderDiscount'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
+import { verifyDepositReceiptToken, verifyOrderReceiptToken } from '../lib/paymentReceiptToken'
 
 export const paymentsRouter = Router()
 
@@ -346,8 +347,13 @@ paymentsRouter.get('/session/:sessionId', async (req: Request, res: Response): P
   }
 
   const orderId = typeof req.query.orderId === 'string' ? req.query.orderId : null
-  if (!orderId) {
-    res.status(400).json({ error: 'orderId richiesto' })
+  const receiptToken = typeof req.query.receipt_token === 'string' ? req.query.receipt_token : null
+  if (!orderId || !receiptToken) {
+    res.status(400).json({ error: 'orderId e receipt_token richiesti' })
+    return
+  }
+  if (!verifyOrderReceiptToken(receiptToken, orderId)) {
+    res.status(403).json({ error: 'Token ricevuta non valido o scaduto' })
     return
   }
 
@@ -391,6 +397,12 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
     return
   }
 
+  const receiptToken = typeof req.query.receipt_token === 'string' ? req.query.receipt_token : null
+  if (!receiptToken) {
+    res.status(400).json({ error: 'receipt_token richiesto' })
+    return
+  }
+
   try {
     const sessionId = String(req.params.sessionId)
     const session = await stripe.checkout.sessions.retrieve(sessionId)
@@ -398,6 +410,10 @@ paymentsRouter.get('/deposit-session/:sessionId', async (req: Request, res: Resp
 
     if (!reservationId) {
       res.status(400).json({ error: 'Sessione non valida per caparra prenotazione' })
+      return
+    }
+    if (!verifyDepositReceiptToken(receiptToken, reservationId)) {
+      res.status(403).json({ error: 'Token ricevuta non valido o scaduto' })
       return
     }
 

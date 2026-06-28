@@ -432,7 +432,7 @@ reportsRouter.post('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, asy
     totalTax += o.tax
     totalTip += o.tipAmount ?? 0
     if (o.paymentMethod === 'CASH') totalCash += o.total
-    else totalCard += o.total
+    else if (o.paymentMethod) totalCard += o.total
   }
 
   // 3. Genera il record di Chiusura

@@ -22,6 +22,8 @@ export async function completeOrderPayment(input: {
   stripePaymentIntentId?: string
   receiptEmail?: string
   restaurantName?: string
+  /** false per ordini guest prepagati Stripe: la cucina deve ancora preparare i piatti */
+  serveItemsOnPayment?: boolean
 }) {
   const [orderPreview, fiscal] = await Promise.all([
     prisma.order.findFirst({
@@ -51,6 +53,7 @@ export async function completeOrderPayment(input: {
 
   const result = await finalizeOrderPayment(input.finalize, {
     splitBreakdown: input.splitBreakdown,
+    serveItemsOnPayment: input.serveItemsOnPayment,
   })
 
   if (posResult?.stripePaymentIntentId) {
@@ -106,5 +109,6 @@ export async function completeGuestStripePayment(
       paymentMethod: 'STRIPE',
       tipAmount: order.tipAmount ?? 0,
     },
+    serveItemsOnPayment: false,
   })
 }

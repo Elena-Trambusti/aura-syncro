@@ -223,7 +223,15 @@ tablesRouter.put('/:id', requirePermission('tables.manage'), async (req: AuthReq
 })
 
 tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { status } = req.body
+  const parsed = z.object({
+    status: z.enum(['FREE', 'OCCUPIED', 'RESERVED', 'CLEANING']),
+  }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Stato tavolo non valido' })
+    return
+  }
+  const { status } = parsed.data
+
   const updated = await prisma.table.updateMany({
     where: scopedWhere(req, req.params.id),
     data: { status },

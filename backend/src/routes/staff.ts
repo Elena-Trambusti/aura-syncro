@@ -175,7 +175,13 @@ staffRouter.post('/shifts', requirePermission('staff.manage'), asyncHandler(asyn
 }))
 
 staffRouter.patch('/shifts/:id/clock', requirePermission('staff.manage'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  const { action } = req.body
+  const parsed = z.object({ action: z.enum(['in', 'out']) }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Azione non valida' })
+    return
+  }
+  const { action } = parsed.data
+
   const data = action === 'in'
     ? { clockIn: new Date(), status: 'ACTIVE' as const }
     : { clockOut: new Date(), status: 'COMPLETED' as const }

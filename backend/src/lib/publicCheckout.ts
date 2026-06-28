@@ -5,6 +5,8 @@ import { computeTaxForRestaurant } from './orderTax'
 import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
+import { signOrderReceiptToken } from './paymentReceiptToken'
+import { deductInventoryForOrder } from './inventoryDeduction'
 
 export const guestCheckoutSchema = z.object({
   slug: z.string().min(1),
@@ -26,6 +28,18 @@ export interface GuestCheckoutResult {
   checkoutUrl: string
   sessionId: string
   orderId: string
+  order: {
+    id: string
+    restaurantId: string
+    status: string
+    table?: { id: string; number: number; status: string } | null
+    items: Array<{
+      id: string
+      quantity: number
+      status: string
+      menuItem: { name: string }
+    }>
+  }
 }
 
 /** Crea ordine PENDING + sessione Stripe Checkout per guest dal menu QR */
@@ -100,7 +114,12 @@ export async function createGuestStripeCheckout(
           })),
         },
       },
+      include: {
+        table: true,
+        items: { include: { menuItem: true } },
+      },
     })
+    await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
 
@@ -120,6 +139,8 @@ export async function createGuestStripeCheckout(
     quantity: item.quantity,
   }))
 
+  const receiptToken = signOrderReceiptToken(order.id)
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: customerEmail,
@@ -131,7 +152,7 @@ export async function createGuestStripeCheckout(
       customerEmail: customerEmail || '',
     },
     line_items: lineItems,
-    success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
+    success_url: `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}&receipt_token=${encodeURIComponent(receiptToken)}`,
     cancel_url: `${frontendUrl}/menu/${slug}?payment=cancelled`,
     ...(connectAccountId ? {
       payment_intent_data: {
@@ -156,5 +177,6 @@ export async function createGuestStripeCheckout(
     checkoutUrl: session.url,
     sessionId: session.id,
     orderId: order.id,
+    order,
   }
 }

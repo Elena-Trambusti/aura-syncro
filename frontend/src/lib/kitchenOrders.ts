@@ -49,12 +49,13 @@ export function computeOrderStatusFromItems(items: KitchenOrderItem[]): string {
   return 'PENDING'
 }
 
+export function orderNeedsKitchenAttention(order: KitchenOrder): boolean {
+  if (order.status === 'CANCELLED' || order.status === 'SERVED') return false
+  return order.items.some(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status))
+}
+
 export function filterKitchenOrders(orders: KitchenOrder[]): KitchenOrder[] {
-  return orders.filter(
-    o =>
-      !['PAID', 'CANCELLED', 'SERVED'].includes(o.status) &&
-      o.items.some(i => !KITCHEN_HIDDEN_ITEM_STATUSES.has(i.status)),
-  )
+  return orders.filter(orderNeedsKitchenAttention)
 }
 
 export function mergeKitchenOrder(orders: KitchenOrder[], updated: KitchenOrder): KitchenOrder[] {

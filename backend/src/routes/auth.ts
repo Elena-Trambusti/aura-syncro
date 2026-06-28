@@ -17,6 +17,7 @@ import {
   authForgotPasswordLimiter,
   authLoginLimiter,
   authRegisterLimiter,
+  authResetPasswordLimiter,
 } from '../middleware/rateLimit'
 
 export const authRouter = Router()
@@ -224,7 +225,7 @@ authRouter.post('/forgot-password', authForgotPasswordLimiter, asyncHandler(asyn
   res.json({ success: true, message: 'Se l\'email esiste, riceverai le istruzioni.' })
 }))
 
-authRouter.post('/reset-password', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+authRouter.post('/reset-password', authResetPasswordLimiter, asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const parsed = z.object({
     token: z.string().min(1),
     password: z.string().min(PASSWORD_MIN),

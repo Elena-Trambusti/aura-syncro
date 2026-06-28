@@ -53,13 +53,23 @@ async function syncOrderStatusFromItems(orderId: string): Promise<void> {
   await prisma.order.update({ where: { id: orderId }, data: { status } })
 }
 
+const orderListQuerySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.nativeEnum(OrderStatus).optional(),
+})
+
 ordersRouter.get('/', requirePermission('orders.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { status, date } = req.query
+  const query = orderListQuerySchema.safeParse(req.query)
+  if (!query.success) {
+    res.status(400).json({ error: 'Parametri query non validi' })
+    return
+  }
+  const { status, date } = query.data
   const where: Record<string, unknown> = { restaurantId: req.restaurantId! }
 
   if (status) where.status = status
   if (date) {
-    const d = parseLocalDate(date as string)
+    const d = parseLocalDate(date)
     if (d) {
       const next = new Date(d)
       next.setDate(next.getDate() + 1)
@@ -79,7 +89,14 @@ ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRe
   const orders = await prisma.order.findMany({
     where: {
       restaurantId: req.restaurantId!,
-      status: { notIn: ['PAID', 'CANCELLED', 'SERVED'] },
+      status: { notIn: ['CANCELLED', 'SERVED'] },
+      OR: [
+        { status: { notIn: ['PAID'] } },
+        {
+          status: 'PAID',
+          items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
+        },
+      ],
     },
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
@@ -342,15 +359,24 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
 
   const order = await prisma.order.findFirst({
     where: { id: req.params.orderId, restaurantId: req.restaurantId! },
-    include: { items: { select: { id: true } } },
+    include: { items: { select: { id: true, status: true } } },
   })
   if (!order) {
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
-  if (['PAID', 'CANCELLED'].includes(order.status)) {
+  if (order.status === 'CANCELLED') {
     res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
     return
+  }
+  if (order.status === 'PAID') {
+    const kitchenStillActive = order.items.some(
+      i => !['SERVED', 'CANCELLED'].includes(i.status),
+    )
+    if (!kitchenStillActive) {
+      res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+      return
+    }
   }
   if (!order.items.some(i => i.id === req.params.itemId)) {
     res.status(404).json({ error: 'Piatto non trovato nell\'ordine' })
@@ -445,9 +471,19 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
 })
 
 ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { status } = req.body
+  const statusSchema = z.object({
+    status: z.nativeEnum(OrderStatus),
+    paymentMethod: z.enum(['CARD', 'CASH']).optional(),
+    tipAmount: z.number().min(0).optional(),
+  })
+  const parsed = statusSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Stato ordine non valido' })
+    return
+  }
+  const { status, paymentMethod: bodyPaymentMethod, tipAmount: bodyTipAmount } = parsed.data
 
-  if (!status || typeof status !== 'string' || !canSetOrderStatus(req.userRole, status)) {
+  if (!canSetOrderStatus(req.userRole, status)) {
     res.status(403).json({ error: 'Permessi insufficienti per questo stato ordine', code: 'FORBIDDEN' })
     return
   }
@@ -459,19 +495,23 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
-  if (['PAID', 'CANCELLED'].includes(existingOrder.status) && status !== existingOrder.status) {
+  if (
+    ['PAID', 'CANCELLED'].includes(existingOrder.status)
+    && status !== existingOrder.status
+    && !(existingOrder.status === 'PAID' && status === 'SERVED')
+  ) {
     res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
     return
   }
 
   if (status === 'PAID') {
-    const paymentMethod = req.body.paymentMethod === 'CASH' ? 'CASH' : 'CARD'
+    const paymentMethod = bodyPaymentMethod ?? 'CARD'
     try {
       const { updatedOrder } = await completeOrderPayment({
         finalize: {
           orderId: req.params.id,
           restaurantId: req.restaurantId!,
-          tipAmount: Number(req.body.tipAmount) || 0,
+          tipAmount: bodyTipAmount ?? 0,
           paymentMethod,
           executorUserId: req.userId,
         },
@@ -525,7 +565,10 @@ ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promi
     include: orderInclude,
   })
 
-  if (status === 'PAID' || status === 'CANCELLED') {
+  if (status === 'CANCELLED') {
+    const releasedTable = await releaseTableIfEmpty(order.tableId)
+    if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
+  } else if (status === 'SERVED' && existingOrder.status === 'PAID') {
     const releasedTable = await releaseTableIfEmpty(order.tableId)
     if (releasedTable) io.to(req.restaurantId!).emit('table:updated', releasedTable)
   }

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { prisma } from './prisma'
 
 export type CustomerFilter = {
@@ -26,21 +27,51 @@ export const MARKETING_SEGMENTS = {
 
 export type MarketingSegmentKey = keyof typeof MARKETING_SEGMENTS
 
-export async function getTargetCustomers(restaurantId: string, filterJson: string | null) {
-  let filter: CustomerFilter = {}
+const marketingSegmentKeys = Object.keys(MARKETING_SEGMENTS) as [
+  MarketingSegmentKey,
+  ...MarketingSegmentKey[],
+]
+
+export const customerFilterSchema = z.object({
+  minSpent: z.number().min(0).optional(),
+  minVisits: z.number().int().min(0).optional(),
+  tierId: z.string().min(1).max(64).optional(),
+  inactiveDays: z.number().int().min(1).max(3650).optional(),
+  newWithinDays: z.number().int().min(1).max(3650).optional(),
+  vipOnly: z.boolean().optional(),
+  birthdayMonth: z.boolean().optional(),
+  segment: z.enum(marketingSegmentKeys).optional(),
+}).strict()
+
+export const marketingTargetFilterSchema = z.union([
+  z.literal(''),
+  z.string().max(1000),
+  z.null(),
+  z.undefined(),
+])
+
+/** Valida e normalizza il filtro destinatari marketing (JSON string o vuoto). */
+export function parseCustomerFilter(filterJson: string | null | undefined): CustomerFilter {
+  if (!filterJson?.trim()) return {}
+
   try {
-    if (filterJson) {
-      const parsed = JSON.parse(filterJson) as CustomerFilter & { segment?: MarketingSegmentKey }
-      if (parsed.segment && parsed.segment in MARKETING_SEGMENTS) {
-        filter = { ...MARKETING_SEGMENTS[parsed.segment], ...parsed }
-        delete (filter as { segment?: MarketingSegmentKey }).segment
-      } else {
-        filter = parsed
-      }
+    const raw = JSON.parse(filterJson)
+    const parsed = customerFilterSchema.safeParse(raw)
+    if (!parsed.success) return {}
+
+    const { segment, ...rest } = parsed.data
+    if (segment && segment in MARKETING_SEGMENTS) {
+      const merged = { ...MARKETING_SEGMENTS[segment], ...rest }
+      return merged
     }
+    return rest
   } catch {
-    /* filtro vuoto */
+    return {}
   }
+}
+
+export async function getTargetCustomers(restaurantId: string, filterJson: string | null) {
+  const filter = parseCustomerFilter(filterJson)
 
   const where: Record<string, unknown> = { restaurantId, email: { contains: '@' } }
   const andConditions: any[] = []

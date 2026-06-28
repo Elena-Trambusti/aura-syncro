@@ -22,16 +22,17 @@ export default function PaymentDepositSuccessPage() {
   const { t } = useTranslation()
   const [params] = useSearchParams()
   const sessionId = params.get('session_id')
+  const receiptToken = params.get('receipt_token')
   const [data, setData] = useState<DepositSessionData | null>(null)
   const [loading, setLoading] = useState(!!sessionId)
-  const [error, setError] = useState(!sessionId)
+  const [error, setError] = useState(!sessionId || !receiptToken)
 
   useEffect(() => {
-    if (!sessionId) return
-    api.get(`/payments/deposit-session/${sessionId}`)
+    if (!sessionId || !receiptToken) return
+    api.get(`/payments/deposit-session/${sessionId}`, { params: { receipt_token: receiptToken } })
       .then(r => { setData(r.data); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
-  }, [sessionId])
+  }, [sessionId, receiptToken])
 
   if (loading) {
     return (

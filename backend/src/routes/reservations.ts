@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import { ReservationStatus } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe } from '../lib/stripe'
@@ -19,8 +20,18 @@ import {
 
 export const reservationsRouter = Router()
 
+const reservationListQuerySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.nativeEnum(ReservationStatus).optional(),
+})
+
 reservationsRouter.get('/', requirePermission('reservations.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { date, status } = req.query
+  const query = reservationListQuerySchema.safeParse(req.query)
+  if (!query.success) {
+    res.status(400).json({ error: 'Parametri query non validi' })
+    return
+  }
+  const { date, status } = query.data
   const where: Record<string, unknown> = { ...tenantWhere(req) }
 
   let timeZone = 'Europe/Rome'
@@ -30,7 +41,7 @@ reservationsRouter.get('/', requirePermission('reservations.read'), async (req: 
       select: { timezone: true },
     })
     timeZone = restaurant?.timezone ?? 'Europe/Rome'
-    const { gte, lt } = dayBoundsInTimezone(date as string, timeZone)
+    const { gte, lt } = dayBoundsInTimezone(date, timeZone)
     where.date = { gte, lt }
   }
   if (status) where.status = status
@@ -201,25 +212,13 @@ reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (
     covers: z.number().int().positive().optional(),
     date: z.string().datetime().optional(),
     duration: z.number().int().optional(),
-    tableId: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
     internalNotes: z.string().optional().nullable(),
-    status: z.enum(['PENDING', 'CONFIRMED', 'SEATED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
   })
   const result = schema.safeParse(req.body)
   if (!result.success) {
     res.status(400).json({ error: 'Dati non validi' })
     return
-  }
-
-  if (result.data.tableId) {
-    const table = await prisma.table.findFirst({
-      where: { id: result.data.tableId, restaurantId: tenantId(req) },
-    })
-    if (!table) {
-      tenantNotFound(res, 'Tavolo non trovato')
-      return
-    }
   }
 
   const updated = await prisma.reservation.updateMany({
@@ -242,8 +241,16 @@ reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (
   res.json(reservation)
 })
 
+const reservationStatusSchema = z.nativeEnum(ReservationStatus)
+
 reservationsRouter.patch('/:id/status', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { status } = req.body
+  const parsed = z.object({ status: reservationStatusSchema }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Stato prenotazione non valido' })
+    return
+  }
+  const { status } = parsed.data
+
   const existing = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
     select: { id: true, tableId: true, status: true },

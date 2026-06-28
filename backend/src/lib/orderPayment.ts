@@ -52,7 +52,7 @@ function generateTransactionId(): string {
  */
 export async function finalizeOrderPayment(
   input: FinalizePaymentInput,
-  options?: { splitBreakdown?: SplitBreakdown },
+  options?: { splitBreakdown?: SplitBreakdown; serveItemsOnPayment?: boolean },
 ): Promise<FinalizePaymentResult> {
   const order = await prisma.order.findFirst({
     where: { id: input.orderId, restaurantId: input.restaurantId },
@@ -74,14 +74,18 @@ export async function finalizeOrderPayment(
   const transactionId = generateTransactionId()
   const paidAt = split.paidAt
 
+  const serveItems = options?.serveItemsOnPayment !== false
+
   const updatedOrder = await prisma.$transaction(async tx => {
-    await tx.orderItem.updateMany({
-      where: {
-        orderId: order.id,
-        status: { notIn: ['CANCELLED', 'SERVED'] },
-      },
-      data: { status: 'SERVED' },
-    })
+    if (serveItems) {
+      await tx.orderItem.updateMany({
+        where: {
+          orderId: order.id,
+          status: { notIn: ['CANCELLED', 'SERVED'] },
+        },
+        data: { status: 'SERVED' },
+      })
+    }
 
     const lock = await tx.order.updateMany({
       where: { id: order.id, status: { not: 'PAID' } },

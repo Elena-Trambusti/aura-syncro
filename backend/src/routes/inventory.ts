@@ -58,7 +58,16 @@ inventoryRouter.put('/:id', requirePermission('inventory.manage'), async (req: A
 })
 
 inventoryRouter.patch('/:id/quantity', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { delta, operation } = req.body
+  const parsed = z.object({
+    delta: z.number().finite(),
+    operation: z.enum(['set', 'add']).optional().default('add'),
+  }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati quantità non validi' })
+    return
+  }
+  const { delta, operation } = parsed.data
+
   const current = await prisma.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
   if (!current) {
     tenantNotFound(res, 'Prodotto non trovato')

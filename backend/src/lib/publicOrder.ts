@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 import { computeTaxForRestaurant } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { assertMenuItemOrderable } from './menuStock'
+import { deductInventoryForOrder } from './inventoryDeduction'
 
 export const publicOrderSchema = z.object({
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
@@ -76,19 +77,15 @@ export async function resolveGuestItemsWithStock(
 /**
  * Crea un ordine guest dal menu QR.
  * Valida stock/disponibilità come il POS cameriere.
+ * `restaurantId` deve provenire dal tenant risolto via slug (route pubblica).
  */
-export async function createPublicOrder(input: PublicOrderInput) {
+export async function createPublicOrder(restaurantId: string, input: PublicOrderInput) {
   const { items, tableNumber, guestEmail, guestPhone, guestName, ...orderData } = input
 
-  const probe = await prisma.menuItem.findFirst({
-    where: { id: items[0]?.menuItemId },
-    select: { restaurantId: true },
-  })
-  if (!probe) {
-    throw new PublicOrderError('Piatto non trovato', 404, 'MENU_ITEM_NOT_FOUND')
+  if (!restaurantId) {
+    throw new PublicOrderError('Ristorante non trovato', 404, 'RESTAURANT_NOT_FOUND')
   }
 
-  const restaurantId = probe.restaurantId
   const itemsWithPrice = await resolveGuestItemsWithStock(restaurantId, items)
 
   let tableId: string | undefined
@@ -137,6 +134,7 @@ export async function createPublicOrder(input: PublicOrderInput) {
         items: { include: { menuItem: true } },
       },
     })
+    await deductInventoryForOrder(tx, created.id, restaurantId)
     return created
   })
 

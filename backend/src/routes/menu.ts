@@ -213,7 +213,13 @@ menuRouter.put('/items/:id', requirePermission('menu.manage'), async (req: AuthR
 })
 
 menuRouter.patch('/items/:id/availability', requirePermission('menu.availability'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { available } = req.body
+  const parsed = z.object({ available: z.boolean() }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Valore disponibilità non valido' })
+    return
+  }
+  const { available } = parsed.data
+
   const updated = await prisma.menuItem.updateMany({
     where: scopedWhere(req, req.params.id),
     data: { available },

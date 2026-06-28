@@ -26,6 +26,22 @@ export const authForgotPasswordLimiter = rateLimit({
   message: message('Troppe richieste di reset password. Riprova tra un\'ora.'),
 })
 
+export const authResetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste di reimpostazione password. Riprova tra un\'ora.'),
+})
+
+export const sentryTunnelLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste al tunnel di monitoraggio. Riprova tra un minuto.'),
+})
+
 export const campaignSendLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,

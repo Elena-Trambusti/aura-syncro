@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import express from 'express'
+import { sentryTunnelLimiter } from '../middleware/rateLimit'
 
 export const sentryTunnelRouter = Router()
 
@@ -20,6 +21,7 @@ function resolveUpstreamUrl(req: Request): string | null {
  */
 sentryTunnelRouter.post(
   '/',
+  sentryTunnelLimiter,
   express.raw({ type: () => true, limit: '2mb' }),
   async (req: Request, res: Response) => {
     try {

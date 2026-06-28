@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { ensureMarketingAutomations } from '../lib/marketingAutomations'
-import { getTargetCustomers } from '../lib/marketingTargets'
+import { getTargetCustomers, marketingTargetFilterSchema } from '../lib/marketingTargets'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { AutomationType } from '@prisma/client'
 
@@ -124,9 +124,17 @@ marketingRouter.delete('/:id', requirePermission('marketing.manage'), async (req
 
 marketingRouter.post('/preview', requirePermission('marketing.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
-  const { targetFilter } = req.body
+  const parsed = z.object({ targetFilter: marketingTargetFilterSchema }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Filtro destinatari non valido', details: parsed.error.flatten() })
+    return
+  }
 
-  const recipients = await getTargetCustomers(restaurantId, targetFilter)
+  const filterValue = parsed.data.targetFilter
+  const recipients = await getTargetCustomers(
+    restaurantId,
+    filterValue === '' || filterValue == null ? null : filterValue,
+  )
   res.json({ count: recipients.length, sample: recipients.slice(0, 5) })
 })
 
