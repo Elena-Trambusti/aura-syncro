@@ -10,7 +10,7 @@ import { BRAND } from '../lib/brand'
 import {
   TrendingUp, ShoppingBag, CalendarCheck,
   Users, AlertTriangle, ClipboardList, AlertCircle,
-  UtensilsCrossed, Activity, Clock,
+  UtensilsCrossed, Clock,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
