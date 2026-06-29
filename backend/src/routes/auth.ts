@@ -214,11 +214,17 @@ authRouter.get('/me', asyncHandler(async (req: Request, res: Response): Promise<
     res.status(401).json({ error: 'Sessione non più valida', code: 'SESSION_REVOKED' })
     return
   }
-  res.json({
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    restaurant: restaurantPayload(user.restaurant),
-    permissions: getPermissionsForRole(user.role),
+  const session = issueAuthResponse({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    restaurantId: user.restaurantId,
+    tokenVersion: user.tokenVersion,
+    restaurant: user.restaurant,
   })
+  setSessionCookie(res, session.token)
+  res.json(session)
 }))
 
 authRouter.post('/forgot-password', authForgotPasswordLimiter, asyncHandler(async (req: Request, res: Response): Promise<void> => {

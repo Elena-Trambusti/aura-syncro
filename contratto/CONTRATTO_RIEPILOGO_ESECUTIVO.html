@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aura Syncro — Riepilogo Contratto SaaS</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Georgia, serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1e293b;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 12mm;
+    }
+    h1 {
+      font-size: 16pt;
+      color: #0f172a;
+      border-bottom: 2px solid #d97706;
+      padding-bottom: 6px;
+      margin: 0 0 4px;
+    }
+    .subtitle { font-size: 9pt; color: #64748b; margin-bottom: 16px; }
+    .brand { color: #b45309; font-weight: 700; letter-spacing: 0.05em; font-size: 9pt; text-transform: uppercase; }
+    h2 { font-size: 11pt; color: #92400e; margin: 14px 0 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.5pt; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; background: #fafafa; }
+    .box strong { display: block; font-size: 9pt; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    ul { margin: 4px 0; padding-left: 18px; }
+    li { margin-bottom: 3px; }
+    .sign-block { margin-top: 20px; page-break-inside: avoid; }
+    .sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px; }
+    .line { border-bottom: 1px solid #334155; min-height: 28px; margin-top: 4px; }
+    .small { font-size: 8.5pt; color: #64748b; }
+    .clause-box { background: #fffbeb; border: 1px solid #fcd34d; padding: 10px; border-radius: 6px; font-size: 9pt; margin-top: 10px; }
+    .page-break { page-break-before: always; }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <p class="brand">Aura Syncro</p>
+  <h1>Riepilogo esecutivo — Contratto SaaS B2B</h1>
+  <p class="subtitle">Documento di sintesi per sottoscrizione · Il testo integrale vincolante è nel Contratto di Licenza d'Uso v2.0</p>
+
+  <div class="grid">
+    <div class="box">
+      <strong>Fornitore</strong>
+      Elena Trambusti<br />
+      Sede: Livorno (LI)<br />
+      P.IVA: 02101860498<br />
+      Email: elenatrambusti2024@gmail.com
+    </div>
+    <div class="box">
+      <strong>Cliente (Ristorante)</strong>
+      Ragione sociale: _________________________________<br />
+      P.IVA / C.F.: ___________________________________<br />
+      Sede: ___________________________________________<br />
+      Email: __________________________________________
+    </div>
+  </div>
+
+  <h2>1. Oggetto</h2>
+  <p>Licenza d'uso <strong>non esclusiva, non trasferibile e temporanea</strong> della piattaforma cloud <strong>Aura Syncro</strong> (PWA/web) per la gestione del Ristorante. Codice, algoritmi, design e marchio restano di esclusiva proprietà del Fornitore.</p>
+
+  <h2>2. Piano e corrispettivi (IVA esclusa)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Piano</th>
+        <th>Setup una tantum</th>
+        <th>Canone mensile</th>
+        <th>Scelta</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Starter</strong></td>
+        <td>€ 250,00</td>
+        <td>€ 99,00</td>
+        <td>☐</td>
+      </tr>
+      <tr>
+        <td><strong>Premium</strong> (consigliato)</td>
+        <td>€ 500,00</td>
+        <td>€ 199,00</td>
+        <td>☐</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="small">Pagamento anticipato setup + addebito ricorrente automatico tramite <strong>Stripe</strong>. Il setup <strong>non è rimborsabile</strong>.</p>
+
+  <h2>3. Punti essenziali</h2>
+  <ul>
+    <li><strong>Contratto B2B</strong> — escluso Codice del Consumo.</li>
+    <li><strong>Sospensione servizio:</strong> dopo <strong>5 giorni</strong> di mancato pagamento, senza risarcimenti per interruzione in sala.</li>
+    <li><strong>Responsabilità fiscale:</strong> il Cliente è unico responsabile di scontrini, RT/POS e adempimenti fiscali; Aura Syncro non sostituisce il registratore di cassa.</li>
+    <li><strong>Limitazione danni:</strong> esclusi danni indiretti; cap massimo = importo pagato nei <strong>12 mesi</strong> precedenti.</li>
+    <li><strong>GDPR:</strong> Cliente = Titolare dati ospiti; Fornitore = Responsabile (Art. 28); dati isolati per ristorante (multi-tenant).</li>
+    <li><strong>Recesso:</strong> in qualsiasi momento con <strong>15 giorni</strong> di preavviso dal pannello impostazioni / Stripe.</li>
+    <li><strong>Foro competente:</strong> <strong>Livorno</strong> · Legge italiana.</li>
+  </ul>
+
+  <h2>4. Documenti integrativi accettati</h2>
+  <ul class="small">
+    <li>Contratto integrale v2.0 (<code>CONTRATTO_ABBONAMENTO_AURA_SYNCRO_PREMIUM.md</code>)</li>
+    <li>Termini di Servizio: https://aurasyncro.com/termini</li>
+    <li>Privacy Policy: https://aurasyncro.com/privacy</li>
+    <li>Allegati A (piani) e B (DPA GDPR)</li>
+  </ul>
+
+  <div class="clause-box">
+    <strong>Approvazione clausole vessatorie (artt. 1341-1342 c.c.)</strong><br />
+    Il Cliente approva specificamente: non rimborsabilità setup; sospensione per insoluto; limitazione/esclusione responsabilità; cap 12 mesi; responsabilità fiscale del Cliente; recesso e cessazione; foro di Livorno. Dettaglio nell'Art. 13 del Contratto integrale.
+  </div>
+
+  <div class="sign-block">
+    <p><strong>Luogo e data:</strong> _________________________, lì _____ / _____ / 202__</p>
+    <div class="sign-row">
+      <div>
+        <strong>Per il Cliente</strong>
+        <div class="line"></div>
+        <span class="small">Firma legale rappresentante / titolare</span>
+        <div class="line" style="margin-top:10px"></div>
+        <span class="small">Nome e qualifica</span>
+      </div>
+      <div>
+        <strong>Per il Fornitore</strong>
+        <div class="line"></div>
+        <span class="small">Elena Trambusti — P.IVA 02101860498</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <p class="brand">Aura Syncro — Allegato al riepilogo</p>
+  <h1>Checklist post-firma e onboarding</h1>
+
+  <h2>A. Cosa fa il Cliente (entro 7 giorni)</h2>
+  <table>
+    <tbody>
+      <tr><td>☐</td><td>Compila modulo configurazione: <strong>https://tally.so/r/WOQp1P</strong></td></tr>
+      <tr><td>☐</td><td>Prenota call setup: <strong>https://calendly.com/aurasyncro/30min</strong></td></tr>
+      <tr><td>☐</td><td>Invia planimetria tavoli e export menu (PDF/Excel)</td></tr>
+      <tr><td>☐</td><td>Indica referente operativo e lista utenti staff (ruoli)</td></tr>
+      <tr><td>☐</td><td>Fornisci P.IVA/NIF e regime fiscale (IT / ES penisola / Canarie)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>B. Cosa fa Aura Syncro (concierge)</h2>
+  <table>
+    <tbody>
+      <tr><td>☐</td><td>Configurazione menu, tavoli, parametri fiscali</td></tr>
+      <tr><td>☐</td><td>Creazione account staff (Owner, Waiter, Chef, Cashier)</td></tr>
+      <tr><td>☐</td><td>Call allineamento e formazione (30 min)</td></tr>
+      <tr><td>☐</td><td>Collaudo UAT in loco o da remoto</td></tr>
+      <tr><td>☐</td><td>Sblocco dashboard operativa post go-live</td></tr>
+    </tbody>
+  </table>
+
+  <h2>C. Piano Premium — incluso nel setup € 500</h2>
+  <ul>
+    <li>Tavoli/aree illimitati · KDS cucina realtime · CRM e fedeltà</li>
+    <li>Menu QR ospite · Report fiscale interno IT/ES · Marketing email</li>
+    <li>Onboarding concierge chiavi in mano</li>
+  </ul>
+
+  <h2>D. Contatti</h2>
+  <p>
+    Supporto: <strong>elenatrambusti2024@gmail.com</strong><br />
+    App: <strong>https://aurasyncro.com</strong>
+  </p>
+
+  <p class="small" style="margin-top:24px; border-top:1px solid #e2e8f0; padding-top:8px;">
+    Per generare il PDF: apri questo file in Chrome → Stampa → Destinazione «Salva come PDF». Conservare insieme al Contratto integrale firmato e alla ricevuta Stripe per 10 anni.
+  </p>
+
+  <p class="no-print small" style="margin-top:12px; color:#b45309;">
+    ↑ In stampa questa riga non compare.
+  </p>
+
+</body>
+</html>

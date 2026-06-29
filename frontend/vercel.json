@@ -8,7 +8,15 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|pwa/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|workbox-).*)",
+      "source": "/api/:path*",
+      "destination": "https://aura-syncro-s98ae.ondigitalocean.app/api/:path*"
+    },
+    {
+      "source": "/socket.io/:path*",
+      "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io/:path*"
+    },
+    {
+      "source": "/((?!api/|socket\\.io/|assets/|pwa/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|workbox-).*)",
       "destination": "/index.html"
     }
   ],

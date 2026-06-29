@@ -617,11 +617,19 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
       }
       await tx.order.update({
         where: { id: req.params.id },
-        data: { subtotal: 0, tax: 0, total: 0, revenueAmount: 0, discount: 0 },
+        data: {
+          status: 'CANCELLED',
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          revenueAmount: 0,
+          discount: 0,
+        },
       })
     })
   }
 
+  if (status !== 'CANCELLED') {
   const updated = await prisma.order.updateMany({
     where: { id: req.params.id, restaurantId: req.restaurantId! },
     data: { status: status as OrderStatus },
@@ -629,6 +637,7 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
   if (updated.count === 0) {
     res.status(404).json({ error: 'Ordine non trovato' })
     return
+  }
   }
 
   const order = await prisma.order.findFirst({

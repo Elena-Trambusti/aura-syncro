@@ -66,7 +66,7 @@ publicRouter.get('/menu/:slug', publicMenuLimiter, async (req: Request, res: Res
 })
 
 /** GET /api/public/booking/:slug — Info prenotazione pubblica */
-publicRouter.get('/booking/:slug', async (req: Request, res: Response): Promise<void> => {
+publicRouter.get('/booking/:slug', publicReservationLimiter, async (req: Request, res: Response): Promise<void> => {
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug: req.params.slug },
     include: { settings: true },

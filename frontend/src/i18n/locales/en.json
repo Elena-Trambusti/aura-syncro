@@ -115,6 +115,7 @@
     "loginSubtitle": "Enter your restaurant account credentials",
     "passwordPlaceholder": "Your password",
     "secureAccess": "Secure encrypted connection",
+    "sessionUnavailable": "Connection temporarily unavailable. Please try again shortly.",
     "newRestaurant": "New restaurant?",
     "hasAccount": "Already have an account?",
     "emailPlaceholder": "your@email.com",

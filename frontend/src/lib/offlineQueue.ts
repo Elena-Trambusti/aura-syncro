@@ -119,6 +119,11 @@ export async function updateMutationPayload(id: string, payload: OfflineMutation
   await enqueueMutation({ ...row, payload })
 }
 
+export async function clearAllMutations(): Promise<void> {
+  if (!isOfflineQueueSupported()) return
+  await runTransaction('readwrite', store => store.clear())
+}
+
 export function createMutationId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()

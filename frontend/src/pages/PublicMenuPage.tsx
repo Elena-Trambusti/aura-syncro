@@ -427,6 +427,19 @@ export default function PublicMenuPage() {
               </Link>
             </div>
           ) : null}
+
+          <footer className="mt-8 border-t border-white/[0.06] pt-6 text-center text-[11px] text-fumo">
+            <p className="mb-2">
+              {t('publicMenu.poweredBy', { defaultValue: 'Powered by Aura Syncro' })}
+            </p>
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
+              <Link to="/informativa-ospiti" className="hover:text-aura-gold underline-offset-2 hover:underline">
+                {t('publicMenu.guestPrivacy', { defaultValue: 'Privacy ospiti' })}
+              </Link>
+              <span aria-hidden>·</span>
+              <Link to="/cookie" className="hover:text-aura-gold underline-offset-2 hover:underline">Cookie</Link>
+            </div>
+          </footer>
         </div>
       </main>
 

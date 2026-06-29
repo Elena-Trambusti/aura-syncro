@@ -1,55 +1,63 @@
 import { Link } from 'react-router-dom'
+import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
+import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
 
 export default function CookiePage() {
   return (
-    <div className="aura-auth-shell min-h-screen px-4 py-16">
-      <div className="premium-card mx-auto max-w-4xl space-y-8 p-8 sm:p-12">
-        
-        <div className="border-b border-white/10 pb-6">
-          <p className="aura-brand-eyebrow mb-2">Aura Syncro</p>
-          <h1 className="text-3xl font-display font-medium text-white mb-4">Cookie Policy</h1>
-          <p className="text-sm text-fumo">Ultimo aggiornamento: Giugno 2026</p>
-        </div>
+    <LegalDocumentShell
+      title="Cookie Policy"
+      subtitle={`Ultimo aggiornamento: ${LEGAL_ENTITY.privacyUpdated}`}
+    >
+      <LegalSection title="1. Cosa sono i cookie">
+        <p>
+          I cookie sono piccoli file di testo memorizzati sul dispositivo dell'utente. Aura Syncro li utilizza per
+          funzionamento, sicurezza e — in forma aggregata — per misurare le prestazioni del sito.
+        </p>
+      </LegalSection>
 
-        <div className="space-y-8 text-sm text-slate-300 leading-relaxed">
-          
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">1. Cosa sono i Cookie</h2>
-            <p>I cookie sono piccoli file di testo che i siti visitati inviano al terminale dell'utente, dove vengono memorizzati, per poi essere ritrasmessi agli stessi siti alla visita successiva. Aura Syncro utilizza i cookie per garantire il corretto funzionamento della piattaforma SaaS.</p>
-          </section>
+      <LegalSection title="2. Cookie tecnici e strettamente necessari (senza consenso)">
+        <ul className="list-disc pl-5 space-y-1 text-slate-400">
+          <li><strong>Sessione e autenticazione:</strong> token JWT / sessione per mantenere l'accesso al gestionale</li>
+          <li><strong>Sicurezza:</strong> prevenzione CSRF e integrità richieste</li>
+          <li><strong>Preferenze:</strong> lingua UI, consenso cookie (`aura-cookie-consent` in localStorage)</li>
+          <li><strong>PWA:</strong> cache service worker per funzionamento offline limitato</li>
+        </ul>
+        <p className="mt-2 text-slate-400">Senza questi cookie il Servizio non è utilizzabile.</p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">2. Cookie Tecnici e Strettamente Necessari</h2>
-            <p>La nostra piattaforma utilizza cookie di prima parte strettamente necessari per il funzionamento del servizio. Questi non richiedono il consenso preventivo dell'utente:</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li><strong>Sessione e Autenticazione:</strong> Cookie essenziali per mantenere l'utente loggato nel pannello gestionale (Token JWT e Session ID).</li>
-              <li><strong>Sicurezza:</strong> Cookie utilizzati per prevenire attacchi CSRF e garantire l'integrità delle richieste.</li>
-            </ul>
-          </section>
+      <LegalSection title="3. Cookie e tecnologie di terze parti">
+        <ul className="list-disc pl-5 space-y-2 text-slate-400">
+          <li>
+            <strong>Stripe</strong> — pagamenti e prevenzione frodi (necessari al checkout abbonamento e pagamenti ospite)
+          </li>
+          <li>
+            <strong>Vercel Analytics / Speed Insights</strong> — statistiche aggregate di visita e performance web
+            (dati non utilizzati per profilazione pubblicitaria)
+          </li>
+          <li>
+            <strong>Sentry</strong> — rilevamento errori applicativi per stabilità del servizio
+          </li>
+        </ul>
+        <p className="mt-2">
+          <strong>Non utilizziamo</strong> cookie di profilazione pubblicitaria (es. Meta Pixel, Google Ads) sul gestionale B2B.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">3. Cookie di Terze Parti</h2>
-            <p>Per fornire il servizio ci avvaliamo di alcuni partner tecnologici che potrebbero installare propri cookie:</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li><strong>Stripe:</strong> Cookie necessari per la prevenzione delle frodi e l'elaborazione sicura dei pagamenti (obbligatori per la fatturazione).</li>
-            </ul>
-            <p>Attualmente, per garantire la massima privacy, Aura Syncro <strong>NON utilizza cookie di profilazione o tracciamento pubblicitario</strong> (es. Facebook Pixel o Google Ads) sul gestionale B2B.</p>
-          </section>
+      <LegalSection title="4. Base giuridica">
+        <p className="text-slate-400">
+          Cookie tecnici: legittimo interesse e necessità contrattuale (art. 6(1)(b) e (f) GDPR).
+          Analytics aggregati e monitoraggio errori: legittimo interesse del Fornitore a migliorare il Servizio (art. 6(1)(f)),
+          con possibilità di opposizione contattando {LEGAL_ENTITY.email}.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">4. Gestione dei Cookie</h2>
-            <p>Puoi gestire le preferenze sui cookie direttamente dalle impostazioni del tuo browser. Tuttavia, disabilitare i cookie tecnici impedirà l'accesso e l'utilizzo del gestionale Aura Syncro.</p>
-          </section>
-
-        </div>
-
-        <div className="pt-8 border-t border-white/10 text-center">
-          <Link to="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl px-6 py-3 text-xs uppercase tracking-[0.15em] font-bold text-white transition-all duration-300 hover:bg-white/10 hover:border-aura-gold/50">
-            Torna alla Home
-          </Link>
-        </div>
-
-      </div>
-    </div>
+      <LegalSection title="5. Gestione">
+        <p>
+          Puoi gestire i cookie dal browser. La disabilitazione dei cookie tecnici impedisce l'accesso ad Aura Syncro.
+          Per maggiori informazioni sui dati personali, vedi la{' '}
+          <Link to={LEGAL_URLS.privacy} className="text-aura-gold hover:underline">Privacy Policy</Link>.
+        </p>
+      </LegalSection>
+    </LegalDocumentShell>
   )
 }

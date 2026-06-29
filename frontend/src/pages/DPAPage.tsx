@@ -1,65 +1,86 @@
 import { Link } from 'react-router-dom'
+import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
+import { LEGAL_ENTITY, LEGAL_SUB_PROCESSORS, LEGAL_URLS } from '../config/legal'
 
 export default function DPAPage() {
   return (
-    <div className="aura-auth-shell min-h-screen px-4 py-16">
-      <div className="premium-card mx-auto max-w-4xl space-y-8 p-8 sm:p-12">
-        
-        <div className="border-b border-white/10 pb-6">
-          <p className="aura-brand-eyebrow mb-2">Aura Syncro</p>
-          <h1 className="text-3xl font-display font-medium text-white mb-4">Data Processing Agreement (DPA)</h1>
-          <p className="text-sm text-fumo">Accordo per il Trattamento dei Dati Personali - Allegato ai Termini di Servizio</p>
-        </div>
+    <LegalDocumentShell
+      title="Data Processing Agreement (DPA)"
+      subtitle="Accordo ex art. 28 GDPR — Allegato ai Termini di Servizio e al contratto commerciale"
+    >
+      <LegalSection title="1. Parti e ruoli">
+        <ul className="list-disc pl-5 space-y-1 text-slate-400">
+          <li><strong>Titolare del trattamento:</strong> il Ristorante (Cliente B2B)</li>
+          <li><strong>Responsabile del trattamento:</strong> {LEGAL_ENTITY.ownerName} ({LEGAL_ENTITY.tradeName}), P.IVA {LEGAL_ENTITY.vatNumber}</li>
+        </ul>
+      </LegalSection>
 
-        <div className="space-y-8 text-sm text-slate-300 leading-relaxed">
-          
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">1. Ruoli delle Parti</h2>
-            <p>Il presente accordo regola il trattamento dei dati personali dei clienti finali (es. commensali) inseriti nel software Aura Syncro.</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li><strong>Titolare del Trattamento (Data Controller):</strong> Il Ristorante (Cliente B2B di Aura Syncro).</li>
-              <li><strong>Responsabile del Trattamento (Data Processor):</strong> ELENA TRAMBUSTI (Aura Syncro).</li>
-            </ul>
-          </section>
+      <LegalSection title="2. Oggetto, durata e natura">
+        <p className="text-slate-400">
+          Trattamento dei dati personali degli ospiti/personale inseriti nel Servizio (ordini, prenotazioni, CRM, pagamenti)
+          per la durata del contratto SaaS e per i 30 giorni successivi alla cessazione (export/cancellazione),
+          salvo obblighi legali diversi.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">2. Oggetto e Natura del Trattamento</h2>
-            <p>Aura Syncro tratta i dati personali <strong>esclusivamente per conto del Titolare</strong> e limitatamente allo scopo di fornire il Servizio Gestionale (gestione prenotazioni, ordini al tavolo, CRM clienti). I dati trattati includono: Nome, Cognome, recapiti telefonici/email, preferenze alimentari e storico ordini dei commensali.</p>
-          </section>
+      <LegalSection title="3. Tipologie di dati e interessati">
+        <p className="text-slate-400">
+          Interessati: commensali, prenotanti, clienti CRM, dipendenti del Ristorante autorizzati.
+          Dati: nome, contatti, preferenze ordine, storico visite, dati di pagamento tokenizzati via Stripe (il Responsabile non memorizza PAN carte).
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">3. Obblighi del Responsabile (Aura Syncro)</h2>
-            <p>Aura Syncro si impegna a:</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li>Trattare i dati solo secondo le istruzioni documentate del Ristorante.</li>
-              <li>Garantire che le persone autorizzate al trattamento si siano impegnate alla riservatezza.</li>
-              <li>Adottare tutte le misure tecniche e organizzative di sicurezza adeguate (crittografia in transito, backup sicuri, accessi loggati) ai sensi dell'Art. 32 del GDPR.</li>
-              <li>Non utilizzare i dati dei commensali per finalità proprie, né per analisi incrociate, né per marketing diretto.</li>
-            </ul>
-          </section>
+      <LegalSection title="4. Istruzioni del Titolare">
+        <p className="text-slate-400">
+          Il Responsabile tratta i dati solo su istruzioni documentate del Titolare, manifestate tramite utilizzo conforme
+          del Servizio e mediante il presente DPA. Il Responsabile informa il Titolare se ritiene un'istruzione illecita.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">4. Sub-Responsabili (Sub-Processors)</h2>
-            <p>Il Titolare autorizza Aura Syncro ad avvalersi dei seguenti Sub-Responsabili tecnologici (es. servizi cloud). Aura Syncro assicura che tali sub-responsabili rispettino gli stessi obblighi in materia di protezione dei dati:</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li><strong>Vercel / Render / Supabase:</strong> Hosting in cloud e database management (Regione EU).</li>
-            </ul>
-          </section>
+      <LegalSection title="5. Obblighi del Responsabile">
+        <ul className="list-disc pl-5 space-y-1 text-slate-400">
+          <li>Riservatezza del personale autorizzato</li>
+          <li>Misure di sicurezza art. 32 GDPR (HTTPS, access control, backup, multi-tenancy)</li>
+          <li>Assistenza al Titolare per richieste degli interessati e DPIA ove necessario</li>
+          <li>Cancellazione/restituzione a fine contratto</li>
+          <li>Non utilizzo dei dati ospiti per marketing proprio o profilazione incrociata tra ristoranti</li>
+        </ul>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">5. Cancellazione e Restituzione</h2>
-            <p>Alla cessazione del contratto di fornitura del Servizio SaaS, Aura Syncro eliminerà o renderà anonimi tutti i dati personali elaborati per conto del Ristorante entro 30 giorni, fatto salvo l'obbligo di conservazione previsto per legge (es. registri di fatturazione diretti).</p>
-          </section>
+      <LegalSection title="6. Sub-responsabili">
+        <p>Il Titolare autorizza i seguenti sub-responsabili con obblighi equivalenti:</p>
+        <ul className="list-disc pl-5 space-y-2 text-slate-400 mt-2">
+          {LEGAL_SUB_PROCESSORS.map(sp => (
+            <li key={sp.name}><strong>{sp.name}</strong> — {sp.purpose}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-slate-400">
+          Il Responsabile informerà il Titolare di sostituzioni sostanziali con preavviso ragionevole; il Titolare può opporsi per motivi legittimi.
+        </p>
+      </LegalSection>
 
-        </div>
+      <LegalSection title="7. Violazioni dei dati (data breach)">
+        <p className="text-slate-400">
+          Il Responsabile notifica al Titolare senza ingiustificato ritardo e, ove possibile, entro <strong>72 ore</strong>
+          dalla presa di conoscenza, fornendo informazioni disponibili per consentire l'adempimento agli obblighi del Titolare verso il Garante e gli interessati.
+        </p>
+      </LegalSection>
 
-        <div className="pt-8 border-t border-white/10 text-center">
-          <Link to="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl px-6 py-3 text-xs uppercase tracking-[0.15em] font-bold text-white transition-all duration-300 hover:bg-white/10 hover:border-aura-gold/50">
-            Torna alla Home
-          </Link>
-        </div>
+      <LegalSection title="8. Audit">
+        <p className="text-slate-400">
+          Il Titolare, con preavviso ragionevole e non più di una volta ogni 12 mesi (salvo incidente di sicurezza),
+          può richiedere documentazione sulle misure tecniche e organizzative adottate.
+        </p>
+      </LegalSection>
 
-      </div>
-    </div>
+      <LegalSection title="9. Accettazione">
+        <p>
+          L'accettazione del DPA avviene mediante checkbox in registrazione, sottoscrizione del contratto commerciale
+          o primo pagamento del Servizio. Per il testo integrale vedi anche il contratto in{' '}
+          <code className="text-aura-gold">CONTRATTO_ABBONAMENTO_AURA_SYNCRO_PREMIUM.md</code>.
+          Informativa generale: <Link to={LEGAL_URLS.privacy} className="text-aura-gold hover:underline">Privacy Policy</Link>.
+        </p>
+      </LegalSection>
+    </LegalDocumentShell>
   )
 }

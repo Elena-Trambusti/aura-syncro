@@ -55,11 +55,12 @@ export default function GuestCartDrawer({
   const [tipInput, setTipInput] = useState('')
   const [loading, setLoading] = useState<'card' | 'table' | null>(null)
   const [orderSuccess, setOrderSuccess] = useState(false)
-  const [clientRequestId] = useState(() => (
+
+  const createClientRequestId = () => (
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `guest_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
-  ))
+  )
 
   const { subtotal: taxableBase, tax, total } = computeGuestOrderTax(subtotal, fiscal.taxRate)
 
@@ -86,16 +87,17 @@ export default function GuestCartDrawer({
     tableNumber: effectiveTable,
     notes: notes.trim() || undefined,
     items: payloadItems,
-    clientRequestId,
     tipAmount: stripeEnabled && parsedTip > 0 ? parsedTip : undefined,
   }
 
   async function handlePayWithCard() {
     if (items.length === 0) return
     setLoading('card')
+    const clientRequestId = createClientRequestId()
     try {
       const res = await api.post('/public/checkout', {
         ...basePayload,
+        clientRequestId,
         customerName: customerName.trim() || undefined,
         customerEmail: customerEmail.trim() || undefined,
       }, { headers: { 'X-Idempotency-Key': clientRequestId } })
@@ -110,6 +112,7 @@ export default function GuestCartDrawer({
   async function handleOrderAtTable() {
     if (items.length === 0) return
     setLoading('table')
+    const clientRequestId = createClientRequestId()
     try {
       await api.post('/public/orders', basePayload, { headers: { 'X-Idempotency-Key': clientRequestId } })
       setOrderSuccess(true)

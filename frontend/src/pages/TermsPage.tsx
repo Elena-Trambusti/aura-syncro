@@ -1,68 +1,102 @@
 import { Link } from 'react-router-dom'
+import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
+import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
 
 export default function TermsPage() {
   return (
-    <div className="aura-auth-shell min-h-screen px-4 py-16">
-      <div className="premium-card mx-auto max-w-4xl space-y-8 p-8 sm:p-12">
-        
-        <div className="border-b border-white/10 pb-6">
-          <p className="aura-brand-eyebrow mb-2">Aura Syncro</p>
-          <h1 className="text-3xl font-display font-medium text-white mb-4">Termini e Condizioni di Servizio (B2B)</h1>
-          <p className="text-sm text-fumo">Ultimo aggiornamento: Giugno 2026</p>
-        </div>
+    <LegalDocumentShell
+      title="Termini e Condizioni di Servizio (B2B)"
+      subtitle={`Ultimo aggiornamento: ${LEGAL_ENTITY.termsUpdated}. In caso di conflitto con il contratto individuale sottoscritto, prevale il contratto firmato.`}
+    >
+      <LegalSection title="1. Oggetto e licenza d'uso">
+        <p>
+          Le presenti Condizioni disciplinano la fornitura del software cloud <strong>Aura Syncro</strong> (PWA/web)
+          in modalità SaaS da <strong>{LEGAL_ENTITY.ownerName}</strong>, P.IVA {LEGAL_ENTITY.vatNumber} (il «Fornitore»).
+        </p>
+        <p>
+          Il Fornitore concede al Cliente una <strong>licenza d'uso non esclusiva, non trasferibile, non sublicenziabile e temporanea</strong>,
+          limitata a un esercizio/tenant. Codice sorgente, algoritmi (incluso il motore predittivo), design e marchi restano di esclusiva proprietà del Fornitore.
+        </p>
+      </LegalSection>
 
-        <div className="space-y-8 text-sm text-slate-300 leading-relaxed">
-          
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">1. Oggetto del Servizio</h2>
-            <p>Le presenti Condizioni Generali di Contratto disciplinano la fornitura del software in cloud "Aura Syncro" (di seguito, il "Servizio" o "Software") erogato in modalità SaaS (Software as a Service) da ELENA TRAMBUSTI, P.IVA 02101860498 (di seguito, "Aura Syncro" o "Fornitore").</p>
-            <p>Aura Syncro è un gestionale premium per la ristorazione che include, a titolo esemplificativo, funzionalità di POS, menu QR digitale, gestione tavoli e comande.</p>
-          </section>
+      <LegalSection title="2. Natura B2B">
+        <p>
+          Il Servizio è destinato esclusivamente a soggetti professionali/imprenditori. Il Cliente dichiara di non essere consumatore:
+          <strong> non si applica il diritto di recesso di 14 giorni</strong> ex Codice del Consumo.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">2. Natura B2B del Servizio</h2>
-            <p>Il Servizio è destinato esclusivamente ad un'utenza professionale e aziendale (B2B). Iscrivendosi e utilizzando il Servizio, il Cliente dichiara di agire per scopi inerenti alla propria attività imprenditoriale, commerciale o professionale. Pertanto, <strong>non trovano applicazione le tutele previste per i consumatori</strong> (ad es. il diritto di recesso entro 14 giorni ex Codice del Consumo).</p>
-          </section>
+      <LegalSection title="3. Piani e corrispettivi">
+        <ul className="list-disc pl-5 space-y-1 text-slate-400">
+          <li><strong>Piano Starter:</strong> setup una tantum € 250,00 + canone € 99,00/mese (+ IVA)</li>
+          <li><strong>Piano Premium:</strong> setup una tantum € 500,00 + canone € 199,00/mese (+ IVA)</li>
+        </ul>
+        <p className="mt-2">
+          Pagamento anticipato del setup e addebito ricorrente automatico tramite <strong>Stripe</strong>.
+          Il setup è <strong>non rimborsabile</strong>.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">3. Attivazione, Abbonamento e Setup</h2>
-            <p>L'accesso al Servizio è subordinato al pagamento di un costo di <strong>Setup Iniziale</strong> (una tantum) e di un <strong>Canone Mensile</strong> in abbonamento, i cui importi sono dettagliati nella pagina Prezzi.</p>
-            <ul className="list-disc pl-5 space-y-1 text-slate-400">
-              <li><strong>Setup Iniziale:</strong> Copre l'onboarding concierge, la configurazione iniziale della mappa tavoli, l'inserimento del menu e la formazione. Tale importo non è in alcun caso rimborsabile.</li>
-              <li><strong>Canone Mensile:</strong> Fatturato anticipatamente tramite carta di credito o addebito SEPA. In caso di mancato pagamento, il Fornitore si riserva il diritto di sospendere l'accesso all'account dopo 7 giorni di preavviso.</li>
-            </ul>
-          </section>
+      <LegalSection title="4. Mancato pagamento e sospensione">
+        <p>
+          In caso di mancato pagamento, rifiuto transazione o chargeback ingiustificato per <strong>più di 5 (cinque) giorni consecutivi</strong>,
+          il Fornitore può <strong>sospendere immediatamente</strong> l'accesso e risolvere il Contratto.
+          Nessun risarcimento è dovuto per interruzione del servizio in sala derivante da tale sospensione.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">4. Esclusione di Responsabilità (SLA e Dati Fiscali)</h2>
-            <p>Aura Syncro si impegna a mantenere l'infrastruttura cloud operativa garantendo un'elevata disponibilità (Best Effort SLA). Tuttavia, il Fornitore non sarà ritenuto responsabile per interruzioni del servizio dovute a cause di forza maggiore, disservizi dei provider cloud (es. AWS, Vercel) o malfunzionamenti hardware locali del Cliente.</p>
-            <p><strong>Dati Fiscali e Corrispettivi:</strong> Aura Syncro fornisce strumenti di calcolo e resoconto, ma <strong>NON sostituisce un registratore telematico di cassa</strong> laddove richiesto dalla legge italiana. Il Cliente rimane l'unico e insindacabile responsabile della corretta emissione degli scontrini, dell'invio dei corrispettivi telematici all'Agenzia delle Entrate e della corretta configurazione delle aliquote IVA sui prodotti.</p>
-          </section>
+      <LegalSection title="5. Responsabilità fiscale e POS">
+        <p>
+          Aura Syncro fornisce strumenti di calcolo e reportistica interna ma <strong>non sostituisce</strong> il registratore telematico
+          o il POS fiscale del Cliente ove richiesto dalla legge. Il Cliente è unico responsabile di scontrini, corrispettivi e adempimenti fiscali.
+          L'integrazione del POS fisico avviene dopo la call di setup (Stripe Terminal, POS esterno o simulazione formativa).
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">5. Licenza d'Uso e Proprietà Intellettuale</h2>
-            <p>Il Software, il codice sorgente, le interfacce, i marchi e tutti i diritti di proprietà intellettuale sono e rimangono di esclusiva proprietà di Aura Syncro. Viene concessa al Cliente una licenza d'uso limitata, non esclusiva, non trasferibile e revocabile per la durata dell'abbonamento. È severamente vietato effettuare reverse engineering, copiare, rivendere o sub-licenziare il Software.</p>
-          </section>
+      <LegalSection title="6. Limitazione di responsabilità">
+        <p>
+          Salvo dolo o colpa grave, il Fornitore non risponde di danni indiretti (mancati guadagni, perdita clientela, interruzione attività,
+          disallineamenti di magazzino) né di disservizi di rete locale, hardware del Cliente, forza maggiore, provider cloud (Vercel, DigitalOcean),
+          Stripe o Aruba. La responsabilità complessiva è <strong>limitata all'importo pagato nei 12 mesi precedenti</strong> l'evento.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">6. Risoluzione e Cancellazione</h2>
-            <p>Il Cliente può disdire l'abbonamento in qualsiasi momento direttamente dal pannello di controllo. La cancellazione fermerà i rinnovi futuri, ma non darà diritto a rimborsi per la frazione di mese già pagata. Alla scadenza dell'abbonamento, i dati del ristorante verranno conservati per 30 giorni, dopodiché potranno essere eliminati definitivamente.</p>
-          </section>
+      <LegalSection title="7. Marketing email">
+        <p>
+          Il modulo marketing consente al Ristorante di inviare comunicazioni ai propri ospiti. Il <strong>Cliente è Titolare</strong> del trattamento
+          e garantisce di possedere idonea base giuridica (consenso o legittimo interesse B2C, secondo normativa applicabile).
+          Aura Syncro fornisce solo lo strumento tecnico di invio.
+        </p>
+      </LegalSection>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-aura-gold">7. Foro Competente</h2>
-            <p>Per qualsiasi controversia relativa all'interpretazione o all'esecuzione dei presenti Termini, la giurisdizione sarà esclusivamente italiana e il Foro competente sarà quello del luogo di sede legale del Fornitore, salvo differenti disposizioni inderogabili di legge.</p>
-          </section>
+      <LegalSection title="8. Durata, recesso e dati">
+        <p>
+          Durata indeterminata con rinnovo mensile automatico. Il Cliente può recedere con <strong>preavviso di 15 giorni</strong> rispetto
+          alla scadenza del periodo successivo, dal pannello impostazioni/Stripe o via email a {LEGAL_ENTITY.email}.
+          Nessun rimborso per il mese in corso. Alla cessazione, export dati per 30 giorni; poi cancellazione salvo obblighi di legge.
+        </p>
+      </LegalSection>
 
-        </div>
+      <LegalSection title="9. Privacy e DPA">
+        <p>
+          Per i dati degli ospiti del Ristorante, il Cliente è Titolare e Aura Syncro Responsabile ex art. 28 GDPR.
+          Vedi <Link to={LEGAL_URLS.privacy} className="text-aura-gold hover:underline">Privacy Policy</Link> e{' '}
+          <Link to={LEGAL_URLS.dpa} className="text-aura-gold hover:underline">DPA</Link>.
+        </p>
+      </LegalSection>
 
-        <div className="pt-8 border-t border-white/10 text-center">
-          <Link to="/" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-xl px-6 py-3 text-xs uppercase tracking-[0.15em] font-bold text-white transition-all duration-300 hover:bg-white/10 hover:border-aura-gold/50">
-            Torna alla Home
-          </Link>
-        </div>
+      <LegalSection title="10. Legge applicabile e foro">
+        <p>
+          Legge italiana. Foro esclusivo: <strong>{LEGAL_ENTITY.competentCourt}</strong>, salvo fori inderogabili di legge.
+        </p>
+      </LegalSection>
 
-      </div>
-    </div>
+      <LegalSection title="11. Clausole vessatorie (artt. 1341-1342 c.c.)">
+        <p className="text-slate-400">
+          Il Cliente approva specificamente: non rimborsabilità setup; sospensione per insoluto (5 giorni); responsabilità fiscale del Cliente;
+          limitazione responsabilità e cap 12 mesi; recesso e cessazione dati; foro di Livorno — come nel contratto individuale sottoscritto.
+        </p>
+      </LegalSection>
+    </LegalDocumentShell>
   )
 }

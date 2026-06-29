@@ -7,6 +7,7 @@ import { bootstrapSessionToken, clearSessionToken, getSessionToken, setSessionTo
 import { applyTenantCssVars } from '../lib/tenantTheme'
 import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
 import { clearAuthCache, readAuthCache, writeAuthCache } from '../lib/authCache'
+import { clearAllMutations } from '../lib/offlineQueue'
 import { isDemoUserEmail } from '../lib/demoAccounts'
 import { clearDemoSession, isDemoSession, isLandingPath } from '../lib/demoSession'
 import { tenantIdentity, tenantIdentityKey } from '../lib/tenantSync'
@@ -111,7 +112,7 @@ function shouldDiscardStaleDemoSession(pathname: string, cachedEmail?: string | 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
   const storedToken = bootstrapSessionToken()
-  const cachedBoot = storedToken ? readAuthCache() : null
+  const cachedBoot = readAuthCache()
   const discardDemoSession = shouldDiscardStaleDemoSession(pathname, cachedBoot?.user.email)
 
   if (discardDemoSession) {
@@ -129,7 +130,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(bootCache?.user ?? null)
   const [restaurant, setRestaurant] = useState<Restaurant | null>(bootCache?.restaurant ?? null)
   const [token, setToken] = useState<string | null>(bootToken)
-  const [isLoading, setIsLoading] = useState(() => !!bootToken && !bootCache)
+  const [isLoading, setIsLoading] = useState(() => {
+    if (discardDemoSession) return false
+    return !!(bootToken || bootCache)
+  })
   const tenantKeyRef = useRef<string | null>(
     bootCache ? tenantIdentityKey(tenantIdentity(bootCache.restaurant)) : null,
   )
@@ -155,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     void api.post('/auth/logout').catch(() => {})
+    void clearAllMutations().catch(() => {})
     clearSessionToken()
     clearAuthCache()
     clearDemoSession()
@@ -172,6 +177,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.get('/auth/me')
       const normalized = normalizeRestaurant(res.data.restaurant)
+      if (res.data.token) {
+        setSessionToken(res.data.token)
+        setToken(res.data.token)
+      }
       setUser(res.data.user)
       commitRestaurant(normalized, true)
       writeAuthCache(res.data.user, normalized)
@@ -190,10 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   useEffect(() => {
-    const bootToken = getSessionToken()
-    if (!bootToken) {
+    if (discardDemoSession) {
       setIsLoading(false)
-      clearAuthCache()
       return
     }
 
@@ -205,6 +212,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     api.get('/auth/me')
       .then(res => {
+        if (res.data.token) {
+          setSessionToken(res.data.token)
+          setToken(res.data.token)
+          connectSocket(res.data.token)
+        } else if (getSessionToken()) {
+          connectSocket(getSessionToken()!)
+        }
         setUser(res.data.user)
         const normalized = normalizeRestaurant(res.data.restaurant)
         commitRestaurant(normalized, false)
@@ -216,8 +230,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logout()
           return
         }
-        // Keep cached session on transient failures to avoid forced logout during service.
-        toast.error('Connessione temporaneamente non disponibile. Riprova tra poco.')
+        if (!cached) {
+          setIsLoading(false)
+          return
+        }
+        toast.error(i18n.t('auth.sessionUnavailable'))
       })
       .finally(() => setIsLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps

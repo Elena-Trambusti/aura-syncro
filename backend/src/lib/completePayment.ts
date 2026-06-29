@@ -86,19 +86,6 @@ export async function completeOrderPayment(input: {
   let chargedAmount = 0
 
   try {
-    if (input.discountOptions) {
-      await applyDiscountToOrder(
-        input.finalize.orderId,
-        input.finalize.restaurantId,
-        input.discountOptions,
-      )
-      const refreshed = await prisma.order.findFirst({
-        where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
-        include: { items: true },
-      })
-      if (refreshed) chargeOrder = refreshed
-    }
-
     if (input.finalize.paymentMethod === 'CARD') {
       const posAmounts = computePosPaymentAmounts(fiscal, chargeOrder, input.finalize.tipAmount)
       chargedAmount = posAmounts.totalCustomerAmount
@@ -113,6 +100,19 @@ export async function completeOrderPayment(input: {
         { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
         input.stripePaymentIntentId,
       )
+    }
+
+    if (input.discountOptions) {
+      await applyDiscountToOrder(
+        input.finalize.orderId,
+        input.finalize.restaurantId,
+        input.discountOptions,
+      )
+      const refreshed = await prisma.order.findFirst({
+        where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+        include: { items: true },
+      })
+      if (refreshed) chargeOrder = refreshed
     }
 
     const result = await finalizeOrderPayment(input.finalize, {

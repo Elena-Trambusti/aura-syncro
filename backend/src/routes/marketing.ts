@@ -145,22 +145,39 @@ marketingRouter.post('/:id/send', campaignSendLimiter, requirePermission('market
     where: scopedWhere(req, req.params.id),
   })
   if (!campaign) { tenantNotFound(res, 'Campagna non trovata'); return }
-  if (campaign.status === 'SENT') { res.status(400).json({ error: 'Campagna già inviata' }); return }
 
   const recipients = await getTargetCustomers(tenantId(req), campaign.targetFilter || null)
 
-  const { sendCampaignEmails } = await import('../lib/marketingSend')
-  const { sent, failed } = await sendCampaignEmails(tenantId(req), campaign, recipients)
-
-  const updated = await prisma.campaign.updateMany({
-    where: scopedWhere(req, req.params.id),
+  const claimed = await prisma.campaign.updateMany({
+    where: {
+      ...scopedWhere(req, req.params.id),
+      status: { in: ['DRAFT', 'SCHEDULED'] },
+    },
     data: {
       status: 'SENT',
       sentAt: new Date(),
       recipientCount: recipients.length,
     },
   })
-  if (updated.count === 0) { tenantNotFound(res, 'Campagna non trovata'); return }
+  if (claimed.count === 0) {
+    res.status(409).json({ error: 'Campagna già inviata o in invio', code: 'CAMPAIGN_ALREADY_SENT' })
+    return
+  }
+
+  const { sendCampaignEmails } = await import('../lib/marketingSend')
+  let sent = 0
+  let failed = 0
+  try {
+    const result = await sendCampaignEmails(tenantId(req), campaign, recipients)
+    sent = result.sent
+    failed = result.failed
+  } catch (err) {
+    await prisma.campaign.updateMany({
+      where: scopedWhere(req, req.params.id),
+      data: { status: campaign.status, sentAt: null, recipientCount: 0 },
+    })
+    throw err
+  }
 
   const refreshed = await prisma.campaign.findFirst({ where: scopedWhere(req, req.params.id) })
 

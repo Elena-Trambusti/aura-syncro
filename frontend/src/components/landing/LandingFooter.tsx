@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BRAND } from '../../lib/brand'
-
 import { formatIssuerFooterLine } from '../../config/fiscal'
+import { LEGAL_URLS } from '../../config/legal'
 
 
 export default function LandingFooter() {
@@ -26,13 +26,22 @@ export default function LandingFooter() {
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-slate-300">
-          <Link to="/privacy" className="hover:text-white transition-colors">
+          <Link to={LEGAL_URLS.privacy} className="hover:text-white transition-colors">
             {t('landing.footer.privacy')}
           </Link>
-          <Link to="/termini" className="hover:text-white transition-colors">
+          <Link to={LEGAL_URLS.terms} className="hover:text-white transition-colors">
             {t('landing.footer.terms')}
           </Link>
-          <Link to="/contatti" className="hover:text-white transition-colors">
+          <Link to={LEGAL_URLS.cookie} className="hover:text-white transition-colors">
+            Cookie
+          </Link>
+          <Link to={LEGAL_URLS.dpa} className="hover:text-white transition-colors">
+            DPA
+          </Link>
+          <Link to={LEGAL_URLS.guestPrivacy} className="hover:text-white transition-colors">
+            Ospiti
+          </Link>
+          <Link to={LEGAL_URLS.contact} className="hover:text-white transition-colors">
             {t('landing.footer.contact')}
           </Link>
         </nav>

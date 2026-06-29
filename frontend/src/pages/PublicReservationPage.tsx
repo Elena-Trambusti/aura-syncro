@@ -58,6 +58,9 @@ export default function PublicReservationPage() {
 
   const bookMutation = useMutation({
     mutationFn: async () => {
+      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `booking_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
       const res = await api.post<{
         reservationId: string
         status: string
@@ -71,7 +74,7 @@ export default function PublicReservationPage() {
         covers: form.covers,
         ...combineDateAndTime(form.date, form.time),
         notes: form.notes.trim() || undefined,
-      })
+      }, { headers: { 'X-Idempotency-Key': idempotencyKey } })
       return res.data
     },
     onSuccess: result => {
@@ -307,6 +310,16 @@ export default function PublicReservationPage() {
               {t('publicBooking.viewMenu')}
             </Link>
           </form>
+
+          <footer className="mt-8 border-t border-white/[0.06] pt-6 text-center text-[11px] text-fumo">
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
+              <Link to="/informativa-ospiti" className="hover:text-aura-gold underline-offset-2 hover:underline">
+                {t('publicBooking.guestPrivacy', { defaultValue: 'Privacy ospiti' })}
+              </Link>
+              <span aria-hidden>·</span>
+              <Link to="/cookie" className="hover:text-aura-gold underline-offset-2 hover:underline">Cookie</Link>
+            </div>
+          </footer>
         </div>
       </div>
     </div>

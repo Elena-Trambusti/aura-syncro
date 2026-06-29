@@ -12,9 +12,11 @@ export function isPublicAppRoute(pathname: string): boolean {
     || path === '/reset-password'
     || path === '/prezzi'
     || path === '/privacy'
+    || path === '/terms'
     || path === '/termini'
     || path === '/cookie'
     || path === '/dpa'
+    || path === '/informativa-ospiti'
     || path === '/contatti'
   ) {
     return true

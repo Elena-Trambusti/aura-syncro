@@ -32,11 +32,14 @@ export default function PaymentSuccessPage() {
   const orderId = params.get('order_id')
   const receiptToken = params.get('receipt_token')
   const [data, setData] = useState<SessionData | null>(null)
-  const [loading, setLoading] = useState(!!sessionId)
+  const [loading, setLoading] = useState(() => !!(sessionId && orderId && receiptToken))
   const [error, setError] = useState(!sessionId || !orderId || !receiptToken)
 
   useEffect(() => {
-    if (!sessionId || !orderId || !receiptToken) return
+    if (!sessionId || !orderId || !receiptToken) {
+      setLoading(false)
+      return
+    }
     api.get(`/payments/session/${sessionId}`, { params: { orderId, receipt_token: receiptToken } })
       .then(r => { setData(r.data); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })

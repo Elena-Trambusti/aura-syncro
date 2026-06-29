@@ -96,17 +96,17 @@ export default function CashDrawerPage() {
   return (
     <ExecutivePageShell>
       <ExecutivePageHeader 
-        title="Turno Cassa" 
-        subtitle="Gestione del cassetto contanti e controllo ammanchi" 
+        title={t('cashDrawer.title')} 
+        subtitle={t('cashDrawer.subtitle')} 
       />
 
       {!session ? (
         <div className="flex flex-col items-center justify-center p-12 text-stone-400 bg-navy-surface rounded-xl border border-white/5">
           <Wallet className="w-16 h-16 mb-4 opacity-50" />
-          <h2 className="text-xl font-bold text-white mb-2">Nessun turno aperto</h2>
-          <p className="mb-6">Il cassetto è chiuso. Aprilo inserendo il fondo cassa iniziale.</p>
+          <h2 className="text-xl font-bold text-white mb-2">{t('cashDrawer.noSessionTitle')}</h2>
+          <p className="mb-6">{t('cashDrawer.noSessionDesc')}</p>
           <button onClick={() => { setAmount(0); setShowOpenModal(true); }} className={ui.btnPrimary + " px-6 py-3"}>
-            <Unlock className="w-4 h-4 mr-2 inline" /> Apri Cassa
+            <Unlock className="w-4 h-4 mr-2 inline" /> {t('cashDrawer.openDrawer')}
           </button>
         </div>
       ) : (
@@ -114,27 +114,27 @@ export default function CashDrawerPage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-navy-surface rounded-xl border border-white/10 p-6 flex items-center justify-between">
               <div>
-                <p className="text-sm text-fumo">Saldo Atteso Attuale</p>
+                <p className="text-sm text-fumo">{t('cashDrawer.expectedBalance')}</p>
                 <p className="text-4xl font-black text-white">€{currentExpected.toFixed(2)}</p>
-                <p className="text-xs text-stone-500 mt-2">Aperto da {session.openedBy.name} alle {formatTime(session.openedAt)}</p>
+                <p className="text-xs text-stone-500 mt-2">{t('cashDrawer.openedBy', { name: session.openedBy.name, time: formatTime(session.openedAt) })}</p>
               </div>
               <div className="flex flex-col gap-3">
                 <button onClick={() => { setAmount(0); setReason(''); setShowTxModal(true) }} className={ui.btnGhost + " px-4 py-2"}>
-                  <Plus className="w-4 h-4 mr-2 inline" /> Prelievo / Versamento
+                  <Plus className="w-4 h-4 mr-2 inline" /> {t('cashDrawer.payInOut')}
                 </button>
                 <button onClick={() => { setAmount(0); setShowCloseModal(true) }} className="bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg font-bold hover:bg-red-500/20">
-                  <Lock className="w-4 h-4 mr-2 inline" /> Chiudi Turno
+                  <Lock className="w-4 h-4 mr-2 inline" /> {t('cashDrawer.closeShift')}
                 </button>
               </div>
             </div>
 
             <div className="bg-navy-elevated rounded-xl border border-white/5 overflow-hidden">
               <div className="p-4 border-b border-white/10 bg-black/20">
-                <h3 className="font-bold text-white">Movimenti del turno</h3>
+                <h3 className="font-bold text-white">{t('cashDrawer.movementsTitle')}</h3>
               </div>
               <div className="p-0">
                 {txs.length === 0 ? (
-                  <p className="p-6 text-center text-stone-500">Nessun movimento registrato.</p>
+                  <p className="p-6 text-center text-stone-500">{t('cashDrawer.noMovements')}</p>
                 ) : (
                   <ul className="divide-y divide-white/5">
                     {txs.map(tx => (

@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { resolveOrCreateCustomer } from './customerResolver'
 import {
@@ -19,6 +20,8 @@ export interface CreateReservationInput {
   internalNotes?: string
 }
 
+type DbClient = Prisma.TransactionClient | typeof prisma
+
 export async function createReservation(input: CreateReservationInput) {
   if (input.tableId) {
     const table = await prisma.table.findFirst({
@@ -37,19 +40,19 @@ export async function createReservation(input: CreateReservationInput) {
 
   const duration = input.duration ?? 90
 
-  return prisma.$transaction(async () => {
+  return prisma.$transaction(async (tx) => {
     const slot = await validateReservationSlot(input.restaurantId, {
       date: input.date,
       covers: input.covers,
       duration,
       tableId: input.tableId,
-    })
+    }, tx)
 
-    const settings = await prisma.restaurantSettings.findUnique({
+    const settings = await tx.restaurantSettings.findUnique({
       where: { restaurantId: input.restaurantId },
     })
 
-    const reservation = await prisma.reservation.create({
+    const reservation = await tx.reservation.create({
       data: {
         restaurantId: input.restaurantId,
         guestName: input.guestName,
@@ -68,7 +71,7 @@ export async function createReservation(input: CreateReservationInput) {
     })
 
     if (reservation.tableId) {
-      await syncTableReservedForReservation(reservation.tableId, input.restaurantId)
+      await syncTableReservedForReservation(reservation.tableId, input.restaurantId, tx)
     }
 
     return {
@@ -82,9 +85,10 @@ export async function createReservation(input: CreateReservationInput) {
 export async function syncTableReservedForReservation(
   tableId: string | null | undefined,
   restaurantId: string,
+  db: DbClient = prisma,
 ): Promise<void> {
   if (!tableId) return
-  await prisma.table.updateMany({
+  await db.table.updateMany({
     where: { id: tableId, restaurantId, status: 'FREE' },
     data: { status: 'RESERVED' },
   })

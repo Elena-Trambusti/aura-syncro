@@ -37,10 +37,16 @@ export default function PricingPage() {
           <Link to="/login" className="aura-btn-ghost flex-1 py-3.5 text-center">Accedi</Link>
         </div>
 
-        <div className="flex justify-center gap-4 text-xs font-medium text-fumo pt-4">
-          <Link to="/privacy" className="hover:text-aura-gold transition-colors">Privacy Policy</Link>
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-medium text-fumo pt-4">
+          <Link to="/privacy" className="hover:text-aura-gold transition-colors">Privacy</Link>
           <span>&middot;</span>
-          <Link to="/termini" className="hover:text-aura-gold transition-colors">Termini di Servizio</Link>
+          <Link to="/termini" className="hover:text-aura-gold transition-colors">Termini</Link>
+          <span>&middot;</span>
+          <Link to="/cookie" className="hover:text-aura-gold transition-colors">Cookie</Link>
+          <span>&middot;</span>
+          <Link to="/dpa" className="hover:text-aura-gold transition-colors">DPA</Link>
+          <span>&middot;</span>
+          <Link to="/informativa-ospiti" className="hover:text-aura-gold transition-colors">Privacy ospiti</Link>
         </div>
       </div>
     </div>

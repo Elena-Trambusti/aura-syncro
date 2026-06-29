@@ -375,15 +375,24 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
     return
   }
 
+  const releaseNoShowLock = async () => {
+    await prisma.reservation.updateMany({
+      where: { id: reservation.id, depositAmountPaid: 0 },
+      data: { depositAmountPaid: null },
+    })
+  }
+
   try {
     const session = await stripe.checkout.sessions.retrieve(reservation.depositStripeSessionId)
     if (!session.setup_intent) {
+      await releaseNoShowLock()
       res.status(400).json({ error: 'SetupIntent mancante nella sessione Stripe.' })
       return
     }
 
     const setupIntent = await stripe.setupIntents.retrieve(session.setup_intent as string)
     if (!setupIntent.payment_method || !setupIntent.customer) {
+      await releaseNoShowLock()
       res.status(400).json({ error: 'Metodo di pagamento non trovato nel SetupIntent.' })
       return
     }
@@ -412,24 +421,31 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
     })
 
     if (paymentIntent.status === 'succeeded') {
-      const updated = await prisma.reservation.update({
-        where: { id: reservation.id },
-        data: { depositAmountPaid: penaltyAmount },
-      })
-      io.to(tenantId(req)).emit('reservation:updated', updated)
-      res.json(updated)
+      try {
+        const updated = await prisma.reservation.update({
+          where: { id: reservation.id },
+          data: { depositAmountPaid: penaltyAmount },
+        })
+        io.to(tenantId(req)).emit('reservation:updated', updated)
+        res.json(updated)
+      } catch (dbErr) {
+        console.error('[stripe] No-show PI succeeded but DB update failed', {
+          reservationId: reservation.id,
+          paymentIntentId: paymentIntent.id,
+          error: dbErr,
+        })
+        res.status(500).json({
+          error: 'Addebito riuscito ma registrazione fallita — contatta il supporto.',
+          code: 'RECONCILIATION_REQUIRED',
+          paymentIntentId: paymentIntent.id,
+        })
+      }
     } else {
-      await prisma.reservation.updateMany({
-        where: { id: reservation.id, depositAmountPaid: 0 },
-        data: { depositAmountPaid: null },
-      })
+      await releaseNoShowLock()
       res.status(400).json({ error: 'Addebito fallito o richiede autenticazione (3D Secure).' })
     }
   } catch (err) {
-    await prisma.reservation.updateMany({
-      where: { id: reservation.id, depositAmountPaid: 0 },
-      data: { depositAmountPaid: null },
-    })
+    await releaseNoShowLock()
     console.error('[stripe] Errore addebito No-Show:', err)
     res.status(500).json({ error: 'Errore durante l\'addebito della penale.' })
   }

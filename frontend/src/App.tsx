@@ -19,6 +19,7 @@ import TermsPage from './pages/TermsPage'
 import CookiePage from './pages/CookiePage'
 import DPAPage from './pages/DPAPage'
 import ContactPage from './pages/ContactPage'
+import GuestPrivacyPage from './pages/GuestPrivacyPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import TablesPage from './pages/TablesPage'
@@ -95,9 +96,11 @@ function AppRoutes() {
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/prezzi" element={<PricingPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<Navigate to="/termini" replace />} />
       <Route path="/termini" element={<TermsPage />} />
       <Route path="/cookie" element={<CookiePage />} />
       <Route path="/dpa" element={<DPAPage />} />
+      <Route path="/informativa-ospiti" element={<GuestPrivacyPage />} />
       <Route path="/contatti" element={<ContactPage />} />
       <Route path="/platform-admin" element={<PlatformAdminPage />} />
       {/* Pagine pubbliche senza auth */}
@@ -155,7 +158,7 @@ function AppRoutes() {
         </Route>
         <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><PaymentsPage /></RequireProPlan></RequireRole>} />
         <Route path="fatture" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><InvoicesPage /></RequireProPlan></RequireRole>} />
-        <Route path="dashboard/ai-predictive" element={<RequireProPlan><AIPredictivePage /></RequireProPlan>} />
+        <Route path="dashboard/ai-predictive" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AIPredictivePage /></RequirePermission></RequireProPlan>} />
         <Route path="dashboard/qr-builder" element={<RequirePermission permissions={['menu.manage']}><QRBuilderPage /></RequirePermission>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
         <Route path="impostazioni" element={<RequireRole roles={ADMIN_NAV_ROLES}><SettingsPage /></RequireRole>} />

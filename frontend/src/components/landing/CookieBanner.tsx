@@ -43,9 +43,9 @@ export function CookieBanner() {
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-white">Gestione Cookie</h3>
             <p className="mt-1 text-xs leading-relaxed text-slate-400">
-              Aura Syncro utilizza esclusivamente cookie tecnici essenziali per garantire il funzionamento e la sicurezza della piattaforma. Non tracciamo i tuoi dati per fini pubblicitari.{' '}
+              Utilizziamo cookie tecnici essenziali, Stripe (pagamenti), statistiche aggregate Vercel e monitoraggio errori (Sentry). Nessun tracciamento pubblicitario.{' '}
               <Link to="/cookie" className="text-aura-gold hover:underline">
-                Leggi l'informativa
+                Cookie Policy
               </Link>.
             </p>
             

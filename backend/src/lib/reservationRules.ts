@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 
 export class ReservationValidationError extends Error {
@@ -9,6 +10,8 @@ export class ReservationValidationError extends Error {
   }
 }
 
+type DbClient = Prisma.TransactionClient | typeof prisma
+
 /** Applica regole prenotazione da RestaurantSettings. */
 export async function validateReservationSlot(
   restaurantId: string,
@@ -19,8 +22,9 @@ export async function validateReservationSlot(
     tableId?: string | null
     excludeReservationId?: string
   },
+  db: DbClient = prisma,
 ): Promise<{ status: 'PENDING' | 'CONFIRMED' }> {
-  const settings = await prisma.restaurantSettings.findUnique({
+  const settings = await db.restaurantSettings.findUnique({
     where: { restaurantId },
   })
 
@@ -37,12 +41,11 @@ export async function validateReservationSlot(
   const requestStart = input.date.getTime()
   const requestEnd = requestStart + input.duration * 60_000
 
-  // Use a conservative window to avoid missing overlaps with long reservations.
-  const windowMs = 24 * 60 * 60 * 1000
+  const windowMs = input.duration * 60_000
   const windowStart = new Date(requestStart - windowMs)
   const windowEnd = new Date(requestEnd + windowMs)
 
-  const allReservations = await prisma.reservation.findMany({
+  const allReservations = await db.reservation.findMany({
     where: {
       restaurantId,
       status: { notIn: ['CANCELLED', 'NO_SHOW', 'COMPLETED'] },

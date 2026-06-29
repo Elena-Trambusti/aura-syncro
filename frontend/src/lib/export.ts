@@ -44,7 +44,7 @@ export async function printReceipt(order: {
   paymentMethod?: string
 }, restaurantName: string, options?: { taxLabel?: string; locale?: string; tipLabel?: string }): Promise<void> {
   const locale = options?.locale ?? 'it-IT'
-  const taxLabel = options?.taxLabel ?? 'IVA'
+  const taxLabel = options?.taxLabel ?? 'Tax'
   const tipLabel = options?.tipLabel ?? 'Mancia'
   const formatEur = (n: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(n)
   const formatDt = (d: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))

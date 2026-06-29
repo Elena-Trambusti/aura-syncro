@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
+import { dayBoundsInTimezone, calendarDateInTimezone } from '../lib/dates'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { updateCustomerTier, bootstrapLoyaltyProgram } from '../lib/loyaltyHelpers'
@@ -97,8 +98,27 @@ loyaltyRouter.post('/earn', requirePermission('loyalty.manage'), async (req: Aut
   })
   if (!customer) { tenantNotFound(res, 'Cliente non trovato'); return }
 
+  if (orderId) {
+    const existingEarn = await prisma.loyaltyTransaction.findFirst({
+      where: { restaurantId, orderId, type: 'EARNED' },
+    })
+    if (existingEarn) {
+      res.status(409).json({ error: 'Punti già assegnati per questo ordine', code: 'LOYALTY_ALREADY_EARNED' })
+      return
+    }
+  }
+
   // RC-05: Use Serializable transaction to prevent double-earn on concurrent requests
+  try {
   const [tx, updatedCustomer] = await prisma.$transaction(async prismaClient => {
+    if (orderId) {
+      const dup = await prismaClient.loyaltyTransaction.findFirst({
+        where: { restaurantId, orderId, type: 'EARNED' },
+      })
+      if (dup) {
+        throw Object.assign(new Error('LOYALTY_ALREADY_EARNED'), { code: 'LOYALTY_ALREADY_EARNED' })
+      }
+    }
     const transaction = await prismaClient.loyaltyTransaction.create({
       data: { customerId, restaurantId, type: 'EARNED', points, description, orderId },
     })
@@ -112,6 +132,14 @@ loyaltyRouter.post('/earn', requirePermission('loyalty.manage'), async (req: Aut
   await updateCustomerTier(restaurantId, customerId, updatedCustomer.loyaltyPoints)
 
   res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
+  } catch (err) {
+    const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+    if (code === 'LOYALTY_ALREADY_EARNED') {
+      res.status(409).json({ error: 'Punti già assegnati per questo ordine', code })
+      return
+    }
+    throw err
+  }
 })
 
 loyaltyRouter.post('/redeem', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -207,6 +235,15 @@ loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: A
 loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { timezone: true },
+  })
+  const timeZone = restaurant?.timezone ?? 'Europe/Rome'
+  const cal = calendarDateInTimezone(timeZone, new Date())
+  const [y, m] = cal.split('-')
+  const { gte: monthStart } = dayBoundsInTimezone(`${y}-${m}-01`, timeZone)
+
   const tierCount = await prisma.loyaltyTier.count({ where: { restaurantId } })
   if (tierCount === 0) {
     await bootstrapLoyaltyProgram(restaurantId)
@@ -223,7 +260,7 @@ loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: 
       by: ['customerId'],
       where: {
         restaurantId,
-        createdAt: { gte: new Date(new Date().setDate(1)) },
+        createdAt: { gte: monthStart },
         type: 'EARNED',
       },
       _count: true,
