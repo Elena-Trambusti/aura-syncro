@@ -494,11 +494,14 @@ aiRouter.get('/summary', requirePermission('analytics.read'), async (req: AuthRe
 
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
   const tomorrowDow = tomorrow.getDay()
+  const windowStart = new Date()
+  windowStart.setDate(windowStart.getDate() - 84)
 
   const tomorrowOrders = await prisma.order.findMany({
     where: {
       restaurantId,
       status: { notIn: ['CANCELLED'] },
+      createdAt: { gte: windowStart },
     },
     select: { createdAt: true, total: true, items: { select: { quantity: true } } },
   })

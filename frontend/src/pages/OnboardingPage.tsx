@@ -1,44 +1,65 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, CalendarHeart, Info, CheckCircle2, Circle } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ClipboardList, CalendarHeart, Info, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
+import { api } from '../lib/api'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
+type ReadinessCheck = { id: string; ok: boolean; detail?: string }
 
+type OnboardingReadiness = {
+  readyForService: boolean
+  checks: ReadinessCheck[]
+  menuItemCount: number
+  tableCount: number
+  posMode: string
+  cashSessionOpen: boolean
+}
 
 export default function OnboardingPage() {
   const { t } = useTranslation()
   const { restaurant, refreshRestaurant } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [checklist, setChecklist] = useState({ menu: false, call: false })
+  const [concierge, setConcierge] = useState({ menu: false, call: false })
 
   const TALLY_URL = 'https://tally.so/r/WOQp1P'
   const CALENDLY_URL = 'https://calendly.com/aurasyncro/30min'
 
-  const checklistDone = Number(checklist.menu) + Number(checklist.call)
+  const { data: readiness, isLoading: readinessLoading, refetch: refetchReadiness } = useQuery<OnboardingReadiness>({
+    queryKey: ['onboarding-readiness', restaurant?.id],
+    queryFn: () => api.get('/restaurant/onboarding-readiness').then(r => r.data),
+    enabled: Boolean(restaurant?.id),
+    refetchInterval: 15_000,
+  })
+
+  const systemDone = readiness?.checks.filter(c => c.ok).length ?? 0
+  const systemTotal = readiness?.checks.length ?? 0
+  const conciergeDone = Number(concierge.menu) + Number(concierge.call)
 
   useEffect(() => {
     if (searchParams.get('welcome') === 'true') {
       toast.success(t('onboarding.welcomeToast'))
       setSearchParams({}, { replace: true })
       void refreshRestaurant()
+      void refetchReadiness()
     }
-  }, [searchParams, setSearchParams, t, refreshRestaurant])
+  }, [searchParams, setSearchParams, t, refreshRestaurant, refetchReadiness])
 
-  // Polling: rileva sblocco concierge e attivazione abbonamento post-pagamento
   useEffect(() => {
     const fast = searchParams.get('welcome') === 'true' || restaurant?.hasActiveSubscription === false
     const ms = fast ? 5_000 : 30_000
     const interval = window.setInterval(() => {
       void refreshRestaurant()
+      void refetchReadiness()
     }, ms)
     return () => window.clearInterval(interval)
-  }, [refreshRestaurant, searchParams, restaurant?.hasActiveSubscription])
+  }, [refreshRestaurant, refetchReadiness, searchParams, restaurant?.hasActiveSubscription])
 
-
+  const checkLabel = (id: string) => t(`onboarding.systemChecks.${id}`, { defaultValue: id })
 
   return (
     <ExecutivePageShell className="mx-auto max-w-4xl space-y-8 pb-8">
@@ -49,8 +70,41 @@ export default function OnboardingPage() {
       />
 
       <section className="rounded-xl premium-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-bold text-pietra">{t('onboarding.systemChecklistTitle')}</h2>
+          {readinessLoading && <Loader2 className="h-4 w-4 animate-spin text-fumo" />}
+        </div>
+        <p className="mb-4 text-sm text-fumo">
+          {t('onboarding.systemProgressLabel', { done: systemDone, total: systemTotal })}
+        </p>
+        <ul className="space-y-2">
+          {(readiness?.checks ?? []).map(item => (
+            <li
+              key={item.id}
+              className="flex items-center gap-3 rounded-lg border border-white/[0.08] px-4 py-3 text-sm"
+            >
+              {item.ok
+                ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+                : <Circle className="h-5 w-5 shrink-0 text-amber-400" />}
+              <span className={item.ok ? 'text-fumo' : 'text-pietra font-medium'}>
+                {checkLabel(item.id)}
+              </span>
+              {item.detail && (
+                <span className="ml-auto text-xs text-fumo">{item.detail}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+        {readiness?.readyForService && (
+          <p className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+            {t('onboarding.systemReady')}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl premium-card p-5 shadow-sm">
         <h2 className="mb-3 font-bold text-pietra">{t('onboarding.checklistTitle')}</h2>
-        <p className="mb-4 text-sm text-fumo">{t('onboarding.progressLabel', { done: checklistDone, total: 2 })}</p>
+        <p className="mb-4 text-sm text-fumo">{t('onboarding.progressLabel', { done: conciergeDone, total: 2 })}</p>
         <ul className="space-y-3">
           {([
             { key: 'menu' as const, label: t('onboarding.checklistMenu') },
@@ -59,15 +113,15 @@ export default function OnboardingPage() {
             <li key={item.key}>
               <button
                 type="button"
-                onClick={() => setChecklist(c => ({ ...c, [item.key]: !c[item.key] }))}
+                onClick={() => setConcierge(c => ({ ...c, [item.key]: !c[item.key] }))}
                 className="flex w-full items-center gap-3 rounded-lg border border-white/[0.08] px-4 py-3 text-left text-sm hover:bg-white/[0.03]"
               >
-                {checklist[item.key]
+                {concierge[item.key]
                   ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
                   : <Circle className="h-5 w-5 shrink-0 text-fumo" />}
-                <span className={checklist[item.key] ? 'text-fumo line-through' : 'text-pietra'}>{item.label}</span>
+                <span className={concierge[item.key] ? 'text-fumo line-through' : 'text-pietra'}>{item.label}</span>
                 <span className="ml-auto text-xs text-fumo">
-                  {checklist[item.key] ? t('onboarding.checklistDone') : t('onboarding.checklistPending')}
+                  {concierge[item.key] ? t('onboarding.checklistDone') : t('onboarding.checklistPending')}
                 </span>
               </button>
             </li>
@@ -94,7 +148,7 @@ export default function OnboardingPage() {
             rel="noopener noreferrer"
             className="w-full sm:w-64 shrink-0 inline-flex justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(234,179,8,0.2)] hover:shadow-[0_0_35px_rgba(234,179,8,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
           >
-            Compila il modulo
+            {t('onboarding.fillForm')}
           </a>
         </section>
 
@@ -115,7 +169,7 @@ export default function OnboardingPage() {
             rel="noopener noreferrer"
             className="w-full sm:w-64 shrink-0 inline-flex justify-center items-center gap-2 rounded-xl bg-aura-gold hover:bg-aura-gold-light text-stone-950 px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(234,179,8,0.2)] hover:shadow-[0_0_35px_rgba(234,179,8,0.3)] hover:scale-105 whitespace-nowrap relative z-10"
           >
-            Prenota la Call
+            {t('onboarding.bookCall')}
           </a>
         </section>
       </div>
@@ -133,4 +187,3 @@ export default function OnboardingPage() {
     </ExecutivePageShell>
   )
 }
-

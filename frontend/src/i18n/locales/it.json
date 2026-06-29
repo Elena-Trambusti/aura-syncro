@@ -260,6 +260,7 @@
     "needsCleaning": "Da pulire",
     "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Toccalo sulla mappa per segnarlo libero.",
     "manageSection": "Gestione tavoli",
+    "manageAreas": "Gestisci zone",
     "refreshed": "Tavoli aggiornati",
     "newTable": "Nuovo tavolo",
     "editTable": "Modifica tavolo",
@@ -1147,6 +1148,15 @@
   },
   "kitchen": {
     "title": "Schermo Cucina",
+    "displayTitle": "CUCINA",
+    "subtitle": "Kitchen Display System",
+    "live": "Live",
+    "disconnected": "Disconnesso",
+    "pending": "In attesa",
+    "preparing": "Preparando",
+    "ready": "Pronti",
+    "aggregateTitle": "Sommario cotture",
+    "backDashboard": "Dashboard",
     "newOrder": "Nuovo ordine!",
     "dishUpdated": "Piatto aggiornato",
     "dishUpdateError": "Impossibile aggiornare il piatto",
@@ -1391,7 +1401,20 @@
     "checklistDone": "Completato",
     "checklistPending": "Da fare",
     "progressLabel": "{{done}} di {{total}} passaggi completati",
-    "posSetupNote": "Il POS fisico (registratore di cassa) si configura dopo la call di setup, quando ci fornirete marca e modello del terminale. Fino ad allora i pagamenti carta in app sono in modalità preparatoria."
+    "posSetupNote": "Il POS fisico (registratore di cassa) si configura dopo la call di setup, quando ci fornirete marca e modello del terminale. Fino ad allora i pagamenti carta in app sono in modalità preparatoria.",
+    "systemChecklistTitle": "Verifica automatica go-live",
+    "systemProgressLabel": "{{done}} di {{total}} controlli di sistema superati",
+    "systemReady": "Configurazione tecnica pronta per il servizio. Il team concierge completerà menu e formazione.",
+    "fillForm": "Compila il modulo",
+    "bookCall": "Prenota la call",
+    "systemChecks": {
+      "subscription": "Abbonamento Premium attivo",
+      "menu": "Menu configurato (min. 3 piatti)",
+      "tables": "Tavoli configurati",
+      "fiscal": "Dati fiscali completi",
+      "pos": "POS carta pronto o simulazione abilitata",
+      "staff": "Almeno un utente staff"
+    }
   },
   "paywall": {
     "title": "Funzionalità Premium",
@@ -1478,6 +1501,8 @@
     "remove": "Rimuovi",
     "increaseQty": "Aumenta quantità",
     "decreaseQty": "Diminuisci quantità",
+    "tipOptional": "Mancia (opzionale)",
+    "tipPlaceholder": "Es. 2,00",
     "errors": {
       "MENU_ITEM_NOT_FOUND": "Piatto non trovato o non disponibile",
       "MENU_ITEM_UNAVAILABLE": "Piatto non disponibile",

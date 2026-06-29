@@ -467,6 +467,8 @@ model OrderItem {
   updatedAt         DateTime   @updatedAt
 
   modifiers OrderItemModifier[]
+
+  @@index([orderId])
 }
 
 model OrderItemModifier {
@@ -534,6 +536,8 @@ model Reservation {
   depositAmountPaid      Float?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
+
+  @@index([restaurantId, date])
 }
 
 enum ReservationStatus {

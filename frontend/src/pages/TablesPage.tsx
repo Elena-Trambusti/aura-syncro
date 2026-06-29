@@ -408,7 +408,7 @@ export default function TablesPage() {
                 onClick={() => setShowAreaManager(true)}
                 className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-pietra hover:bg-white/10"
               >
-                Gestisci Zone
+                {t('tables.manageAreas')}
               </button>
               <button
                 type="button"

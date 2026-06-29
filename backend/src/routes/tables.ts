@@ -33,19 +33,14 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
             },
           ],
         },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
         select: {
           id: true,
           status: true,
           total: true,
           type: true,
-          items: {
-            select: {
-              id: true,
-              status: true,
-              quantity: true,
-              menuItem: { select: { name: true } },
-            },
-          },
+          createdAt: true,
           customer: {
             select: {
               id: true,

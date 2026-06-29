@@ -240,6 +240,7 @@
     "needsCleaning": "Needs cleaning",
     "startCleaningHint": "After payment the table moves to cleaning. Tap it on the map to mark it free.",
     "manageSection": "Table management",
+    "manageAreas": "Manage areas",
     "newTable": "New table",
     "editTable": "Edit table",
     "tableNumber": "Table number",
@@ -1305,7 +1306,20 @@
     "checklistDone": "Done",
     "checklistPending": "To do",
     "progressLabel": "{{done}} of {{total}} steps completed",
-    "posSetupNote": "Your physical POS (fiscal printer/register) is configured after the setup call, once you share the terminal brand and model. Until then, in-app card payments are in preparatory mode."
+    "posSetupNote": "Your physical POS (fiscal printer/register) is configured after the setup call, once you share the terminal brand and model. Until then, in-app card payments are in preparatory mode.",
+    "systemChecklistTitle": "Automatic go-live verification",
+    "systemProgressLabel": "{{done}} of {{total}} system checks passed",
+    "systemReady": "Technical setup is ready for service. The concierge team will complete menu and training.",
+    "fillForm": "Fill out the form",
+    "bookCall": "Book the call",
+    "systemChecks": {
+      "subscription": "Premium subscription active",
+      "menu": "Menu configured (min. 3 dishes)",
+      "tables": "Tables configured",
+      "fiscal": "Fiscal data complete",
+      "pos": "Card POS ready or simulation enabled",
+      "staff": "At least one staff user"
+    }
   },
   "paywall": {
     "title": "Premium Feature",

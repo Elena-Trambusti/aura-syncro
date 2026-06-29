@@ -347,15 +347,15 @@ function ReportFiscalContent() {
         )}
 
         {vatBreakdown && vatBreakdown.breakdown.length > 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-900">{t('reportFiscal.vatBreakdownTitle')}</h3>
+          <div className="rounded-xl premium-card border border-white/[0.08] p-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-pietra">{t('reportFiscal.vatBreakdownTitle')}</h3>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {vatBreakdown.breakdown.map(row => (
-                <div key={row.taxRate} className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs">
-                  <p className="font-semibold text-slate-900">{t('reportFiscal.vatBreakdownRate', { rate: row.taxRate })}</p>
-                  <p className="text-slate-600">{t('reportFiscal.vatBreakdownTaxable')}: {formatCurrency(row.taxableBase)}</p>
-                  <p className="text-slate-600">{t('reportFiscal.vatBreakdownTax')}: {formatCurrency(row.tax)}</p>
-                  <p className="text-slate-500">{t('reportFiscal.vatBreakdownOrders')}: {row.count}</p>
+                <div key={row.taxRate} className="rounded-lg border border-white/[0.06] bg-navy-surface/60 p-3 text-xs">
+                  <p className="font-semibold text-pietra">{t('reportFiscal.vatBreakdownRate', { rate: row.taxRate })}</p>
+                  <p className="text-fumo">{t('reportFiscal.vatBreakdownTaxable')}: {formatCurrency(row.taxableBase)}</p>
+                  <p className="text-fumo">{t('reportFiscal.vatBreakdownTax')}: {formatCurrency(row.tax)}</p>
+                  <p className="text-fumo/80">{t('reportFiscal.vatBreakdownOrders')}: {row.count}</p>
                 </div>
               ))}
             </div>

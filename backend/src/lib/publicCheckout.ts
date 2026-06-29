@@ -29,6 +29,7 @@ export const guestCheckoutSchema = z.object({
     notes: z.string().optional(),
   })).min(1).max(50),
   clientRequestId: z.string().min(8).max(128).optional(),
+  tipAmount: z.number().min(0).max(500).optional(),
 })
 
 export type GuestCheckoutInput = z.infer<typeof guestCheckoutSchema>
@@ -60,7 +61,7 @@ export async function createGuestStripeCheckout(
     throw new PublicOrderError('Pagamenti online non configurati', 503)
   }
 
-  const { items, tableNumber, slug, customerName, customerEmail, clientRequestId, ...orderData } = input
+  const { items, tableNumber, slug, customerName, customerEmail, clientRequestId, tipAmount = 0, ...orderData } = input
 
   const restaurant = await prisma.restaurant.findUnique({ 
     where: { slug },
@@ -119,6 +120,9 @@ export async function createGuestStripeCheckout(
     })),
   )
 
+  const safeTip = Math.round(Math.max(0, tipAmount) * 100) / 100
+  const orderTotal = total + safeTip
+
   const customerId = await resolveOrCreateCustomer(restaurantId, {
     email: customerEmail,
     name: customerName,
@@ -149,10 +153,10 @@ export async function createGuestStripeCheckout(
         customerId,
         subtotal,
         tax,
-        total,
+        total: orderTotal,
         taxRateApplied,
         revenueAmount: total,
-        tipAmount: 0,
+        tipAmount: safeTip,
         type: orderData.type,
         notes: orderData.notes,
         status: 'PENDING',
@@ -192,6 +196,17 @@ export async function createGuestStripeCheckout(
     quantity: item.quantity,
   }))
 
+  if (safeTip > 0) {
+    lineItems.push({
+      price_data: {
+        currency: 'eur' as const,
+        product_data: { name: 'Mancia' },
+        unit_amount: Math.round(safeTip * 100),
+      },
+      quantity: 1,
+    })
+  }
+
   const receiptToken = signOrderReceiptToken(order.id)
 
   let session
@@ -211,7 +226,7 @@ export async function createGuestStripeCheckout(
       cancel_url: `${frontendUrl}/menu/${slug}?payment=cancelled`,
       ...(connectAccountId ? {
         payment_intent_data: {
-          application_fee_amount: Math.round(total * STRIPE_APPLICATION_FEE_PCT * 100),
+          application_fee_amount: Math.round(orderTotal * STRIPE_APPLICATION_FEE_PCT * 100),
           transfer_data: {
             destination: connectAccountId,
           },

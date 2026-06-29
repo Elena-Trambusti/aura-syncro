@@ -87,7 +87,16 @@ export default function OrderModal({
   })
 
   const table = tables.find(tbl => tbl.id === tableId)
-  const activeOrder = table ? findActiveTableOrder(table.orders) : undefined
+  const activeOrderSummary = table ? findActiveTableOrder(table.orders) : undefined
+
+  const { data: activeOrderDetail } = useQuery<Table['orders'][0]>({
+    queryKey: tq(tk, 'orders', activeOrderSummary?.id),
+    queryFn: () => api.get(`/orders/${activeOrderSummary!.id}`).then(r => r.data),
+    enabled: Boolean(activeOrderSummary?.id),
+    staleTime: 3_000,
+  })
+
+  const activeOrder = activeOrderDetail ?? activeOrderSummary
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),

@@ -7,6 +7,7 @@ import { requirePermission } from '../middleware/permissions'
 import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
 import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from '../lib/taxEngine'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
+import { computeOnboardingReadiness } from '../lib/onboardingReadiness'
 
 export const restaurantRouter = Router()
 
@@ -61,6 +62,12 @@ restaurantRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReque
 restaurantRouter.get('/pos-status', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const config = await loadRestaurantPosConfig(req.restaurantId!)
   res.json(serializePosStatusForCheckout(config))
+})
+
+/** Checklist go-live verificata dal sistema (menu, fiscale, POS, tavoli). */
+restaurantRouter.get('/onboarding-readiness', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const readiness = await computeOnboardingReadiness(req.restaurantId!)
+  res.json(readiness)
 })
 
 restaurantRouter.put('/', requirePermission('settings.manage'), requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {

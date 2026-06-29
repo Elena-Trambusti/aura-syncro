@@ -11,7 +11,9 @@ export function isActiveTableOrder(order: {
 }): boolean {
   if (order.status === 'CANCELLED') return false
   if (order.status !== 'PAID') return true
-  return order.items?.some(i => !KITCHEN_DONE_ITEM_STATUSES.has(i.status)) ?? false
+  // GET /tables summary: ordini PAID inclusi solo se hanno item aperti (filtro API)
+  if (!order.items || order.items.length === 0) return true
+  return order.items.some(i => !KITCHEN_DONE_ITEM_STATUSES.has(i.status))
 }
 
 /** Primo ordine attivo sul tavolo (più recente se l'API li ordina per createdAt desc). */

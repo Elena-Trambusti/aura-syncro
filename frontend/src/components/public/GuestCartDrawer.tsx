@@ -52,6 +52,7 @@ export default function GuestCartDrawer({
   const [notes, setNotes] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
+  const [tipInput, setTipInput] = useState('')
   const [loading, setLoading] = useState<'card' | 'table' | null>(null)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [clientRequestId] = useState(() => (
@@ -76,6 +77,9 @@ export default function GuestCartDrawer({
     modifiers: i.modifierIds.length ? i.modifierIds : undefined,
   }))
 
+  const parsedTip = Math.max(0, Number.parseFloat(tipInput.replace(',', '.')) || 0)
+  const grandTotal = total + parsedTip
+
   const basePayload = {
     slug,
     type: orderType,
@@ -83,6 +87,7 @@ export default function GuestCartDrawer({
     notes: notes.trim() || undefined,
     items: payloadItems,
     clientRequestId,
+    tipAmount: stripeEnabled && parsedTip > 0 ? parsedTip : undefined,
   }
 
   async function handlePayWithCard() {
@@ -132,16 +137,16 @@ export default function GuestCartDrawer({
         onClick={handleClose}
       />
 
-      <div className="relative mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <div className="relative mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl border border-white/[0.08] bg-navy-elevated shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{t('publicMenu.cart')}</h2>
-            <p className="text-xs text-slate-500">{restaurantName}</p>
+            <h2 className="text-lg font-bold text-pietra">{t('publicMenu.cart')}</h2>
+            <p className="text-xs text-fumo">{restaurantName}</p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-full p-2 text-fumo hover:bg-white/5 hover:text-pietra"
             aria-label={t('common.close')}
           >
             <X className="h-5 w-5" />
@@ -151,12 +156,12 @@ export default function GuestCartDrawer({
         {orderSuccess ? (
           <div className="flex flex-col items-center px-6 py-12 text-center">
             <CheckCircle2 className="mb-4 h-14 w-14 text-emerald-500" />
-            <h3 className="text-xl font-bold text-slate-900">{t('publicMenu.orderSuccess')}</h3>
-            <p className="mt-2 text-sm text-slate-500">{t('publicMenu.orderSuccessHint')}</p>
+            <h3 className="text-xl font-bold text-pietra">{t('publicMenu.orderSuccess')}</h3>
+            <p className="mt-2 text-sm text-fumo">{t('publicMenu.orderSuccessHint')}</p>
             <button
               type="button"
               onClick={handleClose}
-              className="mt-8 w-full rounded-xl bg-slate-900 py-3.5 text-sm font-semibold text-white"
+              className="mt-8 w-full rounded-xl bg-aura-gold py-3.5 text-sm font-semibold text-navy hover:bg-aura-gold-light"
             >
               {t('common.close')}
             </button>
@@ -165,7 +170,7 @@ export default function GuestCartDrawer({
           <>
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {items.length === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-500">{t('publicMenu.cartEmpty')}</p>
+                <p className="py-8 text-center text-sm text-fumo">{t('publicMenu.cartEmpty')}</p>
               ) : (
                 <ul className="space-y-3">
                   {items.map(item => (
@@ -224,8 +229,8 @@ export default function GuestCartDrawer({
                         onClick={() => setOrderType(type)}
                         className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${
                           orderType === type
-                            ? 'border-amber-500 bg-amber-50 text-amber-800'
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'border-aura-gold bg-aura-gold/10 text-aura-gold'
+                            : 'border-white/[0.08] text-fumo hover:bg-white/5'
                         }`}
                       >
                         {type === 'DINE_IN'
@@ -237,7 +242,7 @@ export default function GuestCartDrawer({
 
                   {orderType === 'DINE_IN' && (
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-fumo">
                         {t('publicMenu.tableNumber')}
                       </label>
                       <input
@@ -246,14 +251,14 @@ export default function GuestCartDrawer({
                         value={tableInput}
                         onChange={e => setTableInput(e.target.value)}
                         placeholder={t('publicMenu.tableNumberPlaceholder')}
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        className="w-full rounded-xl border border-white/[0.08] bg-navy-surface px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
                       />
-                      <p className="mt-1 text-xs text-slate-400">{t('publicMenu.tableNumberHint')}</p>
+                      <p className="mt-1 text-xs text-fumo/70">{t('publicMenu.tableNumberHint')}</p>
                     </div>
                   )}
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-fumo">
                       {t('publicMenu.orderNotes')}
                     </label>
                     <textarea
@@ -261,13 +266,13 @@ export default function GuestCartDrawer({
                       onChange={e => setNotes(e.target.value)}
                       rows={2}
                       placeholder={t('publicMenu.orderNotesPlaceholder')}
-                      className="w-full resize-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                      className="w-full resize-none rounded-xl border border-white/[0.08] bg-navy-surface px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
                     />
                   </div>
 
                   {stripeEnabled && (
-                    <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="space-y-3 rounded-xl border border-white/[0.08] bg-navy-surface/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-fumo">
                         {t('publicMenu.paymentDetails')}
                       </p>
                       <input
@@ -275,15 +280,28 @@ export default function GuestCartDrawer({
                         value={customerName}
                         onChange={e => setCustomerName(e.target.value)}
                         placeholder={t('publicMenu.customerName')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        className="w-full rounded-xl border border-white/[0.08] bg-navy-mid px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
                       />
                       <input
                         type="email"
                         value={customerEmail}
                         onChange={e => setCustomerEmail(e.target.value)}
                         placeholder={t('publicMenu.customerEmail')}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        className="w-full rounded-xl border border-white/[0.08] bg-navy-mid px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
                       />
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-fumo">
+                          {t('publicMenu.tipOptional')}
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={tipInput}
+                          onChange={e => setTipInput(e.target.value)}
+                          placeholder={t('publicMenu.tipPlaceholder')}
+                          className="w-full rounded-xl border border-white/[0.08] bg-navy-mid px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -291,21 +309,27 @@ export default function GuestCartDrawer({
             </div>
 
             {items.length > 0 && (
-              <div className="border-t border-slate-100 px-5 py-4">
+              <div className="border-t border-white/[0.08] px-5 py-4">
                 <div className="mb-4 space-y-1.5 text-sm">
-                  <div className="flex justify-between text-slate-600">
+                  <div className="flex justify-between text-fumo">
                     <span>{t('publicMenu.taxableBase')}</span>
-                    <span className="tabular-nums">{formatCurrency(taxableBase)}</span>
+                    <span className="tabular-nums text-pietra">{formatCurrency(taxableBase)}</span>
                   </div>
                   {tax > 0 && (
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-fumo">
                       <span>{fiscal.taxName} ({fiscal.taxRate}%)</span>
-                      <span className="tabular-nums">{formatCurrency(tax)}</span>
+                      <span className="tabular-nums text-pietra">{formatCurrency(tax)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-base font-bold text-slate-900">
+                  {parsedTip > 0 && (
+                    <div className="flex justify-between text-fumo">
+                      <span>{t('checkout.tip')}</span>
+                      <span className="tabular-nums text-pietra">{formatCurrency(parsedTip)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-bold text-pietra">
                     <span>{t('publicMenu.total')}</span>
-                    <span className="tabular-nums">{formatCurrency(total)}</span>
+                    <span className="tabular-nums text-aura-gold">{formatCurrency(grandTotal)}</span>
                   </div>
                 </div>
 
@@ -315,7 +339,7 @@ export default function GuestCartDrawer({
                       type="button"
                       disabled={loading !== null}
                       onClick={() => void handlePayWithCard()}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3.5 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-3.5 text-sm font-semibold text-navy hover:bg-aura-gold-light disabled:opacity-60"
                     >
                       {loading === 'card'
                         ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -323,14 +347,14 @@ export default function GuestCartDrawer({
                       {t('publicMenu.payWithCard')}
                     </button>
                   ) : (
-                    <p className="text-center text-xs text-slate-500">{t('publicMenu.stripeUnavailable')}</p>
+                    <p className="text-center text-xs text-fumo">{t('publicMenu.stripeUnavailable')}</p>
                   )}
 
                   <button
                     type="button"
                     disabled={loading !== null}
                     onClick={() => void handleOrderAtTable()}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/[0.12] py-3.5 text-sm font-semibold text-pietra hover:bg-white/5 disabled:opacity-60"
                   >
                     {loading === 'table'
                       ? <Loader2 className="h-4 w-4 animate-spin" />

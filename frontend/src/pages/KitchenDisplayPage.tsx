@@ -401,33 +401,33 @@ export default function KitchenDisplayPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#0B0E14] text-white">
+    <div className="flex min-h-[100dvh] flex-col bg-navy text-pietra">
       <header
-        className={`shrink-0 border-b border-slate-700 px-4 py-3 transition-colors sm:px-6 ${
-          newOrderAlert ? 'bg-orange-600' : 'bg-[#12151C]/60 backdrop-blur-md'
+        className={`shrink-0 border-b border-white/[0.08] px-4 py-3 transition-colors sm:px-6 ${
+          newOrderAlert ? 'bg-aura-gold/20' : 'bg-navy-elevated/90 backdrop-blur-md'
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-3 gap-y-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-600">
-              <ChefHat className="h-6 w-6 text-white" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-aura-gold shadow-[0_0_20px_rgba(212,175,55,0.25)]">
+              <ChefHat className="h-6 w-6 text-navy" />
             </div>
             <div className="min-w-0 flex items-center gap-3">
               <div>
-                <h1 className="text-lg font-black text-white">CUCINA</h1>
-                <p className="text-xs text-stone-500">Kitchen Display System</p>
+                <h1 className="text-lg font-black text-pietra lux-heading">{t('kitchen.displayTitle')}</h1>
+                <p className="text-xs text-fumo">{t('kitchen.subtitle')}</p>
               </div>
               
               {/* Status Badge */}
               {isSocketConnected ? (
                 <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/50 border border-emerald-900/50 text-emerald-400 text-xs font-semibold">
                   <Wifi className="w-3 h-3" />
-                  Live
+                  {t('kitchen.live')}
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-950/50 border border-red-900/50 text-red-400 text-xs font-semibold animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.3)]">
                   <WifiOff className="w-3 h-3" />
-                  Disconnesso
+                  {t('kitchen.disconnected')}
                 </div>
               )}
             </div>
@@ -436,9 +436,9 @@ export default function KitchenDisplayPage() {
           <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4 md:gap-6">
             <div className="flex items-center gap-3 sm:gap-4">
               {[
-                { label: 'In attesa', count: pending.length, color: 'text-yellow-400' },
-                { label: 'Preparando', count: preparing.length, color: 'text-orange-400' },
-                { label: 'Pronti', count: ready.length, color: 'text-emerald-400' },
+                { label: t('kitchen.pending'), count: pending.length, color: 'text-aura-gold' },
+                { label: t('kitchen.preparing'), count: preparing.length, color: 'text-amber-300' },
+                { label: t('kitchen.ready'), count: ready.length, color: 'text-emerald-400' },
               ].map(s => (
                 <div key={s.label} className="text-center">
                   <p className={`text-xl font-black sm:text-2xl ${s.color}`}>{s.count}</p>
@@ -454,7 +454,7 @@ export default function KitchenDisplayPage() {
               className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-stone-500 transition-colors hover:text-white"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Dashboard
+              {t('kitchen.backDashboard')}
             </Link>
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function KitchenDisplayPage() {
           <div className="flex items-center gap-3">
             <Flame className="h-5 w-5 shrink-0 text-amber-500 animate-pulse" />
             <span className="shrink-0 text-sm font-bold text-white uppercase tracking-wider">
-              Sommario Cotture:
+              {t('kitchen.aggregateTitle')}:
             </span>
             <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {aggregateItems.map(ag => (
