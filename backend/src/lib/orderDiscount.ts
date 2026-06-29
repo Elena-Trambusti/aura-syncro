@@ -119,9 +119,9 @@ export async function validateOrderDiscountOptions(
     if (campaign.discountPct <= 0) throw new Error('INVALID_DISCOUNT_CODE')
     return
   }
+  // applyLoyalty senza tier attivo: nessuno sconto da applicare (non è un errore al checkout)
   if (options.applyLoyalty && order.customerId) {
-    const loyalty = await resolveLoyaltyDiscount(restaurantId, order.customerId)
-    if (loyalty.discountPct <= 0) throw new Error('NO_LOYALTY_DISCOUNT')
+    await resolveLoyaltyDiscount(restaurantId, order.customerId)
   }
 }
 

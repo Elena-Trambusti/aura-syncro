@@ -126,9 +126,13 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
+  const loyaltyPreview = applyLoyaltyDiscount && order.customerId
+    ? await resolveLoyaltyDiscount(req.restaurantId!, order.customerId)
+    : null
+
   const discountOptions = discountCode
     ? { discountCode }
-    : applyLoyaltyDiscount && order.customerId
+    : loyaltyPreview && loyaltyPreview.discountPct > 0
       ? { applyLoyalty: true as const }
       : undefined
 
@@ -140,6 +144,10 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'INVALID_DISCOUNT_CODE') {
       res.status(400).json({ error: 'Codice sconto non valido', code })
+      return
+    }
+    if (code === 'NO_LOYALTY_DISCOUNT') {
+      res.status(400).json({ error: 'Nessuno sconto fedeltà disponibile per questo cliente', code })
       return
     }
     if (code === 'ORDER_CLOSED') {
