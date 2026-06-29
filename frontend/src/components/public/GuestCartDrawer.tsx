@@ -7,6 +7,7 @@ import {
 import { api } from '../../lib/api'
 import { formatCurrency } from '../../lib/utils'
 import { computeGuestOrderTax } from '../../lib/guestOrderTax'
+import { resolvePublicOrderErrorMessage } from '../../lib/publicOrderErrors'
 import type { GuestCartItem } from '../../hooks/useGuestCart'
 
 interface FiscalInfo {
@@ -24,8 +25,8 @@ interface GuestCartDrawerProps {
   tableNumber: number | null
   items: GuestCartItem[]
   subtotal: number
-  onSetQuantity: (menuItemId: string, quantity: number) => void
-  onRemoveItem: (menuItemId: string) => void
+  onSetQuantity: (cartLineId: string, quantity: number) => void
+  onRemoveItem: (cartLineId: string) => void
   onClearCart: () => void
 }
 
@@ -72,6 +73,7 @@ export default function GuestCartDrawer({
     menuItemId: i.menuItemId,
     quantity: i.quantity,
     notes: i.notes,
+    modifiers: i.modifierIds.length ? i.modifierIds : undefined,
   }))
 
   const basePayload = {
@@ -94,8 +96,8 @@ export default function GuestCartDrawer({
       })
       window.location.href = res.data.checkoutUrl
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      toast.error(msg ?? t('publicMenu.checkoutError'))
+      const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
+      toast.error(resolvePublicOrderErrorMessage(t, data))
       setLoading(null)
     }
   }
@@ -109,8 +111,8 @@ export default function GuestCartDrawer({
       onClearCart()
       toast.success(t('publicMenu.orderSuccess'))
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      toast.error(msg ?? t('publicMenu.checkoutError'))
+      const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
+      toast.error(resolvePublicOrderErrorMessage(t, data))
     } finally {
       setLoading(null)
     }
@@ -168,37 +170,40 @@ export default function GuestCartDrawer({
                 <ul className="space-y-3">
                   {items.map(item => (
                     <li
-                      key={item.menuItemId}
-                      className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3"
+                      key={item.cartLineId}
+                      className="flex gap-3 rounded-xl border border-white/[0.08] bg-navy-surface/80 p-3"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900">{item.name}</p>
-                        <p className="text-sm tabular-nums text-slate-500">
+                        <p className="font-semibold text-pietra">{item.name}</p>
+                        {item.modifierLabels.length > 0 && (
+                          <p className="text-xs text-fumo">{item.modifierLabels.join(' · ')}</p>
+                        )}
+                        <p className="text-sm tabular-nums text-fumo">
                           {formatCurrency(item.price)} × {item.quantity}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => onSetQuantity(item.menuItemId, item.quantity - 1)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-100"
+                          onClick={() => onSetQuantity(item.cartLineId, item.quantity - 1)}
+                          className="rounded-lg border border-white/[0.08] bg-navy-mid p-1.5 text-fumo hover:bg-white/5"
                           aria-label={t('publicMenu.decreaseQty')}
                         >
                           <Minus className="h-4 w-4" />
                         </button>
-                        <span className="w-6 text-center text-sm font-bold tabular-nums">{item.quantity}</span>
+                        <span className="w-6 text-center text-sm font-bold tabular-nums text-pietra">{item.quantity}</span>
                         <button
                           type="button"
-                          onClick={() => onSetQuantity(item.menuItemId, item.quantity + 1)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-100"
+                          onClick={() => onSetQuantity(item.cartLineId, item.quantity + 1)}
+                          className="rounded-lg border border-white/[0.08] bg-navy-mid p-1.5 text-fumo hover:bg-white/5"
                           aria-label={t('publicMenu.increaseQty')}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => onRemoveItem(item.menuItemId)}
-                          className="ml-1 rounded-lg p-1.5 text-rose-500 hover:bg-rose-50"
+                          onClick={() => onRemoveItem(item.cartLineId)}
+                          className="ml-1 rounded-lg p-1.5 text-rose-400 hover:bg-rose-500/10"
                           aria-label={t('publicMenu.remove')}
                         >
                           <Trash2 className="h-4 w-4" />

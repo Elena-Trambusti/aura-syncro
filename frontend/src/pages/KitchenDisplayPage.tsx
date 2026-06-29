@@ -30,6 +30,8 @@ function useElapsedMinutes(createdAt: string) {
 }
 
 const KitchenLiveClock = memo(function KitchenLiveClock() {
+  const { i18n } = useTranslation()
+  const locale = i18n.language.startsWith('es-cn') ? 'es' : i18n.language
   const [time, setTime] = useState(() => new Date())
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
@@ -38,10 +40,10 @@ const KitchenLiveClock = memo(function KitchenLiveClock() {
   return (
     <div className="shrink-0 text-right">
       <p className="font-mono text-xl font-bold text-white sm:text-2xl">
-        {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        {time.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </p>
       <p className="text-[10px] text-stone-500 sm:text-xs">
-        {time.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}
+        {time.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })}
       </p>
     </div>
   )
@@ -350,7 +352,7 @@ export default function KitchenDisplayPage() {
     const onNewOrder = (order: KitchenOrder) => {
       if (!orderNeedsKitchenAttention(order)) return
       setNewOrderAlert(true)
-      toast('🔔 Nuovo ordine!', {
+      toast(`🔔 ${t('kitchen.newOrder')}`, {
         style: { background: '#c9a227', color: '#fff', fontWeight: 'bold' },
         duration: 4000,
       })
@@ -362,7 +364,7 @@ export default function KitchenDisplayPage() {
       socket.off('order:created', onNewOrder)
       if (alertTimer) clearTimeout(alertTimer)
     }
-  }, [])
+  }, [t])
 
   const { pending, preparing, ready } = useMemo(() => ({
     pending: orders.filter(o => kitchenColumnForOrder(o) === 'pending'),

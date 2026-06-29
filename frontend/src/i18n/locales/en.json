@@ -1125,6 +1125,7 @@
     "tax": "VAT",
     "orderSent": "Order sent to kitchen!",
     "sendError": "Unable to send order",
+    "minModifiers": "Select at least {{min}} options for {{group}}",
     "dishAdded": "Dish added!",
     "soldOut": "Sold out",
     "soldOutToast": "Dish sold out — insufficient ingredients in stock",
@@ -1233,7 +1234,27 @@
     "customerLinked": "Customer linked to order",
     "customerLinkError": "Could not link customer",
     "customerRemove": "Remove",
-    "loyaltyTierBadge": "{{tier}} — {{pct}}% discount at checkout"
+    "loyaltyTierBadge": "{{tier}} — {{pct}}% discount at checkout",
+    "alreadyPaid": "Payment already recorded",
+    "errors": {
+      "ORDER_NOT_FOUND": "Order not found",
+      "ORDER_ALREADY_PAID": "Order already paid",
+      "ORDER_CANCELLED": "Order cancelled",
+      "PAYMENT_IN_PROGRESS": "Payment already in progress. Wait a few seconds and try again.",
+      "CASH_SESSION_REQUIRED": "Open the cash register before accepting cash payments.",
+      "CASH_USER_REQUIRED": "Cash user not identified.",
+      "POS_SIMULATION_NOT_ALLOWED": "Card POS not configured. Contact Aura Syncro support.",
+      "STRIPE_PAYMENT_FAILED": "Card payment failed",
+      "STRIPE_PAYMENT_INTENT_REQUIRED": "Card payment failed",
+      "STRIPE_AMOUNT_MISMATCH": "Invalid PaymentIntent for this order",
+      "STRIPE_AMOUNT_OVERPAY": "Invalid PaymentIntent for this order",
+      "STRIPE_PI_ORDER_MISMATCH": "Invalid PaymentIntent for this order",
+      "STRIPE_PI_TENANT_MISMATCH": "Invalid PaymentIntent for this order",
+      "STRIPE_PI_ALREADY_USED": "PaymentIntent already used",
+      "INVALID_DISCOUNT_CODE": "Invalid discount code",
+      "NO_LOYALTY_DISCOUNT": "No loyalty discount available for this customer",
+      "INVALID_TIP_WAITER": "Invalid waiter"
+    }
   },
   "billing": {
     "pageTitle": "The restaurant platform built for you",
@@ -1370,7 +1391,21 @@
     "checkoutError": "Error sending your order",
     "remove": "Remove",
     "increaseQty": "Increase quantity",
-    "decreaseQty": "Decrease quantity"
+    "decreaseQty": "Decrease quantity",
+    "errors": {
+      "MENU_ITEM_NOT_FOUND": "Dish not found or unavailable",
+      "MENU_ITEM_UNAVAILABLE": "Dish unavailable",
+      "MENU_ITEM_SOLD_OUT": "Dish sold out — insufficient ingredients",
+      "INVALID_MODIFIER": "Invalid modifier selection",
+      "MODIFIER_MIN_NOT_MET": "Select all required options",
+      "MODIFIER_MAX_EXCEEDED": "Too many options selected",
+      "MODIFIER_SINGLE_ONLY": "Choose only one option per group",
+      "ORDER_IN_PROGRESS": "Order already in progress. Wait a few seconds.",
+      "TABLE_NOT_FOUND": "Table not found",
+      "TABLE_UNAVAILABLE": "Table unavailable",
+      "RESTAURANT_NOT_FOUND": "Restaurant not found",
+      "SLOT_CONFLICT": "Slot or table no longer available"
+    }
   },
   "qrBuilder": {
     "title": "QR Generator",

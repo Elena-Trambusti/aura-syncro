@@ -351,7 +351,7 @@ export default function OrderModal({
               const selectedCount = (selectedModifiers[group.id] || []).length
               const min = group.isRequired ? Math.max(1, group.minOptions) : group.minOptions
               if (selectedCount < min) {
-                toast.error(`Seleziona almeno ${min} opzioni per ${group.name}`)
+                toast.error(t('orderModal.minModifiers', { min, group: group.name }))
                 return
               }
             }

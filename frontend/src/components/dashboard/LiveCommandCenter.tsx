@@ -6,8 +6,8 @@ import {
   UtensilsCrossed, CalendarClock, ChefHat, ArrowRight, Loader2, Users,
 } from 'lucide-react'
 import { api } from '../../lib/api'
-import { cn, formatTime } from '../../lib/utils'
-import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { cn, formatTime, toDateInputInTimezone } from '../../lib/utils'
+import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { useRole } from '../../hooks/useRole'
 import {
@@ -31,12 +31,8 @@ interface ActiveOrder {
   table?: { number: number } | null
 }
 
-function localToday(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+function localToday(timeZone: string): string {
+  return toDateInputInTimezone(timeZone)
 }
 
 const TABLE_STATUS_KEYS: Record<string, string> = {
@@ -48,6 +44,8 @@ const TABLE_STATUS_KEYS: Record<string, string> = {
 
 export default function LiveCommandCenter() {
   const { t } = useTranslation()
+  const { restaurant } = useAuth()
+  const tenantTz = restaurant?.timezone ?? 'Europe/Rome'
   const tk = useTenantQueryKey()
   const { can } = useRole()
 
@@ -68,7 +66,7 @@ export default function LiveCommandCenter() {
 
   const { data: reservations = [], isLoading: loadingRes } = useQuery<ReservationRow[]>({
     queryKey: tq(tk, 'reservations', 'today'),
-    queryFn: () => api.get(`/reservations?date=${localToday()}`).then(r => r.data),
+    queryFn: () => api.get(`/reservations?date=${localToday(tenantTz)}`).then(r => r.data),
     enabled: canReservations,
     refetchInterval: 60_000,
   })

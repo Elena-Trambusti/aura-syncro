@@ -1,11 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+export interface GuestModifierGroup {
+  id: string
+  name: string
+  isRequired: boolean
+  minOptions: number
+  maxOptions: number
+  multiSelect: boolean
+  options: Array<{ id: string; name: string; price: number }>
+}
+
 export interface GuestCartItem {
+  cartLineId: string
   menuItemId: string
   name: string
+  /** Prezzo unitario lordo (base + modificatori) */
   price: number
   quantity: number
   notes?: string
+  modifierIds: string[]
+  modifierLabels: string[]
+}
+
+export function buildGuestCartLineId(menuItemId: string, modifierIds: string[]): string {
+  const sorted = [...modifierIds].sort()
+  return sorted.length ? `${menuItemId}:${sorted.join(',')}` : menuItemId
 }
 
 function storageKey(slug: string) {
@@ -17,7 +36,13 @@ function readStored(slug: string): GuestCartItem[] {
     const raw = localStorage.getItem(storageKey(slug))
     if (!raw) return []
     const parsed = JSON.parse(raw) as GuestCartItem[]
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(item => ({
+      ...item,
+      cartLineId: item.cartLineId ?? buildGuestCartLineId(item.menuItemId, item.modifierIds ?? []),
+      modifierIds: item.modifierIds ?? [],
+      modifierLabels: item.modifierLabels ?? [],
+    }))
   } catch {
     return []
   }
@@ -43,29 +68,31 @@ export function useGuestCart(slug: string | undefined) {
     }
   }, [slug, items])
 
-  const addItem = useCallback((item: Omit<GuestCartItem, 'quantity'>, quantity = 1) => {
+  const addItem = useCallback((item: Omit<GuestCartItem, 'quantity' | 'cartLineId'> & { quantity?: number }) => {
+    const cartLineId = buildGuestCartLineId(item.menuItemId, item.modifierIds)
+    const quantity = item.quantity ?? 1
     setItems(prev => {
-      const existing = prev.find(i => i.menuItemId === item.menuItemId)
+      const existing = prev.find(i => i.cartLineId === cartLineId)
       if (existing) {
         return prev.map(i =>
-          i.menuItemId === item.menuItemId
+          i.cartLineId === cartLineId
             ? { ...i, quantity: i.quantity + quantity }
             : i,
         )
       }
-      return [...prev, { ...item, quantity }]
+      return [...prev, { ...item, cartLineId, quantity }]
     })
   }, [])
 
-  const setQuantity = useCallback((menuItemId: string, quantity: number) => {
+  const setQuantity = useCallback((cartLineId: string, quantity: number) => {
     setItems(prev => {
-      if (quantity <= 0) return prev.filter(i => i.menuItemId !== menuItemId)
-      return prev.map(i => (i.menuItemId === menuItemId ? { ...i, quantity } : i))
+      if (quantity <= 0) return prev.filter(i => i.cartLineId !== cartLineId)
+      return prev.map(i => (i.cartLineId === cartLineId ? { ...i, quantity } : i))
     })
   }, [])
 
-  const removeItem = useCallback((menuItemId: string) => {
-    setItems(prev => prev.filter(i => i.menuItemId !== menuItemId))
+  const removeItem = useCallback((cartLineId: string) => {
+    setItems(prev => prev.filter(i => i.cartLineId !== cartLineId))
   }, [])
 
   const clearCart = useCallback(() => setItems([]), [])
@@ -80,11 +107,6 @@ export function useGuestCart(slug: string | undefined) {
     [items],
   )
 
-  const getQuantity = useCallback(
-    (menuItemId: string) => items.find(i => i.menuItemId === menuItemId)?.quantity ?? 0,
-    [items],
-  )
-
   return {
     items,
     itemCount,
@@ -93,6 +115,5 @@ export function useGuestCart(slug: string | undefined) {
     setQuantity,
     removeItem,
     clearCart,
-    getQuantity,
   }
 }

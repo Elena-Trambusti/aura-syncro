@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { formatCurrency } from '../lib/utils'
+import { formatCurrency, monthYearInTimezone } from '../lib/utils'
 import { TrendingUp, TrendingDown, FileText, Download, Save } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart as RechartsPie, Pie, Legend } from 'recharts'
 import { downloadCSV } from '../lib/export'
-import { useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { useFiscalRegime, useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { usePlanTier } from '../hooks/usePlanTier'
@@ -35,13 +35,15 @@ const PIE_COLORS = ['#c9a227', '#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ef4
 export default function ReportsPage() {
   const { t } = useTranslation()
   const fiscal = useFiscalRegime()
+  const { restaurant } = useAuth()
+  const tenantTz = restaurant?.timezone ?? fiscal.timezone ?? 'Europe/Rome'
   const { canAccessAdminNav } = useRole()
   const { hasProPlan } = usePlanTier()
   const showZeta = fiscal.countryCode === 'IT' && canAccessAdminNav() && hasProPlan
   const tk = useTenantQueryKey()
-  const now = new Date()
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1)
+  const defaultPeriod = monthYearInTimezone(tenantTz)
+  const [selectedYear, setSelectedYear] = useState(defaultPeriod.year)
+  const [selectedMonth, setSelectedMonth] = useState(defaultPeriod.month)
   const [activeTab, setActiveTab] = useState<'pl' | 'foodcost' | 'annuale'>('pl')
 
   const monthNames = t('reportFiscal.months', { returnObjects: true }) as string[]
@@ -126,7 +128,7 @@ export default function ReportsPage() {
               {t('reportFiscal.linkLabel')}
             </Link>
             <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
-              {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
+              {[defaultPeriod.year - 1, defaultPeriod.year, defaultPeriod.year + 1].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
             <select value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
               {monthNames.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}

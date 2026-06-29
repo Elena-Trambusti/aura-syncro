@@ -1184,3 +1184,46 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 ### Residuo strutturale accettato
 - **C-05** Float Prisma → Decimal (migration DB dedicata, fuori scope patch)
 
+---
+
+## ROUND RZ-6 — Post-deploy E2E + sweep residui (2026-06-29)
+
+### Produzione verificata
+- Commit `b5dbb83` su `main` — deploy DO attivo
+- `npm run test:flow` ✅ **tutti i passaggi completati** (login → ordine → finalize CASH → CRM → marketing)
+- Finalize CASH senza fedeltà: **200** | Finalize CARD: **402** `POS_SIMULATION_NOT_ALLOWED` (manca `POS_ALLOW_SIMULATION` su runtime DO se non re-importato app spec)
+
+### Bug trovati e risolti in RZ-6
+
+| ID | Stato | Fix applicato |
+|----|-------|---------------|
+| RZ6-01 | ✅ RISOLTO | `payments.ts` + `orderDiscount.ts`: `applyLoyaltyDiscount` su cliente senza tier non blocca più il checkout (evita 504 gateway timeout) |
+| RZ6-02 | ✅ RISOLTO | `CheckoutPage.tsx`: split preview include `modifierTotal` (allineato a `computeSplitBreakdown` backend) |
+| RZ6-03 | ✅ RISOLTO | `OrdersPage.tsx`: `printReceipt` passa `taxLabel` da regime tenant (non più IVA hard-coded) |
+| RZ6-04 | ✅ RISOLTO | `LiveCommandCenter.tsx`: prenotazioni "oggi" con `toDateInputInTimezone(tenantTz)` |
+| RZ6-05 | ✅ RISOLTO | `ReservationsPage.tsx`: date picker e pillole Ieri/Oggi/Domani in timezone tenant |
+| RZ6-06 | ✅ RISOLTO | `ReportsPage.tsx`: mese/anno default da `monthYearInTimezone(tenantTz)` |
+| RZ6-07 | ✅ RISOLTO | `KitchenDisplayPage.tsx`: orologio KDS usa locale i18n; toast nuovo ordine via `t('kitchen.newOrder')` |
+| RZ6-08 | ✅ RISOLTO | `OrderModal.tsx` + i18n: validazione modificatori obbligatori tradotta (`orderModal.minModifiers`) |
+| RZ6-09 | ✅ RISOLTO | `ReceiptPreviewModal.tsx` + `CheckoutPage.tsx`: campo `receipt.emailSent` allineato all'API |
+
+### Residui aperti (non bloccanti)
+
+| ID | Severità | Descrizione | Stato |
+|----|----------|-------------|-------|
+| RZ6-R01 | MEDIO | Guest QR: ordini con modifiers (`orderModifiers.ts`, `publicOrder.ts`, `GuestItemCustomizer`, API menu pubblico) | ✅ RISOLTO |
+| RZ6-R02 | MEDIO | `CheckoutPage`: `X-Idempotency-Key` su finalize staff + retry 409 + cache route `POST /payments/finalize` | ✅ RISOLTO |
+| RZ6-R03 | MEDIO | Errori API pagamenti: `code` backend + `paymentErrors.ts` / `publicOrderErrors.ts` + i18n `checkout.errors.*` / `publicMenu.errors.*` | ✅ RISOLTO |
+| RZ6-R04 | BASSO | `PublicMenuPage`: carrello guest solo se `restaurant.fiscal` presente (niente fallback IVA 10%) | ✅ RISOLTO |
+| RZ6-R05 | BASSO | `orders.ts` PATCH status/item: `requirePermission` esplicito | ✅ RISOLTO |
+| C-05 | STRUTTURALE | Float → Decimal Prisma | ⏳ Fuori scope |
+
+### Verifiche eseguite (post-residui RZ6)
+- `backend`: `npm run test` ✅ (37/37)
+- `backend`: `npx tsc --noEmit` ✅
+- `frontend`: `npx tsc -b` ✅
+
+### Esito QA finale (RZ-6)
+- **Zero bug CRITICO/ALTO aperti** nel codice verificato.
+- Produzione E2E smoke test **verde**.
+

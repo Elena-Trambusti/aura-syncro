@@ -1211,6 +1211,7 @@
     "tax": "IVA",
     "orderSent": "Ordine inviato in cucina!",
     "sendError": "Impossibile inviare la comanda",
+    "minModifiers": "Seleziona almeno {{min}} opzioni per {{group}}",
     "dishAdded": "Piatto aggiunto!",
     "soldOut": "Esaurito",
     "soldOutToast": "Piatto esaurito — ingredienti insufficienti in magazzino",
@@ -1319,7 +1320,27 @@
     "customerLinked": "Cliente collegato all'ordine",
     "customerLinkError": "Impossibile collegare il cliente",
     "customerRemove": "Rimuovi",
-    "loyaltyTierBadge": "{{tier}} — sconto {{pct}}% al pagamento"
+    "loyaltyTierBadge": "{{tier}} — sconto {{pct}}% al pagamento",
+    "alreadyPaid": "Pagamento già registrato",
+    "errors": {
+      "ORDER_NOT_FOUND": "Ordine non trovato",
+      "ORDER_ALREADY_PAID": "Ordine già pagato",
+      "ORDER_CANCELLED": "Ordine annullato",
+      "PAYMENT_IN_PROGRESS": "Pagamento già in elaborazione. Attendi qualche secondo e riprova.",
+      "CASH_SESSION_REQUIRED": "Apri la cassa prima di incassare in contanti.",
+      "CASH_USER_REQUIRED": "Utente cassa non identificato.",
+      "POS_SIMULATION_NOT_ALLOWED": "POS carta non configurato. Contatta il supporto Aura Syncro.",
+      "STRIPE_PAYMENT_FAILED": "Pagamento carta non riuscito",
+      "STRIPE_PAYMENT_INTENT_REQUIRED": "Pagamento carta non riuscito",
+      "STRIPE_AMOUNT_MISMATCH": "PaymentIntent non valido per questo ordine",
+      "STRIPE_AMOUNT_OVERPAY": "PaymentIntent non valido per questo ordine",
+      "STRIPE_PI_ORDER_MISMATCH": "PaymentIntent non valido per questo ordine",
+      "STRIPE_PI_TENANT_MISMATCH": "PaymentIntent non valido per questo ordine",
+      "STRIPE_PI_ALREADY_USED": "PaymentIntent già utilizzato",
+      "INVALID_DISCOUNT_CODE": "Codice sconto non valido",
+      "NO_LOYALTY_DISCOUNT": "Nessuno sconto fedeltà disponibile per questo cliente",
+      "INVALID_TIP_WAITER": "Cameriere non valido"
+    }
   },
   "billing": {
     "pageTitle": "Il gestionale pensato per il tuo ristorante",
@@ -1456,7 +1477,21 @@
     "checkoutError": "Errore durante l'invio dell'ordine",
     "remove": "Rimuovi",
     "increaseQty": "Aumenta quantità",
-    "decreaseQty": "Diminuisci quantità"
+    "decreaseQty": "Diminuisci quantità",
+    "errors": {
+      "MENU_ITEM_NOT_FOUND": "Piatto non trovato o non disponibile",
+      "MENU_ITEM_UNAVAILABLE": "Piatto non disponibile",
+      "MENU_ITEM_SOLD_OUT": "Piatto esaurito — ingredienti insufficienti",
+      "INVALID_MODIFIER": "Selezione modificatori non valida",
+      "MODIFIER_MIN_NOT_MET": "Seleziona tutte le opzioni obbligatorie",
+      "MODIFIER_MAX_EXCEEDED": "Troppe opzioni selezionate",
+      "MODIFIER_SINGLE_ONLY": "Scegli una sola opzione per gruppo",
+      "ORDER_IN_PROGRESS": "Ordine già in elaborazione. Attendi qualche secondo.",
+      "TABLE_NOT_FOUND": "Tavolo non trovato",
+      "TABLE_UNAVAILABLE": "Tavolo non disponibile",
+      "RESTAURANT_NOT_FOUND": "Ristorante non trovato",
+      "SLOT_CONFLICT": "Slot o tavolo non più disponibile"
+    }
   },
   "qrBuilder": {
     "title": "Generatore QR",

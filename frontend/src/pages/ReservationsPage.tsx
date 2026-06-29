@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { formatTime, getReservationStatusLabel } from '../lib/utils'
+import { formatTime, getReservationStatusLabel, toDateInputInTimezone, dateInputOffsetInTimezone } from '../lib/utils'
 import {
   Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, ListOrdered,
   CreditCard, Copy, ExternalLink, UserCheck, LogOut, Link2, ChevronDown,
@@ -161,13 +161,8 @@ function requiresDepositFromSettings(settings: RestaurantProfile['settings']): b
   return Boolean(settings?.noShowDepositRequired && (settings?.depositAmount ?? 0) > 0)
 }
 
-function localDateStr(offsetDays = 0): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offsetDays)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+function localDateStr(timeZone: string, offsetDays = 0): string {
+  return dateInputOffsetInTimezone(timeZone, offsetDays)
 }
 
 function isArchivedStatus(status: string): boolean {
@@ -197,12 +192,13 @@ export default function ReservationsPage() {
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   const { restaurant } = useAuth()
+  const tenantTz = restaurant?.timezone ?? 'Europe/Rome'
   const { can, canAccessAdminNav } = useRole()
   const canManageReservations = can('reservations.manage')
   useRealtimeReservations()
   const [activeTab, setActiveTab] = useState<ReservationTab>('bookings')
   const [showForm, setShowForm] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(localDateStr())
+  const [selectedDate, setSelectedDate] = useState(() => toDateInputInTimezone(tenantTz))
   const [assigningReservation, setAssigningReservation] = useState<Reservation | null>(null)
   const [showArchived, setShowArchived] = useState(false)
 
@@ -374,7 +370,7 @@ export default function ReservationsPage() {
                 className={`${ui.input} w-auto rounded-xl py-2`}
               />
               {[-1, 0, 1].map(offset => {
-                const dateStr = localDateStr(offset)
+                const dateStr = localDateStr(tenantTz, offset)
                 const labels = [t('common.yesterday', 'Ieri'), t('common.today', 'Oggi'), t('common.tomorrow', 'Domani')]
                 return (
                   <button

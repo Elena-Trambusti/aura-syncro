@@ -6,7 +6,7 @@ import { api } from '../lib/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime, toDateInputInTimezone } from '../lib/utils'
 import { printReceipt, downloadOrdersPdf } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
-import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
@@ -49,6 +49,7 @@ export default function OrdersPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { restaurant } = useAuth()
+  const fiscal = useFiscalRegime()
   const tk = useTenantQueryKey()
   const { can } = useRole()
   const [filter, setFilter] = useState<string>('active')
@@ -218,7 +219,9 @@ export default function OrdersPage() {
                       {t('common.paid')}
                     </div>
                     <button
-                      onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'))}
+                      onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'), {
+                        taxLabel: fiscal.taxName,
+                      })}
                       className="p-1.5 hover:text-aura-gold hover:bg-aura-gold/10 rounded-lg text-fumo transition-colors"
                       title={t('common.printReceipt')}
                     >

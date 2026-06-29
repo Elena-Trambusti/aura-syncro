@@ -8,11 +8,28 @@ import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
 import GuestCartBar from '../components/public/GuestCartBar'
 import GuestCartDrawer from '../components/public/GuestCartDrawer'
+import GuestItemCustomizer, { type GuestMenuItemForCustomize } from '../components/public/GuestItemCustomizer'
 import { useGuestCart } from '../hooks/useGuestCart'
 import {
   AlertCircle, Search, X, Star, Wheat, Milk, Egg, Fish, Shell,
   Nut, Bean, Clock, Flame, UtensilsCrossed, CalendarDays, Plus,
 } from 'lucide-react'
+
+interface ModifierOption {
+  id: string
+  name: string
+  price: number
+}
+
+interface ModifierGroup {
+  id: string
+  name: string
+  isRequired: boolean
+  minOptions: number
+  maxOptions: number
+  multiSelect: boolean
+  options: ModifierOption[]
+}
 
 interface MenuItem {
   id: string; name: string; description?: string | null
@@ -23,6 +40,7 @@ interface MenuItem {
   preparationTime?: number | null
   featured?: boolean
   image?: string | null
+  modifierGroups?: ModifierGroup[]
 }
 
 interface Category {
@@ -154,6 +172,7 @@ export default function PublicMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [cartOpen, setCartOpen] = useState(false)
+  const [customizingItem, setCustomizingItem] = useState<GuestMenuItemForCustomize | null>(null)
   const cart = useGuestCart(slug)
 
   const tableNumber = useMemo(() => parseTableFromSearch(searchParams), [searchParams])
@@ -214,7 +233,28 @@ export default function PublicMenuPage() {
     : activeCategory?.name ?? t('publicMenu.title')
 
   const guestOrderingEnabled = data?.guestOrderingEnabled !== false
-  // Unused variable removed
+  const restaurantFiscal = data?.restaurant.fiscal
+
+  function handleAddMenuItem(item: MenuItem) {
+    const groups = item.modifierGroups ?? []
+    if (groups.length > 0) {
+      setCustomizingItem({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        modifierGroups: groups,
+      })
+      return
+    }
+    cart.addItem({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      modifierIds: [],
+      modifierLabels: [],
+    })
+    toast.success(t('publicMenu.addedToCart', { name: item.name }))
+  }
 
   if (isLoading) {
     return (
@@ -360,10 +400,7 @@ export default function PublicMenuPage() {
                 key={item.id}
                 item={item}
                 orderable={guestOrderingEnabled}
-                onAdd={() => {
-                  cart.addItem({ menuItemId: item.id, name: item.name, price: item.price })
-                  toast.success(t('publicMenu.addedToCart', { name: item.name }))
-                }}
+                onAdd={() => handleAddMenuItem(item)}
               />
             ))}
           </div>
@@ -393,7 +430,7 @@ export default function PublicMenuPage() {
         </div>
       </main>
 
-      {guestOrderingEnabled && (
+      {guestOrderingEnabled && restaurantFiscal && (
         <>
           <GuestCartBar
             itemCount={cart.itemCount}
@@ -406,7 +443,7 @@ export default function PublicMenuPage() {
             slug={slug!}
             restaurantName={data.restaurant.name}
             stripeEnabled={data.stripeEnabled ?? false}
-            fiscal={data.restaurant.fiscal ?? { taxRate: 10, taxName: 'IVA' }}
+            fiscal={restaurantFiscal}
             tableNumber={tableNumber}
             items={cart.items}
             subtotal={cart.subtotal}
@@ -415,6 +452,22 @@ export default function PublicMenuPage() {
             onClearCart={cart.clearCart}
           />
         </>
+      )}
+      {customizingItem && (
+        <GuestItemCustomizer
+          item={customizingItem}
+          onClose={() => setCustomizingItem(null)}
+          onConfirm={({ modifierIds, modifierLabels, unitPrice }) => {
+            cart.addItem({
+              menuItemId: customizingItem.id,
+              name: customizingItem.name,
+              price: unitPrice,
+              modifierIds,
+              modifierLabels,
+            })
+            toast.success(t('publicMenu.addedToCart', { name: customizingItem.name }))
+          }}
+        />
       )}
       </div>
     </div>

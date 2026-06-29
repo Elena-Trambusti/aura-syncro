@@ -12,6 +12,7 @@ import {
   resolveTipWaiterId,
 } from '../lib/orderPayment'
 import { completeOrderPayment } from '../lib/completePayment'
+import { readIdempotencyKey, getIdempotentResponse, saveIdempotentResponse } from '../lib/apiIdempotency'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
@@ -118,11 +119,20 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   }
 
   const { orderId, tipAmount, tipWaiterId, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount } = parsed.data
+  const idempotencyKey = readIdempotencyKey(req)
+  if (idempotencyKey && req.restaurantId) {
+    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize')
+    if (cached && cached.statusCode !== 202) {
+      res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+  }
+
   const receiptEmail = process.env.NODE_ENV !== 'production' ? simulateEmail : undefined
 
   const order = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!order) {
-    res.status(404).json({ error: 'Ordine non trovato' })
+    res.status(404).json({ error: 'Ordine non trovato', code: 'ORDER_NOT_FOUND' })
     return
   }
 
@@ -159,19 +169,23 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
 
   const refreshedOrder = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!refreshedOrder) {
-    res.status(404).json({ error: 'Ordine non trovato' })
+    res.status(404).json({ error: 'Ordine non trovato', code: 'ORDER_NOT_FOUND' })
     return
   }
 
   if (refreshedOrder.status === 'PAID') {
-    res.json({
+    const alreadyPaidBody = {
       transactionId: null,
       order: refreshedOrder,
       fiscal: { row: null },
       splitBreakdown: null,
       receipt: { emailSent: false, emailTo: null },
       alreadyPaid: true,
-    })
+    }
+    if (idempotencyKey && req.restaurantId) {
+      await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, alreadyPaidBody)
+    }
+    res.json(alreadyPaidBody)
     return
   }
 
@@ -243,7 +257,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     })
 
     // Return only the fields required by the frontend CheckoutFinalizeResult
-    res.json({
+    const responseBody = {
       transactionId: result.transactionId,
       order: updatedOrder,
       fiscal: {
@@ -254,19 +268,23 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
         emailSent,
         emailTo: receiptEmail ?? null,
       },
-    })
+    }
+    if (idempotencyKey && req.restaurantId) {
+      await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, responseBody)
+    }
+    res.json(responseBody)
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'ORDER_NOT_FOUND') {
-      res.status(404).json({ error: 'Ordine non trovato' })
+      res.status(404).json({ error: 'Ordine non trovato', code })
       return
     }
     if (code === 'ORDER_ALREADY_PAID') {
-      res.status(400).json({ error: 'Ordine già pagato' })
+      res.status(400).json({ error: 'Ordine già pagato', code })
       return
     }
     if (code === 'ORDER_CANCELLED') {
-      res.status(400).json({ error: 'Ordine annullato' })
+      res.status(400).json({ error: 'Ordine annullato', code })
       return
     }
     if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
@@ -363,15 +381,15 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'ORDER_ALREADY_PAID') {
-      res.status(400).json({ error: 'Ordine già pagato' })
+      res.status(400).json({ error: 'Ordine già pagato', code })
       return
     }
     if (code === 'ORDER_NOT_FOUND') {
-      res.status(404).json({ error: 'Ordine non trovato' })
+      res.status(404).json({ error: 'Ordine non trovato', code })
       return
     }
     if (code === 'ORDER_CANCELLED') {
-      res.status(400).json({ error: 'Ordine annullato' })
+      res.status(400).json({ error: 'Ordine annullato', code })
       return
     }
     if (code === 'PAYMENT_IN_PROGRESS') {

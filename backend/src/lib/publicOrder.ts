@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { prisma } from './prisma'
-import { computeTaxForRestaurant } from './orderTax'
+import { computeTaxFromGrossLines } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { assertMenuItemOrderable } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
 import { acquireIdempotencyLock, getIdempotentResponse, saveIdempotentResponse } from './apiIdempotency'
 import { occupyTableIfAvailable } from './orderSession'
+import { ModifierValidationError, resolveMenuItemLine } from './orderModifiers'
 
 export const publicOrderSchema = z.object({
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
@@ -17,6 +18,7 @@ export const publicOrderSchema = z.object({
   items: z.array(z.object({
     menuItemId: z.string(),
     quantity: z.number().int().positive().max(99),
+    modifiers: z.array(z.string()).optional(),
     notes: z.string().optional(),
   })).min(1).max(50),
   clientRequestId: z.string().min(8).max(128).optional(),
@@ -48,6 +50,7 @@ export async function resolveGuestItemsWithStock(
     },
     include: {
       inventoryLinks: { include: { inventoryItem: { select: { quantity: true } } } },
+      modifierGroups: { include: { options: true }, orderBy: { sortOrder: 'asc' } },
     },
   })
 
@@ -61,7 +64,17 @@ export async function resolveGuestItemsWithStock(
     const mi = menuItems.find(m => m.id === item.menuItemId)!
     try {
       assertMenuItemOrderable(mi, item.quantity)
+      const resolved = resolveMenuItemLine(mi, item.modifiers)
+      return {
+        ...item,
+        unitPrice: resolved.unitPrice,
+        selectedOptions: resolved.selectedOptions,
+        menuTaxRate: resolved.menuTaxRate,
+      }
     } catch (e) {
+      if (e instanceof ModifierValidationError) {
+        throw new PublicOrderError(e.message, 400, e.code)
+      }
       const code = (e as { code?: string }).code
       if (code === 'MENU_ITEM_UNAVAILABLE') {
         throw new PublicOrderError('Piatto non disponibile', 400, code)
@@ -71,7 +84,6 @@ export async function resolveGuestItemsWithStock(
       }
       throw e
     }
-    return { ...item, unitPrice: mi.price }
   })
 
   return itemsWithPrice
@@ -135,7 +147,14 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
   }
 
   const grossTotal = itemsWithPrice.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-  const { subtotal, tax, total, taxRateApplied } = await computeTaxForRestaurant(restaurantId, grossTotal)
+  const { subtotal, tax, total, taxRateApplied } = await computeTaxFromGrossLines(
+    restaurantId,
+    itemsWithPrice.map(item => ({
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      taxRate: item.menuTaxRate,
+    })),
+  )
 
   const customerId = await resolveOrCreateCustomer(restaurantId, {
     email: guestEmail,
@@ -171,6 +190,9 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             notes: item.notes,
+            modifiers: item.selectedOptions.length
+              ? { create: item.selectedOptions.map(o => ({ optionId: o.optionId, name: o.name, price: o.price })) }
+              : undefined,
           })),
         },
       },

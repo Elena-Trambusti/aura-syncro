@@ -358,7 +358,7 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   res.status(201).json(finalOrder)
 })
 
-ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.kitchen_status', 'orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {
   if (!canUpdateOrderItemStatus(req.userRole)) {
     res.status(403).json({ error: 'Permessi insufficienti', code: 'FORBIDDEN' })
     return
@@ -525,7 +525,7 @@ ordersRouter.patch('/:orderId/items/:itemId/status', async (req: AuthRequest, re
   res.json(updatedOrder)
 })
 
-ordersRouter.patch('/:id/status', async (req: AuthRequest, res: Response): Promise<void> => {
+ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req: AuthRequest, res: Response): Promise<void> => {
   const statusSchema = z.object({
     status: z.nativeEnum(OrderStatus),
     paymentMethod: z.enum(['CARD', 'CASH']).optional(),

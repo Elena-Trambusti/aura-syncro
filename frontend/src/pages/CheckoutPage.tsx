@@ -14,6 +14,11 @@ import {
   ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import {
+  isPaymentAlreadyPaid,
+  isPaymentInProgress,
+  resolvePaymentErrorMessage,
+} from '../lib/paymentErrors'
 
 type PaymentMethod = 'CARD' | 'CASH' | 'SPLIT'
 type SplitMode = 'equal' | 'by_items'
@@ -24,6 +29,12 @@ interface OrderItem {
   unitPrice: number
   status: string
   menuItem: { name: string }
+  modifiers?: Array<{ price: number }>
+}
+
+function lineGross(item: OrderItem): number {
+  const modifierTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) ?? 0
+  return item.quantity * item.unitPrice + modifierTotal
 }
 
 interface CheckoutOrder {
@@ -61,6 +72,11 @@ export default function CheckoutPage() {
   const [receiptEmail, setReceiptEmail] = useState('')
   const [discountCode, setDiscountCode] = useState('')
   const [finalizeResult, setFinalizeResult] = useState<CheckoutFinalizeResult | null>(null)
+
+  const finalizeIdempotencyKey = useMemo(
+    () => (orderId ? `checkout-finalize:${orderId}` : ''),
+    [orderId],
+  )
 
   const { data: cashSession } = useQuery<{ id: string; status: string } | null>({
     queryKey: tq(tk, 'cash', 'current'),
@@ -140,10 +156,10 @@ export default function CheckoutPage() {
       const gi = itemAssignments[item.id] ?? 0
       const idx = Math.min(Math.max(0, gi), guestCount - 1)
       guests[idx].items.push(item)
-      guests[idx].total += item.quantity * item.unitPrice
+      guests[idx].total += lineGross(item)
     }
 
-    const foodTotal = activeItems.reduce((s, it) => s + it.quantity * it.unitPrice, 0)
+    const foodTotal = activeItems.reduce((s, it) => s + lineGross(it), 0)
     return guests.map(g => ({
       ...g,
       total: foodTotal > 0
@@ -181,7 +197,25 @@ export default function CheckoutPage() {
         }
       }
 
-      return api.post('/payments/finalize', payload, { timeout: 20000 }).then(r => r.data)
+      const headers = finalizeIdempotencyKey
+        ? { 'X-Idempotency-Key': finalizeIdempotencyKey }
+        : undefined
+      const maxAttempts = 3
+      let lastErr: unknown
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          return await api.post('/payments/finalize', payload, { timeout: 20000, headers }).then(r => r.data)
+        } catch (err: unknown) {
+          lastErr = err
+          const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
+          if (isPaymentInProgress(data) && attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            continue
+          }
+          throw err
+        }
+      }
+      throw lastErr
     },
     onSuccess: (result: CheckoutFinalizeResult) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
@@ -196,9 +230,9 @@ export default function CheckoutPage() {
           : t('checkout.paymentSuccess'),
       )
     },
-    onError: async (err: { response?: { data?: { error?: string } }; message?: string }) => {
-      const serverMsg = err.response?.data?.error ?? err.message ?? t('checkout.paymentError')
-      if (serverMsg.toLowerCase().includes('già pagato') || serverMsg.toLowerCase().includes('already paid')) {
+    onError: async (err: { response?: { data?: { error?: string; code?: string } }; message?: string }) => {
+      const payload = err.response?.data
+      if (isPaymentAlreadyPaid(payload)) {
         try {
           const checkout = await api.get(`/payments/checkout/${orderId}`).then(r => r.data)
           if (checkout.order?.status === 'PAID') {
@@ -216,7 +250,7 @@ export default function CheckoutPage() {
                   paymentMethod: paidOrder.paymentMethod,
                 },
               },
-              receipt: { simulatedEmailSent: false, emailTo: null },
+              receipt: { emailSent: false, emailTo: null },
             })
             toast.success(t('checkout.alreadyPaid', { defaultValue: 'Pagamento già registrato' }))
             return
@@ -226,7 +260,7 @@ export default function CheckoutPage() {
         }
       }
       console.error('FINALIZE ERROR:', err.response?.data || err.message)
-      toast.error(serverMsg)
+      toast.error(resolvePaymentErrorMessage(t, payload))
     },
   })
 

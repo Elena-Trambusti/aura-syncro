@@ -30,6 +30,12 @@ publicRouter.get('/menu/:slug', publicMenuLimiter, async (req: Request, res: Res
           items: {
             where: { available: true, archived: false },
             orderBy: { sortOrder: 'asc' },
+            include: {
+              modifierGroups: {
+                orderBy: { sortOrder: 'asc' },
+                include: { options: { orderBy: { sortOrder: 'asc' } } },
+              },
+            },
           },
         },
         orderBy: { sortOrder: 'asc' },

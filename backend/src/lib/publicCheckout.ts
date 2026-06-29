@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
-import { computeTaxForRestaurant } from './orderTax'
+import { computeTaxFromGrossLines } from './orderTax'
 import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
@@ -25,6 +25,7 @@ export const guestCheckoutSchema = z.object({
   items: z.array(z.object({
     menuItemId: z.string(),
     quantity: z.number().int().positive().max(99),
+    modifiers: z.array(z.string()).optional(),
     notes: z.string().optional(),
   })).min(1).max(50),
   clientRequestId: z.string().min(8).max(128).optional(),
@@ -109,7 +110,14 @@ export async function createGuestStripeCheckout(
   }))
 
   const grossTotal = itemsWithPrice.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
-  const { subtotal, tax, total, taxRateApplied } = await computeTaxForRestaurant(restaurantId, grossTotal)
+  const { subtotal, tax, total, taxRateApplied } = await computeTaxFromGrossLines(
+    restaurantId,
+    itemsWithPriceRaw.map(item => ({
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      taxRate: item.menuTaxRate,
+    })),
+  )
 
   const customerId = await resolveOrCreateCustomer(restaurantId, {
     email: customerEmail,
@@ -149,11 +157,14 @@ export async function createGuestStripeCheckout(
         notes: orderData.notes,
         status: 'PENDING',
         items: {
-          create: itemsWithPrice.map(item => ({
+          create: itemsWithPriceRaw.map(item => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             notes: item.notes,
+            modifiers: item.selectedOptions?.length
+              ? { create: item.selectedOptions.map(o => ({ optionId: o.optionId, name: o.name, price: o.price })) }
+              : undefined,
           })),
         },
       },

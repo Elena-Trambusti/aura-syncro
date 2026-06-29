@@ -1022,6 +1022,7 @@
     "subtotal": "Zwischensumme",
     "tax": "MwSt.",
     "orderSent": "Bestellung an Küche gesendet!",
+    "minModifiers": "Wählen Sie mindestens {{min}} Optionen für {{group}}",
     "dishAdded": "Gericht hinzugefügt!",
     "soldOut": "Ausverkauft",
     "soldOutToast": "Gericht ausverkauft — unzureichende Zutaten auf Lager",
@@ -1076,7 +1077,27 @@
     "simulatePrint": "Druck simulieren",
     "simulateEmail": "E-Mail simulieren",
     "printSimulated": "Druck simuliert",
-    "emailSimulated": "E-Mail simuliert"
+    "emailSimulated": "E-Mail simuliert",
+    "alreadyPaid": "Zahlung bereits erfasst",
+    "errors": {
+      "ORDER_NOT_FOUND": "Bestellung nicht gefunden",
+      "ORDER_ALREADY_PAID": "Bestellung bereits bezahlt",
+      "ORDER_CANCELLED": "Bestellung storniert",
+      "PAYMENT_IN_PROGRESS": "Zahlung läuft. Bitte kurz warten und erneut versuchen.",
+      "CASH_SESSION_REQUIRED": "Kasse öffnen, bevor Barzahlung angenommen wird.",
+      "CASH_USER_REQUIRED": "Kassenbenutzer nicht identifiziert.",
+      "POS_SIMULATION_NOT_ALLOWED": "Karten-POS nicht konfiguriert. Aura Syncro Support kontaktieren.",
+      "STRIPE_PAYMENT_FAILED": "Kartenzahlung fehlgeschlagen",
+      "STRIPE_PAYMENT_INTENT_REQUIRED": "Kartenzahlung fehlgeschlagen",
+      "STRIPE_AMOUNT_MISMATCH": "Ungültiger PaymentIntent für diese Bestellung",
+      "STRIPE_AMOUNT_OVERPAY": "Ungültiger PaymentIntent für diese Bestellung",
+      "STRIPE_PI_ORDER_MISMATCH": "Ungültiger PaymentIntent für diese Bestellung",
+      "STRIPE_PI_TENANT_MISMATCH": "Ungültiger PaymentIntent für diese Bestellung",
+      "STRIPE_PI_ALREADY_USED": "PaymentIntent bereits verwendet",
+      "INVALID_DISCOUNT_CODE": "Ungültiger Rabattcode",
+      "NO_LOYALTY_DISCOUNT": "Kein Treuerabatt für diesen Kunden",
+      "INVALID_TIP_WAITER": "Ungültiger Kellner"
+    }
   },
   "billing": {
     "pageTitle": "Die Plattform für Ihr Restaurant",
@@ -1204,7 +1225,21 @@
     "checkoutError": "Fehler beim Senden der Bestellung",
     "remove": "Entfernen",
     "increaseQty": "Menge erhöhen",
-    "decreaseQty": "Menge verringern"
+    "decreaseQty": "Menge verringern",
+    "errors": {
+      "MENU_ITEM_NOT_FOUND": "Gericht nicht gefunden oder nicht verfügbar",
+      "MENU_ITEM_UNAVAILABLE": "Gericht nicht verfügbar",
+      "MENU_ITEM_SOLD_OUT": "Gericht ausverkauft — Zutaten nicht ausreichend",
+      "INVALID_MODIFIER": "Ungültige Modifikatorauswahl",
+      "MODIFIER_MIN_NOT_MET": "Alle Pflichtoptionen auswählen",
+      "MODIFIER_MAX_EXCEEDED": "Zu viele Optionen ausgewählt",
+      "MODIFIER_SINGLE_ONLY": "Nur eine Option pro Gruppe wählen",
+      "ORDER_IN_PROGRESS": "Bestellung wird bearbeitet. Bitte kurz warten.",
+      "TABLE_NOT_FOUND": "Tisch nicht gefunden",
+      "TABLE_UNAVAILABLE": "Tisch nicht verfügbar",
+      "RESTAURANT_NOT_FOUND": "Restaurant nicht gefunden",
+      "SLOT_CONFLICT": "Zeitfenster oder Tisch nicht mehr verfügbar"
+    }
   },
   "qrBuilder": {
     "title": "QR-Menü Generator",

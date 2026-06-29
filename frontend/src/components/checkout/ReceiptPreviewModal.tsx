@@ -32,7 +32,7 @@ export interface CheckoutFinalizeResult {
   splitBreakdown?: {
     guests: Array<{ label: string; share: number }>
   }
-  receipt?: { simulatedEmailSent?: boolean; emailTo?: string | null }
+  receipt?: { emailSent?: boolean; emailTo?: string | null }
 }
 
 interface Props {

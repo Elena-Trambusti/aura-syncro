@@ -46,6 +46,19 @@ export function toDateInputInTimezone(timeZone: string, date = new Date()): stri
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date)
 }
 
+/** Calendar date in tenant TZ shifted by N days (for reservation day pills). */
+export function dateInputOffsetInTimezone(timeZone: string, offsetDays = 0): string {
+  const [y, m, d] = toDateInputInTimezone(timeZone).split('-').map(Number)
+  const anchor = new Date(Date.UTC(y, m - 1, d + offsetDays, 12))
+  return toDateInputInTimezone(timeZone, anchor)
+}
+
+/** Year and month (1–12) in tenant timezone — for report period defaults. */
+export function monthYearInTimezone(timeZone: string, date = new Date()): { year: number; month: number } {
+  const [year, month] = toDateInputInTimezone(timeZone, date).split('-').map(Number)
+  return { year, month }
+}
+
 export function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }

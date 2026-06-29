@@ -1022,6 +1022,7 @@
     "subtotal": "Subtotal",
     "tax": "IVA",
     "orderSent": "¡Pedido enviado a cocina!",
+    "minModifiers": "Selecciona al menos {{min}} opciones para {{group}}",
     "dishAdded": "¡Plato añadido!",
     "soldOut": "Agotado",
     "soldOutToast": "Plato agotado — ingredientes insuficientes en almacén",
@@ -1076,7 +1077,27 @@
     "simulatePrint": "Simular impresión",
     "simulateEmail": "Simular email",
     "printSimulated": "Impresión simulada",
-    "emailSimulated": "Email simulado"
+    "emailSimulated": "Email simulado",
+    "alreadyPaid": "Pago ya registrado",
+    "errors": {
+      "ORDER_NOT_FOUND": "Pedido no encontrado",
+      "ORDER_ALREADY_PAID": "Pedido ya pagado",
+      "ORDER_CANCELLED": "Pedido cancelado",
+      "PAYMENT_IN_PROGRESS": "Pago en curso. Espera unos segundos e inténtalo de nuevo.",
+      "CASH_SESSION_REQUIRED": "Abre la caja antes de cobrar en efectivo.",
+      "CASH_USER_REQUIRED": "Usuario de caja no identificado.",
+      "POS_SIMULATION_NOT_ALLOWED": "POS de tarjeta no configurado. Contacta con soporte Aura Syncro.",
+      "STRIPE_PAYMENT_FAILED": "Pago con tarjeta fallido",
+      "STRIPE_PAYMENT_INTENT_REQUIRED": "Pago con tarjeta fallido",
+      "STRIPE_AMOUNT_MISMATCH": "PaymentIntent no válido para este pedido",
+      "STRIPE_AMOUNT_OVERPAY": "PaymentIntent no válido para este pedido",
+      "STRIPE_PI_ORDER_MISMATCH": "PaymentIntent no válido para este pedido",
+      "STRIPE_PI_TENANT_MISMATCH": "PaymentIntent no válido para este pedido",
+      "STRIPE_PI_ALREADY_USED": "PaymentIntent ya utilizado",
+      "INVALID_DISCOUNT_CODE": "Código de descuento no válido",
+      "NO_LOYALTY_DISCOUNT": "Sin descuento de fidelidad para este cliente",
+      "INVALID_TIP_WAITER": "Camarero no válido"
+    }
   },
   "billing": {
     "pageTitle": "La plataforma pensada para tu restaurante",
@@ -1204,7 +1225,21 @@
     "checkoutError": "Error al enviar el pedido",
     "remove": "Eliminar",
     "increaseQty": "Aumentar cantidad",
-    "decreaseQty": "Disminuir cantidad"
+    "decreaseQty": "Disminuir cantidad",
+    "errors": {
+      "MENU_ITEM_NOT_FOUND": "Plato no encontrado o no disponible",
+      "MENU_ITEM_UNAVAILABLE": "Plato no disponible",
+      "MENU_ITEM_SOLD_OUT": "Plato agotado — ingredientes insuficientes",
+      "INVALID_MODIFIER": "Selección de modificadores no válida",
+      "MODIFIER_MIN_NOT_MET": "Selecciona todas las opciones obligatorias",
+      "MODIFIER_MAX_EXCEEDED": "Demasiadas opciones seleccionadas",
+      "MODIFIER_SINGLE_ONLY": "Elige solo una opción por grupo",
+      "ORDER_IN_PROGRESS": "Pedido en curso. Espera unos segundos.",
+      "TABLE_NOT_FOUND": "Mesa no encontrada",
+      "TABLE_UNAVAILABLE": "Mesa no disponible",
+      "RESTAURANT_NOT_FOUND": "Restaurante no encontrado",
+      "SLOT_CONFLICT": "Franja o mesa ya no disponible"
+    }
   },
   "qrBuilder": {
     "title": "Generador Menú QR",
