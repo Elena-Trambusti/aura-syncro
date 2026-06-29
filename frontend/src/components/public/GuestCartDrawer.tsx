@@ -98,7 +98,7 @@ export default function GuestCartDrawer({
         ...basePayload,
         customerName: customerName.trim() || undefined,
         customerEmail: customerEmail.trim() || undefined,
-      })
+      }, { headers: { 'X-Idempotency-Key': clientRequestId } })
       window.location.href = res.data.checkoutUrl
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
@@ -111,7 +111,7 @@ export default function GuestCartDrawer({
     if (items.length === 0) return
     setLoading('table')
     try {
-      await api.post('/public/orders', basePayload)
+      await api.post('/public/orders', basePayload, { headers: { 'X-Idempotency-Key': clientRequestId } })
       setOrderSuccess(true)
       onClearCart()
       toast.success(t('publicMenu.orderSuccess'))

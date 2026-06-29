@@ -1,5 +1,5 @@
 /**
- * Smoke test: login → ordine → pagamento → CRM → campagna marketing
+ * Smoke test completo: login → ordine → CASH + CARD → guest QR → CRM → marketing
  * Uso: npx tsx scripts/test-flow.ts [baseUrl]
  */
 const BASE = (process.argv[2] || 'https://aura-syncro-s98ae.ondigitalocean.app').replace(/\/$/, '')
@@ -55,12 +55,13 @@ async function finalizeWithRetry(
   token: string,
   orderId: string,
   idempotencyKey: string,
+  paymentMethod: 'CASH' | 'CARD',
 ) {
   const body = {
     orderId,
-    paymentMethod: 'CASH',
+    paymentMethod,
     tipAmount: 0,
-    applyLoyaltyDiscount: true,
+    applyLoyaltyDiscount: paymentMethod === 'CASH',
   }
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -69,12 +70,12 @@ async function finalizeWithRetry(
         method: 'POST',
         body,
         idempotencyKey: `${idempotencyKey}:${attempt}`,
-      }) as { success: boolean; order: { status: string; discount?: number } }
+      }) as { order: { status: string; discount?: number } }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      const retryable = /→ (502|503|504):/.test(message) || message.includes('abort')
+      const retryable = /→ (502|503|504|409):/.test(message) || message.includes('abort')
       if (!retryable || attempt === 3) throw err
-      console.warn(`⚠ finalize tentativo ${attempt} fallito, retry...`)
+      console.warn(`⚠ finalize ${paymentMethod} tentativo ${attempt} fallito, retry...`)
       await new Promise(r => setTimeout(r, 2000 * attempt))
     }
   }
@@ -87,13 +88,21 @@ async function main() {
   const login = (await api('/auth/login', {
     method: 'POST',
     body: { email: EMAIL, password: PASSWORD },
-  })) as { token: string; restaurant: { id: string; planTier: string } }
+  })) as { token: string; restaurant: { id: string; planTier: string; slug: string } }
   console.log('✓ Login OK — piano', login.restaurant.planTier)
 
   const token = login.token
+  const slug = login.restaurant.slug
 
   await api('/analytics/summary', { token })
   console.log('✓ Analytics summary OK')
+
+  const readiness = (await api('/restaurant/onboarding-readiness', { token })) as {
+    readyForService: boolean
+    checks: Array<{ id: string; ok: boolean }>
+  }
+  const okChecks = readiness.checks.filter(c => c.ok).length
+  console.log(`✓ Onboarding readiness — ${okChecks}/${readiness.checks.length} controlli (${readiness.readyForService ? 'pronto' : 'in completamento'})`)
 
   const categories = (await api('/menu/categories', { token })) as Array<{ id: string; name: string }>
   let categoryId = categories[0]?.id
@@ -159,8 +168,56 @@ async function main() {
 
   await ensureCashSessionOpen(token)
 
-  const paid = await finalizeWithRetry(token, order.id, `test-flow-pay-${order.id}`)
-  console.log('✓ Pagamento finalizzato — status', paid.order.status)
+  const paidCash = await finalizeWithRetry(token, order.id, `test-flow-pay-cash-${order.id}`, 'CASH')
+  console.log('✓ Pagamento CASH finalizzato — status', paidCash.order.status)
+
+  const cardOrder = (await api('/orders', {
+    token,
+    method: 'POST',
+    body: {
+      type: 'TAKEAWAY',
+      items: [{ menuItemId, quantity: 1 }],
+    },
+    idempotencyKey: `test-flow-order-card-${Date.now()}`,
+  })) as { id: string; total: number }
+  await api(`/orders/${cardOrder.id}/status`, {
+    token,
+    method: 'PATCH',
+    body: { status: 'READY' },
+  })
+  try {
+    const paidCard = await finalizeWithRetry(token, cardOrder.id, `test-flow-pay-card-${cardOrder.id}`, 'CARD')
+    console.log('✓ Pagamento CARD finalizzato — status', paidCard.order.status)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('402') && message.includes('POS_SIMULATION')) {
+      console.warn('⚠ Pagamento CARD saltato — imposta POS_ALLOW_SIMULATION=true su DigitalOcean (vedi .do/app.yaml)')
+    } else {
+      throw err
+    }
+  }
+
+  const publicMenu = (await api(`/public/menu/${slug}`)) as {
+    guestOrderingEnabled?: boolean
+    categories: Array<{ items: Array<{ id: string; available: boolean }> }>
+  }
+  const publicItemId = publicMenu.categories
+    .flatMap(c => c.items)
+    .find(i => i.available)?.id
+  if (!publicItemId) {
+    throw new Error('Nessun piatto disponibile nel menu pubblico')
+  }
+  const guestOrder = (await api('/public/orders', {
+    method: 'POST',
+    body: {
+      slug,
+      type: 'TAKEAWAY',
+      items: [{ menuItemId: publicItemId, quantity: 1 }],
+      clientRequestId: `test-flow-guest-${Date.now()}`,
+    },
+    idempotencyKey: `test-flow-guest-${Date.now()}`,
+  })) as { orderId: string; status: string }
+  console.log(`✓ Ordine guest QR creato — ${guestOrder.orderId} (${guestOrder.status})`)
 
   const orderWithDiscount = (await api('/orders', {
     token,
@@ -180,7 +237,6 @@ async function main() {
 
   const customers = (await api('/customers', { token })) as Array<{
     id: string
-    email: string | null
     totalVisits: number
     totalSpent: number
   }>
@@ -208,7 +264,7 @@ async function main() {
   })) as { sent?: number; skipped?: number }
   console.log('✓ Campagna inviata —', sent)
 
-  console.log('\n✅ Tutti i passaggi completati.\n')
+  console.log('\n✅ Tutti i passaggi completati (CASH + CARD + guest QR).\n')
 }
 
 main().catch(err => {

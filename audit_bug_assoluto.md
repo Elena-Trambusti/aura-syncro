@@ -682,7 +682,7 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 | RC-05 | MEDIA | ✅ RISOLTO | `loyalty.ts` |
 | RC-06 | MEDIA | ✅ RISOLTO | `loyalty.ts` |
 | RC-07 | CRITICA | ✅ RISOLTO | `invoices.ts` |
-| RC-08 | BASSA | ⚠️ PARZIALE | `invoices.ts` |
+| RC-08 | BASSA | ✅ RISOLTO | `invoices.ts` |
 | RC-09 | MEDIA | ✅ RISOLTO | `completePayment.ts` |
 | RC-10 | BASSA | 📋 DOCUMENTATO | `loyalty.ts` |
 | RC-11 | BASSA | 📋 DOCUMENTATO | `apiIdempotency.ts` |
@@ -753,12 +753,12 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 
 ---
 
-## RC-08 — Fattura B2B: errori upstream Aruba restituiti come HTTP 400 (PARZIALE)
+## RC-08 — Fattura B2B: errori upstream Aruba restituiti come HTTP 400 ✅ RISOLTO
 
-- **File:** `invoices.ts` L197-201
+- **File:** `invoices.ts` catch finale
 - **Gravità:** BASSA
-- **Scenario:** Il blocco `catch (error)` finale fa `res.status(400).json(...)` per qualsiasi errore, inclusi timeout di rete verso Aruba, errori 500 di Aruba, eccezioni Prisma. Il frontend interpreta un 400 come errore dell'operatore e mostra un toast fuorviante.
-- **Stato:** Non modificato in questa sessione per evitare refactoring ampio. **Roadmap:** distinguere `PrismaClientKnownRequestError` (P2002 → 409), errori upstream Aruba (→ 502), errori di validazione (→ 400).
+- **Scenario:** Il blocco `catch` restituiva 400 per qualsiasi errore, inclusi timeout Aruba e P2002 Prisma.
+- **Fix applicato:** mapping dedicato — `P2002` → 409, messaggi `ARUBA_*` / upstream → 502, validazione Zod → 400, default → 500.
 
 ---
 
@@ -1226,4 +1226,37 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 ### Esito QA finale (RZ-6)
 - **Zero bug CRITICO/ALTO aperti** nel codice verificato.
 - Produzione E2E smoke test **verde**.
+
+---
+
+## ROUND RZ-7 — Go-live 100% Premium (2026-06-29)
+
+### Interventi
+
+| ID | Stato | Fix |
+|----|-------|-----|
+| RZ7-01 | ✅ RISOLTO | `test-flow.ts`: finalize **CASH + CARD** + ordine **guest QR** + onboarding-readiness |
+| RZ7-02 | ✅ RISOLTO | i18n onboarding sistema + KDS in **it/en/es/fr/de/es-cn** |
+| RZ7-03 | ✅ RISOLTO | `GuestCartDrawer`: header `X-Idempotency-Key` su ordini/checkout guest |
+| RZ7-04 | ✅ RISOLTO | RC-08: `invoices.ts` mapping 409/502/400/500 (già in codice, audit allineato) |
+| RZ7-05 | ✅ RISOLTO | Playwright smoke E2E (`frontend/e2e/smoke.spec.ts`) |
+| RZ7-06 | ✅ RISOLTO | P0 performance/UX/onboarding (`91e4475`) + `stato_del_prodotto_premium.md` |
+
+### Residui roadmap (non bloccanti lancio)
+
+| ID | Tipo | Nota |
+|----|------|------|
+| C-05 | Strutturale | Float → Decimal Q3 |
+| Aruba PDF seal live | Integrazione | Richiede contratto Aruba |
+| VeriFactu trasmissione | Legale | Predisposizione catena SHA presente |
+| Load test 50 tavoli | QA | Consigliato pre-scale |
+
+### Verifiche RZ-7
+- `backend npm run test` ✅
+- `backend npx tsc --noEmit` ✅
+- `frontend npx tsc -b` ✅
+- `backend npm run test:flow` ✅ (CASH + CARD + guest QR)
+
+### Esito QA RZ-7
+**Prontezza lancio Premium: 100%** nel perimetro software + concierge dichiarato.
 

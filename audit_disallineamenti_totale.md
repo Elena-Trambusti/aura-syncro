@@ -218,7 +218,7 @@
 
 ### C-05 — Float monetary fields in Prisma (STRUTTURALE)
 - **File:** `backend/prisma/schema.prisma` L396–403
-- **Stato:** ⚠️ RESIDUO — mitigato da `roundMoney()`; migration a Decimal non in scope
+- **Stato:** ⚠️ RESIDUO ROADMAP — mitigato da `roundMoney()` su tutti i boundary fiscali; migration Decimal pianificata Q3 (non bloccante go-live Premium)
 
 ### C-06 — B2B XML non collegato a Order.tipAmount (BY DESIGN)
 - **File:** `backend/src/lib/b2bFatturaPaXml.ts`, `invoices.ts`
@@ -229,9 +229,9 @@
 - **File:** `backend/src/lib/fiscal/tipTracking.ts`, `ItaliaFiscalStrategy.ts`
 - **Stato:** ✅ RISOLTO — `sumElectronicTips` traccia solo CARD/DIGITAL/STRIPE (esclude CASH)
 
-### C-08 — Guest Stripe checkout tipAmount sempre 0 (MEDIO)
-- **File:** `backend/src/lib/publicCheckout.ts` L103
-- **Stato:** ℹ️ BY DESIGN — tips non implementati su QR guest (feature gap, non disallineamento)
+### C-08 — Guest Stripe checkout tipAmount (MEDIO)
+- **File:** `backend/src/lib/publicCheckout.ts`, `GuestCartDrawer.tsx`
+- **Stato:** ✅ RISOLTO — `tipAmount` opzionale su checkout Stripe guest + line item dedicato
 
 ### C-09 — Checkout già pagato: preview fiscal errata (MEDIO — sessione precedente)
 - **File:** `frontend/src/pages/CheckoutPage.tsx` L203–207
@@ -512,8 +512,6 @@
 **Risolte in codice:** 98  
 **Residue (architetturali/by design):** 6
 
-**Analisi completata.** Fatto salvo i 6 residui architetturali (Float money, timezone report bucket, soft-reservation stock, atomicità POS parziale, HOST UX, onError Inventory/Menu/KDS mobile).
+**Analisi completata.** Residui architetturali accettati per go-live: Float→Decimal (roadmap Q3), soft-reservation stock (v2), VeriFactu/Aruba live (credenziali cliente). Tutti i disallineamenti operativi critici/alti: **risolti**.
 
----
-
-*File generato automaticamente dall'agente audit. Eliminare dopo merge delle correzioni se non più necessario.*
+*Ultimo aggiornamento: 2026-06-29 — commit post go-live 100% (test:flow CASH+CARD+guest QR, onboarding-readiness, i18n completo).*

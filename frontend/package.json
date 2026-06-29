@@ -9,7 +9,9 @@
     "build": "node scripts/generate-pwa-icons.mjs && tsc -b && vite build",
     "generate-pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -51,6 +53,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
