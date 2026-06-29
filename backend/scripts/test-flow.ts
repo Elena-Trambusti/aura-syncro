@@ -148,6 +148,13 @@ async function main() {
   })) as { id: string }
   console.log('✓ Cliente CRM creato')
 
+  await api('/loyalty/earn', {
+    token,
+    method: 'POST',
+    body: { customerId: customer.id, points: 500, description: 'test-flow Gold tier' },
+  })
+  console.log('✓ Cliente promosso a tier Gold (500 pt)')
+
   const order = (await api('/orders', {
     token,
     method: 'POST',

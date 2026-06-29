@@ -771,12 +771,12 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 
 ---
 
-## RC-10 — `loyaltyHelpers.ts`: bootstrapLoyaltyProgram chiamato in GET overview (performance)
+## RC-10 — `loyaltyHelpers.ts`: bootstrapLoyaltyProgram chiamato in GET overview (performance) ✅ RISOLTO
 
-- **File:** `loyalty.ts` L194, `loyaltyHelpers.ts` L39-53
+- **File:** `loyalty.ts` GET `/overview`
 - **Gravità:** BASSA
-- **Scenario:** Ogni `GET /loyalty/overview` esegue `bootstrapLoyaltyProgram()` che conta tier, crea default se assenti, poi itera tutti i clienti per `updateCustomerTier()`. Con 500+ clienti questa è una query N+1 sincrona bloccante su ogni caricamento dashboard.
-- **Stato:** Non modificato. **Roadmap:** spostare bootstrap a startup o primo login OWNER; `updateCustomerTier` in background job.
+- **Scenario:** Ogni caricamento dashboard eseguiva sync tier su tutti i clienti.
+- **Fix applicato:** `bootstrapLoyaltyProgram` invocato solo se il ristorante non ha ancora tier (`tierCount === 0`).
 
 ---
 
@@ -1240,7 +1240,10 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 | RZ7-03 | ✅ RISOLTO | `GuestCartDrawer`: header `X-Idempotency-Key` su ordini/checkout guest |
 | RZ7-04 | ✅ RISOLTO | RC-08: `invoices.ts` mapping 409/502/400/500 (già in codice, audit allineato) |
 | RZ7-05 | ✅ RISOLTO | Playwright smoke E2E (`frontend/e2e/smoke.spec.ts`) |
-| RZ7-06 | ✅ RISOLTO | P0 performance/UX/onboarding (`91e4475`) + `stato_del_prodotto_premium.md` |
+| RZ7-07 | ✅ RISOLTO | `isPosSimulationAllowed()` — accetta `POS_USE_SIMULATION` oltre a `POS_ALLOW_SIMULATION` |
+| RZ7-08 | ✅ RISOLTO | `/api/health` espone flag runtime POS per ops |
+| RZ7-09 | ✅ RISOLTO | `test-flow`: earn 500 pt → verifica sconto Gold |
+| RZ7-10 | ✅ RISOLTO | RC-10: bootstrap loyalty solo se tier assenti |
 
 ### Residui roadmap (non bloccanti lancio)
 

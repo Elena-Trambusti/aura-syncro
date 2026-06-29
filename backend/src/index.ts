@@ -44,7 +44,7 @@ import { runAllMarketingJobs } from './lib/marketingSend'
 import { errorHandler } from './middleware/errorHandler'
 import { requirePermission } from './middleware/permissions'
 import { setupSocketHandlers } from './socket/handlers'
-import { validateEnv } from './lib/env'
+import { validateEnv, isPosSimulationAllowed } from './lib/env'
 import { getVapidPublicKey } from './lib/webPush'
 import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
@@ -165,7 +165,15 @@ app.use('/api/checkout', authenticate, checkoutRouter)
 app.use('/api/ai', authenticate, requireDashboardAccess, requireProPlan, aiRouter)
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    runtime: {
+      posSimulationAllowed: isPosSimulationAllowed(),
+      posUseSimulation: process.env.POS_USE_SIMULATION !== 'false',
+      posAllowSimulation: process.env.POS_ALLOW_SIMULATION === 'true',
+    },
+  })
 })
 
 // Gestore Errori Sentry (deve essere DOPO le rotte ma PRIMA del gestore errori custom)

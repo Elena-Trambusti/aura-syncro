@@ -207,7 +207,10 @@ loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: A
 loyaltyRouter.get('/overview', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
-  await bootstrapLoyaltyProgram(restaurantId)
+  const tierCount = await prisma.loyaltyTier.count({ where: { restaurantId } })
+  if (tierCount === 0) {
+    await bootstrapLoyaltyProgram(restaurantId)
+  }
 
   const [tiers, totalMembers, activeThisMonth, topCustomers] = await Promise.all([
     prisma.loyaltyTier.findMany({

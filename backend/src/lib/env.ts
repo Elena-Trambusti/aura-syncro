@@ -34,3 +34,10 @@ export function isStripeWebhookSecretConfigured(): boolean {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   return !!secret && !secret.includes('inserisci')
 }
+
+/** Produzione: consente addebito carta simulato (concierge / demo fino a Stripe Terminal). */
+export function isPosSimulationAllowed(): boolean {
+  if (!isProduction()) return true
+  return process.env.POS_ALLOW_SIMULATION === 'true'
+    || process.env.POS_USE_SIMULATION === 'true'
+}

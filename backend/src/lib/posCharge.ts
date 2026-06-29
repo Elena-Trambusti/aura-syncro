@@ -1,6 +1,6 @@
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { loadRestaurantPosConfig } from './posIntegration'
-import { isProduction } from './env'
+import { isProduction, isPosSimulationAllowed } from './env'
 import { prisma } from './prisma'
 
 export interface PosChargeBreakdown {
@@ -162,7 +162,7 @@ export async function chargePosCard(
   }
 
   if (posConfig.isCardChargeSimulated) {
-    if (isProduction() && process.env.POS_ALLOW_SIMULATION !== 'true') {
+    if (isProduction() && !isPosSimulationAllowed()) {
       throw new Error('POS_SIMULATION_NOT_ALLOWED')
     }
     void enrichedMeta

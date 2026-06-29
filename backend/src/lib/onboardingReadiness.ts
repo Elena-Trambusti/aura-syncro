@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { loadRestaurantPosConfig } from './posIntegration'
 import { buildFiscalConfig } from './taxEngine'
+import { isPosSimulationAllowed } from './env'
 
 export type OnboardingReadiness = {
   menuConfigured: boolean
@@ -45,7 +46,7 @@ export async function computeOnboardingReadiness(restaurantId: string): Promise<
   const posConfig = await loadRestaurantPosConfig(restaurantId)
   const posReady =
     posConfig.mode !== 'PENDING_SETUP'
-    || process.env.POS_ALLOW_SIMULATION === 'true'
+    || isPosSimulationAllowed()
   const subscriptionActive = restaurant?.settings?.hasActiveSubscription === true
 
   const checks = [
