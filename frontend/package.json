@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "Frontend Aura Syncro — gestionale ristoranti SaaS",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "node scripts/write-manifest.mjs && vite",
     "build": "node scripts/generate-pwa-icons.mjs && tsc -b && vite build",
