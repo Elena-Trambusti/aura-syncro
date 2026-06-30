@@ -1,38 +1,26 @@
 import './instrument'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Toaster } from 'react-hot-toast'
-import './i18n'
+import { bootstrapI18n } from './i18n/bootstrap'
 import App from './App'
 import './index.css'
 import AppProviders from './components/AppProviders'
 import DeferredMetrics from './components/DeferredMetrics'
+import DeferredToaster from './components/DeferredToaster'
 import ErrorBoundary from './components/ErrorBoundary'
 import SentryTestButton from './components/SentryTestButton'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <AppProviders>
-        <App />
-        <DeferredMetrics />
-        <SentryTestButton />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#1A1D26',
-              color: '#F4F4F5',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            },
-            success: { iconTheme: { primary: '#D4AF37', secondary: '#0B0E14' } },
-            error: { iconTheme: { primary: '#f87171', secondary: '#0B0E14' } },
-          }}
-        />
-      </AppProviders>
-    </ErrorBoundary>
-  </StrictMode>,
-)
+void bootstrapI18n().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <AppProviders>
+          <App />
+          <DeferredMetrics />
+          <DeferredToaster />
+          <SentryTestButton />
+        </AppProviders>
+      </ErrorBoundary>
+    </StrictMode>,
+  )
+})

@@ -1,10 +1,8 @@
-import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
-
-const LandingBelowFold = lazy(() => import('../components/landing/LandingBelowFold'))
+import LandingBelowFoldLoader from '../components/landing/LandingBelowFoldLoader'
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation()
@@ -33,16 +31,7 @@ export default function LandingPage() {
       <LandingNav />
       <main className="flex-1">
         <LandingHero />
-        <Suspense
-          fallback={
-            <div
-              className="min-h-[1800px] md:min-h-[2400px]"
-              aria-hidden
-            />
-          }
-        >
-          <LandingBelowFold />
-        </Suspense>
+        <LandingBelowFoldLoader />
       </main>
     </div>
   )
