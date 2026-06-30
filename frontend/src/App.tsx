@@ -6,51 +6,14 @@
  * CONFIDENZIALE  NON DISTRIBUIRE
  */
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useLayoutEffect } from 'react'
+import { Suspense, lazy, useLayoutEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { isDemoUserEmail } from './lib/demoAccounts'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import RegisterPage from './pages/RegisterPage'
-import PricingPage from './pages/PricingPage'
-import PrivacyPage from './pages/PrivacyPage'
-import TermsPage from './pages/TermsPage'
-import CookiePage from './pages/CookiePage'
-import DPAPage from './pages/DPAPage'
-import ContactPage from './pages/ContactPage'
-import GuestPrivacyPage from './pages/GuestPrivacyPage'
-import DashboardLayout from './components/layout/DashboardLayout'
-import DashboardPage from './pages/DashboardPage'
-import TablesPage from './pages/TablesPage'
-import OrdersPage from './pages/OrdersPage'
-import MenuPage from './pages/MenuPage'
-import ReservationsPage from './pages/ReservationsPage'
-import CrmPage from './pages/CrmPage'
-import StaffPage from './pages/StaffPage'
-import InventoryPage from './pages/InventoryPage'
-import AnalyticsPage from './pages/AnalyticsPage'
-import SettingsPage from './pages/SettingsPage'
-import LoyaltyPage from './pages/LoyaltyPage'
-import MarketingPage from './pages/MarketingPage'
-import ReportsPage from './pages/ReportsPage'
-import ReportFiscal from './pages/ReportFiscal'
-import KitchenDisplayPage from './pages/KitchenDisplayPage'
-import PublicMenuPage from './pages/PublicMenuPage'
-import PublicReservationPage from './pages/PublicReservationPage'
-import PaymentSuccessPage from './pages/PaymentSuccessPage'
-import PaymentCancelPage from './pages/PaymentCancelPage'
-import PaymentDepositSuccessPage from './pages/PaymentDepositSuccessPage'
-import PaymentsPage from './pages/PaymentsPage'
-import AIPredictivePage from './pages/AIPredictivePage'
-import CheckoutPage from './pages/CheckoutPage'
-import BillingPage from './pages/BillingPage'
-import CashDrawerPage from './pages/CashDrawerPage'
-import QRBuilderPage from './pages/QRBuilderPage'
-import OnboardingPage from './pages/OnboardingPage'
-import PlatformAdminPage from './pages/PlatformAdminPage'
 import LandingPage from './pages/LandingPage'
-import InvoicesPage from './pages/InvoicesPage'
 import LandingRoute from './components/landing/LandingRoute'
 import RequireRole from './components/auth/RequireRole'
 import RequireProPlan from './components/auth/RequireProPlan'
@@ -60,6 +23,44 @@ import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import PwaRegistrar from './components/PwaRegistrar'
 import { CookieBanner } from './components/landing/CookieBanner'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
+
+const PricingPage = lazy(() => import('./pages/PricingPage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
+const CookiePage = lazy(() => import('./pages/CookiePage'))
+const DPAPage = lazy(() => import('./pages/DPAPage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
+const GuestPrivacyPage = lazy(() => import('./pages/GuestPrivacyPage'))
+const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const TablesPage = lazy(() => import('./pages/TablesPage'))
+const OrdersPage = lazy(() => import('./pages/OrdersPage'))
+const MenuPage = lazy(() => import('./pages/MenuPage'))
+const ReservationsPage = lazy(() => import('./pages/ReservationsPage'))
+const CrmPage = lazy(() => import('./pages/CrmPage'))
+const StaffPage = lazy(() => import('./pages/StaffPage'))
+const InventoryPage = lazy(() => import('./pages/InventoryPage'))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'))
+const MarketingPage = lazy(() => import('./pages/MarketingPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+const ReportFiscal = lazy(() => import('./pages/ReportFiscal'))
+const KitchenDisplayPage = lazy(() => import('./pages/KitchenDisplayPage'))
+const PublicMenuPage = lazy(() => import('./pages/PublicMenuPage'))
+const PublicReservationPage = lazy(() => import('./pages/PublicReservationPage'))
+const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage'))
+const PaymentCancelPage = lazy(() => import('./pages/PaymentCancelPage'))
+const PaymentDepositSuccessPage = lazy(() => import('./pages/PaymentDepositSuccessPage'))
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage'))
+const AIPredictivePage = lazy(() => import('./pages/AIPredictivePage'))
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
+const BillingPage = lazy(() => import('./pages/BillingPage'))
+const CashDrawerPage = lazy(() => import('./pages/CashDrawerPage'))
+const QRBuilderPage = lazy(() => import('./pages/QRBuilderPage'))
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'))
+const PlatformAdminPage = lazy(() => import('./pages/PlatformAdminPage'))
+const InvoicesPage = lazy(() => import('./pages/InvoicesPage'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -89,7 +90,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<AuthLoadingScreen />}>
+      <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
@@ -164,7 +166,8 @@ function AppRoutes() {
         <Route path="impostazioni" element={<RequireRole roles={ADMIN_NAV_ROLES}><SettingsPage /></RequireRole>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   )
 }
 

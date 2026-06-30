@@ -210,8 +210,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       applyTenantCssVars(cached.restaurant.colorTheme)
     }
 
-    api.get('/auth/me')
+    const hasAuthHint = Boolean(getSessionToken() || cached)
+    if (!hasAuthHint) {
+      setIsLoading(false)
+      return
+    }
+
+    api.get('/auth/me', {
+      validateStatus: (status) => status === 200 || status === 401 || status === 403,
+    })
       .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          logout()
+          return
+        }
         if (res.data.token) {
           setSessionToken(res.data.token)
           setToken(res.data.token)
@@ -224,12 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         commitRestaurant(normalized, false)
         writeAuthCache(res.data.user, normalized)
       })
-      .catch((error: { response?: { status?: number } }) => {
-        const status = error?.response?.status
-        if (status === 401 || status === 403) {
-          logout()
-          return
-        }
+      .catch(() => {
         if (!cached) {
           setIsLoading(false)
           return
