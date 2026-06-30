@@ -33,9 +33,9 @@ export default function LandingHero() {
 
   return (
     <section className="relative overflow-hidden bg-transparent px-4 pb-20 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-28 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))]">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 -left-20 h-[600px] w-[600px] rounded-full bg-amber-500/20 blur-[120px]" />
-        <div className="absolute top-1/4 -right-32 h-[700px] w-[700px] rounded-full bg-orange-500/15 blur-[140px]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+        <div className="absolute -top-32 -left-20 hidden h-[600px] w-[600px] rounded-full bg-amber-500/20 blur-[120px] md:block" />
+        <div className="absolute top-1/4 -right-32 hidden h-[700px] w-[700px] rounded-full bg-orange-500/15 blur-[140px] lg:block" />
       </div>
 
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">

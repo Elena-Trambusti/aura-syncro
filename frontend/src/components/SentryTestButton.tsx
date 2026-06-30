@@ -1,9 +1,7 @@
 import toast from 'react-hot-toast'
-import { Sentry } from '../instrument'
 
 /**
  * Test Sentry (step 3 wizard) — solo in sviluppo.
- * React non propaga `throw` nei click: usiamo captureException.
  */
 export default function SentryTestButton() {
   if (!import.meta.env.DEV) return null
@@ -13,6 +11,7 @@ export default function SentryTestButton() {
       type="button"
       onClick={() => {
         void (async () => {
+          const Sentry = await import('@sentry/react')
           const err = new Error('This is your first error!')
           const eventId = Sentry.captureException(err)
           const sent = await Sentry.flush(5000)

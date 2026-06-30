@@ -1,24 +1,21 @@
 import './instrument'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { Toaster } from 'react-hot-toast'
 import './i18n'
 import App from './App'
-import { Analytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/react'
 import './index.css'
-import { queryClient, idbPersister } from './lib/queryClient'
+import AppProviders from './components/AppProviders'
+import DeferredMetrics from './components/DeferredMetrics'
 import ErrorBoundary from './components/ErrorBoundary'
 import SentryTestButton from './components/SentryTestButton'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
+      <AppProviders>
         <App />
-        <Analytics />
-        <SpeedInsights />
+        <DeferredMetrics />
         <SentryTestButton />
         <Toaster
           position="top-right"
@@ -35,7 +32,7 @@ createRoot(document.getElementById('root')!).render(
             error: { iconTheme: { primary: '#f87171', secondary: '#0B0E14' } },
           }}
         />
-      </PersistQueryClientProvider>
+      </AppProviders>
     </ErrorBoundary>
   </StrictMode>,
 )

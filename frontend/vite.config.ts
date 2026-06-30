@@ -29,6 +29,23 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
+            return 'vendor-react'
+          }
+          if (id.includes('@tanstack')) return 'vendor-query'
+          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
+          if (id.includes('axios') || id.includes('socket.io')) return 'vendor-network'
+          if (id.includes('@sentry')) return 'vendor-sentry'
+          if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n'
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
