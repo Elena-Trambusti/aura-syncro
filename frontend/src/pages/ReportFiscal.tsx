@@ -16,7 +16,7 @@ import {
   FileDown, CalendarRange, Loader2, Receipt, Coins, Wallet,
   Sparkles, AlertCircle, Hash,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 type FilterMode = 'day' | 'month' | 'range'
 

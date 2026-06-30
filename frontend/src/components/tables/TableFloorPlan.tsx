@@ -308,15 +308,15 @@ function TableTile({
 }
 
 export const TABLE_LEGEND_DOT: Record<TableStatus, string> = {
-  FREE: 'bg-emerald-500/100',
-  OCCUPIED: 'bg-aura-gold',
-  RESERVED: 'bg-amber-400',
-  CLEANING: 'bg-blue-500/100',
+  FREE: 'bg-[#8A9A7B]',
+  OCCUPIED: 'bg-[#C5A059]',
+  RESERVED: 'bg-[#C9A96E]',
+  CLEANING: 'bg-[#7A9BB8]',
 }
 
 export const TABLE_STATUS_BADGE: Record<TableStatus, string> = {
-  FREE: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25',
-  OCCUPIED: 'bg-aura-gold/10 text-aura-gold border border-aura-gold/25',
-  RESERVED: 'bg-aura-gold/10 text-aura-gold border border-aura-gold/25',
-  CLEANING: 'bg-blue-500/10 text-blue-400 border border-blue-500/25',
+  FREE: 'bg-[#0B0E14]/80 text-[#8A9A7B] border border-white/[0.08]',
+  OCCUPIED: 'bg-[#0B0E14]/80 text-[#C5A059] border border-[#C5A059]/25',
+  RESERVED: 'bg-[#0B0E14]/80 text-[#C9A96E] border border-[#C9A96E]/25',
+  CLEANING: 'bg-[#0B0E14]/80 text-[#7A9BB8] border border-[#7A9BB8]/30',
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
@@ -10,6 +10,7 @@ import GuestCartBar from '../components/public/GuestCartBar'
 import GuestCartDrawer from '../components/public/GuestCartDrawer'
 import GuestItemCustomizer, { type GuestMenuItemForCustomize } from '../components/public/GuestItemCustomizer'
 import { useGuestCart } from '../hooks/useGuestCart'
+import AuraIcon from '../components/ui/AuraIcon'
 import {
   AlertCircle, Search, X, Star, Wheat, Milk, Egg, Fish, Shell,
   Nut, Bean, Clock, Flame, UtensilsCrossed, CalendarDays, Plus,
@@ -303,7 +304,7 @@ export default function PublicMenuPage() {
             {data.restaurant.logo ? (
               <img src={data.restaurant.logo} alt={data.restaurant.name} className="h-full w-full object-cover" />
             ) : (
-              <UtensilsCrossed className="h-10 w-10 text-aura-gold" strokeWidth={1.5} />
+              <AuraIcon icon={UtensilsCrossed} size="hero" weight="display" className="text-aura-gold" />
             )}
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-aura-gold mb-3">
@@ -324,7 +325,7 @@ export default function PublicMenuPage() {
 
         <div className="mb-6 rounded-2xl border border-white/[0.04] bg-navy-surface/40 backdrop-blur-md px-4 sm:px-6 py-4 sm:py-5 text-center shadow-lg ring-1 ring-white/[0.02]">
           <div className="flex flex-col items-center gap-2">
-            <UtensilsCrossed className="h-5 w-5 text-aura-gold/70" aria-hidden />
+            <AuraIcon icon={UtensilsCrossed} size="lg" className="text-aura-gold/70" />
             <p className="text-sm font-medium leading-relaxed text-slate-200">
               {guestOrderingEnabled
                 ? (tableNumber != null

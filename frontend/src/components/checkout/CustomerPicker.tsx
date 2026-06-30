@@ -6,7 +6,7 @@ import { Search, User, Loader2 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 export interface CustomerOption {
   id: string

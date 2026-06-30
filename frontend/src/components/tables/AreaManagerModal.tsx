@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { X, Save, Edit2, Map } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { ui } from '../../lib/ui'
+import GlassModal from '../ui/GlassModal'
+import AuraIcon from '../ui/AuraIcon'
 
 interface AreaManagerModalProps {
   areas: string[]
@@ -30,7 +32,7 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
     },
     onError: () => {
       toast.error(t('common.error', { defaultValue: 'Errore imprevisto' }))
-    }
+    },
   })
 
   const handleSave = (oldName: string | null) => {
@@ -39,82 +41,69 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-      <div className={ui.modal}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className={ui.modalTitle}>
-            <Map className="w-5 h-5 text-aura-gold inline-block mr-2" />
-            Gestione Zone
-          </h3>
-          <button onClick={onClose} className="p-2 rounded-full text-fumo hover:text-white hover:bg-white/10 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-sm text-fumo mb-6 leading-relaxed">
-          Le zone vengono generate automaticamente in base ai tavoli presenti. Rinomina una zona per spostare tutti i tavoli associati.
-        </p>
-
-        <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-          {areas.map(area => (
-            <div key={area || 'default'} className="p-3 rounded-xl bg-black/20 border border-white/5 flex items-center justify-between group">
-              {editingArea === area ? (
-                <div className="flex items-center gap-2 w-full">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newName}
-                    onChange={e => setNewName(e.target.value)}
-                    className={ui.input}
-                    placeholder="Nuovo nome..."
-                    onKeyDown={e => e.key === 'Enter' && handleSave(area)}
-                  />
-                  <button
-                    onClick={() => handleSave(area)}
-                    disabled={renameArea.isPending}
-                    className="p-2 rounded-lg bg-aura-gold text-navy hover:bg-aura-gold/90 transition-colors"
-                  >
-                    <Save className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setEditingArea(null)}
-                    className="p-2 rounded-lg text-fumo hover:text-white transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <span className="text-base font-semibold text-pietra">
-                    {area || 'Sala Principale'}
-                  </span>
-                  <button
-                    onClick={() => {
-                      setEditingArea(area)
-                      setNewName(area || 'Sala Principale')
-                    }}
-                    className="p-2 rounded-lg text-fumo opacity-0 group-hover:opacity-100 hover:text-aura-gold hover:bg-white/5 transition-all"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
-
-          {areas.length === 0 && (
-            <div className="text-center p-6 bg-white/5 rounded-xl border border-white/5 border-dashed">
-              <p className="text-sm text-fumo">Nessuna zona creata. Crea un tavolo per iniziare.</p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-pietra hover:bg-white/10 transition-colors">
-            Chiudi
-          </button>
-        </div>
+    <GlassModal onClose={onClose} maxWidth="lg">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className={ui.modalTitle}>
+          <AuraIcon icon={Map} size="lg" className="mr-2 inline text-aura-gold" />
+          {t('tables.areaManagerTitle', { defaultValue: 'Gestione Zone' })}
+        </h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full p-2 text-fumo transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <AuraIcon icon={X} size="lg" />
+        </button>
       </div>
-    </div>
+
+      <p className="mb-6 text-sm leading-relaxed text-fumo">
+        {t('tables.areaManagerHint', {
+          defaultValue:
+            'Le zone vengono generate automaticamente in base ai tavoli presenti. Rinomina una zona per spostare tutti i tavoli associati.',
+        })}
+      </p>
+
+      <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-2">
+        {areas.map(area => (
+          <div
+            key={area || 'default'}
+            className="aura-glass group flex items-center justify-between rounded-xl p-3"
+          >
+            {editingArea === area ? (
+              <div className="flex flex-1 items-center gap-2">
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  className={ui.input + ' flex-1'}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSave(area || null)}
+                  className="rounded-lg bg-aura-gold/20 p-2 text-aura-gold hover:bg-aura-gold/30"
+                >
+                  <AuraIcon icon={Save} size="md" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className="font-medium text-pietra">{area || t('tables.defaultArea', { defaultValue: 'Sala principale' })}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingArea(area)
+                    setNewName(area || '')
+                  }}
+                  className="rounded-lg p-2 text-fumo opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-aura-gold"
+                >
+                  <AuraIcon icon={Edit2} size="md" />
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </GlassModal>
   )
 }

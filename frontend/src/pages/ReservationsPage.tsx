@@ -7,7 +7,7 @@ import {
   Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, ListOrdered,
   CreditCard, Copy, ExternalLink, UserCheck, LogOut, Link2, ChevronDown,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { useRole } from '../hooks/useRole'
 import WaitlistPanel from '../components/reservations/WaitlistPanel'
 import AssignTableModal from '../components/reservations/AssignTableModal'

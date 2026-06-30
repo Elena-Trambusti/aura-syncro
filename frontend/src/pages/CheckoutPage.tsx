@@ -13,7 +13,7 @@ import CustomerPicker from '../components/checkout/CustomerPicker'
 import {
   ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import {
   isPaymentAlreadyPaid,
   isPaymentInProgress,

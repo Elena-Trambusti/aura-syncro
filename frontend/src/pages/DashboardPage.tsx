@@ -370,7 +370,7 @@ export default function DashboardPage() {
                     type="monotone"
                     dataKey="revenue"
                     stroke={BRAND.gold}
-                    strokeWidth={2.5}
+                    strokeWidth={2}
                     fill="url(#revenueGradient)"
                     isAnimationActive
                     animationDuration={1200}

@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus, Loader2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { getSocket } from '../lib/socket'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import { useKitchenOrders } from '../hooks/useKitchenOrders'
@@ -352,10 +352,7 @@ export default function KitchenDisplayPage() {
     const onNewOrder = (order: KitchenOrder) => {
       if (!orderNeedsKitchenAttention(order)) return
       setNewOrderAlert(true)
-      toast(`🔔 ${t('kitchen.newOrder')}`, {
-        style: { background: '#c9a227', color: '#fff', fontWeight: 'bold' },
-        duration: 4000,
-      })
+      toast.kitchen(t('kitchen.newOrder'), { duration: 4000 })
       if (alertTimer) clearTimeout(alertTimer)
       alertTimer = setTimeout(() => setNewOrderAlert(false), 3000)
     }

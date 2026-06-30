@@ -6,7 +6,7 @@ import App from './App'
 import './index.css'
 import AppProviders from './components/AppProviders'
 import DeferredMetrics from './components/DeferredMetrics'
-import DeferredToaster from './components/DeferredToaster'
+import AuraSonner from './components/AuraSonner'
 import ErrorBoundary from './components/ErrorBoundary'
 import SentryTestButton from './components/SentryTestButton'
 
@@ -17,7 +17,7 @@ void bootstrapI18n().then(() => {
         <AppProviders>
           <App />
           <DeferredMetrics />
-          <DeferredToaster />
+          <AuraSonner />
           <SentryTestButton />
         </AppProviders>
       </ErrorBoundary>

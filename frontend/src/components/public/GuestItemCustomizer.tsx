@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { X } from 'lucide-react'
 import { formatCurrency, cn } from '../../lib/utils'
 import type { GuestModifierGroup } from '../../hooks/useGuestCart'

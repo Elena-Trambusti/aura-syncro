@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import i18n from '../i18n'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
 import { bootstrapSessionToken, clearSessionToken, getSessionToken, setSessionToken } from '../lib/sessionToken'

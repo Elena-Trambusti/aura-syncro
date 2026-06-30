@@ -7,7 +7,7 @@ import { BRAND } from '../lib/brand'
 import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { formatApiError } from '../lib/errors'
 
 export default function RegisterPage() {

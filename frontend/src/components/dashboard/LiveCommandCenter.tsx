@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import {
   UtensilsCrossed, CalendarClock, ChefHat, ArrowRight, Loader2, Users,
 } from 'lucide-react'
+import AuraIcon from '../ui/AuraIcon'
 import { api } from '../../lib/api'
 import { cn, formatTime, toDateInputInTimezone } from '../../lib/utils'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
@@ -217,7 +218,7 @@ export default function LiveCommandCenter() {
             <div key={mod.key} className={cn('aura-command-module', `aura-command-module--${mod.tone}`)}>
               <div className="aura-command-module__head">
                 <div className={cn('aura-command-module__icon', `aura-command-module__icon--${mod.tone}`)}>
-                  <Icon className="h-4 w-4" aria-hidden />
+                  <AuraIcon icon={Icon} size="md" />
                 </div>
                 <h3 className="aura-command-module__title">{mod.title}</h3>
               </div>
@@ -240,12 +241,12 @@ export default function LiveCommandCenter() {
                   className="aura-command-module__cta group"
                 >
                   {mod.cta}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                  <AuraIcon icon={ArrowRight} size="sm" className="transition-transform group-hover:translate-x-0.5" />
                 </a>
               ) : (
                 <Link to={mod.href} className="aura-command-module__cta group">
                   {mod.cta}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                  <AuraIcon icon={ArrowRight} size="sm" className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
               )}
             </div>

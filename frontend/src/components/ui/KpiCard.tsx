@@ -1,12 +1,13 @@
-import type { ElementType } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import TrendBadge from './TrendBadge'
+import AuraIcon from './AuraIcon'
 
 interface KpiCardProps {
   title: string
   value: string
   subtitle?: string
-  icon: ElementType
+  icon: LucideIcon
   trend?: number
   trendLabel?: (value: number) => string
   accent?: 'gold' | 'emerald' | 'blue' | 'amber'
@@ -68,7 +69,7 @@ function KpiSparkline({
         d={path}
         fill="none"
         stroke={stroke}
-        strokeWidth="2"
+        strokeWidth="1.25"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
@@ -123,7 +124,11 @@ export default function KpiCard({
           </div>
         </div>
         <div className={cn('aura-kpi-icon', ACCENT_ICON[accent], size === 'hero' && 'h-10 w-10')}>
-          <Icon className={cn('h-5 w-5', size === 'hero' && 'h-6 w-6')} strokeWidth={1.5} aria-hidden />
+          <AuraIcon
+            icon={Icon}
+            size={size === 'hero' ? 'xl' : 'lg'}
+            className={ACCENT_ICON[accent]}
+          />
         </div>
       </div>
       

@@ -8,7 +8,7 @@ import { useRole } from '../../hooks/useRole'
 import {
   Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, X, ListOrdered,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 

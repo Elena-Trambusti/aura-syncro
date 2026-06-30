@@ -6,10 +6,11 @@ import { formatTime } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Wallet, Plus, Lock, Unlock } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import { ui } from '../lib/ui'
+import GlassModal from '../components/ui/GlassModal'
 
 interface CashSession {
   id: string
@@ -182,49 +183,43 @@ export default function CashDrawerPage() {
 
       {/* MODALS */}
       {showOpenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-navy-elevated rounded-2xl w-full max-w-sm border border-white/10 p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Apri Cassa</h3>
-            <p className="text-sm text-stone-400 mb-4">Inserisci il fondo cassa iniziale (resto) attualmente presente nel cassetto.</p>
-            <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + " w-full mb-6 text-xl p-3 text-center"} placeholder="0.00" />
-            <div className="flex gap-3">
-              <button onClick={() => setShowOpenModal(false)} className={ui.chipInactive + " flex-1 py-3 rounded-xl"}>Annulla</button>
-              <button onClick={() => openSession.mutate()} className={ui.btnPrimary + " flex-1 py-3"}>Conferma</button>
-            </div>
+        <GlassModal onClose={() => setShowOpenModal(false)} maxWidth="sm">
+          <h3 className="mb-4 text-xl font-bold text-pietra">{t('cashDrawer.openTitle', { defaultValue: 'Apri Cassa' })}</h3>
+          <p className="mb-4 text-sm text-fumo">{t('cashDrawer.openHint', { defaultValue: 'Inserisci il fondo cassa iniziale (resto) attualmente presente nel cassetto.' })}</p>
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-3 text-center text-xl'} placeholder="0.00" />
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setShowOpenModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
+            <button type="button" onClick={() => openSession.mutate()} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
           </div>
-        </div>
+        </GlassModal>
       )}
 
       {showTxModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-navy-elevated rounded-2xl w-full max-w-sm border border-white/10 p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Movimento Extra</h3>
-            <div className="flex gap-2 mb-4 bg-black/30 p-1 rounded-xl">
-              <button onClick={() => setTxType('PAYOUT')} className={`flex-1 py-2 rounded-lg text-sm font-bold ${txType==='PAYOUT' ? 'bg-red-500/20 text-red-400' : 'text-stone-400'}`}>Prelievo (-)</button>
-              <button onClick={() => setTxType('PAYIN')} className={`flex-1 py-2 rounded-lg text-sm font-bold ${txType==='PAYIN' ? 'bg-emerald-500/20 text-emerald-400' : 'text-stone-400'}`}>Versamento (+)</button>
-            </div>
-            <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + " w-full mb-4 text-xl p-3 text-center"} placeholder="Importo €" />
-            <input type="text" value={reason} onChange={e => setReason(e.target.value)} className={ui.input + " w-full mb-6 p-3"} placeholder="Motivazione (es. Pagamento fornitore)" />
-            <div className="flex gap-3">
-              <button onClick={() => setShowTxModal(false)} className={ui.chipInactive + " flex-1 py-3 rounded-xl"}>Annulla</button>
-              <button disabled={amount <= 0 || !reason} onClick={() => addTx.mutate()} className={ui.btnPrimary + " flex-1 py-3"}>Registra</button>
-            </div>
+        <GlassModal onClose={() => setShowTxModal(false)} maxWidth="sm">
+          <h3 className="mb-4 text-xl font-bold text-pietra">{t('cashDrawer.txTitle', { defaultValue: 'Movimento Extra' })}</h3>
+          <div className="mb-4 flex gap-2 rounded-xl bg-black/30 p-1">
+            <button type="button" onClick={() => setTxType('PAYOUT')} className={`flex-1 rounded-lg py-2 text-sm font-bold ${txType === 'PAYOUT' ? 'bg-red-500/20 text-red-400' : 'text-fumo'}`}>Prelievo (-)</button>
+            <button type="button" onClick={() => setTxType('PAYIN')} className={`flex-1 rounded-lg py-2 text-sm font-bold ${txType === 'PAYIN' ? 'bg-emerald-500/20 text-emerald-400' : 'text-fumo'}`}>Versamento (+)</button>
           </div>
-        </div>
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-4 w-full p-3 text-center text-xl'} placeholder="Importo €" />
+          <input type="text" value={reason} onChange={e => setReason(e.target.value)} className={ui.input + ' mb-6 w-full p-3'} placeholder="Motivazione (es. Pagamento fornitore)" />
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setShowTxModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
+            <button type="button" disabled={amount <= 0 || !reason} onClick={() => addTx.mutate()} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
+          </div>
+        </GlassModal>
       )}
 
       {showCloseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-navy-elevated rounded-2xl w-full max-w-sm border border-white/10 p-6 shadow-[0_0_50px_rgba(239,68,68,0.15)]">
-            <h3 className="text-xl font-bold text-white mb-2">Chiusura alla Cieca</h3>
-            <p className="text-sm text-stone-400 mb-6">Conta tutti i soldi fisici nel cassetto e inserisci l'importo totale. Il sistema calcolerà le differenze.</p>
-            <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + " w-full mb-6 text-3xl p-4 text-center font-black"} placeholder="0.00" />
-            <div className="flex gap-3">
-              <button onClick={() => setShowCloseModal(false)} className={ui.chipInactive + " flex-1 py-3 rounded-xl"}>Annulla</button>
-              <button onClick={() => closeSession.mutate()} className="bg-red-600 text-white flex-1 py-3 rounded-xl font-bold hover:bg-red-700">Chiudi Cassa</button>
-            </div>
+        <GlassModal onClose={() => setShowCloseModal(false)} maxWidth="sm" className="border-rose-500/20">
+          <h3 className="mb-2 text-xl font-bold text-pietra">{t('cashDrawer.closeTitle', { defaultValue: 'Chiusura alla Cieca' })}</h3>
+          <p className="mb-6 text-sm text-fumo">{t('cashDrawer.closeHint', { defaultValue: "Conta tutti i soldi fisici nel cassetto e inserisci l'importo totale. Il sistema calcolerà le differenze." })}</p>
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-4 text-center text-3xl font-black'} placeholder="0.00" />
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setShowCloseModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
+            <button type="button" onClick={() => closeSession.mutate()} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>
           </div>
-        </div>
+        </GlassModal>
       )}
 
     </ExecutivePageShell>

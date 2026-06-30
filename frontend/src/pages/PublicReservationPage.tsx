@@ -2,10 +2,11 @@ import { type CSSProperties, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
+import AuraIcon from '../components/ui/AuraIcon'
 import { AlertCircle, CalendarDays, CheckCircle2, Users, Phone, Mail, User, UtensilsCrossed } from 'lucide-react'
 
 interface BookingInfo {
@@ -158,7 +159,7 @@ export default function PublicReservationPage() {
             {data.restaurant.logo ? (
               <img src={data.restaurant.logo} alt={data.restaurant.name} className="h-full w-full object-cover" />
             ) : (
-              <UtensilsCrossed className="h-10 w-10 text-aura-gold" strokeWidth={1.5} />
+              <AuraIcon icon={UtensilsCrossed} size="hero" weight="display" className="text-aura-gold" />
             )}
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-aura-gold mb-3">

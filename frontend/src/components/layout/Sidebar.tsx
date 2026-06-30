@@ -5,7 +5,7 @@ import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
   ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock, Receipt, Wallet
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { cn } from '../../lib/utils'
 import { useAuth, useFiscalRegime } from '../../contexts/AuthContext'
 import { useAccessTier } from '../../hooks/useAccessTier'
@@ -215,7 +215,7 @@ export default function Sidebar() {
                       aria-label={`${t(item.labelKey)} — ${t('nav.lockedAria')}`}
                     >
                       <span className="aura-nav-icon aura-nav-icon--muted">
-                        <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                        <FeatureIcon className="h-[17px] w-[17px]" />
                       </span>
                       <span className="truncate">{t(item.labelKey)}</span>
                       <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" aria-hidden />
@@ -223,10 +223,7 @@ export default function Sidebar() {
                   ) : (
                     <NavLink to={item.to} className={itemClass}>
                       <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
-                        <FeatureIcon
-                          className="h-[17px] w-[17px]"
-                          strokeWidth={isActive ? 2.25 : 1.75}
-                        />
+                        <FeatureIcon className="h-[17px] w-[17px]" />
                       </span>
                       <span className="truncate">{t(item.labelKey)}</span>
                     </NavLink>
@@ -252,7 +249,7 @@ export default function Sidebar() {
                   aria-label={`${t(link.labelKey)} — ${t('nav.lockedAria')}`}
                 >
                   <span className="aura-nav-icon aura-nav-icon--muted">
-                    <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                    <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
                   <span className="truncate">{t(link.labelKey)}</span>
                   <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" />
@@ -270,7 +267,7 @@ export default function Sidebar() {
                   className="premium-nav-item"
                 >
                   <span className="aura-nav-icon">
-                    <FeatureIcon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                    <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
                   {t(link.labelKey)}
                   <span className="ml-auto text-xs opacity-40">↗</span>

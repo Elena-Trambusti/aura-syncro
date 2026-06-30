@@ -10,6 +10,7 @@ import {
   Scale,
   type LucideIcon,
 } from 'lucide-react'
+import AuraIcon from '../ui/AuraIcon'
 
 type GalleryProblem = {
   icon: LucideIcon
@@ -82,7 +83,6 @@ function resolveGalleryData(lang: string, t: (key: string) => string): GalleryDa
 
   if (base === 'it') {
     return {
-      eyebrow: t('landing.gallery.eyebrow'),
       title: t('landing.gallery.title'),
       subtitle: t('landing.gallery.subtitle'),
       problems: IT_PROBLEM_KEYS.map(key => ({
@@ -133,7 +133,7 @@ export default function LandingGallery() {
                 <div className="relative flex h-44 items-center justify-center overflow-hidden border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604]">
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.14),transparent_68%)] opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
                   <div className="relative z-10 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-black/60 text-[#E8C872] shadow-[0_0_28px_rgba(212,175,55,0.18)] backdrop-blur-sm transition-all duration-500 group-hover:scale-105 group-hover:border-[#E8C872]/40 group-hover:shadow-[0_0_36px_rgba(212,175,55,0.28)]">
-                    <Icon className="h-9 w-9" strokeWidth={1.35} />
+                    <AuraIcon icon={Icon} size="2xl" weight="display" className="text-[#E8C872]" />
                   </div>
                   <span className="absolute right-5 top-5 font-display text-5xl font-light leading-none text-[#D4AF37]/10 transition-colors duration-500 group-hover:text-[#D4AF37]/20">
                     {String(index + 1).padStart(2, '0')}

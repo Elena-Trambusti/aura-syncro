@@ -8,7 +8,7 @@ import { useRealtimeQuery } from '../../hooks/useRealtimeInvalidation'
 import {
   ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X, Info,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import ModalPortal from '../ModalPortal'
 import QueryErrorBanner from '../QueryErrorBanner'
 import { useTenantQueryKey } from '../../contexts/AuthContext'

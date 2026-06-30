@@ -5,12 +5,13 @@ import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, formatCurrency, formatTime } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import OrderModal from '../components/orders/OrderModal'
 import ModalPortal from '../components/ModalPortal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
 import AreaManagerModal from '../components/tables/AreaManagerModal'
+import TableCleaningConfirmModal from '../components/tables/TableCleaningConfirmModal'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -48,10 +49,10 @@ type TableFormData = { number: number; seats: number; area: string }
 type TableFormState = { number: NumericField; seats: NumericField; area: string }
 
 const STAT_ACCENTS = [
-  { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'emerald' as const, icon: CheckCircle2 },
-  { key: 'occupied' as const, status: 'OCCUPIED' as TableStatus, accent: 'amber' as const, icon: Users },
-  { key: 'reserved' as const, status: 'RESERVED' as TableStatus, accent: 'amber' as const, icon: CalendarCheck },
-  { key: 'cleaning' as const, status: 'CLEANING' as TableStatus, accent: 'blue' as const, icon: Sparkles },
+  { key: 'free' as const, status: 'FREE' as TableStatus, accent: 'sage' as const, icon: CheckCircle2 },
+  { key: 'occupied' as const, status: 'OCCUPIED' as TableStatus, accent: 'gold-satin' as const, icon: Users },
+  { key: 'reserved' as const, status: 'RESERVED' as TableStatus, accent: 'amber-soft' as const, icon: CalendarCheck },
+  { key: 'cleaning' as const, status: 'CLEANING' as TableStatus, accent: 'sapphire' as const, icon: Sparkles },
 ]
 
 function TableFormModal({
@@ -155,6 +156,7 @@ export default function TablesPage() {
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
   const [reservedTable, setReservedTable] = useState<Table | null>(null)
+  const [cleaningConfirmTable, setCleaningConfirmTable] = useState<FloorTable | null>(null)
 
   const { data: tablesData, isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
@@ -226,6 +228,7 @@ export default function TablesPage() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       const table = tables.find(tbl => tbl.id === id)
+      setCleaningConfirmTable(null)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
     },
     onError: (err: { response?: { data?: { code?: string } } }) => {
@@ -312,9 +315,7 @@ export default function TablesPage() {
   const handleTableClick = (table: FloorTable) => {
     if (transferSourceId) return
     if (table.status === 'CLEANING') {
-      if (confirm(t('tables.confirmMarkFree', { defaultValue: 'Segnare il tavolo come libero?' }))) {
-        markTableFree.mutate(table.id)
-      }
+      setCleaningConfirmTable(table)
       return
     }
     const fullTable = tables.find(tbl => tbl.id === table.id)
@@ -374,7 +375,7 @@ export default function TablesPage() {
               <button
                 type="button"
                 onClick={() => setIsEditorOpen(true)}
-                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-aura-gold bg-aura-gold/10 hover:bg-aura-gold/20 hover:text-aura-gold transition-colors sm:w-auto"
+                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[#C5A059]/55 bg-[#0B0E14]/90 px-4 py-2.5 text-sm font-semibold text-[#C5A059] shadow-[0_0_20px_rgba(197,160,89,0.12)] transition-all hover:border-[#C5A059]/75 hover:bg-[#12151C] hover:shadow-[0_0_28px_rgba(197,160,89,0.2)] sm:w-auto"
               >
                 <Edit2 className="h-4 w-4" />
                 {t('tables.editLayout', { defaultValue: 'Editor Layout' })}
@@ -474,6 +475,7 @@ export default function TablesPage() {
             value={stats[key]}
             icon={Icon}
             accent={accent}
+            luxuryCounters
           />
         ))}
       </div>
@@ -544,19 +546,24 @@ export default function TablesPage() {
               <button
                 key={table.id}
                 type="button"
-                onClick={() => {
-                  if (confirm(t('tables.confirmMarkFree', { defaultValue: 'Segnare il tavolo come libero?' }))) {
-                    markTableFree.mutate(table.id)
-                  }
-                }}
+                onClick={() => setCleaningConfirmTable(table)}
                 disabled={markTableFree.isPending}
-                className="saas-chip px-3 py-2 rounded-lg text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/25 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/25 transition-colors"
+                className="rounded-lg border border-[#7A9BB8]/30 bg-[#0B0E14]/80 px-3 py-2 text-xs font-semibold text-[#7A9BB8] transition-colors hover:border-[#8A9A7B]/40 hover:bg-[#8A9A7B]/10 hover:text-[#8A9A7B] disabled:opacity-50"
               >
                 T{table.number} — {t('tables.markFree')}
               </button>
             ))}
           </div>
         </div>
+      )}
+
+      {cleaningConfirmTable && (
+        <TableCleaningConfirmModal
+          tableNumber={cleaningConfirmTable.number}
+          onConfirm={() => markTableFree.mutate(cleaningConfirmTable.id)}
+          onCancel={() => setCleaningConfirmTable(null)}
+          isPending={markTableFree.isPending}
+        />
       )}
 
       {editingTable && (

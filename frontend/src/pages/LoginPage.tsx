@@ -8,7 +8,7 @@ import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 export default function LoginPage() {
   const { t } = useTranslation()

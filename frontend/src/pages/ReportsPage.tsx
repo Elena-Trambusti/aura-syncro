@@ -18,7 +18,7 @@ import FilterPills from '../components/ui/FilterPills'
 import KpiStatCard from '../components/ui/KpiStatCard'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import { useMutation } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 interface PLSummary {
   revenue: number; subtotal: number; tax: number; totalDiscount: number; orders: number

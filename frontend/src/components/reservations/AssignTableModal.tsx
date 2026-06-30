@@ -6,7 +6,7 @@ import { formatTime, cn } from '../../lib/utils'
 import { Loader2, X, Users } from 'lucide-react'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 interface AvailableTable {
   id: string

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { resolveApiBaseUrl } from './backendUrl'
 import { isPublicAppRoute } from './publicRoutes'
 import { readAuthCache } from './authCache'
@@ -45,14 +45,9 @@ api.interceptors.request.use(config => {
     isDemoUserEmail(cachedUser) &&
     !isDemoMutationAllowed(url, method)
   ) {
-    toast.error('In modalità Demo puoi interagire solo con la sezione Tavoli.', {
-      icon: '⚠️',
-      style: {
-        borderRadius: '10px',
-        background: '#1e293b',
-        color: '#fcd34d',
-        border: '1px solid rgba(245, 158, 11, 0.2)',
-      },
+    toast.warning('In modalità Demo puoi interagire solo con la sezione Tavoli.', {
+      className: 'aura-sonner-toast--demo',
+      duration: 4500,
     })
     return Promise.reject(new axios.CanceledError('DEMO_READ_ONLY'))
   }
@@ -73,14 +68,9 @@ api.interceptors.response.use(
         window.location.href = '/login'
       }
     } else if (err.response?.status === 403 && err.response?.data?.code === 'DEMO_READ_ONLY') {
-      toast.error(err.response.data.error || 'Azione non consentita in modalità Demo.', {
-        icon: '⚠️',
-        style: {
-          borderRadius: '10px',
-          background: '#1e293b', // slate-800
-          color: '#fcd34d', // amber-300
-          border: '1px solid rgba(245, 158, 11, 0.2)', // amber-500/20
-        },
+      toast.warning(err.response.data.error || 'Azione non consentita in modalità Demo.', {
+        className: 'aura-sonner-toast--demo',
+        duration: 4500,
       })
     }
     return Promise.reject(err)

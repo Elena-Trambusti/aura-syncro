@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { registerSW } from 'virtual:pwa-register'
 
 /**

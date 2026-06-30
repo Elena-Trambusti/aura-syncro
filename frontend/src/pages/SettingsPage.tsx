@@ -10,7 +10,7 @@ import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy } from 'lu
 import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'

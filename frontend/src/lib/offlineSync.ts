@@ -1,5 +1,5 @@
 import type { AxiosError } from 'axios'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import i18n from '../i18n'
 import { api } from './api'
 import {

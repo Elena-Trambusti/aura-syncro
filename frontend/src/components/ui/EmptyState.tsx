@@ -1,8 +1,10 @@
-import type { ElementType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import AuraIcon from './AuraIcon'
 
 interface EmptyStateProps {
-  icon: ElementType
+  icon: LucideIcon
   title: string
   description?: string
   action?: ReactNode
@@ -19,7 +21,7 @@ export default function EmptyState({
   return (
     <div className={cn('aura-empty-state', className)}>
       <div className="aura-empty-state__icon">
-        <Icon className="h-6 w-6" aria-hidden />
+        <AuraIcon icon={Icon} size="xl" className="text-fumo" />
       </div>
       <p className="aura-empty-state__title">{title}</p>
       {description && <p className="aura-empty-state__desc">{description}</p>}

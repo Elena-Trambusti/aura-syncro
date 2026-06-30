@@ -257,6 +257,12 @@
     "reserved": "Prenotati",
     "cleaning": "Pulizia",
     "markFree": "Segna Libero",
+    "confirmCleaningTitle": "Ripristino Tavolo",
+    "confirmCleaningDescription": "Vuoi veramente confermare la pulizia del tavolo {{number}}?",
+    "confirmCleaningConfirm": "Conferma pulizia",
+    "confirmCleaningTitle": "Ripristino Tavolo",
+    "confirmCleaningDescription": "Vuoi veramente confermare la pulizia del tavolo {{number}}?",
+    "confirmCleaningConfirm": "Conferma pulizia",
     "tableReady": "Tavolo {{number}} pronto",
     "needsCleaning": "Da pulire",
     "startCleaningHint": "Dopo il pagamento il tavolo passa in pulizia. Toccalo sulla mappa per segnarlo libero.",
@@ -1671,7 +1677,6 @@
       }
     },
     "gallery": {
-      "eyebrow": "Il costo nascosto",
       "title": "I veri problemi di ogni servizio",
       "subtitle": "Quando sala, cucina e amministrazione non dialogano, perdi margine ogni sera — prima ancora di chiudere la cassa.",
       "p1": {

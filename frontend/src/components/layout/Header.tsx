@@ -68,7 +68,7 @@ export default function Header() {
                   cn('aura-topbar-quick__link', isActive && 'aura-topbar-quick__link--active')
                 }
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+                <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="hidden 2xl:inline">{t(link.labelKey)}</span>
               </NavLink>
             )

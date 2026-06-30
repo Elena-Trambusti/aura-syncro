@@ -1,4 +1,4 @@
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 /**
  * Test Sentry (step 3 wizard) — solo in sviluppo.

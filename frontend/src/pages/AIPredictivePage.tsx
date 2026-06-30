@@ -1,9 +1,10 @@
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Brain, TrendingUp, AlertTriangle, Sparkles, CloudRain, Sun, Cloud,
   Package, RefreshCw,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -14,47 +15,45 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import EmptyState from '../components/ui/EmptyState'
+import AuraIcon from '../components/ui/AuraIcon'
+import { ui } from '../lib/ui'
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 
 const SEVERITY_STYLES: Record<AlertSeverity, {
-  border: string
-  bg: string
+  card: string
   icon: typeof AlertTriangle
   iconColor: string
   badge: string
   badgeText: string
 }> = {
   critical: {
-    border: 'border-rose-200',
-    bg: 'bg-navy-elevated',
+    card: 'aura-glass border-rose-500/20',
     icon: AlertTriangle,
-    iconColor: 'text-rose-500',
-    badge: 'bg-rose-50',
-    badgeText: 'text-rose-700',
+    iconColor: 'text-rose-400',
+    badge: 'bg-rose-500/10 border border-rose-500/15',
+    badgeText: 'text-rose-300',
   },
   optimization: {
-    border: 'border-aura-gold/25',
-    bg: 'bg-navy-elevated',
+    card: 'aura-glass aura-glass--satin',
     icon: CloudRain,
-    iconColor: 'text-amber-500',
-    badge: 'bg-aura-gold/10',
-    badgeText: 'text-aura-gold',
+    iconColor: 'text-aura-gold',
+    badge: 'bg-aura-gold/10 border border-aura-gold/15',
+    badgeText: 'text-aura-gold-light',
   },
   opportunity: {
-    border: 'border-emerald-500/25',
-    bg: 'bg-navy-elevated',
+    card: 'aura-glass border-emerald-500/20',
     icon: TrendingUp,
-    iconColor: 'text-emerald-500',
-    badge: 'bg-emerald-500/10',
-    badgeText: 'text-emerald-400',
+    iconColor: 'text-emerald-400',
+    badge: 'bg-emerald-500/10 border border-emerald-500/15',
+    badgeText: 'text-emerald-300',
   },
 }
 
 function WeatherIcon({ weather }: { weather: 'sunny' | 'cloudy' | 'rain' }) {
-  if (weather === 'rain') return <CloudRain className="h-3.5 w-3.5 text-blue-500" />
-  if (weather === 'cloudy') return <Cloud className="h-3.5 w-3.5 text-fumo" />
-  return <Sun className="h-3.5 w-3.5 text-amber-500" />
+  if (weather === 'rain') return <AuraIcon icon={CloudRain} size="sm" className="text-blue-400" />
+  if (weather === 'cloudy') return <AuraIcon icon={Cloud} size="sm" className="text-fumo" />
+  return <AuraIcon icon={Sun} size="sm" className="text-aura-gold" />
 }
 
 function AlertCard({ alert }: { alert: PredictiveAlert }) {
@@ -69,10 +68,10 @@ function AlertCard({ alert }: { alert: PredictiveAlert }) {
   }
 
   return (
-    <article className={cn('rounded-xl border shadow-sm p-4', style.border, style.bg)}>
+    <article className={cn('rounded-xl p-4', style.card)}>
       <div className="flex gap-3">
         <div className={cn('mt-0.5 shrink-0 rounded-lg p-2', style.badge)}>
-          <Icon className={cn('h-5 w-5', style.iconColor)} />
+          <AuraIcon icon={Icon} size="lg" className={style.iconColor} />
         </div>
         <div className="min-w-0 flex-1">
           <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold', style.badge, style.badgeText)}>
@@ -102,6 +101,26 @@ export default function AIPredictivePage() {
 function AIPredictivePageContent() {
   const { t, i18n } = useTranslation()
   const { forecast, alerts, factorsUsed, engineVersion, generatedAt, weatherSource, isLoading, isFetching, isError, refetch } = usePredictiveAI()
+  const toastedAlertsRef = useRef(new Set<string>())
+
+  useEffect(() => {
+    if (isLoading || alerts.length === 0) return
+    let count = 0
+    for (const alert of alerts) {
+      if (toastedAlertsRef.current.has(alert.id)) continue
+      toastedAlertsRef.current.add(alert.id)
+      const dayKey = alert.params.dayKey as string | undefined
+      const msg = t(alert.i18nKey, {
+        ...alert.params,
+        ...(dayKey ? { day: t(dayKey) } : {}),
+      })
+      if (alert.severity === 'critical') toast.aiCritical(msg)
+      else if (alert.severity === 'opportunity') toast.aiOpportunity(msg)
+      else toast.ai(msg)
+      count += 1
+      if (count >= 2) break
+    }
+  }, [alerts, isLoading, t])
 
   const chartData = forecast.map(day => ({
     ...day,
@@ -124,8 +143,8 @@ function AIPredictivePageContent() {
         meta={(
           <>
             {engineVersion && (
-              <span className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm">
-                <Brain className="h-3 w-3 text-amber-500" />
+              <span className={cn('inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-fumo', ui.glass)}>
+                <AuraIcon icon={Brain} size="xs" className="text-aura-gold" />
                 {t('aiPredictive.engineLabel', { version: engineVersion })}
                 {weatherSource && (
                   <span className="text-fumo">
@@ -139,9 +158,9 @@ function AIPredictivePageContent() {
                 {factorsUsed.map(f => (
                   <span
                     key={f}
-                    className="inline-flex items-center gap-1.5 rounded-lg premium-card px-2.5 py-1 text-xs font-medium text-fumo shadow-sm"
+                    className={cn('inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-fumo', ui.glass)}
                   >
-                    <Sparkles className="h-3 w-3 text-amber-500" />
+                    <AuraIcon icon={Sparkles} size="xs" className="text-aura-gold" />
                     {factorLabels[f]}
                   </span>
                 ))}

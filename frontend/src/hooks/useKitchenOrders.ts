@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { getSocket } from '../lib/socket'
 import { useTenantQueryKey } from '../contexts/AuthContext'

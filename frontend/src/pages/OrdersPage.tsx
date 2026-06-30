@@ -10,7 +10,7 @@ import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthCon
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'

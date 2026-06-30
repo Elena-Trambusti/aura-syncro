@@ -6,6 +6,8 @@ import { Bell, X, ShoppingBag, CalendarDays, AlertTriangle, ChefHat } from 'luci
 import { getSocket } from '../../lib/socket'
 import { formatDateTime } from '../../lib/utils'
 import { cn } from '../../lib/utils'
+import { toast } from '@/lib/toast'
+import AuraIcon from '../ui/AuraIcon'
 
 interface Notification {
   id: string
@@ -17,10 +19,10 @@ interface Notification {
 }
 
 const TYPE_CONFIG = {
-  new_order: { icon: ShoppingBag, color: 'text-aura-gold', bg: 'bg-aura-gold/10' },
-  reservation: { icon: CalendarDays, color: 'text-blue-400', bg: 'bg-blue-500/100/10' },
-  low_stock: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/100/10' },
-  order_ready: { icon: ChefHat, color: 'text-emerald-400', bg: 'bg-emerald-500/100/10' },
+  new_order: { icon: ShoppingBag, color: 'text-aura-gold', bg: 'bg-aura-gold/10', toast: 'order' as const },
+  reservation: { icon: CalendarDays, color: 'text-blue-400', bg: 'bg-blue-500/10', toast: 'reservation' as const },
+  low_stock: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10', toast: 'stock' as const },
+  order_ready: { icon: ChefHat, color: 'text-emerald-400', bg: 'bg-emerald-500/10', toast: 'ready' as const },
 }
 
 const PANEL_WIDTH = 320
@@ -92,6 +94,8 @@ export default function NotificationBell() {
         orderId: data.orderId,
       }
       setNotifications(prev => [notif, ...prev].slice(0, 50))
+      const cfg = TYPE_CONFIG[data.type] || TYPE_CONFIG.new_order
+      toast.notify(data.message, cfg.toast)
     }
 
     socket.on('notification', handleNotification)
@@ -184,7 +188,7 @@ export default function NotificationBell() {
                       maxWidth: 'calc(100vw - 1rem - env(safe-area-inset-left) - env(safe-area-inset-right))',
                     }),
               }}
-              className="saas-dropdown overflow-hidden max-w-none"
+              className="aura-glass-dropdown max-w-none overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
                 <h3 className="font-semibold text-pietra">{t('notifications.title')}</h3>
@@ -195,7 +199,7 @@ export default function NotificationBell() {
                     </button>
                   )}
                   <button onClick={close} aria-label={t('common.close')} className="premium-topbar-btn !p-1">
-                    <X className="w-4 h-4" />
+                    <AuraIcon icon={X} size="md" />
                   </button>
                 </div>
               </div>
@@ -203,7 +207,7 @@ export default function NotificationBell() {
               <div className="max-h-[min(20rem,50dvh)] overflow-y-auto divide-y divide-white/[0.06]">
                 {notifications.length === 0 ? (
                   <div className="py-8 text-center text-fumo">
-                    <Bell className="mx-auto mb-2 h-8 w-8 opacity-30" />
+                    <Bell className="mx-auto mb-2 h-8 w-8 opacity-30" strokeWidth={1.25} />
                     <p className="text-sm">{t('notifications.noNotifications')}</p>
                   </div>
                 ) : (
@@ -219,8 +223,8 @@ export default function NotificationBell() {
                           !notif.read && 'bg-aura-gold/5',
                         )}
                       >
-                        <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${config.bg}`}>
-                          <Icon className={`h-4 w-4 ${config.color}`} />
+                        <div className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5', config.bg)}>
+                          <AuraIcon icon={Icon} size="md" className={config.color} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm leading-snug text-pietra">{notif.message}</p>
@@ -253,7 +257,7 @@ export default function NotificationBell() {
         aria-expanded={open}
         aria-label={t('notifications.title')}
       >
-        <Bell className="h-5 w-5" />
+        <AuraIcon icon={Bell} size="lg" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-aura-gold text-xs font-bold text-navy">
             {unreadCount > 9 ? '9+' : unreadCount}

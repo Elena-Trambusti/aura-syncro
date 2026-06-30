@@ -1,5 +1,6 @@
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import AuraIcon from './AuraIcon'
 
 interface TrendBadgeProps {
   value: number
@@ -20,9 +21,9 @@ export default function TrendBadge({ value, label, className, size = 'default' }
       )}
     >
       {positive ? (
-        <TrendingUp className={cn('shrink-0', size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3')} aria-hidden />
+        <AuraIcon icon={TrendingUp} size={size === 'sm' ? '2xs' : 'xs'} className="shrink-0" />
       ) : (
-        <TrendingDown className={cn('shrink-0', size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3')} aria-hidden />
+        <AuraIcon icon={TrendingDown} size={size === 'sm' ? '2xs' : 'xs'} className="shrink-0" />
       )}
       {label}
     </span>
