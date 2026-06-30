@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
-import LandingTrustBar from '../components/landing/LandingTrustBar'
-import LandingFeatures from '../components/landing/LandingFeatures'
+const LandingTrustBar = lazy(() => import('../components/landing/LandingTrustBar'))
+const LandingFeatures = lazy(() => import('../components/landing/LandingFeatures'))
 
 const LandingGallery = lazy(() => import('../components/landing/LandingGallery'))
 const LandingPricing = lazy(() => import('../components/landing/LandingPricing'))
@@ -40,9 +40,9 @@ export default function LandingPage() {
       <LandingNav />
       <main className="flex-1">
         <LandingHero />
-        <LandingTrustBar />
-        <LandingFeatures />
-        <Suspense fallback={<div className="h-24" aria-hidden />}>
+        <Suspense fallback={<div className="h-16" aria-hidden />}>
+          <LandingTrustBar />
+          <LandingFeatures />
           <LandingGallery />
           <LandingPricing />
         </Suspense>

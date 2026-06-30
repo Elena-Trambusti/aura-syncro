@@ -17,7 +17,7 @@ export default function LandingNav() {
       <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-aura-gold/50 to-transparent" />
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <BrandLogo size="sm" className="mx-0 shadow-sm" />
+          <BrandLogo size="sm" className="mx-0 shadow-sm" priority />
           <span className="text-sm font-bold text-slate-100 sm:text-base">{BRAND.name}</span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-300 md:flex">

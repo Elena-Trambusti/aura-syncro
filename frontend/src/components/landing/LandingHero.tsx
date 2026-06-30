@@ -82,7 +82,7 @@ export default function LandingHero() {
         </div>
 
         <div
-          className="lux-hero-preview group relative pt-10 lg:pt-0"
+          className="lux-hero-preview group relative hidden pt-10 lg:block lg:pt-0"
           style={{ animation: 'reveal-slide 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '600ms' }}
         >
           <div className="lux-hero-preview__halo" aria-hidden />

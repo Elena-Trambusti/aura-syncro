@@ -17,6 +17,7 @@ interface BrandLogoProps {
   className?: string
   showName?: boolean
   layout?: 'icon' | 'horizontal'
+  priority?: boolean
 }
 
 export default function BrandLogo({
@@ -24,6 +25,7 @@ export default function BrandLogo({
   className,
   showName = false,
   layout = 'icon',
+  priority = false,
 }: BrandLogoProps) {
   const { t } = useTranslation()
   const s = SIZES[size]
@@ -32,8 +34,12 @@ export default function BrandLogo({
     <img
       src={ICON_SRC}
       alt=""
-      className={cn(s.img, 'shrink-0 object-contain object-center drop-shadow-md')}
-      style={{ filter: 'drop-shadow(0 4px 12px rgba(212, 175, 55, 0.2))' }}
+      className={cn(s.img, 'shrink-0 object-contain object-center')}
+      width={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
+      height={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
+      decoding="async"
       aria-hidden
     />
   )

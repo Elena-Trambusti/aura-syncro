@@ -64,8 +64,8 @@
 
 @layer utilities {
   @keyframes reveal-blur {
-    0% { opacity: 0; filter: blur(12px); transform: translateY(24px); }
-    100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    0% { opacity: 0; transform: translateY(24px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes reveal-slide {
@@ -220,6 +220,14 @@
 
     .lux-hero-preview:hover .lux-hero-preview__shell {
       transform: translateY(-4px);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .lux-hero-preview__halo,
+    .lux-hero-preview__ring,
+    .lux-hero-preview__shell {
+      animation: none;
     }
   }
 }
