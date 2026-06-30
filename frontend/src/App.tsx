@@ -9,21 +9,21 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'rea
 import { Suspense, lazy, useLayoutEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { isDemoUserEmail } from './lib/demoAccounts'
-import LoginPage from './pages/LoginPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import RegisterPage from './pages/RegisterPage'
-import LandingPage from './pages/LandingPage'
-import LandingRoute from './components/landing/LandingRoute'
 import RequireRole from './components/auth/RequireRole'
 import RequireProPlan from './components/auth/RequireProPlan'
 import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
-import PwaRegistrar from './components/PwaRegistrar'
-import { CookieBanner } from './components/landing/CookieBanner'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const LandingRoute = lazy(() => import('./components/landing/LandingRoute'))
+const PwaRegistrar = lazy(() => import('./components/PwaRegistrar'))
+const CookieBanner = lazy(() => import('./components/landing/CookieBanner').then((m) => ({ default: m.CookieBanner })))
 const PricingPage = lazy(() => import('./pages/PricingPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
@@ -175,8 +175,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <PwaRegistrar />
-        <CookieBanner />
+        <Suspense fallback={null}>
+          <PwaRegistrar />
+          <CookieBanner />
+        </Suspense>
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

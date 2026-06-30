@@ -41,8 +41,8 @@
   --color-slate-900: #12151C;
   --color-slate-950: #0B0E14;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Playfair Display', 'Inter', system-ui, serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
