@@ -12,27 +12,14 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 import FilterPills from '../components/ui/FilterPills'
-import { Download, AlertCircle, TrendingUp, ShoppingBag, Receipt, Clock } from 'lucide-react'
+import { Download, AlertCircle, TrendingUp, ShoppingBag, Receipt } from 'lucide-react'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
-import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend,
-} from 'recharts'
+import { LuxuryChartFrame } from '../components/charts'
+import { LuxuryAreaChart, LuxuryBarChart } from '../components/charts/lazy'
+import ChartSuspense from '../components/charts/ChartSuspense'
 
 type Period = '7d' | '30d' | '90d'
-
-const CHART_COLORS = ['#D4AF37', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4']
-const GRID_STROKE = 'rgba(255,255,255,0.06)'
-const TICK_FILL = '#94a3b8'
-
-const tooltipStyle = {
-  borderRadius: '12px',
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: '#1A1D26',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-  color: '#E8E6E3',
-}
 
 export default function AnalyticsPage() {
   const { t, i18n } = useTranslation()
@@ -147,84 +134,60 @@ export default function AnalyticsPage() {
             />
           </div>
 
-          <div className="premium-card p-5 sm:p-6">
-            <h3 className="text-base font-semibold text-pietra mb-1">{t('analytics.revenueChartTitle', { defaultValue: 'Fatturato nel tempo' })}</h3>
-            <p className="text-sm text-fumo mb-5">{t('analytics.revenueChartSubtitle', { period: periodLabels[period] })}</p>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={revenue || []}>
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={d => new Date(d).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })}
-                  tick={{ fontSize: 11, fill: TICK_FILL }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={v => `€${v}`}
-                  tick={{ fontSize: 11, fill: TICK_FILL }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  formatter={(v, name) => [
-                    name === 'revenue' ? formatCurrency(Number(v) || 0) : v,
-                    name === 'revenue' ? t('analytics.csvRevenue') : t('analytics.csvOrders'),
-                  ]}
-                  labelFormatter={d => new Date(d).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'long' })}
-                  contentStyle={tooltipStyle}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#D4AF37" strokeWidth={2.5} fill="url(#revenueGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <LuxuryChartFrame
+            eyebrow={periodLabels[period]}
+            title={t('analytics.revenueChartTitle', { defaultValue: 'Fatturato nel tempo' })}
+            subtitle={t('analytics.revenueChartSubtitle', { period: periodLabels[period] })}
+            hero
+          >
+            <ChartSuspense height={300}>
+              <LuxuryAreaChart
+                data={revenue || []}
+                dataKey="revenue"
+                xKey="date"
+                locale={locale}
+                valueLabel={t('analytics.csvRevenue')}
+                height={300}
+              />
+            </ChartSuspense>
+          </LuxuryChartFrame>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="premium-card p-5 sm:p-6">
-              <h3 className="text-base font-semibold text-pietra mb-4">{t('analytics.topItemsChart', { defaultValue: 'Top piatti per fatturato' })}</h3>
+            <LuxuryChartFrame title={t('analytics.topItemsChart', { defaultValue: 'Top piatti per fatturato' })}>
               {pieData.length === 0 ? (
-                <p className="text-sm text-fumo text-center py-12">{t('analytics.noData', { defaultValue: 'Nessun dato disponibile' })}</p>
+                <p className="py-12 text-center text-sm text-fumo">{t('analytics.noData', { defaultValue: 'Nessun dato disponibile' })}</p>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} dataKey="value" paddingAngle={2}>
-                      {pieData.map((_: unknown, index: number) => (
-                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v) => [formatCurrency(Number(v) || 0), t('analytics.csvRevenue')]} contentStyle={tooltipStyle} />
-                    <Legend formatter={(value) => <span className="text-xs text-fumo">{value}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ChartSuspense height={260}>
+                  <LuxuryBarChart
+                    data={pieData}
+                    dataKey="value"
+                    xKey="name"
+                    valueLabel={t('analytics.csvRevenue')}
+                    height={260}
+                    barSize={12}
+                  />
+                </ChartSuspense>
               )}
-            </div>
+            </LuxuryChartFrame>
 
-            <div className="premium-card p-5 sm:p-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-4 h-4 text-aura-gold" />
-                <h3 className="text-base font-semibold text-pietra">{t('analytics.hourlyTraffic')}</h3>
-              </div>
-              {peakHours.length > 0 && (
-                <p className="text-xs text-fumo mb-4">
-                  {t('analytics.peakHours', { hours: peakHours.map((h: { hour: string }) => h.hour).join(', '), defaultValue: 'Ore di punta: {{hours}}' })}
-                </p>
-              )}
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={hourly || []} barSize={10}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                  <XAxis dataKey="hour" tick={{ fontSize: 10, fill: TICK_FILL }} axisLine={false} tickLine={false} interval={2} />
-                  <YAxis tick={{ fontSize: 10, fill: TICK_FILL }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="orders" fill="#D4AF37" radius={[4, 4, 0, 0]} name={t('analytics.csvOrders')} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <LuxuryChartFrame
+              title={t('analytics.hourlyTraffic')}
+              subtitle={peakHours.length > 0
+                ? t('analytics.peakHours', { hours: peakHours.map((h: { hour: string }) => h.hour).join(', '), defaultValue: 'Ore di punta: {{hours}}' })
+                : undefined}
+            >
+              <ChartSuspense height={220}>
+                <LuxuryBarChart
+                  data={hourly || []}
+                  dataKey="orders"
+                  xKey="hour"
+                  valueLabel={t('analytics.csvOrders')}
+                  height={220}
+                  barSize={8}
+                  accent="champagne"
+                />
+              </ChartSuspense>
+            </LuxuryChartFrame>
           </div>
 
           <div className="premium-card overflow-hidden">

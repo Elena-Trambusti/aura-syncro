@@ -59,7 +59,12 @@ function KpiSparkline({
     : 'M0 48 C 30 44, 50 36, 80 38 S 140 28, 180 22 S 220 18, 240 12'
 
   return (
-    <svg className="absolute inset-x-0 bottom-0 w-full h-full max-h-[55%] pointer-events-none opacity-20" viewBox="0 0 240 64" preserveAspectRatio="none" aria-hidden style={{ maskImage: 'linear-gradient(to top, black 30%, transparent)' }}>
+    <svg
+      className="aura-kpi-sparkline"
+      viewBox="0 0 240 64"
+      preserveAspectRatio="none"
+      aria-hidden
+    >
       <path
         d={`${path} V 64 H 0 Z`}
         fill={`url(#kpi-area-${accent})`}
@@ -98,43 +103,38 @@ export default function KpiCard({
 }: KpiCardProps) {
   return (
     <div className={cn('aura-kpi', `aura-kpi--${size}`, size === 'hero' && 'aura-kpi--command', className)}>
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="aura-kpi-label">{title}</p>
-          <div className={cn('mt-2', size === 'hero' && 'mt-3')}>
-            <p
-              className={cn(
-                'aura-kpi-value',
-                size === 'hero' ? 'aura-kpi-value--hero' : 'aura-kpi-value--standard',
-                size === 'compact' && 'text-2xl sm:text-3xl',
-                valueTone === 'gold' && 'aura-kpi-value--gold',
-              )}
-            >
-              {value}
-            </p>
-            {trend !== undefined && trendLabel && (
-              <div className="mt-2.5">
-                <TrendBadge
-                  value={trend}
-                  label={trendLabel(Math.abs(trend))}
-                  size="sm"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className={cn('aura-kpi-icon', ACCENT_ICON[accent], size === 'hero' && 'h-10 w-10')}>
-          <AuraIcon
-            icon={Icon}
-            size={size === 'hero' ? 'xl' : 'lg'}
-            className={ACCENT_ICON[accent]}
-          />
-        </div>
+      <div className={cn('aura-kpi-icon', ACCENT_ICON[accent])}>
+        <AuraIcon
+          icon={Icon}
+          size={size === 'hero' ? 'lg' : 'md'}
+          className={ACCENT_ICON[accent]}
+        />
       </div>
-      
-      {subtitle && (
-        <p className="relative z-10 mt-3 text-[11px] leading-relaxed text-fumo/80">{subtitle}</p>
-      )}
+
+      <div className="relative z-10 aura-kpi-body">
+        <p className="aura-kpi-label">{title}</p>
+        <p
+          className={cn(
+            'aura-kpi-value',
+            size === 'hero' ? 'aura-kpi-value--hero' : 'aura-kpi-value--standard',
+            size === 'compact' && 'text-2xl sm:text-3xl',
+            valueTone === 'gold' && 'aura-kpi-value--gold',
+          )}
+        >
+          {value}
+        </p>
+        {trend !== undefined && trendLabel && (
+          <TrendBadge
+            value={trend}
+            label={trendLabel(Math.abs(trend))}
+            size="xs"
+            className="mt-1.5"
+          />
+        )}
+        {subtitle && (
+          <p className="aura-kpi-subtitle">{subtitle}</p>
+        )}
+      </div>
 
       <KpiSparkline accent={accent} data={sparklineData} />
     </div>

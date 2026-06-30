@@ -8,17 +8,35 @@ import { pwaIncludeAssets, pwaManifest } from './src/pwa/manifest'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-/** CSS principale non bloccante: critical styles già inline in index.html. */
+/** CSS principale non bloccante + nessun prefetch chunk dashboard sulla landing. */
 function nonBlockingCss(): Plugin {
   return {
     name: 'non-blocking-css',
     apply: 'build',
     enforce: 'post',
     transformIndexHtml(html) {
-      return html.replace(
-        /<link rel="stylesheet" crossorigin href="(\/assets\/[^"]+\.css)">/g,
+      let out = html.replace(
+        /<link rel="stylesheet"(?: crossorigin)? href="(\/assets\/[^"]+\.css)">/g,
         '<link rel="preload" as="style" href="$1" onload="this.onload=null;this.rel=\'stylesheet\'"><noscript><link rel="stylesheet" href="$1"></noscript>',
       )
+      // Evita download anticipato di chunk route (recharts, dashboard, …) sulla landing
+      out = out.replace(/<link rel="modulepreload"[^>]+>/g, (tag) => {
+        if (
+          tag.includes('recharts')
+          || tag.includes('LuxuryAreaChart')
+          || tag.includes('LuxuryBarChart')
+          || tag.includes('LuxuryLineChart')
+          || tag.includes('DashboardPage')
+          || tag.includes('AnalyticsPage')
+          || tag.includes('ReportsPage')
+          || tag.includes('vendor-sentry')
+          || /\/assets\/(en|es-cn|es|fr|de)-[^"']+\.js/.test(tag)
+        ) {
+          return ''
+        }
+        return tag
+      })
+      return out
     },
   }
 }
@@ -60,9 +78,21 @@ export default defineConfig({
       resolveDependencies(_filename, deps) {
         return deps.filter(
           (dep) =>
-            !dep.includes('vendor-charts')
-            && !dep.includes('html2canvas')
-            && !dep.includes('/export-'),
+            !dep.includes('html2canvas')
+            && !dep.includes('/export-')
+            && !dep.includes('vendor-sentry')
+            && !dep.includes('/pages/')
+            && !dep.includes('DashboardPage')
+            && !dep.includes('AnalyticsPage')
+            && !dep.includes('ReportsPage')
+            && !dep.includes('AIPredictivePage')
+            && !dep.includes('PaymentsPage')
+            && !dep.includes('ReportFiscal')
+            && !dep.includes('LuxuryAreaChart')
+            && !dep.includes('LuxuryBarChart')
+            && !dep.includes('LuxuryLineChart')
+            && !dep.includes('recharts')
+            && !/\/(en|es-cn|es|fr|de)-/.test(dep)
         )
       },
     },
@@ -79,7 +109,6 @@ export default defineConfig({
             return 'vendor-react'
           }
           if (id.includes('@tanstack')) return 'vendor-query'
-          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
           if (id.includes('axios') || id.includes('socket.io')) return 'vendor-network'
           if (id.includes('@sentry')) return 'vendor-sentry'
           if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n'

@@ -6,11 +6,17 @@ import { formatTime, cn } from '../../lib/utils'
 import { useRealtimeQuery } from '../../hooks/useRealtimeInvalidation'
 import { useRole } from '../../hooks/useRole'
 import {
-  Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, X, ListOrdered,
+  Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, ListOrdered,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
+import {
+  AuraDialog,
+  AuraDialogBody,
+  AuraDialogFooter,
+  AuraDialogHeader,
+} from '@/components/ui/AuraDialog'
 
 interface WaitlistEntry {
   id: string
@@ -45,90 +51,83 @@ function WaitlistForm({ date, onSave, onCancel }: WaitlistFormProps) {
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
-      <div className="w-full max-w-md rounded-xl premium-card p-6 shadow-lg" onClick={e => e.stopPropagation()}>
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-pietra">{t('waitlist.addGuest')}</h3>
-          <button type="button" onClick={onCancel} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="space-y-4">
+    <AuraDialog onClose={onCancel} maxWidth="md" hideClose>
+      <AuraDialogHeader onClose={onCancel} title={t('waitlist.addGuest')} />
+      <AuraDialogBody>
+        <label className="block text-sm font-medium text-pietra">
+          {t('waitlist.guestName')}
+          <input
+            value={form.guestName}
+            onChange={e => update('guestName', e.target.value)}
+            className="saas-input mt-1 w-full py-2.5 text-sm"
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm font-medium text-pietra">
-            {t('waitlist.guestName')}
+            {t('common.phone')}
             <input
-              value={form.guestName}
-              onChange={e => update('guestName', e.target.value)}
-              className="saas-input mt-1 w-full py-2.5 text-sm"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm font-medium text-pietra">
-              {t('common.phone')}
-              <input
-                value={form.guestPhone}
-                onChange={e => update('guestPhone', e.target.value)}
-                className="saas-input mt-1 w-full py-2.5 text-sm"
-              />
-            </label>
-            <label className="block text-sm font-medium text-pietra">
-              {t('waitlist.covers')}
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={form.covers}
-                onChange={e => update('covers', parseInt(e.target.value, 10))}
-                className="saas-input mt-1 w-full py-2.5 text-sm"
-              />
-            </label>
-          </div>
-          <label className="block text-sm font-medium text-pietra">
-            {t('waitlist.requestedTime')}
-            <input
-              type="datetime-local"
-              value={form.requestedDate}
-              onChange={e => update('requestedDate', e.target.value)}
+              value={form.guestPhone}
+              onChange={e => update('guestPhone', e.target.value)}
               className="saas-input mt-1 w-full py-2.5 text-sm"
             />
           </label>
           <label className="block text-sm font-medium text-pietra">
-            {t('common.email')}
+            {t('waitlist.covers')}
             <input
-              type="email"
-              value={form.guestEmail}
-              onChange={e => update('guestEmail', e.target.value)}
+              type="number"
+              min={1}
+              max={20}
+              value={form.covers}
+              onChange={e => update('covers', parseInt(e.target.value, 10))}
               className="saas-input mt-1 w-full py-2.5 text-sm"
             />
           </label>
-          <label className="block text-sm font-medium text-pietra">
-            {t('waitlist.notes')}
-            <textarea
-              value={form.notes}
-              onChange={e => update('notes', e.target.value)}
-              rows={2}
-              className="saas-input mt-1 w-full resize-none py-2.5 text-sm"
-            />
-          </label>
         </div>
-        <div className="mt-6 flex gap-3">
-          <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-fumo">
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onSave({
-              ...form,
-              requestedDate: new Date(form.requestedDate).toISOString(),
-            })}
-            disabled={!form.guestName || !form.guestPhone}
-            className="flex-1 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60"
-          >
-            {t('waitlist.addToList')}
-          </button>
-        </div>
-      </div>
-    </div>
+        <label className="block text-sm font-medium text-pietra">
+          {t('waitlist.requestedTime')}
+          <input
+            type="datetime-local"
+            value={form.requestedDate}
+            onChange={e => update('requestedDate', e.target.value)}
+            className="saas-input mt-1 w-full py-2.5 text-sm"
+          />
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('common.email')}
+          <input
+            type="email"
+            value={form.guestEmail}
+            onChange={e => update('guestEmail', e.target.value)}
+            className="saas-input mt-1 w-full py-2.5 text-sm"
+          />
+        </label>
+        <label className="block text-sm font-medium text-pietra">
+          {t('waitlist.notes')}
+          <textarea
+            value={form.notes}
+            onChange={e => update('notes', e.target.value)}
+            rows={2}
+            className="saas-input mt-1 w-full resize-none py-2.5 text-sm"
+          />
+        </label>
+      </AuraDialogBody>
+      <AuraDialogFooter className="flex gap-3 sm:flex-row">
+        <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-fumo">
+          {t('common.cancel')}
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave({
+            ...form,
+            requestedDate: new Date(form.requestedDate).toISOString(),
+          })}
+          disabled={!form.guestName || !form.guestPhone}
+          className="flex-1 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-navy hover:bg-aura-gold-light disabled:opacity-60"
+        >
+          {t('waitlist.addToList')}
+        </button>
+      </AuraDialogFooter>
+    </AuraDialog>
   )
 }
 

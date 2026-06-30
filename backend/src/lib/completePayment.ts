@@ -2,24 +2,18 @@ import { io } from '../index'
 import { prisma } from './prisma'
 import {
   finalizeOrderPayment,
-  releaseTableIfEmpty,
   type FinalizePaymentInput,
   type SplitBreakdown,
+  type PrecomputedOrderTotals,
 } from './orderPayment'
-import { occupyTableForSessionOrder } from './orderSession'
 import { chargePosCard } from './posCharge'
-import { sendEmail } from './email'
 import { loadRestaurantFiscalConfig } from './taxEngine'
 import { computePosPaymentAmounts, type OrderAmounts } from './tipFiscal'
-import { applyDiscountToOrder, resolveDiscountForOrder } from './orderDiscount'
+import { resolveDiscountForOrder } from './orderDiscount'
 import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
 import { stripe } from './stripe'
 import { moneyNumber } from './money'
-
-const posOrderInclude = {
-  table: true,
-  items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' as const } },
-}
+import { schedulePaymentSideEffects } from './paymentSideEffects'
 
 function paymentLockKey(orderId: string): string {
   return `payment:finalize:${orderId}`
@@ -35,28 +29,17 @@ export async function completeOrderPayment(input: {
   stripePaymentIntentId?: string
   receiptEmail?: string
   restaurantName?: string
-  /** false per ordini guest prepagati Stripe: la cucina deve ancora preparare i piatti */
   serveItemsOnPayment?: boolean
-  /** Applicato solo dopo incasso riuscito (evita sconto su pagamento fallito) */
   discountOptions?: { applyLoyalty?: boolean; discountCode?: string }
 }) {
-  const [orderPreview, fiscal] = await Promise.all([
-    prisma.order.findFirst({
-      where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
-      include: { items: true },
-    }),
-    loadRestaurantFiscalConfig(input.finalize.restaurantId),
-  ])
+  const orderPreview = await prisma.order.findFirst({
+    where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+    include: { items: true },
+  })
 
-  if (!orderPreview) {
-    throw new Error('ORDER_NOT_FOUND')
-  }
-  if (orderPreview.status === 'PAID') {
-    throw new Error('ORDER_ALREADY_PAID')
-  }
-  if (orderPreview.status === 'CANCELLED') {
-    throw new Error('ORDER_CANCELLED')
-  }
+  if (!orderPreview) throw new Error('ORDER_NOT_FOUND')
+  if (orderPreview.status === 'PAID') throw new Error('ORDER_ALREADY_PAID')
+  if (orderPreview.status === 'CANCELLED') throw new Error('ORDER_CANCELLED')
 
   const lockKey = paymentLockKey(input.finalize.orderId)
   const lockAcquired = await acquireIdempotencyLock(
@@ -73,7 +56,11 @@ export async function completeOrderPayment(input: {
     throw new Error('PAYMENT_IN_PROGRESS')
   }
 
+  const fiscal = await loadRestaurantFiscalConfig(input.finalize.restaurantId)
+
   let orderAmounts: OrderAmounts = orderPreview
+  let precomputedTotals: PrecomputedOrderTotals | undefined
+
   if (input.discountOptions) {
     const { totals } = await resolveDiscountForOrder(
       input.finalize.restaurantId,
@@ -86,6 +73,14 @@ export async function completeOrderPayment(input: {
       tax: totals.tax,
       total: totals.total,
       tipAmount: orderPreview.tipAmount,
+    }
+    precomputedTotals = {
+      subtotal: totals.subtotal,
+      tax: totals.tax,
+      total: totals.total,
+      discountAmount: totals.discountAmount,
+      revenueAmount: totals.revenueAmount,
+      taxRateApplied: totals.taxRateApplied,
     }
   }
 
@@ -109,63 +104,33 @@ export async function completeOrderPayment(input: {
       )
     }
 
-    if (input.discountOptions) {
-      await applyDiscountToOrder(
-        input.finalize.orderId,
-        input.finalize.restaurantId,
-        input.discountOptions,
-      )
-    }
-
     const result = await finalizeOrderPayment(input.finalize, {
       splitBreakdown: input.splitBreakdown,
       serveItemsOnPayment: input.serveItemsOnPayment,
+      precomputedTotals,
+      fiscalConfig: fiscal,
     })
 
-    if (posResult?.stripePaymentIntentId) {
-      await prisma.order.update({
-        where: { id: input.finalize.orderId },
-        data: { stripePaymentIntent: posResult.stripePaymentIntentId },
-      })
-    }
+    const { updatedOrder } = result
 
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: input.finalize.orderId },
-      include: posOrderInclude,
+    if (result.updatedTable) {
+      io.to(input.finalize.restaurantId).emit('table:updated', result.updatedTable)
+    }
+    io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+
+    schedulePaymentSideEffects({
+      orderId: input.finalize.orderId,
+      restaurantId: input.finalize.restaurantId,
+      paidAt: result.paidAt,
+      serveItemsOnPayment: input.serveItemsOnPayment !== false,
+      transactionId: result.transactionId,
+      total: result.total,
+      receiptEmail: input.receiptEmail,
+      restaurantName: input.restaurantName,
+      stripePaymentIntentId: posResult?.stripePaymentIntentId ?? input.stripePaymentIntentId,
     })
 
-    let occupiedTable: Awaited<ReturnType<typeof occupyTableForSessionOrder>> = null
-    if (updatedOrder?.tableId && input.serveItemsOnPayment === false) {
-      occupiedTable = await prisma.$transaction(async tx =>
-        occupyTableForSessionOrder(tx, updatedOrder.tableId!, input.finalize.restaurantId, updatedOrder.id),
-      )
-    }
-
-    const releasedTable = await releaseTableIfEmpty(updatedOrder?.tableId)
-    if (occupiedTable) {
-      io.to(input.finalize.restaurantId).emit('table:updated', occupiedTable)
-    } else if (releasedTable) {
-      io.to(input.finalize.restaurantId).emit('table:updated', releasedTable)
-    }
-
-    if (updatedOrder) {
-      io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
-      if (input.serveItemsOnPayment === false) {
-        io.to(input.finalize.restaurantId).emit('order:created', updatedOrder)
-        io.to(input.finalize.restaurantId).emit('print:kitchen', { type: 'kitchen', order: updatedOrder })
-      }
-      io.to(input.finalize.restaurantId).emit('print:receipt', { type: 'receipt', order: updatedOrder })
-    }
-
-    let emailSent = false
-    if (input.receiptEmail) {
-      sendEmail({
-        to: input.receiptEmail,
-        subject: `Ricevuta — ${input.restaurantName ?? 'Aura Syncro'}`,
-        text: `Grazie per la visita!\nTotale: €${result.total.toFixed(2)}\nTransazione: ${result.transactionId}`,
-      }).catch(err => console.error('Failed to send async receipt:', err))
-      emailSent = true
-    }
+    const emailSent = Boolean(input.receiptEmail)
 
     await saveIdempotentResponse(
       input.finalize.restaurantId,
@@ -182,7 +147,6 @@ export async function completeOrderPayment(input: {
       ?? (input.finalize.paymentMethod === 'STRIPE' ? input.stripePaymentIntentId : undefined)
     if (stripeIntentToRefund) {
       const message = err instanceof Error ? err.message : 'UNKNOWN'
-      // Best-effort compensation: auto-refund captured Stripe card charge when business finalize fails.
       if (posResult?.provider === 'stripe' || input.finalize.paymentMethod === 'STRIPE') {
         await stripe.refunds.create({
           payment_intent: stripeIntentToRefund,
@@ -234,8 +198,6 @@ export async function completeGuestStripePayment(
   if (!order || order.status === 'PAID' || order.status === 'CANCELLED') return null
 
   if (stripeAmountTotalCents != null) {
-    // RC-09: double-round before converting to cents to prevent IEEE-754 drift
-    // (e.g. order.total = 49.999999... → Math.round(49.999999 * 100) = 4999 instead of 5000)
     const expectedCents = Math.round(Math.round(moneyNumber(order.total) * 100) / 100 * 100)
     if (stripeAmountTotalCents < expectedCents) {
       throw new Error('STRIPE_AMOUNT_MISMATCH')
@@ -243,13 +205,6 @@ export async function completeGuestStripePayment(
     if (stripeAmountTotalCents > expectedCents + 1) {
       throw new Error('STRIPE_AMOUNT_OVERPAY')
     }
-  }
-
-  if (paymentIntentId) {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { stripePaymentIntent: paymentIntentId },
-    })
   }
 
   return completeOrderPayment({

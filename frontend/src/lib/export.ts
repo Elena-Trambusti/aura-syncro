@@ -3,6 +3,7 @@
  */
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { addMoney, lineGrossMoney, moneyNumber } from './money'
 
 export function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]): void {
   const sep = ';'
@@ -46,11 +47,11 @@ export async function printReceipt(order: {
   const locale = options?.locale ?? 'it-IT'
   const taxLabel = options?.taxLabel ?? 'Tax'
   const tipLabel = options?.tipLabel ?? 'Mancia'
-  const formatEur = (n: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(n)
+  const formatEur = (n: unknown) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(moneyNumber(n))
   const formatDt = (d: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
 
-  const foodTotal = order.revenueAmount ?? (order.subtotal + order.tax)
-  const tip = order.tipAmount ?? Math.max(0, order.total - foodTotal)
+  const foodTotal = moneyNumber(order.revenueAmount) || addMoney(order.subtotal, order.tax)
+  const tip = moneyNumber(order.tipAmount) || Math.max(0, moneyNumber(order.total) - foodTotal)
 
   const PAYMENT_LABELS: Record<string, string> = { CASH: 'Contanti', CARD: 'Carta', VOUCHER: 'Voucher', DIGITAL: 'Digitale' }
 
@@ -83,7 +84,7 @@ export async function printReceipt(order: {
   ${order.items.map(item => `
     <div class="row">
       <span>${item.quantity}x ${item.menuItem.name}</span>
-      <span>${formatEur(item.unitPrice * item.quantity)}</span>
+      <span>${formatEur(lineGrossMoney(item.quantity, item.unitPrice))}</span>
     </div>
   `).join('')}
   <div class="separator"></div>
@@ -114,7 +115,7 @@ export async function printReceipt(order: {
     
     escpos.align('left')
     order.items.forEach(item => {
-      escpos.row(`${item.quantity}x ${item.menuItem.name.substring(0, 20)}`, formatEur(item.unitPrice * item.quantity))
+      escpos.row(`${item.quantity}x ${item.menuItem.name.substring(0, 20)}`, formatEur(lineGrossMoney(item.quantity, item.unitPrice)))
     })
     escpos.separator()
     

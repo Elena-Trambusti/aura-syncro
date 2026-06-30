@@ -218,7 +218,7 @@ export default function Sidebar() {
                         <FeatureIcon className="h-[17px] w-[17px]" />
                       </span>
                       <span className="truncate">{t(item.labelKey)}</span>
-                      <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" aria-hidden />
+                      <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-[#C5A059]/50" aria-hidden />
                     </button>
                   ) : (
                     <NavLink to={item.to} className={itemClass}>
@@ -252,7 +252,7 @@ export default function Sidebar() {
                     <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
                   <span className="truncate">{t(link.labelKey)}</span>
-                  <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-aura-gold/60" />
+                  <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-[#C5A059]/50" />
                 </button>
               )
             }
@@ -270,7 +270,7 @@ export default function Sidebar() {
                     <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
                   {t(link.labelKey)}
-                  <span className="ml-auto text-xs opacity-40">↗</span>
+                  <span className="ml-auto text-xs text-[#C5A059]/45">↗</span>
                 </a>
               )
             }

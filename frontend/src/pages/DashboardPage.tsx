@@ -7,16 +7,11 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { usePlanTier } from '../hooks/usePlanTier'
 import { useRole } from '../hooks/useRole'
 import { tq } from '../lib/queryKeys'
-import { BRAND } from '../lib/brand'
 import {
   TrendingUp, ShoppingBag, CalendarCheck,
   Users, AlertTriangle, ClipboardList, AlertCircle,
   UtensilsCrossed, Clock,
 } from 'lucide-react'
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
 import KpiCard from '../components/ui/KpiCard'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -25,6 +20,8 @@ import ServiceHeatmap from '../components/dashboard/ServiceHeatmap'
 import LiveCommandCenter from '../components/dashboard/LiveCommandCenter'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
+import { LuxuryAreaChart } from '../components/charts/lazy'
+import ChartSuspense from '../components/charts/ChartSuspense'
 
 interface DashboardData {
   today: { orders: number; revenue: number; reservations: number; activeOrders: number }
@@ -37,38 +34,6 @@ function ChartError({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center py-12 text-fumo">
       <AlertCircle className="mb-2 h-8 w-8 text-red-400" />
       <p className="text-sm text-red-400">{message}</p>
-    </div>
-  )
-}
-
-function RevenueTooltip({
-  active,
-  payload,
-  label,
-  locale,
-}: {
-  active?: boolean
-  payload?: Array<{ value?: number }>
-  label?: string
-  locale: string
-}) {
-  if (!active || !payload?.length) return null
-
-  const dateLabel = label
-    ? new Date(label).toLocaleDateString(locale, {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      })
-    : ''
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-navy-elevated px-3 py-2.5 shadow-lg">
-      <p className="text-xs font-medium text-fumo">{dateLabel}</p>
-      <p className="mt-0.5 text-sm font-bold tabular-nums text-aura-gold">
-        {formatCurrency(Number(payload[0]?.value) || 0)}
-      </p>
     </div>
   )
 }
@@ -117,9 +82,6 @@ function TopDishRow({
     </div>
   )
 }
-
-const CHART_GRID = 'rgba(255,255,255,0.06)'
-const CHART_AXIS = '#71717A'
 
 export default function DashboardPage() {
   const { t } = useTranslation()
@@ -235,7 +197,7 @@ export default function DashboardPage() {
 
       {canAnalytics && (
       <section aria-label={t('dashboard.kpiSection', { defaultValue: 'Indicatori chiave' })}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-4 w-full">
           <KpiCard
             title={t('dashboard.todayRevenue')}
             value={formatCurrency(dashboard?.today.revenue || 0)}
@@ -261,16 +223,18 @@ export default function DashboardPage() {
             value={String(dashboard?.today.activeOrders || 0)}
             subtitle={t('dashboard.activeOrdersSub')}
             icon={ClipboardList}
-            accent="amber"
+            accent="gold"
             size="hero"
+            valueTone="gold"
           />
           <KpiCard
             title={t('dashboard.todayReservations')}
             value={String(dashboard?.today.reservations || 0)}
             subtitle={t('dashboard.todayReservationsSub')}
             icon={CalendarCheck}
-            accent="blue"
+            accent="gold"
             size="hero"
+            valueTone="gold"
           />
         </div>
       </section>
@@ -332,53 +296,16 @@ export default function DashboardPage() {
             {revenueError ? (
               <ChartError message={t('common.loadError')} />
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={revenueData || []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={BRAND.gold} stopOpacity={0.4} />
-                      <stop offset="100%" stopColor={BRAND.gold} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={d => new Date(d).toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })}
-                    tick={{ fontSize: 11, fill: CHART_AXIS }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={v => `€${v}`}
-                    tick={{ fontSize: 11, fill: CHART_AXIS }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={48}
-                  />
-                  <Tooltip
-                    cursor={{ stroke: BRAND.gold, strokeWidth: 1, strokeDasharray: '4 4', strokeOpacity: 0.45 }}
-                    content={({ active, payload, label }) => (
-                      <RevenueTooltip
-                        active={active}
-                        payload={payload?.map(entry => ({ value: Number(entry.value) || 0 }))}
-                        label={typeof label === 'string' ? label : String(label ?? '')}
-                        locale={locale}
-                      />
-                    )}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke={BRAND.gold}
-                    strokeWidth={2}
-                    fill="url(#revenueGradient)"
-                    isAnimationActive
-                    animationDuration={1200}
-                    animationEasing="ease-out"
-                    activeDot={{ r: 5, fill: BRAND.gold, stroke: BRAND.champagne, strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <ChartSuspense height={280}>
+                <LuxuryAreaChart
+                  data={(revenueData as Array<{ date: string; revenue: number }>) || []}
+                  dataKey="revenue"
+                  xKey="date"
+                  locale={locale}
+                  valueLabel={t('dashboard.revenueLabel', { defaultValue: 'Fatturato netto' })}
+                  height={280}
+                />
+              </ChartSuspense>
             )}
           </div>
 

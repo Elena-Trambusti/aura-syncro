@@ -123,7 +123,7 @@ export default function LandingGallery() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-          {data.problems.map((problem, index) => {
+          {data.problems.map(problem => {
             const Icon = problem.icon
             return (
               <article
@@ -135,9 +135,6 @@ export default function LandingGallery() {
                   <div className="relative z-10 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-black/60 text-[#E8C872] shadow-[0_0_28px_rgba(212,175,55,0.18)] backdrop-blur-sm transition-all duration-500 group-hover:scale-105 group-hover:border-[#E8C872]/40 group-hover:shadow-[0_0_36px_rgba(212,175,55,0.28)]">
                     <AuraIcon icon={Icon} size="2xl" weight="display" className="text-[#E8C872]" />
                   </div>
-                  <span className="absolute right-5 top-5 font-display text-5xl font-light leading-none text-[#D4AF37]/10 transition-colors duration-500 group-hover:text-[#D4AF37]/20">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
                 </div>
 
                 <div className="flex flex-1 flex-col p-7 sm:p-8">

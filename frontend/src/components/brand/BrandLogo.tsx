@@ -18,6 +18,8 @@ interface BrandLogoProps {
   showName?: boolean
   layout?: 'icon' | 'horizontal'
   priority?: boolean
+  /** Gap ridotto e tagline nascosta su viewport stretti (header mobile) */
+  compact?: boolean
 }
 
 export default function BrandLogo({
@@ -26,6 +28,7 @@ export default function BrandLogo({
   showName = false,
   layout = 'icon',
   priority = false,
+  compact = false,
 }: BrandLogoProps) {
   const { t } = useTranslation()
   const s = SIZES[size]
@@ -49,13 +52,18 @@ export default function BrandLogo({
   }
 
   return (
-    <div className={cn('flex items-center justify-center gap-3', className)}>
+    <div className={cn('flex items-center justify-center', compact ? 'gap-2' : 'gap-3', className)}>
       {iconBox}
       <div className="min-w-0 text-left">
-        <p className={cn('font-display font-semibold tracking-tight text-pietra leading-tight', s.text)}>
+        <p className={cn('font-display font-semibold tracking-tight text-pietra leading-tight whitespace-nowrap', s.text)}>
           {BRAND.name}
         </p>
-        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-aura-gold/80">
+        <p
+          className={cn(
+            'text-[8px] font-bold uppercase tracking-[0.22em] text-aura-gold/80 whitespace-nowrap',
+            compact && 'hidden min-[420px]:block',
+          )}
+        >
           {t('brand.saasPlatform')}
         </p>
       </div>

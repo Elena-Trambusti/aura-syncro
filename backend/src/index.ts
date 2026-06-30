@@ -48,7 +48,7 @@ import { validateEnv, isPosSimulationAllowed } from './lib/env'
 import { getVapidPublicKey } from './lib/webPush'
 import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
-import { decimalJsonReplacer } from './lib/money'
+import { serializeDecimals } from './lib/money'
 
 // In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
 // in locale carichiamo backend/.env tramite dotenv.
@@ -123,7 +123,7 @@ app.use((_req, res, next) => {
   const originalJson = res.json.bind(res)
   res.json = (body: unknown) => {
     if (body === undefined) return originalJson(body)
-    return originalJson(JSON.parse(JSON.stringify(body, decimalJsonReplacer)))
+    return originalJson(serializeDecimals(body))
   }
   next()
 })

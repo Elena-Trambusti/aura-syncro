@@ -1,22 +1,16 @@
 import type { ReactNode } from 'react'
-import { cn } from '../../lib/utils'
-import { ui } from '../../lib/ui'
-import ModalPortal from '../ModalPortal'
+import { cn } from '@/lib/utils'
+import { AuraDialog } from './AuraDialog'
+import type { AuraDialogMaxWidth } from './AuraDialog'
 
 interface GlassModalProps {
   children: ReactNode
   onClose: () => void
   className?: string
-  maxWidth?: 'sm' | 'md' | 'lg'
+  maxWidth?: AuraDialogMaxWidth
 }
 
-const MAX_W = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-} as const
-
-/** Overlay + pannello vetro satin — modali premium luxury. */
+/** Overlay + pannello vetro satin — modali premium luxury (Radix Dialog). */
 export default function GlassModal({
   children,
   onClose,
@@ -24,13 +18,14 @@ export default function GlassModal({
   maxWidth = 'md',
 }: GlassModalProps) {
   return (
-    <ModalPortal onClose={onClose}>
-      <div
-        className={cn('w-full', MAX_W[maxWidth], ui.glassModal, 'p-6 sm:p-8', className)}
-        onClick={e => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </ModalPortal>
+    <AuraDialog
+      onClose={onClose}
+      maxWidth={maxWidth}
+      variant="sheet"
+      hideClose
+      className={cn('p-6 sm:p-8', className)}
+    >
+      {children}
+    </AuraDialog>
   )
 }

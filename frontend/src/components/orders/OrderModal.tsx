@@ -7,12 +7,13 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { submitAddOrderItems, submitCreateOrder } from '../../lib/offlineSync'
 import { formatCurrency, ORDER_STATUS_LABELS, cn } from '../../lib/utils'
+import { addMoney, lineGrossMoney, moneyNumber } from '../../lib/money'
 import { X, Plus, Minus, ShoppingCart, ArrowLeft, Receipt, ArrowRightLeft } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useRole } from '../../hooks/useRole'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
-import ModalPortal from '../ModalPortal'
+import { AuraDialog } from '@/components/ui/AuraDialog'
 import CustomerPicker, { type CustomerOption } from '../checkout/CustomerPicker'
 import { findActiveTableOrder } from '../../lib/orderSession'
 
@@ -182,7 +183,7 @@ export default function OrderModal({
     let sum = 0
     item.modifierGroups?.forEach(g => {
       g.options.forEach(o => {
-        if (modifiers.includes(o.id)) sum += o.price
+        if (modifiers.includes(o.id)) sum = addMoney(sum, o.price)
       })
     })
     return sum
@@ -211,8 +212,8 @@ export default function OrderModal({
         : [...prev, { 
             menuItemId: item.id, 
             name: item.name, 
-            basePrice: item.price,
-            price: item.price + (modifiers.length > 0 ? getModifiersPrice(item, modifiers) : 0), 
+            basePrice: moneyNumber(item.price),
+            price: addMoney(item.price, modifiers.length > 0 ? getModifiersPrice(item, modifiers) : 0), 
             quantity: 1, 
             course: selectedCourse,
             modifiers,
@@ -233,7 +234,7 @@ export default function OrderModal({
     })
   }
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const cartTotal = cart.reduce((sum, item) => addMoney(sum, lineGrossMoney(item.quantity, item.price)), 0)
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
   const orderBadgeCount = cartCount > 0 ? cartCount : (activeOrder?.items.length ?? 0)
 
@@ -249,9 +250,9 @@ export default function OrderModal({
 
   if (!table) {
     return (
-      <ModalPortal onClose={onClose} overlayClassName="items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
-      </ModalPortal>
+      <AuraDialog onClose={onClose} variant="fullscreen" hideClose overlayClassName="flex items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-aura-gold/40 border-t-aura-gold rounded-full animate-spin" />
+      </AuraDialog>
     )
   }
 
@@ -370,7 +371,7 @@ export default function OrderModal({
           }}
           className="w-full bg-aura-gold text-white font-bold py-3.5 rounded-xl transition-colors hover:bg-aura-gold-light shadow-lg"
         >
-          {t('orderModal.addFor', { defaultValue: 'Aggiungi' })} {formatCurrency(modifyingItem.price + getModifiersPrice(modifyingItem, Object.values(selectedModifiers).flat()))}
+          {t('orderModal.addFor', { defaultValue: 'Aggiungi' })} {formatCurrency(addMoney(modifyingItem.price, getModifiersPrice(modifyingItem, Object.values(selectedModifiers).flat())))}
         </button>
       </div>
     </div>
@@ -525,7 +526,7 @@ export default function OrderModal({
                 <span className="text-[10px] text-aura-gold uppercase font-bold mt-1">{t('orderModal.course', { defaultValue: 'Portata' })} {item.course}</span>
               </div>
               <div className="shrink-0 mt-0.5">
-                <p className="text-sm font-medium tabular-nums text-pietra">{formatCurrency(item.price * item.quantity)}</p>
+                <p className="text-sm font-medium tabular-nums text-pietra">{formatCurrency(lineGrossMoney(item.quantity, item.price))}</p>
               </div>
             </div>
           ))}
@@ -570,7 +571,7 @@ export default function OrderModal({
                   <span className="truncate text-sm font-medium text-pietra">{item.menuItem.name}</span>
                 </div>
                 <span className="shrink-0 text-sm font-medium tabular-nums text-pietra">
-                  {formatCurrency(item.unitPrice * item.quantity)}
+                  {formatCurrency(lineGrossMoney(item.quantity, item.unitPrice))}
                 </span>
               </div>
             ))}
@@ -632,7 +633,7 @@ export default function OrderModal({
   )
 
   return (
-    <ModalPortal onClose={onClose} overlayClassName="items-stretch justify-stretch p-0 sm:items-center sm:justify-center sm:p-4">
+    <AuraDialog onClose={onClose} variant="fullscreen" hideClose>
       <div
         className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-navy-elevated sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
         onClick={e => e.stopPropagation()}
@@ -697,6 +698,6 @@ export default function OrderModal({
           )}
         </div>
       </div>
-    </ModalPortal>
+    </AuraDialog>
   )
 }

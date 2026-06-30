@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { addMoney, lineGrossMoney } from '../lib/money'
 
 export interface GuestModifierGroup {
   id: string
@@ -103,7 +104,7 @@ export function useGuestCart(slug: string | undefined) {
   )
 
   const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+    () => items.reduce((sum, i) => addMoney(sum, lineGrossMoney(i.quantity, i.price)), 0),
     [items],
   )
 

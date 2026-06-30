@@ -31,7 +31,9 @@ export async function deductInventoryForOrderItem(
     deductions.set(link.inventoryItemId, (deductions.get(link.inventoryItemId) ?? 0) + amount)
   }
 
-  for (const [inventoryItemId, amount] of deductions.entries()) {
+  for (const [inventoryItemId, amount] of [...deductions.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
     const updated = await tx.inventoryItem.updateMany({
       where: { id: inventoryItemId, restaurantId, quantity: { gte: amount } },
       data: { quantity: { decrement: amount } },
@@ -53,12 +55,57 @@ export async function deductInventoryForOrder(
   orderId: string,
   restaurantId: string,
 ): Promise<void> {
+  await deductInventoryForOrderBatched(tx, orderId, restaurantId)
+}
+
+/**
+ * Versione batch: una query per le righe, aggregazione in memoria, meno round-trip DB.
+ * Usata nel percorso background post-pagamento.
+ */
+export async function deductInventoryForOrderBatched(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  restaurantId: string,
+): Promise<void> {
   const items = await tx.orderItem.findMany({
     where: { orderId, inventoryDeducted: false, status: { not: 'CANCELLED' } },
-    select: { id: true },
+    include: { menuItem: { include: { inventoryLinks: true } } },
   })
+  if (items.length === 0) return
+
+  const deductions = new Map<string, number>()
+  const markDeductedIds: string[] = []
+
   for (const item of items) {
-    await deductInventoryForOrderItem(tx, item.id, restaurantId)
+    if (item.menuItem.inventoryLinks.length === 0) {
+      markDeductedIds.push(item.id)
+      continue
+    }
+    for (const link of item.menuItem.inventoryLinks) {
+      const amount = link.quantity * item.quantity
+      if (amount <= 0) continue
+      deductions.set(link.inventoryItemId, (deductions.get(link.inventoryItemId) ?? 0) + amount)
+    }
+    markDeductedIds.push(item.id)
+  }
+
+  for (const [inventoryItemId, amount] of [...deductions.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    const updated = await tx.inventoryItem.updateMany({
+      where: { id: inventoryItemId, restaurantId, quantity: { gte: amount } },
+      data: { quantity: { decrement: amount } },
+    })
+    if (updated.count === 0) {
+      throw Object.assign(new Error('INSUFFICIENT_STOCK'), { code: 'INSUFFICIENT_STOCK' })
+    }
+  }
+
+  if (markDeductedIds.length > 0) {
+    await tx.orderItem.updateMany({
+      where: { id: { in: markDeductedIds } },
+      data: { inventoryDeducted: true },
+    })
   }
 }
 

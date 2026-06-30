@@ -3,6 +3,7 @@ import { formatCurrency } from '../../lib/utils'
 import { useFiscalRegime } from '../../contexts/AuthContext'
 import { tRegime } from '../../lib/fiscalRegime'
 import { X, Printer, Mail, CheckCircle2 } from 'lucide-react'
+import { AuraDialog, AuraDialogFooter } from '@/components/ui/AuraDialog'
 
 export interface CheckoutFinalizeResult {
   transactionId: string
@@ -57,22 +58,18 @@ export default function ReceiptPreviewModal({
   const row = result.fiscal.row
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
-      <div
-        className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl premium-card shadow-lg"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-            <h2 className="text-lg font-bold text-pietra">{t('checkout.receiptTitle')}</h2>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
-            <X className="h-5 w-5" />
-          </button>
+    <AuraDialog onClose={onClose} maxWidth="md" hideClose className="flex max-h-[90vh] flex-col overflow-hidden p-0">
+      <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+          <h2 className="text-lg font-bold text-pietra">{t('checkout.receiptTitle')}</h2>
         </div>
+        <button type="button" onClick={onClose} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="rounded-lg border border-white/[0.08] bg-navy-surface/50 p-4 font-mono text-xs text-pietra">
             <p className="text-center text-sm font-bold">{restaurantName}</p>
             <p className="mt-1 text-center text-fumo">{t('checkout.transactionId', { id: result.transactionId })}</p>
@@ -119,25 +116,24 @@ export default function ReceiptPreviewModal({
           )}
         </div>
 
-        <div className="flex gap-2 border-t border-white/[0.08] p-4">
-          <button
-            type="button"
-            onClick={onPrint}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3 text-sm font-semibold text-fumo hover:bg-white/[0.05]"
-          >
-            <Printer className="h-4 w-4" />
-            {t('checkout.simulatePrint')}
-          </button>
-          <button
-            type="button"
-            onClick={onEmail}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl saas-btn-primary w-full py-3 text-sm"
-          >
-            <Mail className="h-4 w-4" />
-            {t('checkout.simulateEmail')}
-          </button>
-        </div>
-      </div>
-    </div>
+      <AuraDialogFooter className="mt-0 flex gap-2 border-t border-white/[0.08] p-4 sm:flex-row">
+        <button
+          type="button"
+          onClick={onPrint}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3 text-sm font-semibold text-fumo hover:bg-white/[0.05]"
+        >
+          <Printer className="h-4 w-4" />
+          {t('checkout.simulatePrint')}
+        </button>
+        <button
+          type="button"
+          onClick={onEmail}
+          className="saas-btn-primary flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm"
+        >
+          <Mail className="h-4 w-4" />
+          {t('checkout.simulateEmail')}
+        </button>
+      </AuraDialogFooter>
+    </AuraDialog>
   )
 }

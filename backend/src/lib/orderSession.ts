@@ -104,13 +104,73 @@ export async function releaseTableIfSessionComplete(
   const activeCount = await countActiveTableOrders(tableId, table.restaurantId)
   if (activeCount > 0) return null
 
+  return markTableCleaningIfOccupied(tableId, table.status)
+}
+
+/**
+ * Dopo incasso POS: il conto chiuso non blocca più il tavolo (ospiti usciti → pulizia),
+ * anche se in cucina restano item non ancora marcati SERVED.
+ */
+export async function releaseTableAfterPayment(
+  tableId: string | null | undefined,
+  paidOrderId: string,
+): Promise<Awaited<ReturnType<typeof prisma.table.update>> | null> {
+  if (!tableId) return null
+
+  const table = await prisma.table.findUnique({ where: { id: tableId } })
+  if (!table) return null
+
+  const otherActive = await prisma.order.count({
+    where: {
+      ...activeTableOrderWhere(tableId, table.restaurantId),
+      id: { not: paidOrderId },
+    },
+  })
+  if (otherActive > 0) return null
+
+  return markTableCleaningIfOccupied(tableId, table.status)
+}
+
+/** Variante transazionale — usata nel fast-path di incasso POS. */
+export async function releaseTableAfterPaymentTx(
+  tx: Prisma.TransactionClient,
+  tableId: string | null | undefined,
+  restaurantId: string,
+  paidOrderId: string,
+): Promise<Awaited<ReturnType<typeof prisma.table.update>> | null> {
+  if (!tableId) return null
+
+  const table = await tx.table.findFirst({ where: { id: tableId, restaurantId } })
+  if (!table) return null
+
+  const otherActive = await tx.order.count({
+    where: {
+      ...activeTableOrderWhere(tableId, restaurantId),
+      id: { not: paidOrderId },
+    },
+  })
+  if (otherActive > 0) return null
+
   if (table.status === 'OCCUPIED' || table.status === 'RESERVED') {
-    return prisma.table.update({
+    return tx.table.update({
       where: { id: tableId },
       data: { status: 'CLEANING' },
     })
   }
   return null
+}
+
+function markTableCleaningIfOccupied(
+  tableId: string,
+  status: string,
+): Promise<Awaited<ReturnType<typeof prisma.table.update>> | null> {
+  if (status === 'OCCUPIED' || status === 'RESERVED') {
+    return prisma.table.update({
+      where: { id: tableId },
+      data: { status: 'CLEANING' },
+    })
+  }
+  return Promise.resolve(null)
 }
 
 /** Occupa tavolo in modo atomico se libero o già riservato. */

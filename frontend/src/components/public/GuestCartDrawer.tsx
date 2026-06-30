@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { formatCurrency } from '../../lib/utils'
+import { addMoney, moneyNumber } from '../../lib/money'
 import { computeGuestOrderTax } from '../../lib/guestOrderTax'
 import { resolvePublicOrderErrorMessage } from '../../lib/publicOrderErrors'
 import type { GuestCartItem } from '../../hooks/useGuestCart'
@@ -78,8 +79,8 @@ export default function GuestCartDrawer({
     modifiers: i.modifierIds.length ? i.modifierIds : undefined,
   }))
 
-  const parsedTip = Math.max(0, Number.parseFloat(tipInput.replace(',', '.')) || 0)
-  const grandTotal = total + parsedTip
+  const parsedTip = Math.max(0, moneyNumber(tipInput.replace(',', '.')))
+  const grandTotal = addMoney(total, parsedTip)
 
   const basePayload = {
     slug,

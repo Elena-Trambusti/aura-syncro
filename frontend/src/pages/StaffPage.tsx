@@ -9,7 +9,9 @@ import { type AppRole } from '../lib/rbac'
 import { Plus, UserCog, Loader2, X, UserMinus, UserCheck, CalendarDays, Pencil } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import StaffShiftsTab from '../components/staff/StaffShiftsTab'
-import ModalPortal from '../components/ModalPortal'
+import GlassModal from '../components/ui/GlassModal'
+import AuraSelect from '../components/ui/AuraSelect'
+import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -134,34 +136,18 @@ export default function StaffPage() {
         )}
       />
 
-      <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-navy-surface/40 p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('team')}
-          className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
-            activeTab === 'team'
-              ? 'bg-aura-gold/15 text-aura-gold shadow-sm'
-              : 'text-fumo hover:text-pietra',
-          )}
-        >
-          <UserCog className="h-4 w-4" />
-          {t('staff.tabTeam')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('shifts')}
-          className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
-            activeTab === 'shifts'
-              ? 'bg-aura-gold/15 text-aura-gold shadow-sm'
-              : 'text-fumo hover:text-pietra',
-          )}
-        >
-          <CalendarDays className="h-4 w-4" />
-          {t('staff.shifts')}
-        </button>
-      </div>
+      <AuraTabs value={activeTab} onValueChange={v => setActiveTab(v as StaffTab)}>
+        <AuraTabsList className="w-full sm:w-auto">
+          <AuraTabsTrigger value="team">
+            <UserCog className="h-4 w-4" />
+            {t('staff.tabTeam')}
+          </AuraTabsTrigger>
+          <AuraTabsTrigger value="shifts">
+            <CalendarDays className="h-4 w-4" />
+            {t('staff.shifts')}
+          </AuraTabsTrigger>
+        </AuraTabsList>
+      </AuraTabs>
 
       {activeTab === 'shifts' ? (
         <StaffShiftsTab staff={staff} onAddMember={openAddMemberForm} />
@@ -275,17 +261,13 @@ export default function StaffPage() {
       )}
 
       {showForm && (
-        <ModalPortal onClose={() => !createStaff.isPending && setShowForm(false)}>
-          <div
-            className="w-full max-w-md rounded-xl border border-white/[0.08] bg-navy-elevated p-6 shadow-lg"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-pietra">{t('staff.addMemberTitle')}</h3>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-fumo hover:text-pietra hover:bg-white/5 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+        <GlassModal onClose={() => !createStaff.isPending && setShowForm(false)} maxWidth="md">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-pietra">{t('staff.addMemberTitle')}</h3>
+            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-fumo hover:text-pietra hover:bg-white/5 transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
             <div className="space-y-4">
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formName')}
@@ -319,15 +301,13 @@ export default function StaffPage() {
               </label>
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formRole')}
-                <select
-                  value={newStaff.role}
-                  onChange={e => setNewStaff(s => ({ ...s, role: e.target.value as AppRole }))}
-                  className="saas-input mt-1 w-full py-2.5 text-sm"
-                >
-                  {assignableStaffRoles.map(r => (
-                    <option key={r} value={r}>{getRoleLabel(r)}</option>
-                  ))}
-                </select>
+                <div className="mt-1">
+                  <AuraSelect
+                    value={newStaff.role}
+                    onValueChange={v => setNewStaff(s => ({ ...s, role: v as AppRole }))}
+                    options={assignableStaffRoles.map(r => ({ value: r, label: getRoleLabel(r) }))}
+                  />
+                </div>
               </label>
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formPhone')}
@@ -357,14 +337,12 @@ export default function StaffPage() {
                 {t('staff.addMember')}
               </button>
             </div>
-          </div>
-        </ModalPortal>
+        </GlassModal>
       )}
       {editingMember && (
-        <ModalPortal onClose={() => !updateStaff.isPending && setEditingMember(null)}>
+        <GlassModal onClose={() => !updateStaff.isPending && setEditingMember(null)} maxWidth="md">
           <div
-            className="w-full max-w-md rounded-xl border border-white/[0.08] bg-navy-elevated p-6 shadow-lg"
-            onClick={e => e.stopPropagation()}
+            className="w-full"
           >
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-pietra">{t('staff.editMemberTitle')}</h3>
@@ -380,7 +358,7 @@ export default function StaffPage() {
               onCancel={() => setEditingMember(null)}
             />
           </div>
-        </ModalPortal>
+        </GlassModal>
       )}
     </ExecutivePageShell>
   )

@@ -6,6 +6,7 @@ import { assertMenuItemOrderable } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
 import { acquireIdempotencyLock, getIdempotentResponse, saveIdempotentResponse } from './apiIdempotency'
 import { occupyTableIfAvailable } from './orderSession'
+import { runOrderTransaction } from './prismaTransactions'
 import { ModifierValidationError, resolveMenuItemLine } from './orderModifiers'
 
 export const publicOrderSchema = z.object({
@@ -162,7 +163,7 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     name: guestName,
   })
 
-  const order = await prisma.$transaction(async tx => {
+  const order = await runOrderTransaction(async tx => {
     if (tableId) {
       const ok = await occupyTableIfAvailable(tx, tableId, restaurantId)
       if (!ok) {

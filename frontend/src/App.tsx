@@ -14,8 +14,9 @@ import RequireProPlan from './components/auth/RequireProPlan'
 import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
-import LandingPage from './pages/LandingPage'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
+
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
@@ -23,7 +24,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 const LandingRoute = lazy(() => import('./components/landing/LandingRoute'))
 const PwaRegistrar = lazy(() => import('./components/PwaRegistrar'))
-const CookieBanner = lazy(() => import('./components/landing/CookieBanner').then((m) => ({ default: m.CookieBanner })))
+const DeferredCookieBanner = lazy(() => import('./components/landing/DeferredCookieBanner'))
 const PricingPage = lazy(() => import('./pages/PricingPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
@@ -177,7 +178,7 @@ export default function App() {
       <AuthProvider>
         <Suspense fallback={null}>
           <PwaRegistrar />
-          <CookieBanner />
+          <DeferredCookieBanner />
         </Suspense>
         <AppRoutes />
       </AuthProvider>

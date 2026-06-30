@@ -5,10 +5,9 @@ import {
   Package, RefreshCw,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from 'recharts'
+import { LuxuryChartFrame } from '../components/charts'
+import { LuxuryLineChart } from '../components/charts/lazy'
+import ChartSuspense from '../components/charts/ChartSuspense'
 import { cn } from '../lib/utils'
 import { usePredictiveAI, type PredictiveAlert, type AlertSeverity } from '../hooks/usePredictiveAI'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -202,104 +201,68 @@ function AIPredictivePageContent() {
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-        <section className="xl:col-span-3 rounded-xl premium-card shadow-sm">
-          <div className="border-b border-white/[0.08] px-5 py-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-amber-500" />
-              <h2 className="text-base font-semibold text-pietra">{t('aiPredictive.chartTitle')}</h2>
-            </div>
-            <p className="mt-1 text-sm text-fumo">{t('aiPredictive.chartSubtitle')}</p>
-          </div>
-
+        <LuxuryChartFrame
+          className="xl:col-span-3"
+          title={t('aiPredictive.chartTitle')}
+          subtitle={t('aiPredictive.chartSubtitle')}
+          hero
+        >
           {isLoading ? (
             <ChartSkeleton />
           ) : isError ? (
             <div className="p-8 text-center text-sm text-red-400">{t('aiPredictive.loadError')}</div>
           ) : (
-            <div className="p-4 sm:p-6">
-              <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="dayLabel"
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    axisLine={false}
-                    tickLine={false}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: '1px solid #e2e8f0',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      backgroundColor: '#fff',
-                    }}
-                    labelFormatter={(_, payload) => {
-                      const row = payload?.[0]?.payload
-                      return row ? `${row.dayLabel} · ${row.shortDate}` : ''
-                    }}
-                    formatter={(value, name) => {
-                      const label = name === 'predictedCovers'
-                        ? t('aiPredictive.chartPredicted')
-                        : t('aiPredictive.chartHistorical')
-                      return [value, label]
-                    }}
-                  />
-                  <Legend
-                    formatter={value =>
-                      value === 'predictedCovers'
-                        ? t('aiPredictive.chartPredicted')
-                        : t('aiPredictive.chartHistorical')
-                    }
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="baseCovers"
-                    stroke="#94a3b8"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="baseCovers"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="predictedCovers"
-                    stroke="#f59e0b"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#f59e0b', strokeWidth: 0 }}
-                    activeDot={{ r: 6 }}
-                    name="predictedCovers"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <>
+              <ChartSuspense height={320}>
+                <LuxuryLineChart
+                  data={chartData}
+                  xKey="dayLabel"
+                  height={320}
+                  yAxisInteger
+                  showLegend
+                  labelFormatter={(_, row) => {
+                    const r = row as { dayLabel: string; shortDate: string } | undefined
+                    return r ? `${r.dayLabel} · ${r.shortDate}` : ''
+                  }}
+                  series={[
+                    {
+                      dataKey: 'baseCovers',
+                      label: t('aiPredictive.chartHistorical'),
+                      accent: 'champagne',
+                      dashed: true,
+                      dot: false,
+                    },
+                    {
+                      dataKey: 'predictedCovers',
+                      label: t('aiPredictive.chartPredicted'),
+                      accent: 'gold',
+                    },
+                  ]}
+                />
+              </ChartSuspense>
 
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
                 {chartData.map(day => (
                   <div
                     key={day.date}
-                    className="rounded-lg border border-white/[0.08] bg-navy-surface/50 px-2 py-2 text-center"
+                    className="rounded-lg border border-white/[0.08] bg-white/[0.02] px-2 py-2 text-center"
                   >
                     <div className="flex items-center justify-center gap-1">
                       <WeatherIcon weather={day.weather} />
                       <span className="text-xs font-medium text-pietra">{day.dayLabel.slice(0, 3)}</span>
                     </div>
-                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-pietra">{day.predictedCovers}</p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-aura-gold-light">{day.predictedCovers}</p>
                     {day.weatherImpactPct !== 0 && (
                       <p className="text-[10px] text-fumo">{day.weatherImpactPct}%</p>
                     )}
                   </div>
                 ))}
               </div>
-            </div>
+            </>
           )}
-        </section>
+        </LuxuryChartFrame>
 
-        <section className="xl:col-span-2 rounded-xl premium-card shadow-sm">
+        <section className="aura-module-frame xl:col-span-2">
           <div className="border-b border-white/[0.08] px-5 py-4">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-amber-500" />

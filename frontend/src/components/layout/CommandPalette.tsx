@@ -7,7 +7,7 @@ import { COMMAND_ROUTES } from '../../lib/commandRoutes'
 import { useRole } from '../../hooks/useRole'
 import { usePlanTier } from '../../hooks/usePlanTier'
 import { useAccessTier } from '../../hooks/useAccessTier'
-import ModalPortal from '../ModalPortal'
+import { AuraDialog } from '../ui/AuraDialog'
 
 interface CommandPaletteProps {
   open: boolean
@@ -88,10 +88,14 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   if (!open) return null
 
   return (
-    <ModalPortal onClose={onClose} overlayClassName="!items-start pt-[12vh]">
+    <AuraDialog
+      onClose={onClose}
+      hideClose
+      maxWidth="lg"
+      className="aura-command-palette !top-[12vh] bottom-auto max-h-[min(70dvh,480px)] !translate-x-[-50%] !translate-y-0 overflow-hidden p-0"
+    >
       <div
-        className="aura-command-palette w-full max-w-lg"
-        onClick={e => e.stopPropagation()}
+        className="w-full"
         role="dialog"
         aria-label={t('commandPalette.title', { defaultValue: 'Navigazione rapida' })}
       >
@@ -143,6 +147,6 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
           <span><kbd className="aura-kbd">↵</kbd> {t('commandPalette.open', { defaultValue: 'apri' })}</span>
         </div>
       </div>
-    </ModalPortal>
+    </AuraDialog>
   )
 }

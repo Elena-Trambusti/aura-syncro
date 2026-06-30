@@ -517,15 +517,19 @@
   }
 
   .aura-kpi--hero {
-    @apply p-8 sm:p-10 lg:p-12;
+    @apply flex min-h-[9.5rem] flex-col p-4 sm:min-h-[10rem] sm:p-5;
   }
 
   .aura-kpi--standard {
-    @apply p-6 sm:p-8;
+    @apply p-5 sm:p-6;
   }
 
   .aura-kpi--compact {
-    @apply p-5 sm:p-6;
+    @apply p-4 sm:p-5;
+  }
+
+  .aura-kpi-body {
+    @apply flex min-w-0 flex-1 flex-col pr-11 sm:pr-12;
   }
 
   .premium-kpi {
@@ -534,7 +538,8 @@
 
   .premium-kpi-label,
   .aura-kpi-label {
-    @apply text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.25em] text-fumo/80;
+    @apply text-[9px] font-semibold uppercase tracking-[0.18em] text-fumo/75 leading-tight;
+    padding-right: 0.25rem;
   }
 
   .premium-kpi-value {
@@ -546,8 +551,8 @@
   }
 
   .aura-kpi-value--hero {
-    @apply text-4xl sm:text-5xl lg:text-[3.25rem];
-    text-shadow: 0 2px 24px rgba(212, 175, 55, 0.12);
+    @apply text-[1.75rem] sm:text-4xl lg:text-[2.5rem];
+    text-shadow: 0 2px 20px rgba(212, 175, 55, 0.1);
   }
 
   .aura-kpi-value--standard {
@@ -558,13 +563,26 @@
     @apply text-aura-gold;
   }
 
+  .aura-kpi-subtitle {
+    @apply mt-2 text-[10px] leading-snug text-fumo/75 sm:text-[11px];
+  }
+
   .aura-kpi-spark {
     @apply absolute inset-x-0 bottom-0 h-16 pointer-events-none opacity-40;
     mask-image: linear-gradient(to top, black 30%, transparent);
   }
 
+  .aura-kpi-sparkline {
+    @apply pointer-events-none absolute inset-x-0 bottom-0 h-12 w-full opacity-[0.16] sm:h-14;
+    mask-image: linear-gradient(to top, black 15%, transparent 85%);
+  }
+
   .aura-kpi-icon {
-    @apply flex shrink-0 items-center justify-center;
+    @apply absolute right-3 top-3 z-20 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03] sm:right-4 sm:top-4 sm:h-8 sm:w-8;
+  }
+
+  .aura-kpi--hero .aura-kpi-icon {
+    @apply right-3.5 top-3.5 sm:right-4 sm:top-4;
   }
 
   .premium-kpi-sparkline {
@@ -599,6 +617,222 @@
     @apply fixed inset-0 z-[99998] min-h-[100dvh] w-full max-w-none bg-black/75 backdrop-blur-sm;
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* ── Radix Aura primitives — luxury dialogs, selects, tabs, dropdowns ── */
+  .aura-dialog-overlay {
+    @apply fixed inset-0 z-[99998] bg-black/75 backdrop-blur-sm;
+    animation: aura-overlay-in 200ms ease-out;
+  }
+
+  .aura-dialog-overlay--fullscreen {
+    @apply bg-black/80;
+  }
+
+  .aura-dialog-overlay[data-state='closed'] {
+    animation: aura-overlay-out 150ms ease-in forwards;
+  }
+
+  .aura-dialog-content {
+    @apply fixed z-[99999] max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto outline-none;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    animation: aura-dialog-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (min-width: 640px) {
+    .aura-dialog-content:not(.aura-dialog-content--fullscreen) {
+      top: 50%;
+      bottom: auto;
+      transform: translate(-50%, -50%);
+      animation: aura-dialog-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
+  .aura-dialog-content[data-state='closed'] {
+    animation: aura-dialog-out 180ms ease-in forwards;
+  }
+
+  .aura-dialog-content--fullscreen {
+    @apply left-0 top-0 max-h-none translate-x-0 translate-y-0;
+    animation: aura-dialog-fade-in 220ms ease-out;
+  }
+
+  @media (min-width: 640px) {
+    .aura-dialog-content--fullscreen {
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  .aura-dialog-close {
+    @apply absolute right-4 top-4 z-10 rounded-lg p-1.5 text-fumo transition-colors hover:bg-white/[0.06] hover:text-pietra;
+  }
+
+  .aura-dialog-close--inline {
+    @apply relative right-auto top-auto shrink-0;
+  }
+
+  .aura-dialog-header {
+    @apply mb-5 flex items-start justify-between gap-3;
+  }
+
+  .aura-dialog-title {
+    @apply font-display text-lg font-semibold tracking-tight text-pietra sm:text-xl;
+  }
+
+  .aura-dialog-description {
+    @apply mt-1 text-sm leading-relaxed text-fumo;
+  }
+
+  .aura-dialog-body {
+    @apply space-y-4;
+  }
+
+  .aura-dialog-footer {
+    @apply mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end;
+  }
+
+  .aura-select-trigger {
+    @apply inline-flex w-full items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-navy-surface/60 px-3 py-2.5 text-sm text-pietra outline-none transition-colors;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .aura-select-trigger:hover {
+    @apply border-aura-gold/25 bg-navy-surface/80;
+  }
+
+  .aura-select-trigger:focus-visible {
+    @apply border-aura-gold/40 ring-1 ring-aura-gold/25;
+  }
+
+  .aura-select-trigger[data-disabled] {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .aura-select-content {
+    @apply z-[99999] overflow-hidden rounded-xl border border-white/[0.08] bg-navy-elevated p-1;
+    box-shadow: var(--shadow-premium-lg);
+    animation: aura-dropdown-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aura-select-viewport {
+    @apply p-0.5;
+  }
+
+  .aura-select-item {
+    @apply relative flex cursor-pointer select-none items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm text-fumo outline-none transition-colors;
+  }
+
+  .aura-select-item[data-highlighted] {
+    @apply bg-white/[0.05] text-pietra;
+  }
+
+  .aura-select-item[data-state='checked'] {
+    @apply text-aura-gold;
+  }
+
+  .aura-select-indicator {
+    @apply ml-2 shrink-0;
+  }
+
+  .aura-tabs-list {
+    @apply flex gap-1 rounded-xl border border-white/[0.08] bg-navy-surface/50 p-1;
+  }
+
+  .aura-tabs-trigger {
+    @apply inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fumo transition-colors outline-none;
+  }
+
+  .aura-tabs-trigger:hover {
+    @apply text-pietra;
+  }
+
+  .aura-tabs-trigger[data-state='active'] {
+    @apply bg-aura-gold/15 text-aura-gold shadow-sm;
+  }
+
+  .aura-tabs-trigger:focus-visible {
+    @apply ring-1 ring-aura-gold/30;
+  }
+
+  .aura-tabs-content {
+    @apply mt-4 outline-none;
+    animation: aura-fade-in 200ms ease-out;
+  }
+
+  .aura-dropdown-content {
+    @apply z-[99999] min-w-[10rem] overflow-hidden rounded-xl border border-white/[0.08] bg-navy-elevated p-1;
+    box-shadow: var(--shadow-premium-lg);
+    animation: aura-dropdown-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aura-dropdown-item {
+    @apply relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-fumo outline-none transition-colors;
+  }
+
+  .aura-dropdown-item[data-highlighted] {
+    @apply bg-white/[0.05] text-pietra;
+  }
+
+  .aura-dropdown-item[data-disabled] {
+    @apply pointer-events-none opacity-40;
+  }
+
+  .aura-dropdown-label {
+    @apply px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-fumo/70;
+  }
+
+  .aura-tooltip-content {
+    @apply z-[99999] max-w-xs rounded-xl border border-white/[0.08] bg-navy-elevated px-3 py-2.5 text-xs leading-relaxed text-fumo;
+    box-shadow: var(--shadow-premium-md);
+    animation: aura-dropdown-in 150ms ease-out;
+  }
+
+  .aura-tooltip-arrow {
+    fill: #16161D;
+  }
+
+  @keyframes aura-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes aura-overlay-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes aura-dialog-in {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  @keyframes aura-dialog-out {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  }
+
+  @keyframes aura-dialog-sheet-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @keyframes aura-dialog-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes aura-dropdown-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes aura-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .saas-dropdown {
@@ -669,37 +903,40 @@
   }
 
   .premium-nav-item {
-    @apply relative flex w-full items-center gap-4 rounded-full px-5 py-3 text-left text-[16px] transition-all duration-300;
-    color: var(--color-aura-gold);
+    @apply relative flex w-full items-center gap-4 rounded-full px-5 py-3 text-left text-[16px] text-stone-300 transition-colors duration-200;
     font-family: var(--font-display);
     letter-spacing: 0.04em;
   }
 
   .premium-nav-item span.truncate {
-    color: var(--color-aura-gold);
-    text-shadow: 0 0 8px rgba(197, 160, 89, 0.2);
-    transition: all 0.4s ease;
+    @apply text-stone-300 transition-colors duration-200;
   }
 
   .premium-nav-item:hover {
-    @apply bg-aura-gold/5;
+    @apply bg-white/[0.04] text-stone-200;
   }
 
   .premium-nav-item:hover span.truncate {
-    color: var(--color-aura-gold-light);
-    text-shadow: 0 0 12px rgba(230, 213, 184, 0.5), 0 0 24px rgba(197, 160, 89, 0.4);
+    @apply text-stone-200;
   }
 
   .premium-nav-item--active {
-    @apply font-bold;
-    background: linear-gradient(90deg, rgba(15,15,15,0.7) 0%, rgba(30,30,30,0.5) 50%, rgba(15,15,15,0.7) 100%);
-    border: 1px solid var(--color-aura-gold);
-    box-shadow: 0 0 20px rgba(197, 160, 89, 0.15), inset 0 0 15px rgba(0,0,0,0.9);
+    @apply font-semibold text-[#C5A059];
+    background: linear-gradient(90deg, rgba(15, 15, 15, 0.72) 0%, rgba(24, 24, 24, 0.55) 50%, rgba(15, 15, 15, 0.72) 100%);
+    border: 1px solid rgba(197, 160, 89, 0.42);
+    box-shadow: 0 0 16px rgba(197, 160, 89, 0.12), inset 0 0 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .premium-nav-item--active:hover {
+    @apply text-[#C5A059];
   }
 
   .premium-nav-item--active span.truncate {
-    color: var(--color-champagne);
-    text-shadow: 0 0 12px rgba(245, 230, 204, 0.6), 0 0 24px rgba(197, 160, 89, 0.5);
+    @apply text-[#C5A059];
+  }
+
+  .premium-nav-item--active:hover span.truncate {
+    @apply text-[#C5A059];
   }
 
   .premium-nav-item--active::before {
@@ -707,15 +944,14 @@
     position: absolute;
     inset: 2px;
     border-radius: inherit;
-    border: 1px solid rgba(212, 175, 55, 0.3);
+    border: 1px solid rgba(197, 160, 89, 0.22);
     pointer-events: none;
   }
 
   .aura-nav-section {
-    @apply mb-4 mt-2 px-5 text-[15px] font-bold uppercase tracking-[0.2em];
-    color: #D4AF37;
+    @apply mb-4 mt-2 px-5 text-[15px] font-bold uppercase tracking-[0.2em] text-[#C5A059];
     font-family: var(--font-display);
-    text-shadow: 0 0 10px rgba(212,175,55,0.3);
+    text-shadow: 0 0 8px rgba(197, 160, 89, 0.18);
   }
 
   .premium-topbar,
@@ -726,8 +962,17 @@
   }
 
   .aura-topbar-search {
-    @apply hidden w-full max-w-md items-center gap-2 rounded-xl border border-white/[0.08] bg-navy-surface/60 px-4 py-2.5 text-sm text-fumo/60 lg:flex;
+    @apply hidden h-9 min-w-0 items-center justify-start gap-2.5 rounded-xl border border-white/[0.08] bg-navy-surface/60 px-3 text-sm text-fumo/60 lg:inline-flex xl:px-4;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    line-height: 0;
+  }
+
+  .aura-topbar-search__icon {
+    @apply block shrink-0 text-fumo/50;
+  }
+
+  .aura-topbar-search__label {
+    @apply min-w-0 truncate text-left text-sm leading-normal text-fumo/60;
   }
 
   .aura-topbar-context {
@@ -739,7 +984,16 @@
   }
 
   .premium-topbar-btn {
-    @apply rounded-lg p-2 text-fumo transition-colors hover:bg-white/[0.06] hover:text-pietra;
+    @apply inline-flex items-center justify-center rounded-lg p-2 text-fumo transition-colors hover:bg-white/[0.06] hover:text-pietra;
+    line-height: 0;
+  }
+
+  .premium-topbar-btn .lucide {
+    @apply block shrink-0;
+  }
+
+  .premium-topbar-btn--icon {
+    @apply size-9 p-0;
   }
 
   .premium-topbar-btn--active {
@@ -1144,6 +1398,68 @@
     @apply px-2 py-0.5 text-[9px] tracking-wide;
   }
 
+  .aura-trend-badge--xs {
+    @apply gap-0.5 rounded-md px-1.5 py-px text-[8px] font-medium leading-tight tracking-normal;
+  }
+
+  /* ── Grafici finanziari luxury (Recharts) ── */
+  .luxury-chart-canvas {
+    @apply relative -mx-1;
+  }
+
+  .luxury-chart-tooltip {
+    @apply relative min-w-[10.5rem] overflow-hidden rounded-xl border border-white/[0.12] px-3.5 py-3 text-left backdrop-blur-xl;
+    background: rgba(10, 10, 10, 0.82);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 0 0 1px rgba(212, 175, 55, 0.06),
+      0 16px 48px rgba(0, 0, 0, 0.55),
+      0 0 32px rgba(212, 175, 55, 0.06);
+    animation: luxury-tooltip-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .luxury-chart-tooltip__shine {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.45) 50%,
+      transparent 100%
+    );
+  }
+
+  .luxury-chart-tooltip__title {
+    @apply mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-fumo/90;
+  }
+
+  .luxury-chart-tooltip__label {
+    @apply text-xs text-fumo;
+  }
+
+  .luxury-chart-tooltip__value {
+    @apply text-sm font-semibold;
+  }
+
+  .luxury-chart-tooltip__footer {
+    @apply mt-2 border-t border-white/[0.08] pt-2 text-[10px] text-fumo/80;
+  }
+
+  .luxury-chart-active-dot {
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.55));
+    transition: r 0.18s ease-out;
+  }
+
+  @keyframes luxury-tooltip-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   .pwa-app-shell {
     @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-full flex-row overflow-hidden overflow-x-hidden text-pietra bg-transparent;
   }
@@ -1255,21 +1571,28 @@
   }
 
   .aura-nav-icon {
-    @apply flex h-6 w-6 shrink-0 items-center justify-center transition-all duration-300;
-    color: #D4AF37;
+    @apply flex h-6 w-6 shrink-0 items-center justify-center text-[#C5A059] transition-colors duration-200;
   }
 
-  .premium-nav-item:hover .aura-nav-icon {
-    color: #E8C547;
+  .premium-nav-item:hover .aura-nav-icon:not(.aura-nav-icon--active) {
+    @apply text-[#E6D5B8];
   }
 
   .aura-nav-icon--active {
-    color: #F7E7CE;
+    @apply text-[#C5A059];
+  }
+
+  .aura-nav-icon--active .lucide {
+    color: #C5A059;
+  }
+
+  .aura-nav-icon--muted {
+    @apply text-[#C5A059]/55;
   }
 
   .aura-nav-icon--muted .lucide {
     stroke-width: 1.25;
-    opacity: 0.72;
+    opacity: 0.85;
   }
 
   .aura-sidebar-user {

@@ -17,9 +17,11 @@ const MENU_Z = 99999
 
 interface LanguageSwitcherProps {
   prominent?: boolean
+  /** Nasconde il nome lingua fino a lg — utile nella topbar stretta */
+  compact?: boolean
 }
 
-export default function LanguageSwitcher({ prominent = false }: LanguageSwitcherProps) {
+export default function LanguageSwitcher({ prominent = false, compact = false }: LanguageSwitcherProps) {
   const { i18n, t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number; minWidth: number } | null>(null)
@@ -161,7 +163,7 @@ export default function LanguageSwitcher({ prominent = false }: LanguageSwitcher
         title={t('common.selectLanguage')}
       >
         <Globe className={cn('shrink-0', prominent ? 'w-4 h-4' : 'w-3.5 h-3.5')} />
-        <span className="hidden sm:inline">{current.name}</span>
+        <span className={cn(compact ? 'hidden lg:inline' : 'hidden sm:inline')}>{current.name}</span>
         <ChevronDown className={cn('shrink-0 opacity-60 transition-transform', prominent ? 'w-3.5 h-3.5' : 'w-3 h-3', open && 'rotate-180')} />
       </button>
       {portal}

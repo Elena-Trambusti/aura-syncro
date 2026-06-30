@@ -5,6 +5,12 @@ const STORAGE_KEY = 'aura-lang'
 const SUPPORTED = ['it', 'en', 'es', 'es-cn', 'fr', 'de'] as const
 export type SupportedLocale = (typeof SUPPORTED)[number]
 
+import itLocale from './locales/it.json'
+
+const EAGER_LOCALE_BUNDLES: Partial<Record<SupportedLocale, Record<string, unknown>>> = {
+  it: itLocale as Record<string, unknown>,
+}
+
 const localeLoaders: Record<SupportedLocale, () => Promise<{ default: Record<string, unknown> }>> = {
   it: () => import('./locales/it.json'),
   en: () => import('./locales/en.json'),
@@ -46,13 +52,14 @@ async function loadLocaleBundle(lng: SupportedLocale) {
   i18n.addResourceBundle(lng, 'translation', mod.default, true, true)
 }
 
-/** Carica solo la lingua attiva; le altre on-demand al cambio lingua. */
+/** Lingua iniziale nel bundle principale (zero round-trip); fr/de on-demand. */
 export async function bootstrapI18n(): Promise<void> {
   const initial = resolveInitialLocale()
-  const mod = await localeLoaders[initial]()
+  const eager = EAGER_LOCALE_BUNDLES[initial]
+  const translation = eager ?? (await localeLoaders[initial]()).default
 
   await i18n.use(initReactI18next).init({
-    resources: { [initial]: { translation: mod.default } },
+    resources: { [initial]: { translation } },
     lng: initial,
     fallbackLng: 'it',
     interpolation: { escapeValue: false },

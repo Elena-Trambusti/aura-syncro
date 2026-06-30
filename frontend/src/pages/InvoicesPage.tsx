@@ -10,6 +10,8 @@ import { ALLOWED_TAX_RATES } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import { AuraDialog, AuraDialogTitle } from '@/components/ui/AuraDialog'
+import AuraSelect from '@/components/ui/AuraSelect'
 
 interface Invoice {
   id: string
@@ -159,10 +161,9 @@ function InvoiceModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="saas-card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6">
-        <h2 className="mb-4 text-xl font-bold text-pietra">{t('invoices.modalTitle')}</h2>
-        <form onSubmit={submit} className="space-y-6">
+    <AuraDialog onClose={onClose} maxWidth="2xl" hideClose className="max-h-[90vh] overflow-y-auto">
+      <AuraDialogTitle className="mb-4">{t('invoices.modalTitle')}</AuraDialogTitle>
+      <form onSubmit={submit} className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm text-fumo">{t('invoices.companyName')} *</label>
@@ -189,11 +190,13 @@ function InvoiceModal({
                 <input required placeholder={t('invoices.description')} className="glass-input flex-1 p-2" value={it.desc} onChange={e => { const n = [...items]; n[idx].desc = e.target.value; setItems(n) }} />
                 <input type="number" required placeholder={t('invoices.qty')} className="glass-input w-20 p-2" value={it.qty} onChange={e => { const n = [...items]; n[idx].qty = Number(e.target.value); setItems(n) }} />
                 <input type="number" required step="0.01" placeholder={t('invoices.priceGross')} className="glass-input w-24 p-2" value={it.price} onChange={e => { const n = [...items]; n[idx].price = Number(e.target.value); setItems(n) }} />
-                <select className="glass-input w-24 p-2" value={it.tax} onChange={e => { const n = [...items]; n[idx].tax = Number(e.target.value); setItems(n) }}>
-                  {taxRates.map(rate => (
-                    <option key={rate} value={rate}>{rate}%</option>
-                  ))}
-                </select>
+                <AuraSelect
+                  value={String(it.tax)}
+                  onValueChange={v => { const n = [...items]; n[idx].tax = Number(v); setItems(n) }}
+                  options={taxRates.map(rate => ({ value: String(rate), label: `${rate}%` }))}
+                  triggerClassName="w-24"
+                  aria-label={t('invoices.taxRate', { defaultValue: 'Aliquota' })}
+                />
               </div>
             ))}
             <button type="button" onClick={() => setItems([...items, { desc: '', qty: 1, price: 0, tax: defaultTax }])} className="text-sm text-aura-gold hover:underline">{t('invoices.addLine')}</button>
@@ -206,7 +209,6 @@ function InvoiceModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AuraDialog>
   )
 }

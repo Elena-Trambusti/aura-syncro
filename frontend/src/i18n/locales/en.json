@@ -836,6 +836,16 @@
     "pdfGenerated": "PDF generated successfully",
     "pdfError": "Error generating PDF. Please try again.",
     "linkLabel": "Fiscal Report",
+    "chartRevenueTitle": "Net revenue trend",
+    "chartRevenueSubtitle": "Daily performance for the selected period",
+    "chartCompositionTitle": "Collection composition",
+    "chartCompositionSubtitle": "Tax vs tracked tips",
+    "chartVatTitle": "Tax by rate",
+    "chartVatSubtitle": "Taxable base and tax distribution",
+    "chartRevenueLabel": "Net revenue",
+    "chartTaxLabel": "Tax",
+    "chartTipsLabel": "Tips",
+    "chartTaxableLabel": "Taxable base",
     "byRegime": {
       "IT_MAIN": {
         "title": "Fiscal Register Book",

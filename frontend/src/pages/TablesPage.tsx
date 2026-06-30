@@ -7,7 +7,7 @@ import { ui } from '../lib/ui'
 import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import OrderModal from '../components/orders/OrderModal'
-import ModalPortal from '../components/ModalPortal'
+import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
 import AreaManagerModal from '../components/tables/AreaManagerModal'
@@ -86,9 +86,8 @@ function TableFormModal({
     numericToNumber(form.number, 0) >= 1 && numericToNumber(form.seats, 0) >= 1
 
   return (
-    <ModalPortal onClose={onCancel}>
-      <div className={ui.modal} onClick={e => e.stopPropagation()}>
-        <h3 className={ui.modalTitle}>{table ? t('tables.editTable') : t('tables.newTable')}</h3>
+    <GlassModal onClose={onCancel} maxWidth="md">
+      <h3 className={ui.modalTitle}>{table ? t('tables.editTable') : t('tables.newTable')}</h3>
         <div className="space-y-4">
           <div>
             <label className={ui.label}>{t('tables.tableNumber')} *</label>
@@ -130,8 +129,7 @@ function TableFormModal({
             {t('common.save')}
           </button>
         </div>
-      </div>
-    </ModalPortal>
+    </GlassModal>
   )
 }
 
@@ -576,9 +574,8 @@ export default function TablesPage() {
       )}
 
       {reservedTable?.reservations?.[0] && (
-        <ModalPortal onClose={() => setReservedTable(null)}>
-          <div className={ui.modal} onClick={e => e.stopPropagation()}>
-            <h3 className={ui.modalTitle}>{t('tables.reservedTitle', { number: reservedTable.number })}</h3>
+        <GlassModal onClose={() => setReservedTable(null)} maxWidth="md">
+          <h3 className={ui.modalTitle}>{t('tables.reservedTitle', { number: reservedTable.number })}</h3>
             <div className="space-y-3 text-sm text-fumo">
               <p className="text-base font-semibold text-pietra">{reservedTable.reservations[0].guestName}</p>
               <p>{formatTime(reservedTable.reservations[0].date)} · {reservedTable.reservations[0].covers} {t('common.seats')}</p>
@@ -599,8 +596,7 @@ export default function TablesPage() {
                 {t('common.close')}
               </button>
             </div>
-          </div>
-        </ModalPortal>
+        </GlassModal>
       )}
 
       {showOrderModal && selectedTableId && (

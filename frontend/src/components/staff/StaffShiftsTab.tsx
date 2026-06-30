@@ -9,7 +9,8 @@ import {
   ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X, Info,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import ModalPortal from '../ModalPortal'
+import GlassModal from '../ui/GlassModal'
+import AuraSelect from '../ui/AuraSelect'
 import QueryErrorBanner from '../QueryErrorBanner'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
@@ -359,12 +360,8 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
       )}
 
       {showForm && (
-        <ModalPortal onClose={() => !createShift.isPending && setShowForm(false)}>
-          <div
-            className="w-full max-w-md rounded-xl border border-white/[0.08] bg-navy-elevated p-6 shadow-lg"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
+        <GlassModal onClose={() => !createShift.isPending && setShowForm(false)} maxWidth="md">
+          <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-pietra">{t('staff.addShiftTitle')}</h3>
               <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-fumo hover:bg-white/[0.05]">
                 <X className="h-5 w-5" />
@@ -373,16 +370,17 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
             <div className="space-y-4">
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formMember')}
-                <select
-                  value={form.userId}
-                  onChange={e => setForm(f => ({ ...f, userId: e.target.value }))}
-                  className="saas-input mt-1 w-full py-2.5 text-sm"
-                >
-                  <option value="">{t('staff.selectMember')}</option>
-                  {assignableStaff.map(m => (
-                    <option key={m.id} value={m.id}>{m.name} ({getRoleLabel(m.role)})</option>
-                  ))}
-                </select>
+                <div className="mt-1">
+                  <AuraSelect
+                    value={form.userId}
+                    onValueChange={v => setForm(f => ({ ...f, userId: v }))}
+                    placeholder={t('staff.selectMember')}
+                    options={assignableStaff.map(m => ({
+                      value: m.id,
+                      label: `${m.name} (${getRoleLabel(m.role)})`,
+                    }))}
+                  />
+                </div>
               </label>
               <label className="block text-sm font-medium text-pietra">
                 {t('common.date')}
@@ -438,8 +436,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
                 {t('staff.addShift')}
               </button>
             </div>
-          </div>
-        </ModalPortal>
+        </GlassModal>
       )}
     </div>
   )

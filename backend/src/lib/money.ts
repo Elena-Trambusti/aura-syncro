@@ -24,14 +24,38 @@ export function isDecimal(value: unknown): value is Prisma.Decimal {
   return Prisma.Decimal.isDecimal(value)
 }
 
-/** Serializza Prisma.Decimal → number per JSON API (2 decimali). */
+/**
+ * Serializza Prisma.Decimal → number per JSON API.
+ * Non usare JSON.stringify con replacer: Decimal.toJSON() gira prima del replacer
+ * e produce stringhe ("8") che il frontend concatena con + invece di sommare.
+ */
 export function serializeDecimals<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value, decimalJsonReplacer)) as T
+  return deepSerializeMoney(value) as T
 }
 
+function deepSerializeMoney(value: unknown): unknown {
+  if (value == null) return value
+  if (isDecimal(value)) {
+    return moneyNumber(value)
+  }
+  if (value instanceof Date) return value
+  if (Array.isArray(value)) {
+    return value.map(deepSerializeMoney)
+  }
+  if (typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = deepSerializeMoney(child)
+    }
+    return out
+  }
+  return value
+}
+
+/** @deprecated Usa serializeDecimals — il replacer non intercetta Decimal.toJSON(). */
 export function decimalJsonReplacer(_key: string, value: unknown): unknown {
   if (isDecimal(value)) {
-    return value.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toNumber()
+    return moneyNumber(value)
   }
   return value
 }

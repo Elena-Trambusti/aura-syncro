@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, monthYearInTimezone } from '../lib/utils'
 import { TrendingUp, TrendingDown, FileText, Download, Save } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart as RechartsPie, Pie, Legend } from 'recharts'
 import { downloadCSV } from '../lib/export'
+import { LuxuryChartFrame } from '../components/charts'
+import { LuxuryAreaChart, LuxuryBarChart } from '../components/charts/lazy'
+import ChartSuspense from '../components/charts/ChartSuspense'
 import { useFiscalRegime, useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
@@ -29,8 +31,6 @@ interface PLData { period: { year: number; month: number }; summary: PLSummary; 
 interface FoodCostItem { id: string; name: string; category: string; price: number; ingredientCost: number; margin: number; marginPct: number; soldQty: number; totalRevenue: number; totalCost: number }
 interface CategoryData { name: string; revenue: number; qty: number }
 interface YearlyData { year: number; months: { month: number; monthName: string; revenue: number; orders: number }[]; totalRevenue: number; bestMonth: { monthName: string; revenue: number } }
-
-const PIE_COLORS = ['#c9a227', '#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ef4444']
 
 export default function ReportsPage() {
   const { t } = useTranslation()
@@ -114,7 +114,7 @@ export default function ReportsPage() {
                   }
                 }}
                 disabled={isGeneratingZeta}
-                className="flex items-center gap-1.5 rounded-xl border border-aura-gold/30 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light shadow-sm transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15 disabled:opacity-50"
               >
                 <Save className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
                 {isGeneratingZeta ? '...' : t('reports.zetaButton')}
@@ -122,7 +122,7 @@ export default function ReportsPage() {
             )}
             <Link
               to="/report/fiscal"
-              className="flex items-center gap-1.5 rounded-xl border border-aura-gold/30 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-100"
+              className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15"
             >
               <FileText className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
               {t('reportFiscal.linkLabel')}
@@ -196,18 +196,17 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="premium-card p-6">
-              <h3 className="text-base font-semibold text-pietra mb-4">{t('reports.dailyTrend')}</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={plData?.dailyBreakdown || []} barSize={8}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="date" tickFormatter={d => new Date(d + 'T00:00:00').getDate().toString()} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => `€${v}`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v) || 0), t('reports.tooltipRevenue')]} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="revenue" fill="#c9a227" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <LuxuryChartFrame title={t('reports.dailyTrend')}>
+              <ChartSuspense height={220}>
+                <LuxuryBarChart
+                  data={plData?.dailyBreakdown || []}
+                  dataKey="revenue"
+                  xKey="date"
+                  valueLabel={t('reports.tooltipRevenue')}
+                  height={220}
+                />
+              </ChartSuspense>
+            </LuxuryChartFrame>
           </div>
         </div>
       )}
@@ -215,18 +214,19 @@ export default function ReportsPage() {
       {!hasError && !isLoading && activeTab === 'foodcost' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="premium-card p-6">
-              <h3 className="text-base font-semibold text-pietra mb-4">{t('reports.categoryRevenue')}</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <RechartsPie>
-                  <Pie data={categories} dataKey="revenue" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={90} label={false}>
-                    {categories.map((_: CategoryData, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v) || 0), '']} />
-                  <Legend formatter={v => <span className="text-xs text-fumo">{v}</span>} />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </div>
+            <LuxuryChartFrame title={t('reports.categoryRevenue')}>
+              <ChartSuspense height={220}>
+                <LuxuryBarChart
+                  data={categories}
+                  dataKey="revenue"
+                  xKey="name"
+                  xTickFormatter={v => (v.length > 8 ? `${v.slice(0, 8)}…` : v)}
+                  valueLabel={t('reports.kpiRevenue')}
+                  height={220}
+                  barSize={14}
+                />
+              </ChartSuspense>
+            </LuxuryChartFrame>
 
             <div className="xl:col-span-2 premium-card overflow-hidden">
               <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
@@ -294,18 +294,18 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="premium-card p-6">
-            <h3 className="text-base font-semibold text-pietra mb-4">{t('reports.monthlyRevenue', { year: selectedYear })}</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={yearly?.months || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="monthName" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => `€${v}`} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v) => [formatCurrency(Number(v) || 0), t('reports.kpiRevenue')]} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-                <Line type="monotone" dataKey="revenue" stroke="#c9a227" strokeWidth={3} dot={{ fill: '#c9a227', r: 5 }} activeDot={{ r: 7 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <LuxuryChartFrame title={t('reports.monthlyRevenue', { year: selectedYear })}>
+            <ChartSuspense height={280}>
+              <LuxuryAreaChart
+                data={yearly?.months || []}
+                dataKey="revenue"
+                xKey="monthName"
+                valueLabel={t('reports.kpiRevenue')}
+                height={280}
+                showYAxis
+              />
+            </ChartSuspense>
+          </LuxuryChartFrame>
 
           <div className="premium-card overflow-hidden">
             <table className="w-full text-sm">

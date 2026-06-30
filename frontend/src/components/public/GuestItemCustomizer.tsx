@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import { X } from 'lucide-react'
 import { formatCurrency, cn } from '../../lib/utils'
+import { addMoney } from '../../lib/money'
 import type { GuestModifierGroup } from '../../hooks/useGuestCart'
 
 export interface GuestMenuItemForCustomize {
@@ -29,8 +30,8 @@ export default function GuestItemCustomizer({ item, onClose, onConfirm }: Props)
   const unitPrice = useMemo(() => {
     const ids = Object.values(selectedModifiers).flat()
     const options = item.modifierGroups?.flatMap(g => g.options) ?? []
-    const extra = ids.reduce((sum, id) => sum + (options.find(o => o.id === id)?.price ?? 0), 0)
-    return item.price + extra
+    const extra = ids.reduce((sum, id) => addMoney(sum, options.find(o => o.id === id)?.price ?? 0), 0)
+    return addMoney(item.price, extra)
   }, [item, selectedModifiers])
 
   function handleConfirm() {

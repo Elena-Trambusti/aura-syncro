@@ -5,7 +5,8 @@ import { Plus, Trash2, Package } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { api } from '../../lib/api'
 import { ui } from '../../lib/ui'
-import ModalPortal from '../ModalPortal'
+import GlassModal from '../ui/GlassModal'
+import AuraSelect from '../ui/AuraSelect'
 
 interface InventoryOption {
   id: string
@@ -79,9 +80,8 @@ export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }
   const isLoading = recipeLoading || inventoryLoading
 
   return (
-    <ModalPortal onClose={onClose}>
-      <div className={`${ui.modal} max-w-lg`} onClick={e => e.stopPropagation()}>
-        <div className="mb-1 flex items-center gap-2">
+    <GlassModal onClose={onClose} maxWidth="lg">
+      <div className="mb-1 flex items-center gap-2">
           <Package className="h-5 w-5 text-aura-gold" aria-hidden />
           <h3 className={ui.modalTitle}>{t('menu.recipeTitle')}</h3>
         </div>
@@ -106,18 +106,15 @@ export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }
               <div key={index} className="flex items-end gap-2 rounded-xl border border-white/[0.08] bg-navy-surface/50 p-3">
                 <div className="min-w-0 flex-1">
                   <label className={ui.label}>{t('menu.recipeIngredient')}</label>
-                  <select
+                  <AuraSelect
                     value={row.inventoryItemId}
-                    onChange={e => updateRow(index, { inventoryItemId: e.target.value })}
-                    className={ui.select}
-                  >
-                    <option value="">{t('menu.recipeSelectIngredient')}</option>
-                    {inventory.map(inv => (
-                      <option key={inv.id} value={inv.id}>
-                        {inv.name} ({inv.unit})
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={v => updateRow(index, { inventoryItemId: v })}
+                    placeholder={t('menu.recipeSelectIngredient')}
+                    options={inventory.map(inv => ({
+                      value: inv.id,
+                      label: `${inv.name} (${inv.unit})`,
+                    }))}
+                  />
                 </div>
                 <div className="w-28 shrink-0">
                   <label className={ui.label}>{t('menu.recipeQty')}</label>
@@ -174,7 +171,6 @@ export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }
             {saveMutation.isPending ? t('common.saving') : t('common.save')}
           </button>
         </div>
-      </div>
-    </ModalPortal>
+    </GlassModal>
   )
 }

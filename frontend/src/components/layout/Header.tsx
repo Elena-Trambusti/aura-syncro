@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { LogOut, MonitorCheck, ExternalLink, Menu, Radio, UtensilsCrossed, ClipboardList, CalendarDays, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials, cn } from '../../lib/utils'
 import BrandLogo from '../brand/BrandLogo'
+import AuraIcon from '../ui/AuraIcon'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useDashboardLayout } from './DashboardLayout'
@@ -35,9 +36,14 @@ export default function Header() {
         <Menu className="h-5 w-5" />
       </button>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-4">
         <div className="shrink-0 lg:hidden">
-          <BrandLogo size="sm" showName layout="horizontal" />
+          <Link
+            to="/"
+            className="inline-block transition-transform hover:scale-[1.02] hover:opacity-80 active:scale-[0.98]"
+          >
+            <BrandLogo size="sm" showName layout="horizontal" compact />
+          </Link>
         </div>
 
         <div className="aura-topbar-context hidden lg:inline-flex">
@@ -50,11 +56,13 @@ export default function Header() {
         <button
           type="button"
           onClick={openCommandPalette}
-          className="aura-topbar-search hidden md:flex w-48 shrink-0"
+          className="aura-topbar-search min-w-0 max-w-[10rem] shrink xl:max-w-md"
           aria-label={t('commandPalette.title', { defaultValue: 'Navigazione rapida' })}
         >
-          <Search className="h-4 w-4 shrink-0 text-fumo/50" aria-hidden />
-          <span className="truncate text-left">{t('commandPalette.shortPlaceholder', { defaultValue: 'Cerca sezione…' })}</span>
+          <AuraIcon icon={Search} size="sm" className="aura-topbar-search__icon" />
+          <span className="aura-topbar-search__label">
+            {t('commandPalette.shortPlaceholder', { defaultValue: 'Cerca sezione…' })}
+          </span>
         </button>
 
         <nav className="aura-topbar-quick hidden lg:flex" aria-label={t('dashboard.quickNav', { defaultValue: 'Accesso rapido' })}>
@@ -80,10 +88,10 @@ export default function Header() {
         <button
           type="button"
           onClick={openCommandPalette}
-          className="premium-topbar-btn hidden sm:flex md:hidden"
+          className="premium-topbar-btn premium-topbar-btn--icon hidden sm:inline-flex lg:hidden"
           aria-label={t('commandPalette.title')}
         >
-          <Search className="h-5 w-5" />
+          <AuraIcon icon={Search} size="md" className="text-fumo/70" />
         </button>
 
 
@@ -101,7 +109,7 @@ export default function Header() {
             <ExternalLink className="hidden h-3 w-3 opacity-40 2xl:block" />
           </a>
 
-          <LanguageSwitcher />
+          <LanguageSwitcher compact />
           <NotificationBell />
         </div>
 

@@ -10,7 +10,8 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen, Package } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import ModalPortal from '../components/ModalPortal'
+import GlassModal from '../components/ui/GlassModal'
+import AuraSelect from '../components/ui/AuraSelect'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -59,16 +60,16 @@ function ItemForm({ item, categories, onSave, onCancel }: {
   }
 
   return (
-    <ModalPortal onClose={onCancel}>
-      <div className={ui.modal} onClick={e => e.stopPropagation()}>
-        <h3 className={ui.modalTitle}>{item?.id ? t('menu.editDish') : t('menu.newDish')}</h3>
+    <GlassModal onClose={onCancel} maxWidth="lg">
+      <h3 className={ui.modalTitle}>{item?.id ? t('menu.editDish') : t('menu.newDish')}</h3>
         <div className="space-y-4">
           <div>
             <label className={ui.label}>{t('menu.category')} *</label>
-            <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-              className={ui.select}>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <AuraSelect
+              value={form.categoryId}
+              onValueChange={v => setForm(f => ({ ...f, categoryId: v }))}
+              options={categories.map(c => ({ value: c.id, label: c.name }))}
+            />
           </div>
           <div>
             <label className={ui.label}>{t('common.name')} *</label>
@@ -128,8 +129,7 @@ function ItemForm({ item, categories, onSave, onCancel }: {
           <button onClick={onCancel} className={`flex-1 py-2.5 ${ui.chipInactive} rounded-xl text-sm font-medium`}>{t('common.cancel')}</button>
           <button onClick={handleSave} className={`flex-1 py-2.5 ${ui.btnPrimary} text-sm`}>{t('common.save')}</button>
         </div>
-      </div>
-    </ModalPortal>
+    </GlassModal>
   )
 }
 
@@ -389,9 +389,8 @@ export default function MenuPage() {
       )}
 
       {categoryForm && (
-        <ModalPortal onClose={() => !createCategory.isPending && !updateCategory.isPending && setCategoryForm(null)}>
-          <div className={ui.modal} onClick={e => e.stopPropagation()}>
-            <h3 className={ui.modalTitle}>
+        <GlassModal onClose={() => !createCategory.isPending && !updateCategory.isPending && setCategoryForm(null)} maxWidth="md">
+          <h3 className={ui.modalTitle}>
               {categoryForm.id ? t('menu.editCategory') : t('menu.newCategory')}
             </h3>
             <div className="space-y-4">
@@ -431,8 +430,7 @@ export default function MenuPage() {
                 {createCategory.isPending || updateCategory.isPending ? t('common.saving') : t('common.save')}
               </button>
             </div>
-          </div>
-        </ModalPortal>
+        </GlassModal>
       )}
     </ExecutivePageShell>
   )

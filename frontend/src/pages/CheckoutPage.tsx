@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { formatCurrency, cn, ORDER_STATUS_LABELS } from '../lib/utils'
+import { addMoney, lineGrossMoney, moneyNumber } from '../lib/money'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
@@ -33,8 +34,8 @@ interface OrderItem {
 }
 
 function lineGross(item: OrderItem): number {
-  const modifierTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) ?? 0
-  return item.quantity * item.unitPrice + modifierTotal
+  const modifierTotal = item.modifiers?.reduce((s, m) => s + moneyNumber(m.price), 0) ?? 0
+  return lineGrossMoney(item.quantity, item.unitPrice, modifierTotal)
 }
 
 interface CheckoutOrder {
@@ -111,8 +112,9 @@ export default function CheckoutPage() {
   const order = data?.order
   const needsCashSession = (paymentMethod === 'CASH' || (paymentMethod === 'SPLIT' && splitSettlement === 'CASH'))
     && cashSession === null
-  const parsedTip = wantsTip ? Math.max(0, parseFloat(tipAmount.replace(',', '.')) || 0) : 0
-  const grandTotal = (order?.total ?? 0) + parsedTip
+  const parsedTip = wantsTip ? Math.max(0, moneyNumber(tipAmount.replace(',', '.'))) : 0
+  const orderTotal = moneyNumber(order?.total)
+  const grandTotal = addMoney(orderTotal, parsedTip)
   const loyaltyDiscount = data?.loyaltyDiscount
   const posStatus = data?.posStatus
   const posSimulation = posStatus?.isCardChargeSimulated ?? data?.posSimulation !== false
@@ -387,7 +389,7 @@ export default function CheckoutPage() {
                   <span className="text-xs text-fumo">{ORDER_STATUS_LABELS[item.status] ?? item.status}</span>
                 </div>
                 <span className="shrink-0 text-sm font-medium tabular-nums text-pietra">
-                  {formatCurrency(item.unitPrice * item.quantity)}
+                  {formatCurrency(lineGrossMoney(item.quantity, item.unitPrice))}
                 </span>
               </div>
             ))}
@@ -396,11 +398,11 @@ export default function CheckoutPage() {
           <div className="mt-5 space-y-2 border-t border-white/[0.06] pt-4 text-sm">
             <div className="flex justify-between text-fumo">
               <span>{t('checkout.subtotal')}</span>
-              <span className="tabular-nums">{formatCurrency(order.subtotal)}</span>
+              <span className="tabular-nums">{formatCurrency(moneyNumber(order.subtotal))}</span>
             </div>
             <div className="flex justify-between text-fumo">
               <span>{taxLabel} ({order.taxRateApplied ?? fiscal.taxRate}%)</span>
-              <span className="tabular-nums">{formatCurrency(order.tax)}</span>
+              <span className="tabular-nums">{formatCurrency(moneyNumber(order.tax))}</span>
             </div>
             {(order.discount ?? 0) > 0 && (
               <div className="flex justify-between text-emerald-400">
@@ -410,7 +412,7 @@ export default function CheckoutPage() {
             )}
             <div className="flex justify-between font-semibold text-pietra">
               <span>{t('checkout.foodTotal')}</span>
-              <span className="tabular-nums">{formatCurrency(order.total)}</span>
+              <span className="tabular-nums">{formatCurrency(orderTotal)}</span>
             </div>
           </div>
         </section>

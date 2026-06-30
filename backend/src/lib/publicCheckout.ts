@@ -8,6 +8,7 @@ import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { signOrderReceiptToken } from './paymentReceiptToken'
 import { deductInventoryForOrder } from './inventoryDeduction'
+import { runOrderTransaction } from './prismaTransactions'
 import {
   acquireIdempotencyLock,
   getIdempotentResponse,
@@ -145,7 +146,7 @@ export async function createGuestStripeCheckout(
     }
   }
 
-  const order = await prisma.$transaction(async tx => {
+  const order = await runOrderTransaction(async tx => {
     const created = await tx.order.create({
       data: {
         restaurantId,

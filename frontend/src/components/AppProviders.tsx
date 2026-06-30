@@ -2,6 +2,7 @@ import { useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '../lib/queryClient'
 import { isPublicAppRoute } from '../lib/publicRoutes'
+import AuraProvider from './ui/AuraProvider'
 
 const PERSIST_OPTIONS = { maxAge: 1000 * 60 * 60 * 24 } as const
 
@@ -40,8 +41,16 @@ export default function AppProviders({ children }: { children: ReactNode }) {
   }, [isPublicLanding])
 
   if (isPublicLanding || !PersistProvider) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuraProvider>{children}</AuraProvider>
+      </QueryClientProvider>
+    )
   }
 
-  return <PersistProvider>{children}</PersistProvider>
+  return (
+    <PersistProvider>
+      <AuraProvider>{children}</AuraProvider>
+    </PersistProvider>
+  )
 }

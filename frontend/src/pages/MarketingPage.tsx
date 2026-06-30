@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { ui } from '../lib/ui'
 import AutomationCard from '../components/marketing/AutomationCard'
-import ModalPortal from '../components/ModalPortal'
+import GlassModal from '../components/ui/GlassModal'
+import AuraSelect from '../components/ui/AuraSelect'
+import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { Cake, RefreshCw, Crown, Plus, Send, Trash2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../lib/utils'
@@ -90,10 +92,9 @@ function CampaignFormModal({
   }
 
   return (
-    <ModalPortal onClose={onCancel}>
-      <div className={ui.modal} onClick={e => e.stopPropagation()}>
-        <h3 className={ui.modalTitle}>{t('marketing.newCampaign')}</h3>
-        <div className="space-y-4">
+    <GlassModal onClose={onCancel} maxWidth="lg">
+      <h3 className={ui.modalTitle}>{t('marketing.newCampaign')}</h3>
+      <div className="space-y-4">
           <div>
             <label className={ui.label}>{t('common.name')} *</label>
             <input
@@ -104,15 +105,14 @@ function CampaignFormModal({
           </div>
           <div>
             <label className={ui.label}>{t('marketing.campaignSegment', { defaultValue: 'Segmento destinatari' })}</label>
-            <select
+            <AuraSelect
               value={segment}
-              onChange={e => handleSegmentChange(e.target.value as CampaignSegment)}
-              className={ui.select}
-            >
-              {SEGMENT_KEYS.map(key => (
-                <option key={key} value={key}>{t(`marketing.segments.${key}`)}</option>
-              ))}
-            </select>
+              onValueChange={v => handleSegmentChange(v as CampaignSegment)}
+              options={SEGMENT_KEYS.map(key => ({
+                value: key,
+                label: t(`marketing.segments.${key}`),
+              }))}
+            />
             <p className="mt-1.5 text-xs text-fumo">{t(`marketing.segments.${segment}Hint`, { defaultValue: '' })}</p>
             {(previewCount !== null || previewLoading) && (
               <p className="mt-1 text-xs font-medium text-aura-gold">
@@ -188,8 +188,7 @@ function CampaignFormModal({
             {t('common.save')}
           </button>
         </div>
-      </div>
-    </ModalPortal>
+    </GlassModal>
   )
 }
 
@@ -276,32 +275,16 @@ export default function MarketingPage() {
         subtitle={t('marketing.subtitle')}
       />
 
-      <div className="flex gap-2 border-b border-white/[0.08]">
-        <button
-          type="button"
-          onClick={() => setActiveTab('automations')}
-          className={cn(
-            'border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
-            activeTab === 'automations'
-              ? 'border-amber-500 text-aura-gold'
-              : 'border-transparent text-fumo hover:text-pietra',
-          )}
-        >
-          {t('marketing.tabAutomations')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('campaigns')}
-          className={cn(
-            'border-b-2 px-4 py-2.5 text-sm font-medium transition-colors -mb-px',
-            activeTab === 'campaigns'
-              ? 'border-amber-500 text-aura-gold'
-              : 'border-transparent text-fumo hover:text-pietra',
-          )}
-        >
-          {t('marketing.tabCampaigns')}
-        </button>
-      </div>
+      <AuraTabs value={activeTab} onValueChange={v => setActiveTab(v as MarketingTab)}>
+        <AuraTabsList className="w-full border-b-0 bg-transparent p-0 sm:w-auto">
+          <AuraTabsTrigger value="automations" className="flex-none rounded-none border-b-2 border-transparent px-4 py-2.5 data-[state=active]:border-aura-gold data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            {t('marketing.tabAutomations')}
+          </AuraTabsTrigger>
+          <AuraTabsTrigger value="campaigns" className="flex-none rounded-none border-b-2 border-transparent px-4 py-2.5 data-[state=active]:border-aura-gold data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            {t('marketing.tabCampaigns')}
+          </AuraTabsTrigger>
+        </AuraTabsList>
+      </AuraTabs>
 
       {activeTab === 'automations' ? (
         <section className="space-y-4">

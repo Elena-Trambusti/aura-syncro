@@ -46,4 +46,11 @@ export const ui = {
   lineClamp2: 'line-clamp-2',
   lineClamp3: 'line-clamp-3',
   glassDropdown: 'aura-glass-dropdown',
+  /** Radix primitives — preferire import da @/components/ui */
+  dialog: 'aura-dialog-content',
+  selectTrigger: 'aura-select-trigger',
+  tabsList: 'aura-tabs-list',
+  tabsTrigger: 'aura-tabs-trigger',
+  dropdownContent: 'aura-dropdown-content',
+  tooltipContent: 'aura-tooltip-content',
 } as const

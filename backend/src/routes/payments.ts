@@ -234,11 +234,6 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       where: { id: req.restaurantId! },
       include: { settings: true },
     })
-    const fiscal = buildFiscalConfig(restaurant?.settings)
-
-    const hasOpenKitchen = refreshedOrder.items.some(
-      (i: { status: string }) => !['SERVED', 'CANCELLED'].includes(i.status),
-    )
 
     const { result, updatedOrder, posResult, emailSent } = await completeOrderPayment({
       finalize: {
@@ -253,7 +248,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       stripePaymentIntentId,
       receiptEmail: receiptEmail,
       restaurantName: restaurant?.name,
-      serveItemsOnPayment: !hasOpenKitchen,
+      serveItemsOnPayment: true,
       discountOptions,
     })
 

@@ -10,17 +10,20 @@ import AuraSonner from './components/AuraSonner'
 import ErrorBoundary from './components/ErrorBoundary'
 import SentryTestButton from './components/SentryTestButton'
 
-void bootstrapI18n().then(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <ErrorBoundary>
-        <AppProviders>
-          <App />
-          <DeferredMetrics />
-          <AuraSonner />
-          <SentryTestButton />
-        </AppProviders>
-      </ErrorBoundary>
-    </StrictMode>,
-  )
-})
+const root = createRoot(document.getElementById('root')!)
+
+// i18n in parallelo al first paint — bundle IT/EN/ES già nel main chunk
+void bootstrapI18n()
+
+root.render(
+  <StrictMode>
+    <ErrorBoundary>
+      <AppProviders>
+        <App />
+        <DeferredMetrics />
+        <AuraSonner />
+        <SentryTestButton />
+      </AppProviders>
+    </ErrorBoundary>
+  </StrictMode>,
+)

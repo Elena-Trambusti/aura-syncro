@@ -909,6 +909,16 @@
     "pdfGenerated": "PDF generato correttamente",
     "pdfError": "Errore nella generazione del PDF. Riprova.",
     "linkLabel": "Report Fiscale",
+    "chartRevenueTitle": "Trend fatturato netto",
+    "chartRevenueSubtitle": "Andamento giornaliero nel periodo selezionato",
+    "chartCompositionTitle": "Composizione incassi",
+    "chartCompositionSubtitle": "Imposta vs mance tracciate",
+    "chartVatTitle": "Imposta per aliquota",
+    "chartVatSubtitle": "Distribuzione imponibile e imposta",
+    "chartRevenueLabel": "Fatturato netto",
+    "chartTaxLabel": "Imposta",
+    "chartTipsLabel": "Mance",
+    "chartTaxableLabel": "Imponibile",
     "byRegime": {
       "IT_MAIN": {
         "title": "Libro Registro Fiscale",

@@ -29,6 +29,7 @@ import {
   syncOrderStatusFromItemsTx,
 } from '../lib/orderSession'
 import { moneyNumber, toMoney } from '../lib/money'
+import { runOrderTransaction, isRetriableTransactionError } from '../lib/prismaTransactions'
 
 export const ordersRouter = Router()
 
@@ -268,7 +269,7 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
 
   let order;
   try {
-    order = await prisma.$transaction(async tx => {
+    order = await runOrderTransaction(async tx => {
       if (orderData.tableId) {
         const occupied = await occupyTableIfAvailable(tx, orderData.tableId, req.restaurantId!)
         if (!occupied) {
@@ -321,6 +322,14 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
       await releaseOrderLock()
       res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
+      return
+    }
+    if (isRetriableTransactionError(e)) {
+      await releaseOrderLock()
+      res.status(503).json({
+        error: 'Servizio temporaneamente occupato. Riprova tra qualche secondo.',
+        code: 'TRANSACTION_TIMEOUT',
+      })
       return
     }
     await releaseOrderLock()
@@ -427,8 +436,25 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
     && orderItem.quantity > 1
     && (readyUnits ?? 1) < orderItem.quantity
 
+  let precomputedTotals: Awaited<ReturnType<typeof computeTaxForOrderItems>> | null = null
+  if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
+    const allLines = await prisma.orderItem.findMany({
+      where: { orderId: req.params.orderId },
+      select: { id: true, quantity: true, unitPrice: true, menuItemId: true, status: true },
+    })
+    precomputedTotals = await computeTaxForOrderItems(
+      req.restaurantId!,
+      allLines.map(i => ({
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        menuItemId: i.menuItemId,
+        status: i.id === req.params.itemId ? 'CANCELLED' : i.status,
+      })),
+    )
+  }
+
   try {
-    await prisma.$transaction(async tx => {
+    await runOrderTransaction(async tx => {
       if (splitReady) {
       const units = readyUnits ?? 1
       await tx.orderItem.update({
@@ -466,40 +492,33 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
       await restoreInventoryForOrderItem(tx, req.params.itemId, req.restaurantId!)
     }
 
-    const allItems = await tx.orderItem.findMany({ where: { orderId: req.params.orderId } })
-    const active = allItems.filter(i => i.status !== 'CANCELLED')
-    
     await syncOrderStatusFromItemsTx(tx, req.params.orderId, order.status)
 
-    // 2. Sync order totals if item cancelled (skip fiscal-closed PAID orders)
-    if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
-      const fetchedOrder = await tx.order.findUnique({
+    // Ricalcolo totali se annullamento (skip ordini PAID chiusi fiscalmente)
+    if (targetStatus === 'CANCELLED' && order.status !== 'PAID' && precomputedTotals) {
+      await tx.order.updateMany({
         where: { id: req.params.orderId },
-        include: { items: true },
+        data: {
+          subtotal: toMoney(precomputedTotals.subtotal),
+          tax: toMoney(precomputedTotals.tax),
+          total: toMoney(precomputedTotals.total),
+          taxRateApplied: precomputedTotals.taxRateApplied,
+          revenueAmount: toMoney(precomputedTotals.total),
+        },
       })
-      if (fetchedOrder) {
-        const grossTotal = active.reduce((s, i) => s + moneyNumber(i.unitPrice) * i.quantity, 0)
-        const { subtotal, tax, total, taxRateApplied } = await computeTaxForOrderItems(
-          req.restaurantId!,
-          active.map(i => ({ quantity: i.quantity, unitPrice: i.unitPrice, menuItemId: i.menuItemId, status: i.status })),
-        )
-        await tx.order.updateMany({
-          where: { id: req.params.orderId },
-          data: {
-            subtotal: toMoney(subtotal),
-            tax: toMoney(tax),
-            total: toMoney(total),
-            taxRateApplied,
-            revenueAmount: toMoney(total),
-          },
-        })
-      }
     }
   })
   } catch (err) {
     const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
     if (code === 'ITEM_STATUS_CONFLICT') {
       res.status(409).json({ error: 'Stato piatto modificato da un altro utente', code })
+      return
+    }
+    if (isRetriableTransactionError(err)) {
+      res.status(503).json({
+        error: 'Servizio temporaneamente occupato. Riprova tra qualche secondo.',
+        code: 'TRANSACTION_TIMEOUT',
+      })
       return
     }
     throw err
@@ -614,7 +633,7 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
       select: { id: true }
     })
 
-    await prisma.$transaction(async tx => {
+    await runOrderTransaction(async tx => {
       await tx.orderItem.updateMany({
         where: { orderId: req.params.id },
         data: { status: 'CANCELLED' }
@@ -769,10 +788,28 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
      }
   }
 
+  const existingLines = await prisma.orderItem.findMany({
+    where: { orderId: req.params.id },
+    select: { quantity: true, unitPrice: true, menuItemId: true, status: true },
+  })
+  const precomputedTotals = await computeTaxForOrderItems(tenantId(req), [
+    ...existingLines.map(i => ({
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      menuItemId: i.menuItemId,
+      status: i.status,
+    })),
+    {
+      quantity: result.data.quantity,
+      unitPrice,
+      menuItemId: result.data.menuItemId,
+      status: 'PENDING',
+    },
+  ])
+
   let createdItem
-  let orderWithItems
   try {
-    const txResult = await prisma.$transaction(async tx => {
+    const txResult = await runOrderTransaction(async tx => {
       const newItem = await tx.orderItem.create({
         data: {
           orderId: req.params.id,
@@ -792,49 +829,41 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
         include: { menuItem: true },
       })
 
-      const fetchedOrder = await tx.order.findFirst({
+      await tx.order.updateMany({
         where: scopedWhere(req, req.params.id),
-        include: { items: true },
+        data: {
+          subtotal: toMoney(precomputedTotals.subtotal),
+          tax: toMoney(precomputedTotals.tax),
+          total: toMoney(precomputedTotals.total),
+          taxRateApplied: precomputedTotals.taxRateApplied,
+          revenueAmount: toMoney(precomputedTotals.total),
+        },
       })
-
-      if (fetchedOrder) {
-        const { subtotal, tax, total, taxRateApplied } = await computeTaxForOrderItems(
-          tenantId(req),
-          fetchedOrder.items.map(i => ({
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            menuItemId: i.menuItemId,
-            status: i.status,
-          })),
-        )
-        
-        await tx.order.updateMany({
-          where: scopedWhere(req, req.params.id),
-          data: {
-            subtotal: toMoney(subtotal),
-            tax: toMoney(tax),
-            total: toMoney(total),
-            taxRateApplied,
-            revenueAmount: toMoney(total),
-          },
-        })
-      }
       
       await deductInventoryForOrder(tx, req.params.id, tenantId(req))
       
-      return { createdItem: newItem, orderWithItems: fetchedOrder }
-    }, { timeout: 10000 })
+      return { createdItem: newItem }
+    })
     createdItem = txResult.createdItem
-    orderWithItems = txResult.orderWithItems
   } catch (e) {
     if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
       await releaseItemsLock()
       res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
       return
     }
+    if (isRetriableTransactionError(e)) {
+      await releaseItemsLock()
+      res.status(503).json({
+        error: 'Servizio temporaneamente occupato. Riprova tra qualche secondo.',
+        code: 'TRANSACTION_TIMEOUT',
+      })
+      return
+    }
     await releaseItemsLock()
     throw e
   }
+
+  const orderWithItems = order
 
   if (orderWithItems && (orderWithItems.customerId || moneyNumber(orderWithItems.discount) > 0)) {
     await applyDiscountToOrder(req.params.id, tenantId(req), { applyLoyalty: true })

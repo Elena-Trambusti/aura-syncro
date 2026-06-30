@@ -1,13 +1,12 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
-import { loadRestaurantFiscalConfig } from './taxEngine'
+import { loadRestaurantFiscalConfig, type FiscalConfig } from './taxEngine'
 import { appendFiscalChainLink } from './fiscal/fiscalIntegrityChain'
-import { applyPostPaymentEffects } from './postPayment'
-import { issueInvoiceForOrder, snapshotOrderBillingFromCustomer } from './fiscalInvoice'
-import { decrementInventoryForUnpaidItems } from './inventoryDeduction'
-import { releaseTableIfSessionComplete } from './orderSession'
+import { snapshotOrderBillingFromCustomer } from './fiscalInvoice'
+import { releaseTableAfterPaymentTx } from './orderSession'
 import { toMoney } from './money'
+import { runOrderTransaction } from './prismaTransactions'
 
 export interface FinalizePaymentInput {
   orderId: string
@@ -41,11 +40,29 @@ export interface FinalizePaymentResult {
   transactionId: string
   fiscalRow: FiscalTransactionRow
   splitBreakdown?: SplitBreakdown
+  updatedTable?: { id: string; number: number; status: string } | null
+}
+
+export type PrecomputedOrderTotals = {
+  subtotal: number
+  tax: number
+  total: number
+  discountAmount: number
+  revenueAmount: number
+  taxRateApplied: number
 }
 
 export { computePaymentSplit }
 
 const TIP_ELIGIBLE_ROLES = ['WAITER', 'MANAGER', 'OWNER', 'HOST', 'BARTENDER'] as const
+
+const paymentOrderInclude = {
+  table: { select: { id: true, number: true, status: true } },
+  items: {
+    include: { menuItem: { select: { id: true, name: true } } },
+    orderBy: { createdAt: 'asc' as const },
+  },
+} as const
 
 /** Valida che il cameriere delle mance appartenga al tenant ed sia attivo. */
 export async function resolveTipWaiterId(
@@ -73,36 +90,66 @@ function generateTransactionId(): string {
   return `txn_${Date.now()}_${Math.random().toString(36).slice(2, 10).toUpperCase()}`
 }
 
+export type FinalizePaymentOptions = {
+  splitBreakdown?: SplitBreakdown
+  serveItemsOnPayment?: boolean
+  /** Totali sconto già calcolati prima della transazione (evita doppio round-trip). */
+  precomputedTotals?: PrecomputedOrderTotals
+  fiscalConfig?: FiscalConfig
+}
+
 /**
- * Chiude la comanda: ordine PAID, piatti attivi → SERVED, totali allineati al Libro Fiscale.
+ * Fast path incasso POS: una sola transazione atomica per stato essenziale.
+ * Magazzino, documento fiscale numerato e Aruba SDI → paymentSideEffects (background).
  */
 export async function finalizeOrderPayment(
   input: FinalizePaymentInput,
-  options?: { splitBreakdown?: SplitBreakdown; serveItemsOnPayment?: boolean },
-): Promise<FinalizePaymentResult> {
+  options?: FinalizePaymentOptions,
+): Promise<FinalizePaymentResult & { updatedOrder: Prisma.OrderGetPayload<{ include: typeof paymentOrderInclude }> }> {
   const order = await prisma.order.findFirst({
     where: { id: input.orderId, restaurantId: input.restaurantId },
     include: { items: { include: { menuItem: true } } },
   })
 
-  if (!order) {
-    throw new Error('ORDER_NOT_FOUND')
-  }
-  if (order.status === 'PAID') {
-    throw new Error('ORDER_ALREADY_PAID')
-  }
-  if (order.status === 'CANCELLED') {
-    throw new Error('ORDER_CANCELLED')
-  }
+  if (!order) throw new Error('ORDER_NOT_FOUND')
+  if (order.status === 'PAID') throw new Error('ORDER_ALREADY_PAID')
+  if (order.status === 'CANCELLED') throw new Error('ORDER_CANCELLED')
 
-  const fiscal = await loadRestaurantFiscalConfig(input.restaurantId)
-  const split = computePaymentSplit(order, input.tipAmount, fiscal)
+  const fiscal = options?.fiscalConfig ?? await loadRestaurantFiscalConfig(input.restaurantId)
+  const serveItems = options?.serveItemsOnPayment !== false
+  const precomputed = options?.precomputedTotals
+
+  const split = computePaymentSplit(
+    precomputed
+      ? {
+          ...order,
+          subtotal: toMoney(precomputed.subtotal),
+          tax: toMoney(precomputed.tax),
+          total: toMoney(precomputed.total),
+          revenueAmount: toMoney(precomputed.revenueAmount),
+        }
+      : order,
+    input.tipAmount,
+    fiscal,
+  )
   const transactionId = generateTransactionId()
   const paidAt = split.paidAt
 
-  const serveItems = options?.serveItemsOnPayment !== false
+  const { paidOrder, updatedTable } = await runOrderTransaction(async tx => {
+    if (precomputed) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          subtotal: toMoney(precomputed.subtotal),
+          tax: toMoney(precomputed.tax),
+          total: toMoney(precomputed.total),
+          discount: toMoney(precomputed.discountAmount),
+          taxRateApplied: precomputed.taxRateApplied,
+          revenueAmount: toMoney(precomputed.revenueAmount),
+        },
+      })
+    }
 
-  const updatedOrder = await prisma.$transaction(async tx => {
     if (serveItems) {
       await tx.orderItem.updateMany({
         where: {
@@ -115,12 +162,9 @@ export async function finalizeOrderPayment(
 
     const lock = await tx.order.updateMany({
       where: { id: order.id, status: { not: 'PAID' } },
-      data: { status: 'PAID' }
+      data: { status: 'PAID' },
     })
-    
-    if (lock.count === 0) {
-      throw new Error('ORDER_ALREADY_PAID')
-    }
+    if (lock.count === 0) throw new Error('ORDER_ALREADY_PAID')
 
     const chainLink = await appendFiscalChainLink(tx, input.restaurantId, {
       orderId: order.id,
@@ -144,28 +188,18 @@ export async function finalizeOrderPayment(
         fiscalPrevHash: chainLink.prevHash,
         fiscalClosedAt: chainLink.closedAt,
       },
-      include: {
-        table: true,
-        items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
-      },
+      include: paymentOrderInclude,
     })
 
     await snapshotOrderBillingFromCustomer(tx, order.id, order.customerId)
-    await issueInvoiceForOrder(tx, order.id, input.restaurantId, paidAt)
-
-    await decrementInventoryForUnpaidItems(tx, order.id, input.restaurantId)
 
     if (input.paymentMethod === 'CASH') {
       const openSession = await tx.cashRegisterSession.findFirst({
-        where: { restaurantId: input.restaurantId, status: 'OPEN' }
+        where: { restaurantId: input.restaurantId, status: 'OPEN' },
       })
-      if (!openSession) {
-        throw new Error('CASH_SESSION_REQUIRED')
-      }
+      if (!openSession) throw new Error('CASH_SESSION_REQUIRED')
       const resolvedUserId = input.executorUserId || order.waiterId
-      if (!resolvedUserId) {
-        throw new Error('CASH_USER_REQUIRED')
-      }
+      if (!resolvedUserId) throw new Error('CASH_USER_REQUIRED')
 
       await tx.cashTransaction.create({
         data: {
@@ -174,21 +208,25 @@ export async function finalizeOrderPayment(
           type: 'SALE',
           amount: toMoney(split.total),
           reason: `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
-          orderId: order.id
-        }
+          orderId: order.id,
+        },
       })
     }
 
-    return paid
-  }, { timeout: 20000 })
+    let tableUpdate: Awaited<ReturnType<typeof releaseTableAfterPaymentTx>> = null
+    if (serveItems && order.tableId) {
+      tableUpdate = await releaseTableAfterPaymentTx(
+        tx,
+        order.tableId,
+        input.restaurantId,
+        order.id,
+      )
+    }
 
-  const fiscalRow = buildFiscalTransactionRow(updatedOrder, paidAt)
-
-  // Eseguiamo gli effetti post-pagamento in background (CRM, punti fedeltà, webhook marketing)
-  // per non tenere appesa la connessione HTTP del POS.
-  applyPostPaymentEffects(order.id, input.restaurantId).catch(err => {
-    console.error(`Post payment effects failed for ${order.id}:`, err)
+    return { paidOrder: paid, updatedTable: tableUpdate }
   })
+
+  const fiscalRow = buildFiscalTransactionRow(paidOrder, paidAt)
 
   return {
     revenueAmount: split.revenueAmount,
@@ -198,6 +236,10 @@ export async function finalizeOrderPayment(
     transactionId,
     fiscalRow,
     splitBreakdown: options?.splitBreakdown,
+    updatedTable: updatedTable
+      ? { id: updatedTable.id, number: updatedTable.number, status: updatedTable.status }
+      : null,
+    updatedOrder: paidOrder,
   }
 }
 
@@ -206,12 +248,11 @@ export async function decrementInventoryForOrder(
   orderId: string,
   restaurantId: string,
 ): Promise<void> {
-  await decrementInventoryForUnpaidItems(tx, orderId, restaurantId)
+  const { deductInventoryForOrderBatched } = await import('./inventoryDeduction')
+  await deductInventoryForOrderBatched(tx, orderId, restaurantId)
 }
 
-export async function releaseTableIfEmpty(tableId: string | null | undefined) {
-  return releaseTableIfSessionComplete(tableId)
-}
+export { releaseTableIfSessionComplete as releaseTableIfEmpty } from './orderSession'
 
 /** Calcola ripartizione split (solo presentazione — un solo incasso fiscale) */
 export function computeSplitBreakdown(

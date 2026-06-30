@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatCurrency, formatDateTime, toDateInputInTimezone } from '../lib/utils'
+import { lineGrossMoney } from '../lib/money'
 import { printReceipt, downloadOrdersPdf } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
@@ -187,7 +188,7 @@ export default function OrdersPage() {
                           {item.quantity}
                         </span>
                         <span className="text-pietra flex-1 font-medium">{item.menuItem.name}</span>
-                        <span className="text-fumo">{formatCurrency(item.unitPrice * item.quantity)}</span>
+                        <span className="text-fumo">{formatCurrency(lineGrossMoney(item.quantity, item.unitPrice))}</span>
                       </div>
                     ))}
                   </div>

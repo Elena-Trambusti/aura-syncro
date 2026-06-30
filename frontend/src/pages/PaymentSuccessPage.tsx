@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
+import { lineGrossMoney } from '../lib/money'
 import { CheckCircle2, ChefHat, ArrowLeft, Loader2 } from 'lucide-react'
 
 interface OrderItem {
@@ -105,7 +106,7 @@ export default function PaymentSuccessPage() {
                     <span className="text-sm text-fumo">{item.menuItem.name}</span>
                   </div>
                   <span className="text-sm font-semibold text-pietra">
-                    {formatCurrency(item.unitPrice * item.quantity)}
+                    {formatCurrency(lineGrossMoney(item.quantity, item.unitPrice))}
                   </span>
                 </div>
               ))}

@@ -21,7 +21,8 @@ import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
-import ModalPortal from '../components/ModalPortal'
+import GlassModal from '../components/ui/GlassModal'
+import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { isVipCustomer } from '../lib/customerTags'
 
 type ReservationTab = 'bookings' | 'waitlist'
@@ -56,10 +57,9 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <ModalPortal onClose={onCancel}>
-      <div className={cn(ui.modal, 'max-w-md')} onClick={e => e.stopPropagation()}>
-        <h3 className={ui.modalTitle}>{t('reservations.formTitle')}</h3>
-        <div className="space-y-4">
+    <GlassModal onClose={onCancel} maxWidth="md">
+      <h3 className={ui.modalTitle}>{t('reservations.formTitle')}</h3>
+      <div className="space-y-4">
           <div>
             <label className={ui.label}>{t('reservations.formGuestName')}</label>
             <input
@@ -152,8 +152,7 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
             {t('reservations.formConfirm')}
           </button>
         </div>
-      </div>
-    </ModalPortal>
+    </GlassModal>
   )
 }
 
@@ -334,33 +333,21 @@ export default function ReservationsPage() {
 
       <div className={`${ui.card} px-4 py-3`}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-navy-surface/50 p-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab('bookings')}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  activeTab === 'bookings' ? ui.tabActive : ui.tabInactive,
-                )}
-              >
+          <AuraTabs value={activeTab} onValueChange={v => setActiveTab(v as ReservationTab)}>
+            <AuraTabsList>
+              <AuraTabsTrigger value="bookings">
                 <CalendarDays className="h-4 w-4" />
                 {t('reservations.tabBookings')}
                 {activeReservations.length > 0 && (
                   <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold">{activeReservations.length}</span>
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('waitlist')}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  activeTab === 'waitlist' ? ui.tabActive : ui.tabInactive,
-                )}
-              >
+              </AuraTabsTrigger>
+              <AuraTabsTrigger value="waitlist">
                 <ListOrdered className="h-4 w-4" />
                 {t('reservations.tabWaitlist')}
-              </button>
-            </div>
+              </AuraTabsTrigger>
+            </AuraTabsList>
+          </AuraTabs>
 
             <div className={ui.filterRow}>
               <input
