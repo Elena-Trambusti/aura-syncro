@@ -60,6 +60,7 @@ export async function runPaymentSideEffects(input: PaymentSideEffectsInput): Pro
     scheduleArubaInvoiceSubmission(invoiceId)
   }
 
+  // CRM già applicato in modo sincrono da completePayment — idempotente se richiamato.
   await applyPostPaymentEffects(orderId, restaurantId)
 
   const updatedOrder = await prisma.order.findUnique({

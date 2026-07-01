@@ -19,14 +19,21 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
       tax: true,
       tipAmount: true,
       paidAt: true,
+      refundedAt: true,
     },
   })
   if (!orderFull?.customerId) return
+  if (orderFull.refundedAt) return
 
   const customerId = orderFull.customerId
   const order = orderFull
 
-  const alreadyProcessed = await prisma.loyaltyTransaction.findFirst({
+  const crmMarker = await prisma.loyaltyTransaction.findFirst({
+    where: { orderId: order.id, restaurantId, type: 'ADJUSTMENT' },
+    select: { id: true },
+  })
+
+  const earnedMarker = await prisma.loyaltyTransaction.findFirst({
     where: { orderId: order.id, type: 'EARNED' },
     select: { id: true },
   })
@@ -34,7 +41,7 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
   const revenue = resolveRevenueAmount(order)
   const paidAt = order.paidAt ?? new Date()
 
-  if (!alreadyProcessed) {
+  if (!crmMarker) {
     await prisma.customer.updateMany({
       where: { id: customerId, restaurantId },
       data: {
@@ -43,6 +50,18 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
         lastVisit: paidAt,
       },
     })
+    await prisma.loyaltyTransaction.create({
+      data: {
+        customerId,
+        restaurantId,
+        type: 'ADJUSTMENT',
+        points: 0,
+        orderId: order.id,
+        description: `CRM visita ordine ${order.id.slice(-6)}`,
+      },
+    })
+  } else if (!earnedMarker) {
+    // Idempotenza: marker esiste ma earn non ancora eseguito (retry).
   }
 
   await earnLoyaltyPointsForOrder(customerId, restaurantId, revenue, order.id)
@@ -75,6 +94,10 @@ export async function reversePostPaymentEffects(
     where: { orderId, restaurantId, type: 'EARNED' },
     select: { id: true, points: true },
   })
+  const crmMarker = await db.loyaltyTransaction.findFirst({
+    where: { orderId, restaurantId, type: 'ADJUSTMENT' },
+    select: { id: true },
+  })
 
   const customer = await db.customer.findFirst({
     where: { id: customerId, restaurantId },
@@ -83,7 +106,8 @@ export async function reversePostPaymentEffects(
   if (!customer) return
 
   const spentDecrement = Math.min(moneyNumber(customer.totalSpent), revenue)
-  const visitsDecrement = earned ? 1 : 0
+  const visitsDecrement =
+    crmMarker || spentDecrement > 0 ? Math.min(moneyNumber(customer.totalVisits), 1) : 0
   const pointsDecrement = earned ? Math.min(customer.loyaltyPoints, earned.points) : 0
 
   await db.customer.updateMany({
@@ -130,5 +154,11 @@ export async function reversePostPaymentEffects(
     if (updated) {
       await updateCustomerTier(restaurantId, customerId, updated.loyaltyPoints)
     }
+  }
+
+  if (crmMarker) {
+    await db.loyaltyTransaction.deleteMany({
+      where: { id: crmMarker.id, restaurantId },
+    })
   }
 }
