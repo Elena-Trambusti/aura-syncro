@@ -12,10 +12,11 @@ import { loadRestaurantPosConfig } from './posIntegration'
 import { computePosPaymentAmounts, type OrderAmounts } from './tipFiscal'
 import { resolveDiscountForOrder } from './orderDiscount'
 import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
-import { stripe } from './stripe'
+import { stripe, STRIPE_ENABLED } from './stripe'
 import { moneyNumber } from './money'
 import { schedulePaymentSideEffects } from './paymentSideEffects'
 import { applyPostPaymentEffects } from './postPayment'
+import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 
 function paymentLockKey(orderId: string): string {
   return `payment:finalize:${orderId}`
@@ -268,14 +269,41 @@ export async function completeGuestStripePayment(
     }
   }
 
-  return completeOrderPayment({
-    finalize: {
-      orderId,
-      restaurantId: order.restaurantId,
-      paymentMethod: 'STRIPE',
-      tipAmount: moneyNumber(order.tipAmount),
-    },
-    serveItemsOnPayment: false,
-    stripePaymentIntentId: paymentIntentId ?? undefined,
-  })
+  try {
+    return await completeOrderPayment({
+      finalize: {
+        orderId,
+        restaurantId: order.restaurantId,
+        paymentMethod: 'STRIPE',
+        tipAmount: moneyNumber(order.tipAmount),
+      },
+      serveItemsOnPayment: false,
+      stripePaymentIntentId: paymentIntentId ?? undefined,
+    })
+  } catch (err) {
+    if (paymentIntentId && STRIPE_ENABLED) {
+      await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        reason: 'requested_by_customer',
+        metadata: {
+          orderId,
+          restaurantId: order.restaurantId,
+          reason: 'guest_finalize_failed_auto_refund',
+        },
+      }).catch(refundErr => {
+        console.error('[guest-stripe] Auto-refund fallito dopo errore finalize', {
+          orderId,
+          paymentIntentId,
+          error: refundErr instanceof Error ? refundErr.message : refundErr,
+        })
+      })
+    }
+    await cancelAbandonedGuestOrder(orderId).catch(cancelErr => {
+      console.error('[guest-stripe] Cancellazione ordine guest fallita', {
+        orderId,
+        error: cancelErr instanceof Error ? cancelErr.message : cancelErr,
+      })
+    })
+    throw err
+  }
 }

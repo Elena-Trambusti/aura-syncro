@@ -6,6 +6,7 @@ import { TABLE_STATUS_LABELS, formatCurrency, formatTime } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { formatApiError, apiErrorPayload } from '../lib/formatApiError'
 import OrderModal from '../components/orders/OrderModal'
 import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
@@ -171,8 +172,8 @@ export default function TablesPage() {
       setEditingTable(null)
       toast.success(t('tables.saved'))
     },
-    onError: () => {
-      toast.error(t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
@@ -183,8 +184,8 @@ export default function TablesPage() {
       setEditingTable(null)
       toast.success(t('tables.saved'))
     },
-    onError: () => {
-      toast.error(t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
@@ -194,8 +195,8 @@ export default function TablesPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       toast.success(t('tables.deleted'))
     },
-    onError: () => {
-      toast.error(t('common.deleteError', { defaultValue: 'Impossibile eliminare il tavolo' }))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.deleteError'))
     },
   })
 
@@ -217,8 +218,8 @@ export default function TablesPage() {
       }
       toast.success(t('tables.reservationSeated'))
     },
-    onError: () => {
-      toast.error(t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
@@ -229,12 +230,13 @@ export default function TablesPage() {
       const table = tables.find(tbl => tbl.id === id)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
     },
-    onError: (err: { response?: { data?: { code?: string } } }) => {
-      if (err.response?.data?.code === 'TABLE_HAS_ACTIVE_ORDER') {
+    onError: (err: unknown) => {
+      const code = apiErrorPayload(err)?.code
+      if (code === 'TABLE_HAS_ACTIVE_ORDER') {
         toast.error(t('tables.cannotFreeActiveOrder', { defaultValue: 'Impossibile liberare: ordine o conto ancora aperti' }))
         return
       }
-      toast.error(t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
@@ -248,13 +250,13 @@ export default function TablesPage() {
       setTransferSourceId(null)
       toast.success(t('orderModal.transferSuccess'))
     },
-    onError: (err: { response?: { data?: { code?: string } } }) => {
-      const code = err.response?.data?.code
+    onError: (err: unknown) => {
+      const code = apiErrorPayload(err)?.code
       if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
         toast.error(t('orderModal.transferTargetUnavailable'))
         return
       }
-      toast.error(t('orderModal.transferError'))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'orderModal.transferError'))
     },
   })
 

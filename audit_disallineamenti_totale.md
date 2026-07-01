@@ -612,3 +612,21 @@ Audit esaustivo su tutto il codebase (routes, permessi, revenue, TZ, socket, mar
 | RZ9-05 | Migrazione `order_split_collected_amount` applicata su DB Supabase |
 
 *Ultimo aggiornamento: 2026-07-01 — RZ9 completato.*
+
+---
+
+# ROUND RZ10 — Go-live 100% operativo (2026-07-01)
+
+| ID | Fix |
+|----|-----|
+| RZ10-01 | Guest Stripe: auto-refund + `cancelAbandonedGuestOrder` se finalize webhook fallisce (AB-LOG-02) |
+| RZ10-02 | `TablesPage`: `formatApiError` su tutte le mutation |
+| RZ10-03 | Playwright `e2e/dashboard.spec.ts` (login con `E2E_EMAIL`/`E2E_PASSWORD`) |
+| RZ10-04 | CI GitHub: job Playwright smoke su aurasyncro.com |
+| RZ10-05 | `test:flow` produzione **verde** (CASH, CARD, split, CRM, marketing) |
+| RZ10-06 | CRM sync sincrono + storno rimborso senza deadlock |
+
+### Residuo accettato (roadmap Q3)
+- **C-05** Float → Decimal Prisma (migration dedicata, non bloccante)
+
+*Ultimo aggiornamento: 2026-07-01 — RZ10 completato. Go-live ~98%.*
