@@ -1363,7 +1363,9 @@
       "demoError": "Erreur de démo : impossible de se connecter."
     },
     "trust": {
-      "title": "Choisi par les meilleurs restaurants à :"
+      "eyebrow": "Conçu pour la restauration en",
+      "aria": "Marchés géographiques pris en charge",
+      "items": ["Italie", "Espagne", "Canaries"]
     },
     "features": {
       "eyebrow": "Plateforme",

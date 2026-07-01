@@ -1568,7 +1568,9 @@
       "demoError": "Demo launch error: unable to connect."
     },
     "trust": {
-      "title": "Chosen by top restaurants in:"
+      "eyebrow": "Built for restaurants in",
+      "aria": "Supported geographic markets",
+      "items": ["Italy", "Spain", "Canary Islands"]
     },
     "features": {
       "eyebrow": "Platform",

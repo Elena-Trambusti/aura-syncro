@@ -105,7 +105,7 @@ export default function LandingPricing() {
 
                 <ul className="mt-8 flex-1 space-y-3.5">
                   {plan.features.map(line => (
-                    <li key={line} className="flex items-start gap-3 text-sm font-light lux-text-soft">
+                    <li key={line} className="flex items-start gap-3 text-sm font-light text-[#F0E6D2]">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#D4AF37]/25 bg-black/40">
                         <AuraIcon icon={Check} size="sm" weight="display" className="text-[#E8C872]" />
                       </span>
@@ -113,11 +113,11 @@ export default function LandingPricing() {
                     </li>
                   ))}
                   {plan.missingFeatures.map(line => (
-                    <li key={line} className="flex items-start gap-3 text-sm font-light lux-text-faint">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#8C7A52]/20 bg-black/20">
-                        <AuraIcon icon={Minus} size="sm" weight="display" className="text-[#8C7A52]/70" />
+                    <li key={line} className="flex items-start gap-3 text-sm font-light text-[#F0E6D2]/35">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#F0E6D2]/10 bg-black/20">
+                        <AuraIcon icon={Minus} size="sm" weight="display" className="text-[#F0E6D2]/30" />
                       </span>
-                      <span className="opacity-80">{line}</span>
+                      <span>{line}</span>
                     </li>
                   ))}
                 </ul>

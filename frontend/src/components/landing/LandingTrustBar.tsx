@@ -1,26 +1,27 @@
 import { useTranslation } from 'react-i18next'
-import { LandingSectionDecor } from './landingLuxury'
-
-const TRUST_ITEMS = ['Milano', 'Madrid', 'Barcelona', 'Roma', 'Las Palmas']
 
 export default function LandingTrustBar() {
   const { t } = useTranslation()
+  const items = t('landing.trust.items', { returnObjects: true }) as string[]
 
   return (
-    <section className="relative overflow-hidden border-y border-[#D4AF37]/10 py-14 sm:py-16">
-      <LandingSectionDecor />
-      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-        <h2 className="text-center lux-eyebrow">
-          {t('landing.trust.title')}
-        </h2>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
-          {TRUST_ITEMS.map(item => (
-            <div
+    <section
+      className="relative border-y border-[#D4AF37]/8 bg-[#080604]/40 py-10 sm:py-12"
+      aria-label={t('landing.trust.aria')}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/25 to-transparent" />
+      <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
+        <p className="lux-eyebrow text-[11px] tracking-[0.32em] text-[#F0E6D2] sm:text-xs">
+          {t('landing.trust.eyebrow')}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+          {items.map(item => (
+            <span
               key={item}
-              className="group rounded-xl border border-[#D4AF37]/12 bg-gradient-to-b from-[#1a1408]/60 to-[#080604]/80 px-4 py-3.5 text-center text-sm font-medium font-display tracking-wide text-[#C5A059]/70 transition-all duration-300 hover:border-[#D4AF37]/30 hover:text-[#E8C872] hover:shadow-[0_0_20px_rgba(212,175,55,0.08)]"
+              className="inline-flex items-center rounded-full border border-[#D4AF37]/15 bg-[#1a1408]/50 px-4 py-2 font-display text-xs font-medium tracking-[0.12em] text-[#F0E6D2] transition-colors duration-300 hover:border-[#D4AF37]/35 sm:px-5 sm:text-sm sm:tracking-wide"
             >
               {item}
-            </div>
+            </span>
           ))}
         </div>
       </div>

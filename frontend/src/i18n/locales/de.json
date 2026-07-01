@@ -1363,7 +1363,9 @@
       "demoError": "Demo-Fehler: Verbindung fehlgeschlagen."
     },
     "trust": {
-      "title": "Vertraut von Top-Restaurants in:"
+      "eyebrow": "Für Gastronomie entwickelt in",
+      "aria": "Unterstützte Märkte",
+      "items": ["Italien", "Spanien", "Kanaren"]
     },
     "features": {
       "eyebrow": "Plattform",

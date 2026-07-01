@@ -1363,7 +1363,9 @@
       "demoError": "Error en la demo: no se pudo conectar."
     },
     "trust": {
-      "title": "Elegido por los mejores restaurantes en:"
+      "eyebrow": "Diseñado para la restauración en",
+      "aria": "Mercados geográficos soportados",
+      "items": ["Italia", "España", "Canarias"]
     },
     "features": {
       "eyebrow": "Plataforma",

@@ -1673,7 +1673,9 @@
       "demoError": "Errore avvio demo: impossibile collegarsi."
     },
     "trust": {
-      "title": "Scelto dai migliori ristoranti a:"
+      "eyebrow": "Progettato per la ristorazione in",
+      "aria": "Mercati geografici supportati",
+      "items": ["Italia", "Spagna", "Canarie"]
     },
     "features": {
       "eyebrow": "Piattaforma",
