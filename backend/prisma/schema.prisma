@@ -271,6 +271,10 @@ model RestaurantSettings {
    */
   onboardingIntake        Json?
   onboardingSubmittedAt   DateTime?
+  /**
+   * Telegram Chat ID associato al tenant per ricezione alert AI
+   */
+  telegramChatId          String?
 }
 
 // ===== UTENTI =====

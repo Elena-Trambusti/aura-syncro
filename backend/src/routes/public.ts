@@ -276,3 +276,51 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
     res.status(500).json({ error: 'Errore durante il checkout' })
   }
 })
+
+/** POST /api/public/telegram-webhook — Webhook ufficiale Telegram per registrare i Chat ID */
+publicRouter.post('/telegram-webhook', async (req: Request, res: Response): Promise<void> => {
+  // Telegram invia i messaggi nel body: req.body.message
+  const message = req.body?.message
+  if (!message || !message.text) {
+    res.sendStatus(200) // Rispondi 200 per non far ritentare a Telegram
+    return
+  }
+
+  const chatId = message.chat.id
+  const text = message.text.trim()
+
+  // Quando un utente clicca il link t.me/AuraSyncroBot?start=RISTORANTE_ABC123
+  // Telegram invia il messaggio: "/start RISTORANTE_ABC123"
+  if (text.startsWith('/start ')) {
+    const restaurantId = text.split(' ')[1]
+
+    if (restaurantId) {
+      try {
+        const restaurant = await prisma.restaurant.findUnique({
+          where: { id: restaurantId },
+        })
+
+        if (restaurant) {
+          // Salva l'ID della chat per questo tenant
+          await prisma.restaurantSettings.upsert({
+            where: { restaurantId: restaurant.id },
+            update: { telegramChatId: String(chatId) },
+            create: { restaurantId: restaurant.id, telegramChatId: String(chatId) },
+          })
+
+          // Importiamo dinamicamente sendTelegramMessage per evitare cicli
+          const { sendTelegramMessage } = await import('../lib/telegramBot')
+          await sendTelegramMessage(
+            String(chatId),
+            `✅ <b>Perfetto!</b>\nTelegram collegato con successo al ristorante <b>${restaurant.name}</b>.\n\nRiceverai qui gli Alert della AI Predittiva.`
+          )
+        }
+      } catch (err) {
+        console.error('[Telegram Webhook] Errore salvataggio chat:', err)
+      }
+    }
+  }
+
+  // Telegram richiede un 200 OK
+  res.sendStatus(200)
+})

@@ -6,7 +6,7 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { defaultTaxRateForRegion } from '../lib/fiscalRegime'
-import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy } from 'lucide-react'
+import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
@@ -35,6 +35,7 @@ interface RestaurantSettings {
   posProviderLabel?: string | null
   posTerminalId?: string | null
   laborHourlyRate?: number | null
+  telegramChatId?: string | null
 }
 
 interface RestaurantData {
@@ -580,6 +581,25 @@ export default function SettingsPage() {
             {t('settings.posNetworkHint')}
           </p>
         )}
+      </div>
+
+      <div className="premium-card p-6">
+        <h2 className="text-base font-semibold text-pietra mb-2">Notifiche AI su Telegram</h2>
+        <p className="text-sm text-fumo mb-4">Collega il tuo account Telegram per ricevere in tempo reale gli alert predittivi e i consigli sui riordini direttamente sul tuo smartphone.</p>
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => window.open(`https://t.me/AuraSyncroAlert_bot?start=${restaurantData?.id}`, '_blank')}
+              className="flex items-center gap-2 px-4 py-2 bg-[#2AABEE] hover:bg-[#229ED9] text-white rounded-xl text-sm font-semibold transition-colors">
+              <Send className="w-4 h-4" />
+              Collega Telegram
+            </button>
+          </div>
+          {restaurantData?.settings?.telegramChatId && (
+            <p className="text-xs text-green-400/90 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+              ✅ Telegram è già collegato! Riceverai le notifiche AI su questo account.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="premium-card p-6">
