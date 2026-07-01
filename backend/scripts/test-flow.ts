@@ -62,6 +62,7 @@ async function refundWithRetry(
   throw new Error('refund retry exhausted')
 }
 
+async function ensureCashSessionOpen(token: string): Promise<void> {
   const current = (await api('/cash/session/current', { token })) as { id: string } | null
   if (current?.id) return
   await api('/cash/session/open', {
