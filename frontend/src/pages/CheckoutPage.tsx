@@ -21,6 +21,7 @@ import {
   isPaymentInProgress,
   resolvePaymentErrorMessage,
 } from '../lib/paymentErrors'
+import { resolveToastApiError } from '../lib/formatApiError'
 import {
   isSplitGuestPaid,
   nextUnpaidSplitGuest,
@@ -138,7 +139,7 @@ export default function CheckoutPage() {
       void refetch()
       toast.success(t('checkout.discountApplied'))
     },
-    onError: () => toast.error(t('checkout.discountInvalid')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'checkout.discountInvalid')),
   })
 
   const refundOrder = useMutation({

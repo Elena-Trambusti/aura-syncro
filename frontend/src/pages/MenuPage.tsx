@@ -10,7 +10,7 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen, Package } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { formatApiError } from '../lib/formatApiError'
+import { formatApiError, resolveToastApiError } from '../lib/formatApiError'
 import GlassModal from '../components/ui/GlassModal'
 import AuraSelect from '../components/ui/AuraSelect'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -159,12 +159,12 @@ export default function MenuPage() {
   const createItem = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/menu/items', data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setShowForm(false); toast.success(t('menu.added')) },
-    onError: () => toast.error(t('menu.saveError', { defaultValue: 'Impossibile salvare il piatto' })),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
   })
   const updateItem = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/menu/items/${id}`, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setEditingItem(null); toast.success(t('menu.updated')) },
-    onError: () => toast.error(t('menu.saveError', { defaultValue: 'Impossibile salvare il piatto' })),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
   })
   const deleteItem = useMutation({
     mutationFn: (id: string) => api.delete(`/menu/items/${id}`),
@@ -179,7 +179,7 @@ export default function MenuPage() {
   const toggleAvail = useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) => api.patch(`/menu/items/${id}/availability`, { available }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
-    onError: () => toast.error(t('menu.saveError', { defaultValue: 'Impossibile aggiornare la disponibilità' })),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
   })
 
   const createCategory = useMutation({

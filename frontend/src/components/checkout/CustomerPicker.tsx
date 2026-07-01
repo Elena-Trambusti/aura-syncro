@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../../lib/formatApiError'
 
 export interface CustomerOption {
   id: string
@@ -58,7 +59,7 @@ export default function CustomerPicker({
       setQuery('')
       toast.success(t('checkout.customerLinked'))
     },
-    onError: () => toast.error(t('checkout.customerLinkError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'checkout.customerLinkError')),
   })
 
   const selected = currentCustomer

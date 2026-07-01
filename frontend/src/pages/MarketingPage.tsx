@@ -9,6 +9,7 @@ import AuraSelect from '../components/ui/AuraSelect'
 import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { Cake, RefreshCw, Crown, Plus, Send, Trash2, Star } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../lib/formatApiError'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -218,9 +219,9 @@ export default function MarketingPage() {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'automations') })
       toast.success(t('marketing.automations.saved'))
     },
-    onError: () => {
+    onError: (err: unknown) => {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'automations') })
-      toast.error(t('marketing.automations.saveError'))
+      toast.error(resolveToastApiError(t, err, 'marketing.automations.saveError'))
     },
   })
 
@@ -232,7 +233,7 @@ export default function MarketingPage() {
       setShowCampaignForm(false)
       toast.success(t('marketing.campaignCreated'))
     },
-    onError: () => toast.error(t('marketing.createError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'marketing.createError')),
   })
 
   const sendCampaign = useMutation({
@@ -241,7 +242,7 @@ export default function MarketingPage() {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'campaigns') })
       toast.success(t('marketing.campaignSent'))
     },
-    onError: () => toast.error(t('marketing.sendError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'marketing.sendError')),
   })
 
   const deleteCampaign = useMutation({
@@ -250,6 +251,7 @@ export default function MarketingPage() {
       qc.invalidateQueries({ queryKey: tq(tk, 'marketing', 'campaigns') })
       toast.success(t('marketing.deleted'))
     },
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'common.deleteError')),
   })
 
   const ordered = useMemo(() => {

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, Package } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../../lib/formatApiError'
 import { api } from '../../lib/api'
 import { ui } from '../../lib/ui'
 import GlassModal from '../ui/GlassModal'
@@ -58,7 +59,7 @@ export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }
       onSaved()
       onClose()
     },
-    onError: () => toast.error(t('menu.recipeSaveError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.recipeSaveError')),
   })
 
   const addRow = () => {

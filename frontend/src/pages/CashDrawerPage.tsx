@@ -7,6 +7,7 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Wallet, Plus, Lock, Unlock } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../lib/formatApiError'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import { ui } from '../lib/ui'
@@ -64,7 +65,7 @@ export default function CashDrawerPage() {
       setShowOpenModal(false)
       toast.success(t('cashDrawer.openSuccess'))
     },
-    onError: () => toast.error(t('cashDrawer.openError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.openError')),
   })
 
   const closeSession = useMutation({
@@ -77,7 +78,7 @@ export default function CashDrawerPage() {
       else if (diff > 0) toast.success(t('cashDrawer.closeSurplus', { amount: diff }))
       else toast.error(t('cashDrawer.closeShortage', { amount: diff }))
     },
-    onError: () => toast.error(t('cashDrawer.closeError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.closeError')),
   })
 
   const addTx = useMutation({
@@ -87,7 +88,7 @@ export default function CashDrawerPage() {
       setShowTxModal(false)
       toast.success(t('cashDrawer.txSuccess'))
     },
-    onError: () => toast.error(t('cashDrawer.txError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.txError')),
   })
 
   const sales = txs.filter(t => t.type === 'SALE' || t.type === 'PAYIN').reduce((sum, t) => sum + t.amount, 0)

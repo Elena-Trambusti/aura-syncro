@@ -648,8 +648,22 @@ Audit esaustivo su tutto il codebase (routes, permessi, revenue, TZ, socket, mar
 | ID | Nota |
 |----|------|
 | RC-12 | P&L food cost — stima interna, arrotondata |
-| i18n-B | CashDrawer, Marketing, Waitlist parziale senza `formatApiError` |
+| i18n-B | Errori API su CashDrawer, Marketing, Waitlist (add/notify) | ✅ RISOLTO RZ12 |
 | B-12 | Saga POS oltre auto-refund |
 | Load-50 | Stress test pre-scale |
 
 *Ultimo aggiornamento: 2026-07-01 — RZ11 completato. Go-live ~98%.*
+
+---
+
+# ROUND RZ12 — i18n errori API completo (2026-07-01)
+
+| ID | Fix |
+|----|-----|
+| RZ12-01 | `resolveToastApiError()` helper in `formatApiError.ts` |
+| RZ12-02 | CashDrawer, Marketing, Menu (save/toggle), Checkout promo |
+| RZ12-03 | Waitlist add/notify, RecipeEditor, AreaManager, FloorPlan |
+| RZ12-04 | CustomerPicker, StaffPage, StaffShiftsTab |
+| RZ12-05 | Reservations deposit link |
+
+*Ultimo aggiornamento: 2026-07-01 — RZ12 completato. Go-live ~99%.*

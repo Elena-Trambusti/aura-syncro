@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import type { AxiosError } from 'axios'
 import { api } from '../../lib/api'
 import { getRoleLabel, cn } from '../../lib/utils'
 import { useRealtimeQuery } from '../../hooks/useRealtimeInvalidation'
@@ -9,6 +8,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Loader2, Clock, Trash2, LogIn, LogOut, X, Info,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../../lib/formatApiError'
 import GlassModal from '../ui/GlassModal'
 import AuraSelect from '../ui/AuraSelect'
 import QueryErrorBanner from '../QueryErrorBanner'
@@ -64,11 +64,6 @@ function toDateInput(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
-}
-
-function apiErrorMessage(err: unknown, fallback: string): string {
-  const axiosErr = err as AxiosError<{ error?: string }>
-  return axiosErr.response?.data?.error ?? fallback
 }
 
 interface StaffShiftsTabProps {
@@ -156,7 +151,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
       setShowForm(false)
       toast.success(t('staff.shiftAdded'))
     },
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.shiftAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.shiftAddError')),
   })
 
   const clockShift = useMutation({
@@ -166,7 +161,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
       queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       toast.success(t('staff.clockUpdated'))
     },
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.shiftAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.shiftAddError')),
   })
 
   const deleteShift = useMutation({
@@ -175,7 +170,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
       queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       toast.success(t('staff.shiftDeleted'))
     },
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.shiftAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.shiftAddError')),
   })
 
   const statusLabel = (status: Shift['status']) => t(`staff.shiftStatus.${status.toLowerCase()}`)

@@ -13,3 +13,12 @@ export function apiErrorPayload(err: unknown): ApiErrorPayload | null {
 export function formatApiError(t: TFunction, err: unknown, fallbackKey = 'errors.serverError'): string {
   return resolveApiErrorMessage(t, apiErrorPayload(err), fallbackKey)
 }
+
+/** Per toast: preferisce `translatedMessage` impostato dall'interceptor axios. */
+export function resolveToastApiError(t: TFunction, err: unknown, fallbackKey = 'errors.serverError'): string {
+  if (err && typeof err === 'object') {
+    const translated = (err as { translatedMessage?: string }).translatedMessage
+    if (translated) return translated
+  }
+  return formatApiError(t, err, fallbackKey)
+}

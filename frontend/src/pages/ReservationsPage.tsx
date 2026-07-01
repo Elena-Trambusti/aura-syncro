@@ -17,7 +17,7 @@ import { ui } from '../lib/ui'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
-import { formatApiError } from '../lib/formatApiError'
+import { formatApiError, resolveToastApiError } from '../lib/formatApiError'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -266,7 +266,7 @@ export default function ReservationsPage() {
       await navigator.clipboard.writeText(url)
       toast.success(t('reservations.depositLinkCopied'))
     },
-    onError: () => toast.error(t('reservations.depositPayError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'reservations.depositPayError')),
   })
 
   const chargeNoShow = useMutation({

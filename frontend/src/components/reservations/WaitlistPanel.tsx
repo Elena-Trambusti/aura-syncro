@@ -9,7 +9,7 @@ import {
   Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, ListOrdered,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { formatApiError } from '@/lib/formatApiError'
+import { formatApiError, resolveToastApiError } from '@/lib/formatApiError'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import {
@@ -158,7 +158,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
       setShowForm(false)
       toast.success(t('waitlist.added'))
     },
-    onError: () => toast.error(t('waitlist.addError')),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'waitlist.addError')),
   })
 
   const notifyGuest = useMutation({
@@ -167,7 +167,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.success(t('waitlist.notified'))
     },
-    onError: () => toast.error(t('waitlist.notifyError', { defaultValue: 'Notifica non riuscita' })),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'waitlist.notifyError')),
   })
 
   const confirmGuest = useMutation({

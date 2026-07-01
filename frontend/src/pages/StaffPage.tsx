@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import type { AxiosError } from 'axios'
 import { api } from '../lib/api'
+import { resolveToastApiError } from '../lib/formatApiError'
 import { getRoleLabel, getInitials, cn } from '../lib/utils'
 import { useRole } from '../hooks/useRole'
 import { type AppRole } from '../lib/rbac'
@@ -42,11 +42,6 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 const MIN_PASSWORD_LENGTH = 8
-
-function apiErrorMessage(err: unknown, fallback: string): string {
-  const axiosErr = err as AxiosError<{ error?: string }>
-  return axiosErr.response?.data?.error ?? fallback
-}
 
 export default function StaffPage() {
   const { t } = useTranslation()
@@ -93,7 +88,7 @@ export default function StaffPage() {
       setNewStaff({ name: '', email: '', password: '', role: 'WAITER', phone: '' })
       toast.success(t('staff.memberAdded'))
     },
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.memberAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.memberAddError')),
   })
 
   const updateStaff = useMutation({
@@ -104,14 +99,14 @@ export default function StaffPage() {
       setEditingMember(null)
       toast.success(t('staff.memberUpdated'))
     },
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.memberAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.memberAddError')),
   })
 
   const toggleActive = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       api.put(`/staff/${id}`, { active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'staff') }),
-    onError: (err) => toast.error(apiErrorMessage(err, t('staff.memberAddError'))),
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'staff.memberAddError')),
   })
 
   const canSubmitMember =

@@ -5,6 +5,7 @@ import { Save, UtensilsCrossed, RotateCw } from 'lucide-react'
 import type { FloorTable } from './TableFloorPlan'
 import { api } from '../../lib/api'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../../lib/formatApiError'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
@@ -72,8 +73,8 @@ export default function FloorPlanEditor({ tables, onClose }: FloorPlanEditorProp
       toast.success(t('tables.layoutSaved', { defaultValue: 'Layout salvato con successo!' }))
       onClose()
     },
-    onError: () => {
-      toast.error(t('common.error'))
+    onError: (err: unknown) => {
+      toast.error(resolveToastApiError(t, err, 'common.error'))
     }
   })
 

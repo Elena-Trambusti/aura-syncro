@@ -1291,7 +1291,7 @@ I campi `Float` residui sono **by design**: `taxRate`, percentuali fedeltà, coo
 | ID | Severità | Descrizione | Stato |
 |----|----------|-------------|-------|
 | RC-12 | BASSA | P&L `estimatedFoodCost` accumulo JS — stima, non documento fiscale; arrotondato in output | Accettato |
-| i18n-B | BASSA | `formatApiError` mancante su CashDrawer, Marketing (parziale), Waitlist add/notify, RecipeEditor | Backlog UX |
+| i18n-B | BASSA | ~~`formatApiError` mancante su CashDrawer, Marketing, Waitlist~~ | ✅ RISOLTO (RZ12) |
 | B-12 | BASSA | Saga POS distribuita completa (oltre auto-refund) | Roadmap |
 | C-03/C-04 | BASSA | Bucket report timezone edge case su tenant non-Europe/Rome | Accettato |
 | Load-50 | QA | Load test 50 tavoli concorrenti | Consigliato pre-scale |
@@ -1302,3 +1302,17 @@ I campi `Float` residui sono **by design**: `taxRate`, percentuali fedeltà, coo
 - **Go-live operativo: ~98%** — residui solo UX secondaria e hardening enterprise opzionale.
 
 *Ultimo aggiornamento audit: 2026-07-01 — RZ-11.*
+
+---
+
+## ROUND RZ-12 — i18n errori API (2026-07-01)
+
+| ID | Fix |
+|----|-------|
+| RZ12-01 | `resolveToastApiError()` — helper unificato toast + `apiErrors.*` |
+| RZ12-02 | CashDrawer, Marketing, Menu, Checkout promo, Reservations deposit |
+| RZ12-03 | Waitlist, RecipeEditor, AreaManager, FloorPlan, CustomerPicker, Staff |
+
+**i18n-B:** ✅ RISOLTO
+
+*Ultimo aggiornamento audit: 2026-07-01 — RZ-12.*

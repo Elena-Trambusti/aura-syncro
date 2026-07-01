@@ -633,8 +633,8 @@ Float residui: percentuali IVA/IGIC, coordinate tavoli, quantità magazzino (non
 
 ### Residui bassa priorità
 - **RC-12:** stima food cost P&L (non fiscale)
-- **i18n-B:** errori API su CashDrawer, Marketing, Waitlist (add/notify)
+- ~~**i18n-B:** errori API pagine secondarie~~ ✅ RZ12
 - **B-12:** saga POS distribuita (auto-refund già attivo)
 - **Load-50:** stress test concorrenza tavoli
 
-*Audit aggiornato: 2026-07-01 — RZ11.*
+*Audit aggiornato: 2026-07-01 — RZ12.*

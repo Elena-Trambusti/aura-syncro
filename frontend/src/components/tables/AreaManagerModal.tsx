@@ -4,6 +4,7 @@ import { X, Save, Edit2, Map } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { toast } from '@/lib/toast'
+import { resolveToastApiError } from '../../lib/formatApiError'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { ui } from '../../lib/ui'
@@ -30,8 +31,8 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
       toast.success(t('common.saved', { defaultValue: 'Salvato con successo' }))
       setEditingArea(null)
     },
-    onError: () => {
-      toast.error(t('common.error', { defaultValue: 'Errore imprevisto' }))
+    onError: (err: unknown) => {
+      toast.error(resolveToastApiError(t, err, 'common.error'))
     },
   })
 
