@@ -9,6 +9,7 @@ import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { computeOnboardingReadiness } from '../lib/onboardingReadiness'
 import { resolveMaxCoversPerSlot } from '../lib/reservationCapacity'
+import { onboardingRouter } from './onboarding'
 
 const SENSITIVE_SETTINGS_FIELDS = new Set([
   'stripeCustomerId',
@@ -39,6 +40,8 @@ function serializeRestaurantResponse(
 }
 
 export const restaurantRouter = Router()
+
+restaurantRouter.use('/onboarding', onboardingRouter)
 
 const emptyToNull = (val: unknown) =>
   val === '' || val === null || val === undefined ? null : val

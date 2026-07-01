@@ -95,6 +95,33 @@ model Restaurant {
   saasElectronicInvoices SaasElectronicInvoice[]
   apiIdempotencyRecords  ApiIdempotencyRecord[]
   fiscalClosures         FiscalClosure[]
+  setupAppointment       SetupAppointment?
+}
+
+/**
+ * Appuntamento setup concierge — sostituto Calendly (slot globali unici)
+ */
+model SetupAppointment {
+  id           String                   @id @default(cuid())
+  restaurantId String                   @unique
+  restaurant   Restaurant               @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  slotStart    DateTime
+  slotEnd      DateTime
+  status       SetupAppointmentStatus   @default(CONFIRMED)
+  contactEmail String?
+  contactPhone String?
+  notes        String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  @@unique([slotStart])
+  @@index([slotStart, status])
+}
+
+enum SetupAppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }
 
 model FiscalClosure {
@@ -239,6 +266,11 @@ model RestaurantSettings {
    * Checklist concierge onboarding (persistita)
    */
   onboardingConcierge     Json?
+  /**
+   * Payload completo modulo onboarding proprietario (sala, menu, hardware…)
+   */
+  onboardingIntake        Json?
+  onboardingSubmittedAt   DateTime?
 }
 
 // ===== UTENTI =====
