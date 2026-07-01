@@ -11,12 +11,17 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
+import {
+  LandingSectionHeader,
+  LandingSectionShell,
+  LUXURY_CARD_CLASS,
+  LuxuryCardHoverLine,
+} from './landingLuxury'
 
 type GalleryProblem = {
   icon: LucideIcon
   title: string
   desc: string
-  accent?: string
 }
 
 type GalleryData = {
@@ -26,8 +31,8 @@ type GalleryData = {
   problems: GalleryProblem[]
 }
 
-const IT_PROBLEM_KEYS = ['p1', 'p2', 'p3'] as const
-const IT_PROBLEM_ICONS: Record<(typeof IT_PROBLEM_KEYS)[number], LucideIcon> = {
+const GALLERY_PROBLEM_KEYS = ['p1', 'p2', 'p3'] as const
+const GALLERY_PROBLEM_ICONS: Record<(typeof GALLERY_PROBLEM_KEYS)[number], LucideIcon> = {
   p1: Layers,
   p2: TrendingDown,
   p3: Scale,
@@ -35,6 +40,7 @@ const IT_PROBLEM_ICONS: Record<(typeof IT_PROBLEM_KEYS)[number], LucideIcon> = {
 
 const MARKET_DATA: Record<string, GalleryData> = {
   es: {
+    eyebrow: 'Hostelería',
     title: 'Resolvemos los problemas reales de la Hostelería en España',
     subtitle: 'Olvídate de las sanciones de Hacienda. Aura Syncro automatiza tu cumplimiento fiscal y operativo.',
     problems: [
@@ -56,6 +62,7 @@ const MARKET_DATA: Record<string, GalleryData> = {
     ],
   },
   'es-cn': {
+    eyebrow: 'Canarias',
     title: 'Soluciones diseñadas exclusivamente para Canarias',
     subtitle: 'No somos un software de la península adaptado a medias. Aura Syncro nació entendiendo el IGIC y el REF.',
     problems: [
@@ -78,15 +85,18 @@ const MARKET_DATA: Record<string, GalleryData> = {
   },
 }
 
+const I18N_GALLERY_LANGS = new Set(['it', 'en', 'de', 'fr'])
+
 function resolveGalleryData(lang: string, t: (key: string) => string): GalleryData {
   const base = lang.split('-')[0]
 
-  if (base === 'it') {
+  if (I18N_GALLERY_LANGS.has(base)) {
     return {
+      eyebrow: t('landing.gallery.eyebrow'),
       title: t('landing.gallery.title'),
       subtitle: t('landing.gallery.subtitle'),
-      problems: IT_PROBLEM_KEYS.map(key => ({
-        icon: IT_PROBLEM_ICONS[key],
+      problems: GALLERY_PROBLEM_KEYS.map(key => ({
+        icon: GALLERY_PROBLEM_ICONS[key],
         title: t(`landing.gallery.${key}.title`),
         desc: t(`landing.gallery.${key}.desc`),
       })),
@@ -101,35 +111,19 @@ export default function LandingGallery() {
   const data = resolveGalleryData(i18n.language || 'it', t)
 
   return (
-    <section className="relative overflow-hidden border-y border-[#D4AF37]/10 py-24 sm:py-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_0%,rgba(212,175,55,0.12),transparent_65%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(0,0,0,0.55),transparent)]" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
-
-      <div className="relative z-10 mx-auto mb-16 max-w-7xl px-6 text-center lg:px-8">
-        {data.eyebrow && (
-          <p className="lux-eyebrow mb-4">
-            {data.eyebrow}
-          </p>
-        )}
-        <h2 className="lux-heading text-[#C5A059] font-display text-3xl font-medium tracking-tight sm:text-4xl lg:text-5xl">
-          {data.title}
-        </h2>
-        <p className="mx-auto mt-5 max-w-2xl text-base font-light leading-relaxed text-slate-300 sm:text-lg">
-          {data.subtitle}
-        </p>
-      </div>
+    <LandingSectionShell>
+      <LandingSectionHeader
+        eyebrow={data.eyebrow}
+        title={data.title}
+        subtitle={data.subtitle}
+      />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
           {data.problems.map(problem => {
             const Icon = problem.icon
             return (
-              <article
-                key={problem.title}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#D4AF37]/15 bg-gradient-to-b from-[#1a1408]/90 via-[#0f0c08]/95 to-[#080604] shadow-[0_24px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(232,200,114,0.1)] transition-all duration-500 hover:-translate-y-1 hover:border-[#D4AF37]/35 hover:shadow-[0_28px_56px_rgba(0,0,0,0.55),0_0_40px_rgba(212,175,55,0.08)]"
-              >
+              <article key={problem.title} className={LUXURY_CARD_CLASS}>
                 <div className="relative flex h-44 items-center justify-center overflow-hidden border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604]">
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.14),transparent_68%)] opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
                   <div className="relative z-10 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-black/60 text-[#E8C872] shadow-[0_0_28px_rgba(212,175,55,0.18)] backdrop-blur-sm transition-all duration-500 group-hover:scale-105 group-hover:border-[#E8C872]/40 group-hover:shadow-[0_0_36px_rgba(212,175,55,0.28)]">
@@ -138,20 +132,20 @@ export default function LandingGallery() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-7 sm:p-8">
-                  <h3 className="font-display text-xl font-medium tracking-tight text-slate-100 transition-colors duration-300 group-hover:text-white">
+                  <h3 className="font-display text-xl font-medium tracking-tight text-[#F0E6D2] transition-colors duration-300 group-hover:text-white">
                     {problem.title}
                   </h3>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-300">
+                  <p className="mt-3 flex-1 text-sm font-light leading-relaxed lux-text-soft">
                     {problem.desc}
                   </p>
                 </div>
 
-                <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <LuxuryCardHoverLine />
               </article>
             )
           })}
         </div>
       </div>
-    </section>
+    </LandingSectionShell>
   )
 }

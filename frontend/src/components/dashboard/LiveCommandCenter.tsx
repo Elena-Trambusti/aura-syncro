@@ -165,7 +165,6 @@ export default function LiveCommandCenter() {
       loading: loadingOrders,
       href: '/cucina',
       cta: t('dashboard.openKitchen'),
-      external: true,
       content: (
         <div className="grid grid-cols-3 gap-2">
           <div className="aura-kitchen-stat">

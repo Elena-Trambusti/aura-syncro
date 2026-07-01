@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import RegisterLink from './RegisterLink'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Sparkles, Zap, BarChart3, Loader2 } from 'lucide-react'
+import { ArrowRight, Zap, BarChart3, Loader2 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
 import { toast } from '@/lib/toast'
 import { BRAND } from '../../lib/brand'
@@ -33,7 +33,15 @@ export default function LandingHero() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-transparent px-4 pb-20 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-28 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))]">
+    <section
+      className="relative overflow-hidden bg-transparent px-4 pb-20 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-28 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))]"
+      itemScope
+      itemType="https://schema.org/SoftwareApplication"
+    >
+      <meta itemProp="name" content={BRAND.name} />
+      <link itemProp="url" href="https://www.aurasyncro.com/" />
+      <meta itemProp="applicationCategory" content="BusinessApplication" />
+      <meta itemProp="operatingSystem" content="Web" />
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute -top-32 -left-20 hidden h-[600px] w-[600px] rounded-full bg-amber-500/20 blur-[120px] md:block" />
         <div className="absolute top-1/4 -right-32 hidden h-[700px] w-[700px] rounded-full bg-orange-500/15 blur-[140px] lg:block" />
@@ -42,11 +50,13 @@ export default function LandingHero() {
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
         <div>
           <div
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-aura-gold/20 bg-neutral-950/80 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-aura-gold motion-reduce:animate-none"
+            className="lux-hero-badge motion-reduce:animate-none"
             style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both' }}
           >
-            <AuraIcon icon={Sparkles} size="sm" className="text-aura-gold" />
-            {t('landing.hero.badge')}
+            <span className="lux-hero-badge__icon" aria-hidden>
+              <AuraIcon icon={Zap} size="sm" className="text-[#E8C872]" weight="display" />
+            </span>
+            <span className="lux-hero-badge__text">{t('landing.hero.badge')}</span>
           </div>
           <h1 
             className="lux-heading text-[#C5A059] text-4xl font-display font-medium tracking-tight sm:text-5xl lg:text-7xl lg:leading-[1.1] drop-shadow-2xl"
@@ -54,8 +64,9 @@ export default function LandingHero() {
           >
             {t('landing.hero.title')}
           </h1>
-          <p 
-            className="mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg font-light"
+          <p
+            itemProp="description"
+            className="mt-6 max-w-xl text-base font-light leading-relaxed text-[#F0E6D2] sm:text-lg"
             style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '300ms' }}
           >
             {t('landing.hero.subtitle', { brand: BRAND.name })}

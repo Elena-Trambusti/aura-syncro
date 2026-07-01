@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
-import { getSocket } from '../lib/socket'
+import { getSocket, ensureSocketConnected, isSocketConnected } from '../lib/socket'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import {
@@ -34,10 +34,7 @@ export function useKitchenOrders() {
     queryFn: () =>
       api.get('/orders/active').then(r => filterKitchenOrders(r.data as KitchenOrder[])),
     staleTime: 30_000,
-    refetchInterval: () => {
-      const socket = getSocket()
-      return socket.connected ? 60_000 : SOCKET_FALLBACK_REFETCH_MS
-    },
+    refetchInterval: () => (isSocketConnected() ? 60_000 : SOCKET_FALLBACK_REFETCH_MS),
   })
 
   const patchCache = useCallback(
@@ -55,8 +52,8 @@ export function useKitchenOrders() {
   )
 
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket.connected) socket.connect()
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof getSocket>> | null = null
 
     const onNewOrder = (order: KitchenOrder) => {
       if (pendingOrderIdsRef.current.has(order.id)) return
@@ -68,9 +65,16 @@ export function useKitchenOrders() {
       patchCache(prev => mergeKitchenOrder(prev, order))
     }
 
-    socket.on('order:created', onNewOrder)
-    socket.on('order:updated', onOrderUpdated)
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      s.on('order:created', onNewOrder)
+      s.on('order:updated', onOrderUpdated)
+    })
+
     return () => {
+      cancelled = true
+      if (!socket) return
       socket.off('order:created', onNewOrder)
       socket.off('order:updated', onOrderUpdated)
     }
@@ -185,14 +189,12 @@ export function useKitchenOrders() {
     onError: (_err, _orderId, ctx) => {
       if (ctx?.skipped) return
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous)
-      toast.error(t('kitchen.orderDismissError', { defaultValue: "Impossibile archiviare l'ordine" }))
+      toast.error(t('kitchen.orderDismissError'))
     },
     onSuccess: (updated, _orderId, ctx) => {
       if (ctx?.skipped) return
       mergeServerOrder(updated)
-      toast.success(
-        t('kitchen.orderDismissed', { defaultValue: 'Ordine consegnato e rimosso dalla cucina' }),
-      )
+      toast.success(t('kitchen.orderDismissed'))
     },
     onSettled: (_data, _err, orderId, ctx) => {
       if (!ctx || ctx.skipped) return

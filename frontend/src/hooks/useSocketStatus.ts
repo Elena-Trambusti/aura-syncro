@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react'
-import { getSocket } from '../lib/socket'
+import { ensureSocketConnected } from '../lib/socket'
 
 export function useSocketStatus() {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const socket = getSocket()
-
-    // Initialize with current status
-    setIsConnected(socket.connected)
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
 
     const onConnect = () => setIsConnected(true)
     const onDisconnect = () => setIsConnected(false)
     const onConnectError = () => setIsConnected(false)
 
-    socket.on('connect', onConnect)
-    socket.on('disconnect', onDisconnect)
-    socket.on('connect_error', onConnectError)
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      setIsConnected(s.connected)
+      s.on('connect', onConnect)
+      s.on('disconnect', onDisconnect)
+      s.on('connect_error', onConnectError)
+    })
 
     return () => {
+      cancelled = true
+      if (!socket) return
       socket.off('connect', onConnect)
       socket.off('disconnect', onDisconnect)
       socket.off('connect_error', onConnectError)

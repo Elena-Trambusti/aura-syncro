@@ -86,6 +86,13 @@
     "previewUnsubscribed": "Aperçu gratuit — activez Premium pour tout débloquer",
     "previewOnboarding": "Onboarding en cours — les fonctions se débloquent à la fin du setup"
   },
+  "demo": {
+    "bannerTitle": "Démo interactive Aura Syncro",
+    "bannerSubtitle": "Testez le flux complet depuis Tables : ouvrir une table, passer commande et suivre la synchro en temps réel.",
+    "bannerReadOnly": "Vous explorez en lecture seule. Les modifications ne sont possibles que depuis Tables (commandes et encaissement).",
+    "apiReadOnly": "En mode Démo, vous ne pouvez interagir qu'avec la section Tables.",
+    "apiForbidden": "Action non autorisée en mode Démo."
+  },
   "commandPalette": {
     "title": "Navigation rapide",
     "placeholder": "Rechercher sections, tables, commandes…",
@@ -108,6 +115,7 @@
     "loginSubtitle": "Saisissez les identifiants de votre compte restaurant",
     "passwordPlaceholder": "Votre mot de passe",
     "secureAccess": "Connexion sécurisée et chiffrée",
+    "sessionUnavailable": "Connexion temporairement indisponible. Veuillez réessayer dans un instant.",
     "newRestaurant": "Nouveau restaurant ?",
     "hasAccount": "Vous avez déjà un compte ?",
     "emailPlaceholder": "votre@email.fr",
@@ -990,7 +998,9 @@
     "dishUpdated": "Plat mis à jour",
     "dishUpdateError": "Impossible de mettre à jour le plat",
     "orderReady": "Commande prête à servir !",
-    "orderReadyError": "Impossible de marquer la commande comme prête"
+    "orderReadyError": "Impossible de marquer la commande comme prête",
+    "orderDismissError": "Impossible d'archiver la commande",
+    "orderDismissed": "Commande servie et retirée de la cuisine"
   },
   "offline": {
     "bannerOffline": "Hors ligne — les commandes seront envoyées dès le retour de la connexion",
@@ -1341,13 +1351,17 @@
     "hero": {
       "badge": "Italie · Espagne · Îles Canaries",
       "title": "Le logiciel qui synchronise votre restaurant",
-      "subtitle": "{{brand}} est un logiciel cloud pour la restauration structurée : caisse rapide, menu QR, commandes en temps réel et conformité fiscale multi-pays.",
+      "subtitle": "{{brand}} est un logiciel cloud pour la restauration en Italie, en Espagne et aux Îles Canaries : caisse rapide, menu QR, commandes en temps réel et conformité fiscale multi-pays.",
       "ctaPrimary": "Essayer maintenant",
       "ctaSecondary": "Connexion",
       "ctaDemo": "Entrer dans la Démo",
       "demoError": "Erreur de démo : impossible de se connecter."
     },
+    "trust": {
+      "title": "Choisi par les meilleurs restaurants à :"
+    },
     "features": {
+      "eyebrow": "Plateforme",
       "title": "Tout le nécessaire pendant le service",
       "subtitle": "De la salle à la cuisine, du menu digital aux rapports fiscaux — une plateforme synchronisée.",
       "tables": {
@@ -1356,7 +1370,7 @@
       },
       "qrMenu": {
         "title": "Menu QR digital",
-        "desc": "Les clients commandent depuis leur téléphone avec une carte à jour envoyée en cuisine."
+        "desc": "Les clients consultent le menu sur leur téléphone en salle. Les serveurs prennent toutes les commandes."
       },
       "stripe": {
         "title": "Paiements Stripe",
@@ -1365,9 +1379,35 @@
       "fiscal": {
         "title": "Rapport fiscal",
         "desc": "TVA en Italie et péninsule, IGIC aux Canaries — exports prêts pour la facturation électronique."
+      },
+      "crm": {
+        "title": "CRM et fidélisation",
+        "desc": "Profils clients, tags, allergies et campagnes ciblées pour plus de retours et un ticket moyen plus élevé."
+      },
+      "ai": {
+        "title": "IA prédictive",
+        "desc": "Prévisions de couverts et de consommation pour planifier équipe, achats et production avec plus de précision."
+      }
+    },
+    "gallery": {
+      "eyebrow": "Le problème",
+      "title": "Les vrais défis de chaque service",
+      "subtitle": "Quand salle, cuisine et administration ne communiquent pas, vous perdez de la marge chaque soir — avant même de fermer la caisse.",
+      "p1": {
+        "title": "Trop d'outils, zéro synchronisation",
+        "desc": "Caisse, réservations, livraison et stock vivent dans des mondes séparés. Double saisie, erreurs en salle et données incohérentes."
+      },
+      "p2": {
+        "title": "Les plateformes érodent la marge",
+        "desc": "Jusqu'à 30 % sur chaque commande en livraison. Les clients sont les vôtres — le profit part ailleurs."
+      },
+      "p3": {
+        "title": "La conformité fiscale vous ralentit",
+        "desc": "Tickets, déclarations et facturation électronique exigent une précision absolue. Chaque erreur peut coûter des amendes et du stress comptable."
       }
     },
     "pricing": {
+      "eyebrow": "Investissement",
       "title": "Des offres claires à chaque étape",
       "subtitle": "Installation clé en main et abonnement mensuel transparent.",
       "cta": "Commencer l'essai",

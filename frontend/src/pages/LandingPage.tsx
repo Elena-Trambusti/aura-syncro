@@ -1,13 +1,33 @@
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
+import { injectLandingStructuredData } from '../lib/landingStructuredData'
+import {
+  LANDING_HREFLANG_ALTERNATES,
+  ogLocaleForLanguage,
+} from '../lib/siteUrl'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
-import LandingBelowFoldLoader from '../components/landing/LandingBelowFoldLoader'
+import LandingBelowFold from '../components/landing/LandingBelowFold'
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation()
+  const { pathname } = useLocation()
+  const metaTitle = t('landing.meta.title')
+  const metaDescription = t('landing.meta.description')
+  const canonicalPath = pathname === '/' ? '/' : pathname
 
-  usePageMeta(t('landing.meta.title'), t('landing.meta.description'))
+  usePageMeta(metaTitle, metaDescription, {
+    canonicalPath,
+    htmlLang: i18n.language,
+    ogLocale: ogLocaleForLanguage(i18n.language),
+    hreflangAlternates: LANDING_HREFLANG_ALTERNATES,
+  })
+
+  useEffect(() => {
+    return injectLandingStructuredData(i18n.language, metaTitle, metaDescription)
+  }, [i18n.language, metaTitle, metaDescription])
 
   return (
     <div lang={i18n.language} className="min-h-[100dvh] flex flex-col relative lux-text selection:bg-aura-gold/30 bg-[#020202] overflow-x-hidden">
@@ -31,7 +51,7 @@ export default function LandingPage() {
       <LandingNav />
       <main className="flex-1">
         <LandingHero />
-        <LandingBelowFoldLoader />
+        <LandingBelowFold />
       </main>
     </div>
   )

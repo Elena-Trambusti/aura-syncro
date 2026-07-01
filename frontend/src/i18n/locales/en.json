@@ -91,7 +91,9 @@
   "demo": {
     "bannerTitle": "Aura Syncro interactive demo",
     "bannerSubtitle": "Try the full flow from Tables: open a table, place an order, and watch real-time sync.",
-    "bannerReadOnly": "You are browsing in read-only mode. You can only change data from Tables (orders and checkout)."
+    "bannerReadOnly": "You are browsing in read-only mode. You can only change data from Tables (orders and checkout).",
+    "apiReadOnly": "In Demo mode you can only interact with the Tables section.",
+    "apiForbidden": "Action not allowed in Demo mode."
   },
   "commandPalette": {
     "title": "Quick navigation",
@@ -1094,6 +1096,8 @@
     "dishUpdateError": "Unable to update dish",
     "orderReady": "Order ready for service!",
     "orderReadyError": "Unable to mark order as ready",
+    "orderDismissError": "Unable to archive the order",
+    "orderDismissed": "Order served and removed from kitchen",
     "typeDineIn": "Dine-in",
     "typeTakeaway": "Takeaway",
     "typeDelivery": "Delivery"
@@ -1543,7 +1547,7 @@
     "hero": {
       "badge": "Italy · Spain · Canary Islands",
       "title": "The management platform that keeps your restaurant in sync",
-      "subtitle": "{{brand}} is cloud software for structured restaurants: fast POS, QR menu, real-time orders and multi-country fiscal compliance.",
+      "subtitle": "{{brand}} is cloud software for restaurants in Italy, Spain and the Canary Islands: fast POS, QR menu, real-time orders and multi-country fiscal compliance.",
       "ctaPrimary": "Try now",
       "ctaSecondary": "Watch demo",
       "previewKpi1": "Revenue vs last month",
@@ -1556,6 +1560,7 @@
       "title": "Chosen by top restaurants in:"
     },
     "features": {
+      "eyebrow": "Platform",
       "title": "Everything you need during service",
       "subtitle": "From dining room to kitchen, digital menu to fiscal reporting — one synchronized platform.",
       "tables": {
@@ -1583,7 +1588,25 @@
         "desc": "Forecast covers and consumption to plan staffing, purchasing and production with better accuracy."
       }
     },
+    "gallery": {
+      "eyebrow": "The problem",
+      "title": "The real challenges of every service",
+      "subtitle": "When dining room, kitchen and back office don't talk, you lose margin every night — before you even close the till.",
+      "p1": {
+        "title": "Too many tools, zero sync",
+        "desc": "POS, reservations, delivery and inventory live in separate worlds. Double entry, floor errors and data that never adds up."
+      },
+      "p2": {
+        "title": "Platforms erode your margin",
+        "desc": "Up to 30% on every delivery order. The customers are yours — the profit goes elsewhere."
+      },
+      "p3": {
+        "title": "Fiscal compliance slows you down",
+        "desc": "Receipts, tax reporting and e-invoicing demand absolute precision. Every mistake can mean fines and accountant stress."
+      }
+    },
     "pricing": {
+      "eyebrow": "Investment",
       "title": "Clear plans for every growth stage",
       "subtitle": "Turnkey setup and transparent monthly billing. No surprises.",
       "cta": "Start your trial",

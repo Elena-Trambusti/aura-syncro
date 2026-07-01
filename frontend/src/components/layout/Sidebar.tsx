@@ -53,14 +53,7 @@ const navItems: Array<{
   { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings', adminOnly: true },
 ]
 
-const externalLinks: Array<{
-  href: string
-  icon: typeof ChefHat
-  labelKey: string
-  permission?: Permission
-}> = [
-  { href: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay', permission: 'orders.read' },
-]
+const kitchenLink = { to: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay', permission: 'orders.read' as const }
 
 export default function Sidebar() {
   const { t } = useTranslation()
@@ -235,47 +228,43 @@ export default function Sidebar() {
         </nav>
 
         <div className="border-t border-white/[0.06] px-3 py-3">
-          {externalLinks.map(link => {
+          {(() => {
             const locked = isPreviewMode
-            const FeatureIcon = link.icon
+            const FeatureIcon = kitchenLink.icon
 
             if (locked) {
               return (
                 <button
-                  key={link.href}
                   type="button"
                   onClick={handleLockedClick}
                   className="premium-nav-item opacity-60"
-                  aria-label={`${t(link.labelKey)} — ${t('nav.lockedAria')}`}
+                  aria-label={`${t(kitchenLink.labelKey)} — ${t('nav.lockedAria')}`}
                 >
                   <span className="aura-nav-icon aura-nav-icon--muted">
                     <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
-                  <span className="truncate">{t(link.labelKey)}</span>
+                  <span className="truncate">{t(kitchenLink.labelKey)}</span>
                   <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-[#C5A059]/50" />
                 </button>
               )
             }
 
-            if (!link.permission || can(link.permission)) {
+            if (!kitchenLink.permission || can(kitchenLink.permission)) {
+              const isActive = location.pathname === kitchenLink.to
               return (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="premium-nav-item"
+                <NavLink
+                  to={kitchenLink.to}
+                  className={cn('premium-nav-item', isActive && 'premium-nav-item--active')}
                 >
-                  <span className="aura-nav-icon">
+                  <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
                     <FeatureIcon className="h-[17px] w-[17px]" />
                   </span>
-                  {t(link.labelKey)}
-                  <span className="ml-auto text-xs text-[#C5A059]/45">↗</span>
-                </a>
+                  <span className="truncate">{t(kitchenLink.labelKey)}</span>
+                </NavLink>
               )
             }
             return null
-          })}
+          })()}
         </div>
 
         <div className="border-t border-white/[0.06] p-4">

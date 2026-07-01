@@ -66,7 +66,7 @@ export default function StaffPage() {
 
   const { data: staffData, isLoading, isError } = useQuery<StaffMember[]>({
     queryKey: tq(tk, 'staff'),
-    queryFn: () => api.get('/staff').then(r => r.data),
+    queryFn: () => api.get<StaffMember[]>('/staff').then(r => r.data),
   })
   const showStaffSkeleton = useShowQuerySkeleton(isLoading, staffData !== undefined)
   const staff = staffData ?? []

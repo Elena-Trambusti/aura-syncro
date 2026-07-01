@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus, Loader2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { getSocket } from '../lib/socket'
+import { ensureSocketConnected } from '../lib/socket'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import { useKitchenOrders } from '../hooks/useKitchenOrders'
 import { useSocketStatus } from '../hooks/useSocketStatus'
@@ -347,8 +347,10 @@ export default function KitchenDisplayPage() {
   } = useKitchenOrders()
 
   useEffect(() => {
-    const socket = getSocket()
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
     let alertTimer: ReturnType<typeof setTimeout> | null = null
+
     const onNewOrder = (order: KitchenOrder) => {
       if (!orderNeedsKitchenAttention(order)) return
       setNewOrderAlert(true)
@@ -356,9 +358,16 @@ export default function KitchenDisplayPage() {
       if (alertTimer) clearTimeout(alertTimer)
       alertTimer = setTimeout(() => setNewOrderAlert(false), 3000)
     }
-    socket.on('order:created', onNewOrder)
+
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      s.on('order:created', onNewOrder)
+    })
+
     return () => {
-      socket.off('order:created', onNewOrder)
+      cancelled = true
+      if (socket) socket.off('order:created', onNewOrder)
       if (alertTimer) clearTimeout(alertTimer)
     }
   }, [t])

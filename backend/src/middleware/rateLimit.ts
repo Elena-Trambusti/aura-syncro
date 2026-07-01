@@ -1,6 +1,12 @@
-import rateLimit from 'express-rate-limit'
+import type { Request } from 'express'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 
 const message = (text: string) => ({ error: text, code: 'RATE_LIMITED' })
+
+/** IP normalizzato per rate limit (IPv6-safe, richiesto da express-rate-limit v8+). */
+function rateLimitIp(req: Request): string {
+  return ipKeyGenerator(req.ip ?? 'unknown')
+}
 
 export const authLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -48,8 +54,8 @@ export const campaignSendLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: req => {
-    const auth = req as { restaurantId?: string }
-    return auth.restaurantId ?? req.ip ?? 'unknown'
+    const auth = req as Request & { restaurantId?: string }
+    return auth.restaurantId ?? rateLimitIp(req)
   },
   message: message('Limite invii campagne raggiunto. Riprova tra un\'ora.'),
 })
@@ -85,7 +91,7 @@ export const publicReservationLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: req => {
     const slug = typeof req.body?.slug === 'string' ? req.body.slug : 'unknown'
-    return `${req.ip ?? 'unknown'}:${slug}`
+    return `${rateLimitIp(req)}:${slug}`
   },
   message: message('Troppe prenotazioni. Riprova tra qualche minuto.'),
 })
@@ -96,7 +102,7 @@ export const adminApiLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: req => req.ip ?? 'unknown',
+  keyGenerator: req => rateLimitIp(req),
   message: message('Troppe richieste admin. Riprova tra un minuto.'),
 })
 
@@ -107,7 +113,7 @@ export const publicMenuLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: req => {
     const slug = typeof req.params?.slug === 'string' ? req.params.slug : 'unknown'
-    return `${req.ip ?? 'unknown'}:${slug}`
+    return `${rateLimitIp(req)}:${slug}`
   },
   message: message('Troppe richieste al menu. Riprova tra un minuto.'),
 })

@@ -38,6 +38,8 @@ export default function AuraSonner() {
             title: 'aura-sonner-toast__title',
             description: 'aura-sonner-toast__desc',
             closeButton: 'aura-sonner-toast__close',
+            actionButton: 'aura-sonner-toast__action',
+            cancelButton: 'aura-sonner-toast__cancel',
             success: 'aura-sonner-toast--success',
             error: 'aura-sonner-toast--error',
             warning: 'aura-sonner-toast--warning',

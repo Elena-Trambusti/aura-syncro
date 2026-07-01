@@ -28,7 +28,7 @@ interface Table {
   orders: Array<{
     id: string; status: string; total: number; subtotal: number; tax: number
     customer?: CustomerOption | null
-    items: Array<{ id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string }>
+    items?: Array<{ id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string }>
   }>
 }
 
@@ -90,7 +90,7 @@ export default function OrderModal({
   const table = tables.find(tbl => tbl.id === tableId)
   const activeOrderSummary = table ? findActiveTableOrder(table.orders) : undefined
 
-  const { data: activeOrderDetail } = useQuery<Table['orders'][0]>({
+  const { data: activeOrderDetail, isFetching: isLoadingOrderDetail } = useQuery<Table['orders'][0]>({
     queryKey: tq(tk, 'orders', activeOrderSummary?.id),
     queryFn: () => api.get(`/orders/${activeOrderSummary!.id}`).then(r => r.data),
     enabled: Boolean(activeOrderSummary?.id),
@@ -236,7 +236,8 @@ export default function OrderModal({
 
   const cartTotal = cart.reduce((sum, item) => addMoney(sum, lineGrossMoney(item.quantity, item.price)), 0)
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
-  const orderBadgeCount = cartCount > 0 ? cartCount : (activeOrder?.items.length ?? 0)
+  const activeOrderItems = activeOrder?.items ?? []
+  const orderBadgeCount = cartCount > 0 ? cartCount : activeOrderItems.reduce((s, i) => s + i.quantity, 0)
 
   const goToCheckout = () => {
     if (!activeOrder) return
@@ -562,7 +563,12 @@ export default function OrderModal({
           </div>
 
           <div className="space-y-3">
-            {activeOrder!.items.map(item => (
+            {isLoadingOrderDetail && activeOrderItems.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-aura-gold/30 border-t-aura-gold" />
+              </div>
+            ) : (
+              activeOrderItems.map(item => (
               <div key={item.id} className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-navy-surface text-xs font-bold text-pietra">
@@ -574,7 +580,8 @@ export default function OrderModal({
                   {formatCurrency(lineGrossMoney(item.quantity, item.unitPrice))}
                 </span>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           <p className="text-lg font-bold text-pietra">

@@ -270,6 +270,34 @@ export default function CheckoutPage() {
     setItemAssignments(prev => ({ ...prev, [itemId]: guestIndex }))
   }
 
+  const taxLabel = fiscal.taxName
+
+  const receiptModal = finalizeResult ? (
+    <ReceiptPreviewModal
+      result={finalizeResult}
+      restaurantName={restaurant?.name ?? data?.restaurant.name ?? ''}
+      taxLabel={taxLabel}
+      onClose={() => {
+        setFinalizeResult(null)
+        navigate('/tavoli')
+      }}
+      onPrint={() => {
+        if (!finalizeResult.order) return
+        printReceipt(finalizeResult.order, restaurant?.name ?? '', {
+          taxLabel,
+          tipLabel: tRegime(t, fiscal.taxRegion, 'cards.tips.label'),
+        })
+        toast.success(t('checkout.printSimulated'))
+      }}
+      onEmail={() => toast.success(t('checkout.emailSimulated'))}
+    />
+  ) : null
+
+  // Keep receipt visible after refetch marks the order PAID
+  if (finalizeResult) {
+    return receiptModal
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -278,7 +306,7 @@ export default function CheckoutPage() {
     )
   }
 
-  if (isError || !order || order.status === 'PAID') {
+  if (isError || !order) {
     return (
       <div className="mx-auto max-w-lg rounded-xl premium-card p-8 text-center shadow-sm">
         <p className="text-pietra font-medium">{t('checkout.notAvailable')}</p>
@@ -289,7 +317,16 @@ export default function CheckoutPage() {
     )
   }
 
-  const taxLabel = fiscal.taxName
+  if (order.status === 'PAID') {
+    return (
+      <div className="mx-auto max-w-lg rounded-xl premium-card p-8 text-center shadow-sm">
+        <p className="text-pietra font-medium">{t('checkout.alreadyPaid')}</p>
+        <button type="button" onClick={() => navigate('/tavoli')} className="mt-4 text-sm text-aura-gold hover:underline">
+          {t('nav.tables')}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -614,27 +651,6 @@ export default function CheckoutPage() {
           </button>
         </div>
       </div>
-
-      {finalizeResult && (
-        <ReceiptPreviewModal
-          result={finalizeResult}
-          restaurantName={restaurant?.name ?? data?.restaurant.name ?? ''}
-          taxLabel={taxLabel}
-          onClose={() => {
-            setFinalizeResult(null)
-            navigate('/tavoli')
-          }}
-          onPrint={() => {
-            if (!finalizeResult.order) return
-            printReceipt(finalizeResult.order, restaurant?.name ?? '', {
-              taxLabel,
-              tipLabel: tRegime(t, fiscal.taxRegion, 'cards.tips.label'),
-            })
-            toast.success(t('checkout.printSimulated'))
-          }}
-          onEmail={() => toast.success(t('checkout.emailSimulated'))}
-        />
-      )}
     </>
   )
 }

@@ -5,6 +5,7 @@ export type AccessTier = 'unsubscribed' | 'onboarding' | 'operational'
 
 export const BILLING_PATH = '/dashboard/billing'
 export const ONBOARDING_PATH = '/dashboard/onboarding'
+export const KITCHEN_DISPLAY_PATH = '/cucina'
 
 /** Rotte accessibili senza abbonamento Premium (anteprima post-registrazione) */
 export const FREE_TIER_NAV_PATHS = [
@@ -53,6 +54,9 @@ export function isFreeTierNavItem(to: string, exact?: boolean): boolean {
  */
 export function getAccessRedirect(tier: AccessTier, pathname: string): string | null {
   const path = normalizePath(pathname)
+
+  // KDS fullscreen — sempre accessibile con permesso orders.read (non reindirizzare a onboarding/dashboard)
+  if (path === KITCHEN_DISPLAY_PATH) return null
 
   if (tier === 'unsubscribed') {
     if (isFreeTierPath(path)) return null

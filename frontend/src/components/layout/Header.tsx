@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
-import { LogOut, MonitorCheck, ExternalLink, Menu, Radio, UtensilsCrossed, ClipboardList, CalendarDays, Search } from 'lucide-react'
+import { LogOut, MonitorCheck, Menu, Radio, UtensilsCrossed, ClipboardList, CalendarDays, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials, cn } from '../../lib/utils'
@@ -97,17 +97,14 @@ export default function Header() {
 
 
         <div className="aura-topbar-cluster">
-          <a
-            href="/cucina"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/cucina"
             className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-aura-gold sm:flex"
             title={t('nav.openKitchenDisplay')}
           >
             <MonitorCheck className="h-3.5 w-3.5" />
             <span className="hidden 2xl:inline">{t('nav.kitchenDisplay')}</span>
-            <ExternalLink className="hidden h-3 w-3 opacity-40 2xl:block" />
-          </a>
+          </Link>
 
           <LanguageSwitcher compact />
           <NotificationBell />

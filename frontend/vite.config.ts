@@ -72,6 +72,9 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
+  optimizeDeps: {
+    include: ['qrcode.react'],
+  },
   build: {
     modulePreload: {
       polyfill: false,
@@ -109,7 +112,8 @@ export default defineConfig({
             return 'vendor-react'
           }
           if (id.includes('@tanstack')) return 'vendor-query'
-          if (id.includes('axios') || id.includes('socket.io')) return 'vendor-network'
+          if (id.includes('axios')) return 'vendor-axios'
+          if (id.includes('socket.io')) return 'vendor-socket'
           if (id.includes('@sentry')) return 'vendor-sentry'
           if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n'
         },

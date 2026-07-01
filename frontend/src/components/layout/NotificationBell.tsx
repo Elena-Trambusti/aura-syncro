@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bell, X, ShoppingBag, CalendarDays, AlertTriangle, ChefHat } from 'lucide-react'
-import { getSocket } from '../../lib/socket'
+import { ensureSocketConnected } from '../../lib/socket'
 import { formatDateTime } from '../../lib/utils'
 import { cn } from '../../lib/utils'
 import { toast } from '@/lib/toast'
@@ -77,14 +77,15 @@ export default function NotificationBell() {
   const close = useCallback(() => setOpen(false), [])
 
   useEffect(() => {
-    const socket = getSocket()
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
 
     const handleNotification = (data: { type: Notification['type']; message: string; orderId?: string }) => {
       if (data.orderId) {
         if (seenOrdersRef.current.has(data.orderId)) return
         seenOrdersRef.current.add(data.orderId)
       }
-      
+
       const notif: Notification = {
         id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
         type: data.type,
@@ -98,8 +99,15 @@ export default function NotificationBell() {
       toast.notify(data.message, cfg.toast)
     }
 
-    socket.on('notification', handleNotification)
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      s.on('notification', handleNotification)
+    })
+
     return () => {
+      cancelled = true
+      if (!socket) return
       socket.off('notification', handleNotification)
     }
   }, [])

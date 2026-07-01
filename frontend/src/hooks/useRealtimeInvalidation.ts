@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSocket } from '../lib/socket'
+import { getSocket, ensureSocketConnected } from '../lib/socket'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 
@@ -9,6 +9,7 @@ const TABLE_EVENTS = [
   'tables:updated',
   'table:created',
   'table:deleted',
+  'table:position_changed',
   'order:created',
   'order:updated',
 ] as const
@@ -21,18 +22,24 @@ export function useRealtimeTables(): void {
   const tenantKey = useTenantQueryKey()
 
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket.connected) socket.connect()
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof getSocket>> | null = null
 
     const refresh = () => {
       queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'tables') })
     }
 
-    for (const event of TABLE_EVENTS) {
-      socket.on(event, refresh)
-    }
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      for (const event of TABLE_EVENTS) {
+        s.on(event, refresh)
+      }
+    })
 
     return () => {
+      cancelled = true
+      if (!socket) return
       for (const event of TABLE_EVENTS) {
         socket.off(event, refresh)
       }
@@ -63,19 +70,25 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
   const eventsKey = events.join('|')
 
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket.connected) socket.connect()
-
+    let cancelled = false
+    let socket: Awaited<ReturnType<typeof getSocket>> | null = null
     const eventList = eventsKey.split('|').filter(Boolean)
+
     const refresh = () => {
       queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
     }
 
-    for (const event of eventList) {
-      socket.on(event, refresh)
-    }
+    void ensureSocketConnected().then((s) => {
+      if (cancelled) return
+      socket = s
+      for (const event of eventList) {
+        s.on(event, refresh)
+      }
+    })
 
     return () => {
+      cancelled = true
+      if (!socket) return
       for (const event of eventList) {
         socket.off(event, refresh)
       }

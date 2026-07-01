@@ -86,6 +86,13 @@
     "previewUnsubscribed": "Kostenlose Vorschau — Premium aktivieren für vollen Zugriff",
     "previewOnboarding": "Onboarding läuft — Funktionen werden nach Setup freigeschaltet"
   },
+  "demo": {
+    "bannerTitle": "Aura Syncro interaktive Demo",
+    "bannerSubtitle": "Testen Sie den vollständigen Ablauf über Tische: Tisch öffnen, Bestellung aufgeben und Echtzeit-Sync verfolgen.",
+    "bannerReadOnly": "Sie erkunden im Lesemodus. Änderungen sind nur im Bereich Tische möglich (Bestellungen und Kasse).",
+    "apiReadOnly": "Im Demo-Modus können Sie nur den Bereich Tische nutzen.",
+    "apiForbidden": "Aktion im Demo-Modus nicht erlaubt."
+  },
   "commandPalette": {
     "title": "Schnellnavigation",
     "placeholder": "Bereiche, Tische, Bestellungen suchen…",
@@ -108,6 +115,7 @@
     "loginSubtitle": "Geben Sie Ihre Restaurant-Zugangsdaten ein",
     "passwordPlaceholder": "Ihr Passwort",
     "secureAccess": "Sichere verschlüsselte Verbindung",
+    "sessionUnavailable": "Verbindung vorübergehend nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
     "newRestaurant": "Neues Restaurant?",
     "hasAccount": "Bereits ein Konto?",
     "emailPlaceholder": "ihre@email.de",
@@ -990,7 +998,9 @@
     "dishUpdated": "Gericht aktualisiert",
     "dishUpdateError": "Gericht konnte nicht aktualisiert werden",
     "orderReady": "Bestellung servierbereit!",
-    "orderReadyError": "Bestellung konnte nicht als fertig markiert werden"
+    "orderReadyError": "Bestellung konnte nicht als fertig markiert werden",
+    "orderDismissError": "Bestellung konnte nicht archiviert werden",
+    "orderDismissed": "Bestellung serviert und aus der Küche entfernt"
   },
   "offline": {
     "bannerOffline": "Offline — Bestellungen werden gesendet, sobald die Verbindung wiederhergestellt ist",
@@ -1341,13 +1351,17 @@
     "hero": {
       "badge": "Italien · Spanien · Kanarische Inseln",
       "title": "Die Software, die Ihr Restaurant synchron hält",
-      "subtitle": "{{brand}} ist Cloud-Software für strukturierte Gastronomie: schnelles POS, QR-Menü, Echtzeit-Bestellungen und Multi-Länder-Steuercompliance.",
+      "subtitle": "{{brand}} ist Cloud-Software für die Gastronomie in Italien, Spanien und auf den Kanarischen Inseln: schnelles POS, QR-Menü, Echtzeit-Bestellungen und Multi-Länder-Steuercompliance.",
       "ctaPrimary": "Jetzt testen",
       "ctaSecondary": "Anmelden",
       "ctaDemo": "Zur Live-Demo",
       "demoError": "Demo-Fehler: Verbindung fehlgeschlagen."
     },
+    "trust": {
+      "title": "Vertraut von Top-Restaurants in:"
+    },
     "features": {
+      "eyebrow": "Plattform",
       "title": "Alles für den laufenden Betrieb",
       "subtitle": "Vom Gastraum zur Küche, vom digitalen Menü zum Steuerbericht — eine synchronisierte Plattform.",
       "tables": {
@@ -1356,7 +1370,7 @@
       },
       "qrMenu": {
         "title": "Digitales QR-Menü",
-        "desc": "Gäste bestellen per Smartphone mit Live-Karte und direktem Küchenversand."
+        "desc": "Gäste sehen die Speisekarte auf dem Smartphone im Saal. Bestellungen nehmen die Kellner auf."
       },
       "stripe": {
         "title": "Stripe-Zahlungen",
@@ -1365,9 +1379,35 @@
       "fiscal": {
         "title": "Steuerbericht",
         "desc": "MwSt. in Italien und Festlandspanien, IGIC auf den Kanaren — Exporte für E-Rechnungen."
+      },
+      "crm": {
+        "title": "CRM und Kundenbindung",
+        "desc": "Kundenprofile, Tags, Allergien und gezielte Kampagnen für mehr Wiederbesuche und höheren Bon."
+      },
+      "ai": {
+        "title": "Prädiktive KI",
+        "desc": "Prognosen zu Gästen und Verbrauch für Personal, Einkauf und Produktion mit mehr Präzision."
+      }
+    },
+    "gallery": {
+      "eyebrow": "Das Problem",
+      "title": "Die echten Herausforderungen jedes Services",
+      "subtitle": "Wenn Gastraum, Küche und Verwaltung nicht zusammenarbeiten, verlieren Sie jede Nacht Marge — noch bevor die Kasse schließt.",
+      "p1": {
+        "title": "Zu viele Tools, null Synchronität",
+        "desc": "Kasse, Reservierungen, Lieferung und Lager leben in getrennten Welten. Doppelte Eingaben, Fehler im Saal und Daten, die nicht stimmen."
+      },
+      "p2": {
+        "title": "Plattformen untergraben die Marge",
+        "desc": "Bis zu 30 % auf jede Lieferbestellung. Die Kunden sind Ihre — der Gewinn geht woanders hin."
+      },
+      "p3": {
+        "title": "Steuerbürokratie bremst Sie aus",
+        "desc": "Belege, Steuerberichte und E-Rechnungen verlangen absolute Präzision. Jeder Fehler kann Bußgelder und Stress mit dem Steuerberater bedeuten."
       }
     },
     "pricing": {
+      "eyebrow": "Investition",
       "title": "Klare Pläne für jede Wachstumsphase",
       "subtitle": "Schlüsselfertiges Setup und transparente Monatsgebühr.",
       "cta": "Test starten",

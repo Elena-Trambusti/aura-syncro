@@ -12,20 +12,22 @@
     <link rel="preload" href="/brand/aura-syncro-icon.svg" as="image" type="image/svg+xml" fetchpriority="high" />
 
     <!-- Open Graph / link preview -->
-    <meta property="og:title" content="Aura Syncro" />
-    <meta property="og:description" content="Gestionale cloud per ristoranti — Italia, Spagna e Canarie" />
-    <meta property="og:image" content="https://aurasyncro.com/og-image.jpg?v=2" />
+    <meta property="og:title" content="Aura Syncro — Software cloud ristorazione | Italia, Spagna e Canarie" />
+    <meta property="og:description" content="Aura Syncro — gestionale SaaS cloud per la ristorazione in Italia, Spagna e Isole Canarie. Menu QR, comande, pagamenti Stripe, report fiscale IVA/IGIC." />
+    <meta property="og:image" content="https://www.aurasyncro.com/og-image.jpg?v=3" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Aura Syncro" />
-    <meta property="og:url" content="https://aurasyncro.com/" />
+    <link rel="canonical" href="https://www.aurasyncro.com/" />
+    <meta property="og:url" content="https://www.aurasyncro.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="it_IT" />
     <meta property="og:site_name" content="Aura Syncro" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Aura Syncro" />
-    <meta name="twitter:description" content="Gestionale cloud per ristoranti — Italia, Spagna e Canarie" />
-    <meta name="twitter:image" content="https://aurasyncro.com/og-image.jpg?v=2" />
+    <meta name="twitter:title" content="Aura Syncro — Software cloud ristorazione | Italia, Spagna e Canarie" />
+    <meta name="twitter:description" content="Aura Syncro — gestionale SaaS cloud per la ristorazione in Italia, Spagna e Isole Canarie." />
+    <meta name="twitter:image" content="https://www.aurasyncro.com/og-image.jpg?v=3" />
+    <meta name="robots" content="index, follow" />
 
     <meta name="theme-color" content="#0B0E14" />
     <link rel="preconnect" href="https://www.aurasyncro.com" crossorigin />
@@ -39,14 +41,71 @@
     <meta name="description" content="Aura Syncro — Gestionale ristoranti SaaS per Italia, Spagna e Isole Canarie. Menu QR, comande, pagamenti Stripe, report fiscale IVA/IGIC." />
     <meta name="keywords" content="gestionale ristoranti, software ristorazione, Italia, Spagna, Canarie, IGIC, IVA, POS, menu QR" />
     <title>Aura Syncro — Software cloud ristorazione | Italia, Spagna e Canarie</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.aurasyncro.com/#organization",
+            "name": "Aura Syncro",
+            "url": "https://www.aurasyncro.com/",
+            "logo": "https://www.aurasyncro.com/brand/aura-syncro-icon.svg"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.aurasyncro.com/#website",
+            "url": "https://www.aurasyncro.com/",
+            "name": "Aura Syncro",
+            "publisher": { "@id": "https://www.aurasyncro.com/#organization" },
+            "inLanguage": "it"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.aurasyncro.com/#software",
+            "name": "Aura Syncro",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, Progressive Web App",
+            "url": "https://www.aurasyncro.com/",
+            "description": "Software cloud per la ristorazione in Italia, Spagna e Isole Canarie: tavoli, comande, menu QR, pagamenti Stripe e reportistica fiscale IVA/IGIC.",
+            "offers": {
+              "@type": "Offer",
+              "price": "199.00",
+              "priceCurrency": "EUR"
+            }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://www.aurasyncro.com/#webpage",
+            "url": "https://www.aurasyncro.com/",
+            "name": "Aura Syncro — Software cloud ristorazione | Italia, Spagna e Canarie",
+            "description": "Aura Syncro — gestionale SaaS cloud per la ristorazione in Italia, Spagna e Isole Canarie.",
+            "isPartOf": { "@id": "https://www.aurasyncro.com/#website" },
+            "about": { "@id": "https://www.aurasyncro.com/#software" }
+          }
+        ]
+      }
+    </script>
     <style>
       *,*::before,*::after{box-sizing:border-box}
       html{-webkit-text-size-adjust:100%;background:#020202}
       body{margin:0;min-height:100dvh;background:#020202;color:#d4bc8a;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
       #root{min-height:100dvh;background:#020202}
+      .seo-static-shell{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     </style>
   </head>
   <body>
+    <!-- Contenuto indicizzabile senza JS: i crawler leggono H1/H2 e testo prima dell'hydration React -->
+    <main class="seo-static-shell" id="static-landing-seo">
+      <p><strong>Aura Syncro — Software cloud per la ristorazione</strong></p>
+      <p>Aura Syncro è il software cloud per la ristorazione in Italia, Spagna e Isole Canarie: tavoli, comande e incassi sincronizzati in tempo reale. Fiscale a norma, servizio fluido, controllo totale ogni sera.</p>
+      <h2>Tutto ciò che serve durante il servizio</h2>
+      <p>Gestione tavoli, menu QR digitale, pagamenti Stripe, reportistica fiscale, CRM e AI predittiva in un'unica piattaforma sincronizzata.</p>
+      <h2>I veri problemi di ogni servizio</h2>
+      <p>Quando sala, cucina e amministrazione non dialogano, perdi margine ogni sera.</p>
+      <h2>Piani chiari per ogni fase</h2>
+      <p>Setup chiavi in mano e abbonamento Premium da 199€/mese + IVA.</p>
+    </main>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

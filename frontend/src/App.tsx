@@ -9,20 +9,21 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'rea
 import { Suspense, lazy, useLayoutEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { isDemoUserEmail } from './lib/demoAccounts'
+import { lazyRoute } from './lib/lazyRoute'
 import RequireRole from './components/auth/RequireRole'
 import RequireProPlan from './components/auth/RequireProPlan'
 import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
+import RouteLoadingFallback from './components/auth/RouteLoadingFallback'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
-
-const LandingPage = lazy(() => import('./pages/LandingPage'))
+import LandingPage from './pages/LandingPage'
+import LandingRoute from './components/landing/LandingRoute'
 
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
-const LandingRoute = lazy(() => import('./components/landing/LandingRoute'))
 const PwaRegistrar = lazy(() => import('./components/PwaRegistrar'))
 const DeferredCookieBanner = lazy(() => import('./components/landing/DeferredCookieBanner'))
 const PricingPage = lazy(() => import('./pages/PricingPage'))
@@ -58,7 +59,7 @@ const AIPredictivePage = lazy(() => import('./pages/AIPredictivePage'))
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
 const BillingPage = lazy(() => import('./pages/BillingPage'))
 const CashDrawerPage = lazy(() => import('./pages/CashDrawerPage'))
-const QRBuilderPage = lazy(() => import('./pages/QRBuilderPage'))
+const QRBuilderPage = lazyRoute(() => import('./pages/QRBuilderPage'))
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'))
 const PlatformAdminPage = lazy(() => import('./pages/PlatformAdminPage'))
 const InvoicesPage = lazy(() => import('./pages/InvoicesPage'))
@@ -91,7 +92,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
-    <Suspense fallback={<AuthLoadingScreen />}>
+    <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />

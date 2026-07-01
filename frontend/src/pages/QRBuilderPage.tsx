@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { QRCodeCanvas } from 'qrcode.react'
+import AuraQrCanvas from '../components/qr/AuraQrCanvas'
 import { useAuth } from '../contexts/AuthContext'
 import { Download, ExternalLink, Copy, BookOpen, CalendarDays } from 'lucide-react'
 import { toast } from '@/lib/toast'
@@ -145,7 +145,7 @@ export default function QRBuilderPage() {
         <div className="flex flex-col items-center">
           <div className="rounded-2xl border border-aura-gold/30 bg-navy-elevated/80 p-6 shadow-[0_0_40px_rgba(212,175,55,0.15)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(212,175,55,0.25)] relative group cursor-crosshair">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-aura-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <QRCodeCanvas
+            <AuraQrCanvas
               value={activeUrl}
               size={PREVIEW_SIZE}
               level="H"
@@ -199,7 +199,7 @@ export default function QRBuilderPage() {
       </div>
 
       <div className="pointer-events-none fixed left-[-9999px] top-0 opacity-0" aria-hidden>
-        <QRCodeCanvas
+        <AuraQrCanvas
           ref={exportCanvasRef}
           value={activeUrl}
           size={EXPORT_SIZE}

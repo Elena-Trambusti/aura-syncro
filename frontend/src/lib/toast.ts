@@ -3,10 +3,14 @@
  * @see AuraSonner per lo stile visivo
  */
 import { toast as sonnerToast, type ExternalToast } from 'sonner'
+import { showAuraConfirm, type ConfirmToastOptions } from './confirmToast'
 
 export type ToastOptions = ExternalToast
 
 export const toast = Object.assign(sonnerToast, {
+  /** Dialogo di conferma luxury centrato (portal dedicato). */
+  confirm: (options: ConfirmToastOptions) => showAuraConfirm(options),
+
   kitchen: (message: string, options?: ToastOptions) =>
     sonnerToast(message, {
       duration: 4200,

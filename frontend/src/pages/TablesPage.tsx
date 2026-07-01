@@ -11,7 +11,6 @@ import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
 import AreaManagerModal from '../components/tables/AreaManagerModal'
-import TableCleaningConfirmModal from '../components/tables/TableCleaningConfirmModal'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -154,11 +153,10 @@ export default function TablesPage() {
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
   const [reservedTable, setReservedTable] = useState<Table | null>(null)
-  const [cleaningConfirmTable, setCleaningConfirmTable] = useState<FloorTable | null>(null)
 
   const { data: tablesData, isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
-    queryFn: () => api.get('/tables').then(r => r.data),
+    queryFn: () => api.get<Table[]>('/tables').then(r => r.data),
     refetchInterval: socketConnected ? false : 15_000,
   })
   const showTablesSkeleton = useShowQuerySkeleton(isLoading, tablesData !== undefined)
@@ -203,7 +201,10 @@ export default function TablesPage() {
 
   const seatReservation = useMutation({
     mutationFn: ({ reservationId, tableId }: { reservationId: string; tableId: string }) =>
-      api.post(`/reservations/${reservationId}/confirm`, { tableId }).then(r => r.data),
+      api.post<{ customer?: { id: string }; customerId?: string }>(
+        `/reservations/${reservationId}/confirm`,
+        { tableId },
+      ).then(r => r.data),
     onSuccess: (reservation, { reservationId }) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
@@ -226,7 +227,6 @@ export default function TablesPage() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       const table = tables.find(tbl => tbl.id === id)
-      setCleaningConfirmTable(null)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
     },
     onError: (err: { response?: { data?: { code?: string } } }) => {
@@ -310,10 +310,23 @@ export default function TablesPage() {
     transferOrder.mutate({ sourceId: transferSourceId, targetId: target.id })
   }
 
+  const requestCleaningConfirm = async (table: FloorTable) => {
+    const confirmed = await toast.confirm({
+      title: t('tables.confirmCleaningTitle'),
+      description: t('tables.confirmCleaningDescription', { number: table.number }),
+      confirmLabel: t('tables.confirmCleaningConfirm'),
+      cancelLabel: t('common.cancel'),
+      variant: 'cleaning',
+      badge: table.number,
+      eyebrow: t('tables.cleaning'),
+    })
+    if (confirmed) markTableFree.mutate(table.id)
+  }
+
   const handleTableClick = (table: FloorTable) => {
     if (transferSourceId) return
     if (table.status === 'CLEANING') {
-      setCleaningConfirmTable(table)
+      void requestCleaningConfirm(table)
       return
     }
     const fullTable = tables.find(tbl => tbl.id === table.id)
@@ -544,7 +557,7 @@ export default function TablesPage() {
               <button
                 key={table.id}
                 type="button"
-                onClick={() => setCleaningConfirmTable(table)}
+                onClick={() => { void requestCleaningConfirm(table) }}
                 disabled={markTableFree.isPending}
                 className="rounded-lg border border-[#7A9BB8]/30 bg-[#0B0E14]/80 px-3 py-2 text-xs font-semibold text-[#7A9BB8] transition-colors hover:border-[#8A9A7B]/40 hover:bg-[#8A9A7B]/10 hover:text-[#8A9A7B] disabled:opacity-50"
               >
@@ -553,15 +566,6 @@ export default function TablesPage() {
             ))}
           </div>
         </div>
-      )}
-
-      {cleaningConfirmTable && (
-        <TableCleaningConfirmModal
-          tableNumber={cleaningConfirmTable.number}
-          onConfirm={() => markTableFree.mutate(cleaningConfirmTable.id)}
-          onCancel={() => setCleaningConfirmTable(null)}
-          isPending={markTableFree.isPending}
-        />
       )}
 
       {editingTable && (

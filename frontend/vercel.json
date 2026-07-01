@@ -2,6 +2,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "aurasyncro.com" }],
+      "destination": "https://www.aurasyncro.com/:path*",
+      "permanent": true
+    }
+  ],
   "env": {
     "VITE_API_URL": "https://aura-syncro-s98ae.ondigitalocean.app",
     "BACKEND_URL": "https://aura-syncro-s98ae.ondigitalocean.app"

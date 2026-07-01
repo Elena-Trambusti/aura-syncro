@@ -86,6 +86,13 @@
     "previewUnsubscribed": "Vista previa gratuita — activa Premium para desbloquear todo",
     "previewOnboarding": "Onboarding en curso — las funciones se desbloquean al completar el setup"
   },
+  "demo": {
+    "bannerTitle": "Demo interactiva de Aura Syncro",
+    "bannerSubtitle": "Prueba el flujo completo desde Mesas: abre una mesa, crea un pedido y sigue la sincronización en tiempo real.",
+    "bannerReadOnly": "Estás explorando en solo lectura. Solo puedes modificar datos desde Mesas (pedidos y cobro).",
+    "apiReadOnly": "En modo Demo solo puedes interactuar con la sección Mesas.",
+    "apiForbidden": "Acción no permitida en modo Demo."
+  },
   "commandPalette": {
     "title": "Navegación rápida",
     "placeholder": "Buscar secciones, mesas, pedidos…",
@@ -108,6 +115,7 @@
     "loginSubtitle": "Introduce las credenciales de tu cuenta de restaurante",
     "passwordPlaceholder": "Tu contraseña",
     "secureAccess": "Conexión segura y cifrada",
+    "sessionUnavailable": "Conexión temporalmente no disponible. Inténtalo de nuevo en unos momentos.",
     "newRestaurant": "¿Nuevo restaurante?",
     "hasAccount": "¿Ya tienes cuenta?",
     "emailPlaceholder": "tu@email.com",
@@ -990,7 +998,9 @@
     "dishUpdated": "Plato actualizado",
     "dishUpdateError": "No se puede actualizar el plato",
     "orderReady": "¡Pedido listo para servir!",
-    "orderReadyError": "No se puede marcar el pedido como listo"
+    "orderReadyError": "No se puede marcar el pedido como listo",
+    "orderDismissError": "No se puede archivar el pedido",
+    "orderDismissed": "Pedido servido y eliminado de cocina"
   },
   "offline": {
     "bannerOffline": "Sin conexión — los pedidos se enviarán cuando vuelva la conexión",
@@ -1329,8 +1339,8 @@
   },
   "landing": {
     "meta": {
-      "title": "Gestión para Restaurantes en Canarias | IGIC 7% Aura Syncro",
-      "description": "El único software para restaurantes en Canarias adaptado al IGIC del 7% y Veri*factu. Controla facturas simplificadas e ingresos sin errores."
+      "title": "Aura Syncro — Software cloud restauración | Canarias, España e Italia",
+      "description": "Aura Syncro — gestión SaaS cloud para restauración en Canarias, España e Italia. Menú QR, comandas, IGIC 7%, pagos Stripe e informes fiscales."
     },
     "nav": {
       "features": "Funciones",
@@ -1341,13 +1351,17 @@
     "hero": {
       "badge": "Islas Canarias · IGIC 7% Nativo",
       "title": "Sala, cocina, caja — un solo ritmo.",
-      "subtitle": "Aura Syncro une mesas, comandas e ingresos en tiempo real. IGIC nativo al 7%, REF canario y cumplimiento fiscal sin fricciones.",
+      "subtitle": "{{brand}} es el software cloud para la restauración en Italia, España y Canarias: mesas, comandas e ingresos en tiempo real con IGIC nativo al 7% y cumplimiento fiscal sin fricciones.",
       "ctaPrimary": "Probar ahora",
       "ctaSecondary": "Acceder",
       "ctaDemo": "Entrar a la Demo",
       "demoError": "Error en la demo: no se pudo conectar."
     },
+    "trust": {
+      "title": "Elegido por los mejores restaurantes en:"
+    },
     "features": {
+      "eyebrow": "Plataforma",
       "title": "Todo lo que necesitas en servicio",
       "subtitle": "Desde sala a cocina, menú digital a informes fiscales — una plataforma sincronizada.",
       "tables": {
@@ -1356,7 +1370,7 @@
       },
       "qrMenu": {
         "title": "Menú QR digital",
-        "desc": "Los clientes piden desde el móvil con carta actualizada y envío directo a cocina."
+        "desc": "Los clientes consultan el menú desde el móvil en sala. Los camareros gestionan todos los pedidos."
       },
       "stripe": {
         "title": "Pagos con Stripe",
@@ -1365,9 +1379,18 @@
       "fiscal": {
         "title": "IGIC 7% y REF",
         "desc": "Cálculo nativo del IGIC al 7% y adaptación al Régimen Económico y Fiscal (REF). Facturación simplificada sin complicaciones."
+      },
+      "crm": {
+        "title": "CRM y fidelización",
+        "desc": "Perfiles de cliente, etiquetas, alergias y campañas dirigidas para más repeticiones y ticket medio."
+      },
+      "ai": {
+        "title": "IA predictiva",
+        "desc": "Previsión de cubiertos y consumo para planificar personal, compras y producción con más precisión."
       }
     },
     "pricing": {
+      "eyebrow": "Inversión",
       "title": "Planes claros para cada etapa",
       "subtitle": "Setup llave en mano y cuota mensual transparente. Sin sorpresas.",
       "cta": "Empezar prueba",

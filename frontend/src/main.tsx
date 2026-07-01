@@ -12,18 +12,18 @@ import SentryTestButton from './components/SentryTestButton'
 
 const root = createRoot(document.getElementById('root')!)
 
-// i18n in parallelo al first paint — bundle IT/EN/ES già nel main chunk
-void bootstrapI18n()
-
-root.render(
-  <StrictMode>
-    <ErrorBoundary>
-      <AppProviders>
-        <App />
-        <DeferredMetrics />
-        <AuraSonner />
-        <SentryTestButton />
-      </AppProviders>
-    </ErrorBoundary>
-  </StrictMode>,
-)
+// i18n pronto prima del first paint — evita che bot e utenti vedano chiavi grezze (es. common.loading)
+bootstrapI18n().then(() => {
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        <AppProviders>
+          <App />
+          <DeferredMetrics />
+          <AuraSonner />
+          <SentryTestButton />
+        </AppProviders>
+      </ErrorBoundary>
+    </StrictMode>,
+  )
+})

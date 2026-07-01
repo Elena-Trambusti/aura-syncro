@@ -29,5 +29,5 @@ export const COMMAND_ROUTES: CommandRoute[] = [
   { to: '/magazzino', labelKey: 'nav.inventory', keywords: ['magazzino', 'scorte', 'inventory'], permission: 'inventory.read' },
   { to: '/analytics', labelKey: 'nav.analytics', keywords: ['analytics', 'statistiche'], proOnly: true },
   { to: '/impostazioni', labelKey: 'nav.settings', keywords: ['impostazioni', 'settings', 'config'], adminOnly: true },
-  { to: '/cucina', labelKey: 'nav.kitchenDisplay', keywords: ['cucina', 'kitchen', 'kds'], permission: 'orders.read', external: true },
+  { to: '/cucina', labelKey: 'nav.kitchenDisplay', keywords: ['cucina', 'kitchen', 'kds'], permission: 'orders.read' },
 ]

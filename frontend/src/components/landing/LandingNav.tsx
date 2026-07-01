@@ -12,30 +12,29 @@ export default function LandingNav() {
   const { user, isLoading } = useAuth()
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-neutral-950/92 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_30px_rgba(0,0,0,0.5)] backdrop-blur-sm">
-      {/* Premium glowing top line */}
-      <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-aura-gold/50 to-transparent" />
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#D4AF37]/10 bg-[#020202]/95 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_30px_rgba(0,0,0,0.55)] backdrop-blur-md">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5">
           <BrandLogo size="sm" className="mx-0 shadow-sm" priority />
-          <span className="text-sm font-bold text-slate-100 sm:text-base">{BRAND.name}</span>
+          <span className="font-display text-sm font-medium tracking-tight text-[#F0E6D2] sm:text-base">{BRAND.name}</span>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-300 md:flex">
-          <a href="#features" className="hover:text-[#D4AF37] transition-colors">
+        <nav className="hidden items-center gap-6 text-sm font-medium lux-text-soft md:flex">
+          <a href="#features" className="transition-colors hover:text-[#E8C872]">
             {t('landing.nav.features')}
           </a>
-          <a href="#pricing" className="hover:text-[#D4AF37] transition-colors">
+          <a href="#pricing" className="transition-colors hover:text-[#E8C872]">
             {t('landing.nav.pricing')}
           </a>
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
           {isLoading ? (
-            <div className="hidden sm:block h-9 w-32 animate-pulse rounded-lg bg-white/5" />
+            <div className="hidden h-9 w-32 animate-pulse rounded-lg bg-white/5 sm:block" />
           ) : user && !isDemoUserEmail(user.email) ? (
             <Link
               to="/dashboard"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-amber-500 hover:text-amber-400 hover:bg-white/5 sm:inline-block transition-colors"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
             >
               {t('landing.nav.dashboard', { defaultValue: 'Vai alla Dashboard' })}
             </Link>
@@ -43,12 +42,12 @@ export default function LandingNav() {
             <>
               <Link
                 to="/login"
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:text-[#D4AF37] hover:bg-[#D4AF37]/5 sm:inline-block transition-colors"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium lux-text-soft transition-colors hover:bg-[#D4AF37]/5 hover:text-[#E8C872] sm:inline-block"
               >
                 {t('landing.nav.login')}
               </Link>
               <RegisterLink
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:text-[#D4AF37] hover:bg-[#D4AF37]/5 sm:inline-block transition-colors"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium lux-text-soft transition-colors hover:bg-[#D4AF37]/5 hover:text-[#E8C872] sm:inline-block"
               >
                 {t('landing.nav.register', { defaultValue: 'Registrati' })}
               </RegisterLink>

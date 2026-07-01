@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://aurasyncro.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://aurasyncro.com/it</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://aurasyncro.com/es</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://aurasyncro.com/es-cn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://aurasyncro.com/prezzi</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://aurasyncro.com/contatti</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://aurasyncro.com/privacy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
-  <url><loc>https://aurasyncro.com/termini</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
-  <url><loc>https://aurasyncro.com/cookie</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://aurasyncro.com/informativa-ospiti</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://www.aurasyncro.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.aurasyncro.com/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.aurasyncro.com/" />
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://www.aurasyncro.com/it" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.aurasyncro.com/es" />
+    <xhtml:link rel="alternate" hreflang="es-CN" href="https://www.aurasyncro.com/es-cn" />
+  </url>
+  <url><loc>https://www.aurasyncro.com/it</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.aurasyncro.com/es</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.aurasyncro.com/es-cn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.aurasyncro.com/prezzi</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.aurasyncro.com/contatti</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.aurasyncro.com/privacy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://www.aurasyncro.com/termini</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://www.aurasyncro.com/cookie</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.aurasyncro.com/informativa-ospiti</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

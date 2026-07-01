@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aurasyncro.com/sitemap.xml
+Sitemap: https://www.aurasyncro.com/sitemap.xml

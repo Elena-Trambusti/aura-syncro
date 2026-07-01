@@ -92,7 +92,9 @@
   "demo": {
     "bannerTitle": "Demo interattiva Aura Syncro",
     "bannerSubtitle": "Prova il flusso completo dalla sezione Tavoli: apri un tavolo, inserisci una comanda e segui la sincronizzazione in tempo reale.",
-    "bannerReadOnly": "Stai esplorando in sola lettura. Puoi modificare dati solo dalla sezione Tavoli (comande e incasso)."
+    "bannerReadOnly": "Stai esplorando in sola lettura. Puoi modificare dati solo dalla sezione Tavoli (comande e incasso).",
+    "apiReadOnly": "In modalità Demo puoi interagire solo con la sezione Tavoli.",
+    "apiForbidden": "Azione non consentita in modalità Demo."
   },
   "commandPalette": {
     "title": "Navigazione rapida",
@@ -1179,6 +1181,8 @@
     "dishUpdateError": "Impossibile aggiornare il piatto",
     "orderReady": "Ordine pronto per il servizio!",
     "orderReadyError": "Impossibile segnare l'ordine come pronto",
+    "orderDismissError": "Impossibile archiviare l'ordine",
+    "orderDismissed": "Ordine consegnato e rimosso dalla cucina",
     "typeDineIn": "Sala",
     "typeTakeaway": "Asporto",
     "typeDelivery": "Delivery"
@@ -1633,8 +1637,8 @@
   },
   "landing": {
     "meta": {
-      "title": "Software Gestionale Ristoranti | Aura Syncro Italia",
-      "description": "Automatizza la cassa del tuo ristorante. Gestione fiscale delle mance e integrazione diretta con Aruba Fatturazione Elettronica."
+      "title": "Aura Syncro — Software cloud ristorazione | Italia, Spagna e Canarie",
+      "description": "Aura Syncro — gestionale SaaS cloud per la ristorazione in Italia, Spagna e Isole Canarie. Menu QR, comande, pagamenti Stripe, report fiscale IVA/IGIC."
     },
     "nav": {
       "features": "Funzionalità",
@@ -1646,7 +1650,7 @@
     "hero": {
       "badge": "Italia · Scontrini RT e Aruba",
       "title": "Sala, cucina, cassa — un solo ritmo.",
-      "subtitle": "Aura Syncro unisce tavoli, comande e incassi in tempo reale. Fiscale a norma, servizio fluido, controllo totale ogni sera.",
+      "subtitle": "{{brand}} è il software cloud per la ristorazione in Italia, Spagna e Isole Canarie: tavoli, comande e incassi sincronizzati in tempo reale. Fiscale a norma, servizio fluido, controllo totale ogni sera.",
       "ctaPrimary": "Inizia ora",
       "ctaSecondary": "Guarda demo",
       "previewKpi1": "Ricavi vs mese scorso",
@@ -1659,6 +1663,7 @@
       "title": "Scelto dai migliori ristoranti a:"
     },
     "features": {
+      "eyebrow": "Piattaforma",
       "title": "Tutto ciò che serve durante il servizio",
       "subtitle": "Dalla sala alla cucina, dal menu digitale alla reportistica fiscale — un'unica piattaforma sincronizzata.",
       "tables": {
@@ -1687,6 +1692,7 @@
       }
     },
     "gallery": {
+      "eyebrow": "Il problema",
       "title": "I veri problemi di ogni servizio",
       "subtitle": "Quando sala, cucina e amministrazione non dialogano, perdi margine ogni sera — prima ancora di chiudere la cassa.",
       "p1": {
@@ -1703,6 +1709,7 @@
       }
     },
     "pricing": {
+      "eyebrow": "Investimento",
       "title": "Piani chiari per ogni fase",
       "subtitle": "Setup chiavi in mano e canone mensile trasparente. Nessuna sorpresa.",
       "cta": "Inizia Ora",

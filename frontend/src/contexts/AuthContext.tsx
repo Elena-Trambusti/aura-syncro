@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     commitRestaurant(normalized, true)
     writeAuthCache(data.user, normalized)
     applyRestaurantLocaleOnFirstVisit(normalized.defaultLocale)
-    connectSocket(data.token)
+    void connectSocket(data.token)
   }, [commitRestaurant])
 
   const logout = useCallback(() => {
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [commitRestaurant])
 
   useEffect(() => {
-    if (token) connectSocket(token)
+    if (token) void connectSocket(token)
   }, [token])
 
   useEffect(() => {
@@ -227,9 +227,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res.data.token) {
           setSessionToken(res.data.token)
           setToken(res.data.token)
-          connectSocket(res.data.token)
+          void connectSocket(res.data.token)
         } else if (getSessionToken()) {
-          connectSocket(getSessionToken()!)
+          void connectSocket(getSessionToken()!)
         }
         setUser(res.data.user)
         const normalized = normalizeRestaurant(res.data.restaurant)
