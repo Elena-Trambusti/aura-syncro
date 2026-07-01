@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function PricingPage() {
+  const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.pricing.title'), t('publicMeta.pricing.description'))
+
   return (
     <div className="min-h-screen bg-navy aura-auth-shell flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-8">

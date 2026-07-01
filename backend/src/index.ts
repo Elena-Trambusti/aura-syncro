@@ -44,7 +44,7 @@ import { runAllMarketingJobs } from './lib/marketingSend'
 import { errorHandler } from './middleware/errorHandler'
 import { requirePermission } from './middleware/permissions'
 import { setupSocketHandlers } from './socket/handlers'
-import { validateEnv, isPosSimulationAllowed } from './lib/env'
+import { validateEnv } from './lib/env'
 import { getVapidPublicKey } from './lib/webPush'
 import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
@@ -179,11 +179,6 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    runtime: {
-      posSimulationAllowed: isPosSimulationAllowed(),
-      posUseSimulation: process.env.POS_USE_SIMULATION !== 'false',
-      posAllowSimulation: process.env.POS_ALLOW_SIMULATION === 'true',
-    },
   })
 })
 

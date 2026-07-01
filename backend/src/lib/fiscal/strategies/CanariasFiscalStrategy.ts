@@ -39,8 +39,8 @@ export class CanariasFiscalStrategy extends BaseFiscalStrategy {
     return {
       netRevenueSub: `Sujeto a impuesto IGIC (${taxRate}%)`,
       tipsLabel: 'Total Propinas Personal',
-      tipsSub: 'Exentas de IGIC · Ripartizione IRPF ordinario tra dipendenti',
-      tipsSectionTitle: 'Ripartizione Propinas (Exentas IGIC — IRPF ordinario)',
+      tipsSub: 'Exentas de IGIC · Reparto IRPF ordinario entre empleados',
+      tipsSectionTitle: 'Reparto de propinas (exentas de IGIC — IRPF ordinario)',
       taxColumnName: 'IGIC',
       complianceNotice:
         'Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu / Ley Antifraude 11/2021).',

@@ -197,7 +197,7 @@ export default function PublicMenuPage() {
       description?: string | null
       colorTheme?: string
       slug: string
-      fiscal?: { taxRate: number; taxName: string }
+      fiscal?: { taxRate: number; taxName: string; taxRegion?: import('../lib/fiscalRegime').TaxRegion }
     }
     categories: Category[]
     guestOrderingEnabled?: boolean
@@ -457,7 +457,7 @@ export default function PublicMenuPage() {
             slug={slug!}
             restaurantName={data.restaurant.name}
             stripeEnabled={data.stripeEnabled ?? false}
-            fiscal={restaurantFiscal}
+            fiscal={restaurantFiscal ? { ...restaurantFiscal, taxRegion: restaurantFiscal.taxRegion ?? 'IT_MAIN' } : { taxRate: 10, taxName: 'IVA', taxRegion: 'IT_MAIN' }}
             tableNumber={tableNumber}
             items={cart.items}
             subtotal={cart.subtotal}

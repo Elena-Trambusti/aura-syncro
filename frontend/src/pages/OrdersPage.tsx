@@ -8,6 +8,7 @@ import { lineGrossMoney } from '../lib/money'
 import { printReceipt, downloadOrdersPdf } from '../lib/export'
 import { Clock, ChefHat, CheckCircle2, XCircle, Printer, Download } from 'lucide-react'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
+import { tRegime } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
@@ -221,7 +222,7 @@ export default function OrdersPage() {
                     </div>
                     <button
                       onClick={() => printReceipt(order, restaurant?.name || t('common.restaurant'), {
-                        taxLabel: fiscal.taxName,
+                        taxLabel: tRegime(t, fiscal.taxRegion, 'table.tax'),
                       })}
                       className="p-1.5 hover:text-aura-gold hover:bg-aura-gold/10 rounded-lg text-fumo transition-colors"
                       title={t('common.printReceipt')}

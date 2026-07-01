@@ -19,6 +19,7 @@ import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
 import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount, resolveDiscountForOrder, validateOrderDiscountOptions } from '../lib/orderDiscount'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
+import { resolveFrontendOrigin } from '../lib/frontendOrigin'
 import { verifyDepositReceiptToken, verifyOrderReceiptToken } from '../lib/paymentReceiptToken'
 import { moneyNumber } from '../lib/money'
 
@@ -736,16 +737,8 @@ paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess,
     }
 
     // Crea Account Link per Onboarding
-    const rawOrigin = req.headers.origin
-    let originStr = typeof rawOrigin === 'string' ? rawOrigin : (Array.isArray(rawOrigin) ? rawOrigin[0] : 'http://localhost:5173')
-    
-    // TRUCCO: Stripe in modalità Live (chiavi sk_live_) rifiuta "http://localhost".
-    // Se siamo in Live Mode dal PC locale, forziamo il reindirizzamento al sito vero per evitare l'errore 500.
-    const stripeKey = process.env.STRIPE_SECRET_KEY || ''
-    if (originStr.startsWith('http://localhost') && stripeKey.startsWith('sk_live_')) {
-      originStr = 'https://aurasyncro.com' 
-    }
-    
+    const originStr = resolveFrontendOrigin(req.headers.origin)
+
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${originStr}/dashboard/pagamenti?connect=refresh`,

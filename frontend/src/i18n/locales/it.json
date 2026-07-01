@@ -201,7 +201,9 @@
     "apiNotConfigured": "Server API non configurato su Vercel (manca BACKEND_URL).",
     "backendUnreachable": "Backend non raggiungibile. Verifica che DigitalOcean sia online.",
     "apiBlocked": "Richiesta API bloccata. Rideploya il frontend con la configurazione aggiornata.",
-    "networkError": "Impossibile contattare il server. Verifica la connessione e riprova tra qualche minuto."
+    "networkError": "Impossibile contattare il server. Verifica la connessione e riprova tra qualche minuto.",
+    "timeout": "Richiesta scaduta. Riprova.",
+    "serverError": "Errore del server. Riprova tra poco."
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
@@ -1185,7 +1187,18 @@
     "orderDismissed": "Ordine consegnato e rimosso dalla cucina",
     "typeDineIn": "Sala",
     "typeTakeaway": "Asporto",
-    "typeDelivery": "Delivery"
+    "typeDelivery": "Delivery",
+    "partialReadyHint": "Usa +1 per segnare una porzione pronta",
+    "markOneReady": "Segna 1 porzione pronta",
+    "advanceStatus": "Avanza stato",
+    "dismissServed": "Consegnato — rimuovi",
+    "markAllReady": "Segna tutto pronto",
+    "ofTotal": "di",
+    "toPrepare": "da preparare",
+    "footerHint": "Tocca ✓ per avanzare · +1 segna una porzione pronta · Consegnato rimuove l'ordine",
+    "legendPending": "In attesa",
+    "legendPreparing": "In prep.",
+    "legendReady": "Pronto"
   },
   "offline": {
     "bannerOffline": "Sei offline — le comande verranno inviate appena torna la connessione",
@@ -1750,7 +1763,48 @@
       "privacy": "Privacy Policy",
       "terms": "Termini di servizio",
       "contact": "Contatti",
+      "cookie": "Cookie",
+      "dpa": "DPA",
+      "guests": "Ospiti",
       "rights": "© {{year}} {{brand}}. Tutti i diritti riservati."
     }
+  },
+  "publicMeta": {
+    "pricing": {
+      "title": "Prezzi Aura Syncro | Software gestionale ristoranti",
+      "description": "Piano Premium all-inclusive per ristoranti strutturati: setup chiavi in mano e abbonamento da 199€/mese. Italia, Spagna e Canarie."
+    },
+    "contact": {
+      "title": "Contatti Aura Syncro | Supporto e demo",
+      "description": "Contatta il team Aura Syncro per demo, onboarding Premium e assistenza tecnica. Risposta entro 24 ore lavorative."
+    },
+    "login": {
+      "title": "Accedi | Aura Syncro",
+      "description": "Accedi alla dashboard Aura Syncro per gestire tavoli, comande, pagamenti e reportistica fiscale."
+    },
+    "privacy": {
+      "title": "Privacy Policy | Aura Syncro",
+      "description": "Informativa privacy del servizio SaaS Aura Syncro per ristoranti."
+    },
+    "terms": {
+      "title": "Termini di servizio | Aura Syncro",
+      "description": "Termini e condizioni d'uso della piattaforma Aura Syncro."
+    },
+    "cookie": {
+      "title": "Cookie Policy | Aura Syncro",
+      "description": "Informativa sui cookie del sito e dell'applicazione Aura Syncro."
+    },
+    "dpa": {
+      "title": "DPA | Aura Syncro",
+      "description": "Accordo sul trattamento dei dati (Data Processing Agreement) Aura Syncro."
+    },
+    "guestPrivacy": {
+      "title": "Informativa ospiti | Aura Syncro",
+      "description": "Informativa privacy per gli ospiti dei ristoranti che usano Aura Syncro."
+    }
+  },
+  "pwa": {
+    "updateAvailable": "Nuova versione disponibile",
+    "reload": "Ricarica"
   }
 }

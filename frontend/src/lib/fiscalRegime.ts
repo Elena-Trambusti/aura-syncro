@@ -21,6 +21,12 @@ export const DEFAULT_FISCAL_REGIME: FiscalRegime = {
   defaultLocale: 'it',
 }
 
+export const TAX_NAME_BY_REGION: Record<TaxRegion, string> = {
+  IT_MAIN: 'IVA',
+  ES_CANARIAS: 'IGIC',
+  ES_PENINSULA: 'IVA',
+}
+
 export function fiscalRegimePrefix(taxRegion: TaxRegion): string {
   return `reportFiscal.byRegime.${taxRegion}`
 }
@@ -52,13 +58,27 @@ export function countryCodeFromTaxRegion(taxRegion: TaxRegion): CountryCode {
 export function resolveFiscalRegime(
   source?: Partial<FiscalRegime> | null,
 ): FiscalRegime {
-  if (!source?.taxRegion) return DEFAULT_FISCAL_REGIME
+  if (!source?.taxRegion) {
+    if (source?.countryCode === 'ES') {
+      return {
+        countryCode: 'ES',
+        taxRegion: 'ES_PENINSULA',
+        taxRate: defaultTaxRateForRegion('ES_PENINSULA'),
+        taxName: TAX_NAME_BY_REGION.ES_PENINSULA,
+        defaultLocale: source.defaultLocale ?? 'es',
+        timezone: source.timezone,
+        taxId: source.taxId ?? null,
+      }
+    }
+    return DEFAULT_FISCAL_REGIME
+  }
+
   const taxRegion = source.taxRegion
   return {
-    countryCode: source.countryCode ?? DEFAULT_FISCAL_REGIME.countryCode,
+    countryCode: source.countryCode ?? countryCodeFromTaxRegion(taxRegion),
     taxRegion,
     taxRate: source.taxRate ?? defaultTaxRateForRegion(taxRegion),
-    taxName: source.taxName ?? DEFAULT_FISCAL_REGIME.taxName,
+    taxName: source.taxName ?? TAX_NAME_BY_REGION[taxRegion],
     defaultLocale: source.defaultLocale ?? DEFAULT_FISCAL_REGIME.defaultLocale,
     timezone: source.timezone,
     taxId: source.taxId ?? null,

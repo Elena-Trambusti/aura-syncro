@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
 import { LEGAL_ENTITY, LEGAL_SUB_PROCESSORS, LEGAL_URLS } from '../config/legal'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function DPAPage() {
+  const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.dpa.title'), t('publicMeta.dpa.description'))
+
   return (
     <LegalDocumentShell
       title="Data Processing Agreement (DPA)"

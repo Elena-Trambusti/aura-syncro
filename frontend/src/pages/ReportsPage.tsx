@@ -10,6 +10,7 @@ import { LuxuryChartFrame } from '../components/charts'
 import { LuxuryAreaChart, LuxuryBarChart } from '../components/charts/lazy'
 import ChartSuspense from '../components/charts/ChartSuspense'
 import { useFiscalRegime, useAuth, useTenantQueryKey } from '../contexts/AuthContext'
+import { tRegime } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { usePlanTier } from '../hooks/usePlanTier'
@@ -179,7 +180,7 @@ export default function ReportsPage() {
               <div className="space-y-3">
                 {[
                   { label: t('reports.rowGrossRevenue'), value: s?.revenue || 0, positive: true },
-                  { label: t('reports.taxRowLabel', { taxName: fiscal.taxName, rate: fiscal.taxRate }), value: s?.tax || 0, positive: false, sub: true },
+                  { label: t('reports.taxRowLabel', { taxName: tRegime(t, fiscal.taxRegion, 'table.tax'), rate: fiscal.taxRate }), value: s?.tax || 0, positive: false, sub: true },
                   { label: t('reports.rowDiscounts'), value: -(s?.totalDiscount || 0), positive: false, sub: true },
                   { label: t('reports.rowFoodCost'), value: -(s?.estimatedFoodCost || 0), positive: false },
                   { label: t('reports.rowLaborCost'), value: -(s?.laborCost || 0), positive: false },

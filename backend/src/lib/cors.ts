@@ -19,9 +19,14 @@ export function isOriginAllowed(origin: string | undefined): boolean {
   if (!origin) return true
   const allowed = getAllowedOrigins()
   if (allowed.includes(origin)) return true
-  // Dev locale: Vite può usare porte diverse se 5173 è occupata
-  if (/^http:\/\/localhost:\d+$/i.test(origin)) return true
-  if (/^http:\/\/127\.0\.0\.1:\d+$/i.test(origin)) return true
+
+  const isDev = process.env.NODE_ENV !== 'production'
+  if (isDev) {
+    // Dev locale: Vite può usare porte diverse se 5173 è occupata
+    if (/^http:\/\/localhost:\d+$/i.test(origin)) return true
+    if (/^http:\/\/127\.0\.0\.1:\d+$/i.test(origin)) return true
+  }
+
   // Preview deploy Vercel: https://aura-syncro-xxx.vercel.app
   if (/^https:\/\/aura-syncro[a-z0-9-]*\.vercel\.app$/i.test(origin)) return true
   return false

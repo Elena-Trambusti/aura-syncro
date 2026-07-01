@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Mail, MapPin, Phone, Send } from 'lucide-react'
 import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function ContactPage() {
+  const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.contact.title'), t('publicMeta.contact.description'))
   const [isSent, setIsSent] = useState(false)
   const [form, setForm] = useState({ name: '', restaurant: '', email: '', message: '' })
   const [privacyOk, setPrivacyOk] = useState(false)

@@ -70,6 +70,12 @@ async function initApi(): Promise<AxiosInstance> {
           className: 'aura-sonner-toast--demo',
           duration: 4500,
         })
+      } else if (!err.response) {
+        toast.error(i18n.t('errors.networkError', { defaultValue: 'Impossibile contattare il server. Verifica la connessione.' }))
+      } else if (err.code === 'ECONNABORTED') {
+        toast.error(i18n.t('errors.timeout', { defaultValue: 'Richiesta scaduta. Riprova.' }))
+      } else if (err.response.status >= 500) {
+        toast.error(i18n.t('errors.serverError', { defaultValue: 'Errore del server. Riprova tra poco.' }))
       }
       return Promise.reject(err)
     },

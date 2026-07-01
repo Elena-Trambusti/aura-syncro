@@ -19,5 +19,6 @@
   <url><loc>https://www.aurasyncro.com/privacy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
   <url><loc>https://www.aurasyncro.com/termini</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
   <url><loc>https://www.aurasyncro.com/cookie</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.aurasyncro.com/dpa</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.aurasyncro.com/informativa-ospiti</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

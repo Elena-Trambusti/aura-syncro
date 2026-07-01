@@ -26,8 +26,8 @@ export default function LandingPage() {
   })
 
   useEffect(() => {
-    return injectLandingStructuredData(i18n.language, metaTitle, metaDescription)
-  }, [i18n.language, metaTitle, metaDescription])
+    return injectLandingStructuredData(i18n.language, metaTitle, metaDescription, canonicalPath)
+  }, [i18n.language, metaTitle, metaDescription, canonicalPath])
 
   return (
     <div lang={i18n.language} className="min-h-[100dvh] flex flex-col relative lux-text selection:bg-aura-gold/30 bg-[#020202] overflow-x-hidden">

@@ -138,6 +138,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     bootCache ? tenantIdentityKey(tenantIdentity(bootCache.restaurant)) : null,
   )
 
+  const sessionEpochRef = useRef(0)
+
+  const bumpSessionEpoch = () => {
+    sessionEpochRef.current += 1
+    return sessionEpochRef.current
+  }
+
   const commitRestaurant = useCallback((normalized: Restaurant, invalidateCache = true) => {
     const previousKey = tenantKeyRef.current
     setRestaurant(normalized)
@@ -146,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const setAuth = useCallback((data: { token: string; user: User; restaurant: Record<string, unknown> }) => {
+    bumpSessionEpoch()
     const normalized = normalizeRestaurant(data.restaurant)
     setSessionToken(data.token)
     queryClient.clear()
@@ -158,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [commitRestaurant])
 
   const logout = useCallback(() => {
+    bumpSessionEpoch()
     void api.post('/auth/logout').catch(() => {})
     void clearAllMutations().catch(() => {})
     clearSessionToken()
@@ -174,8 +183,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshRestaurant = useCallback(async () => {
+    const epoch = sessionEpochRef.current
     try {
       const res = await api.get('/auth/me')
+      if (epoch !== sessionEpochRef.current) return
       const normalized = normalizeRestaurant(res.data.restaurant)
       if (res.data.token) {
         setSessionToken(res.data.token)
@@ -216,10 +227,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    const bootEpoch = sessionEpochRef.current
+
     api.get('/auth/me', {
       validateStatus: (status) => status === 200 || status === 401 || status === 403,
     })
       .then(res => {
+        if (bootEpoch !== sessionEpochRef.current) return
         if (res.status === 401 || res.status === 403) {
           logout()
           return

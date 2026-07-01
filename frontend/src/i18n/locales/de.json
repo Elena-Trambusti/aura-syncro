@@ -711,6 +711,7 @@
     "subtitle": "Finanzanalyse und Food Cost",
     "heroHint": "P&L, Food Cost und Margenanalyse",
     "loadError": "Fehler beim Laden der Berichte",
+    "taxRowLabel": "{{taxName}} ({{rate}}%)",
     "tabPl": "📊 Monatliche P&L",
     "tabFoodCost": "🍽 Food Cost",
     "tabYearly": "📈 Jahrestrend"
@@ -1346,6 +1347,7 @@
       "features": "Funktionen",
       "pricing": "Preise",
       "login": "Anmelden",
+      "register": "Registrieren",
       "tryNow": "Jetzt testen"
     },
     "hero": {
@@ -1354,6 +1356,9 @@
       "subtitle": "{{brand}} ist Cloud-Software für die Gastronomie in Italien, Spanien und auf den Kanarischen Inseln: schnelles POS, QR-Menü, Echtzeit-Bestellungen und Multi-Länder-Steuercompliance.",
       "ctaPrimary": "Jetzt testen",
       "ctaSecondary": "Anmelden",
+      "previewKpi1": "Umsatz vs. Vormonat",
+      "previewKpi2": "Gäste heute",
+      "previewChart": "Service-Trend (Demo)",
       "ctaDemo": "Zur Live-Demo",
       "demoError": "Demo-Fehler: Verbindung fehlgeschlagen."
     },

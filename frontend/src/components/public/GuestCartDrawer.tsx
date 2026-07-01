@@ -8,12 +8,14 @@ import { api } from '../../lib/api'
 import { formatCurrency } from '../../lib/utils'
 import { addMoney, moneyNumber } from '../../lib/money'
 import { computeGuestOrderTax } from '../../lib/guestOrderTax'
+import { tRegime, type TaxRegion } from '../../lib/fiscalRegime'
 import { resolvePublicOrderErrorMessage } from '../../lib/publicOrderErrors'
 import type { GuestCartItem } from '../../hooks/useGuestCart'
 
 interface FiscalInfo {
   taxRate: number
   taxName: string
+  taxRegion: TaxRegion
 }
 
 interface GuestCartDrawerProps {
@@ -321,7 +323,7 @@ export default function GuestCartDrawer({
                   </div>
                   {tax > 0 && (
                     <div className="flex justify-between text-fumo">
-                      <span>{fiscal.taxName} ({fiscal.taxRate}%)</span>
+                      <span>{tRegime(t, fiscal.taxRegion, 'table.tax')} ({fiscal.taxRate}%)</span>
                       <span className="tabular-nums text-pietra">{formatCurrency(tax)}</span>
                     </div>
                   )}

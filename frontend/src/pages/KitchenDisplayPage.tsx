@@ -540,15 +540,15 @@ export default function KitchenDisplayPage() {
         <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-stone-400 sm:gap-4">
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-yellow-400" />
-            In attesa
+            {t('kitchen.legendPending', { defaultValue: 'In attesa' })}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-orange-400" />
-            In prep.
+            {t('kitchen.legendPreparing', { defaultValue: 'In prep.' })}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Pronto
+            {t('kitchen.legendReady', { defaultValue: 'Pronto' })}
           </span>
         </div>
       </footer>

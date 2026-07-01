@@ -3,9 +3,15 @@ export const PRODUCTION_BACKEND_URL = 'https://aura-syncro-s98ae.ondigitalocean.
 
 const PRODUCTION_HOSTS = new Set(['aurasyncro.com', 'www.aurasyncro.com'])
 
+function usesSameOriginApiProxy(hostname: string): boolean {
+  if (PRODUCTION_HOSTS.has(hostname)) return true
+  if (hostname.endsWith('.vercel.app')) return true
+  return false
+}
+
 /** URL base del backend (senza /api). In produzione usa same-origin (/api proxy Vercel → DO). */
 export function resolveBackendUrl(): string | undefined {
-  if (typeof window !== 'undefined' && PRODUCTION_HOSTS.has(window.location.hostname)) {
+  if (typeof window !== 'undefined' && usesSameOriginApiProxy(window.location.hostname)) {
     return undefined
   }
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Instagram, Linkedin, Mail } from 'lucide-react'
+import { ExternalLink, Mail } from 'lucide-react'
 import { BRAND } from '../../lib/brand'
 import { formatIssuerFooterLine } from '../../config/fiscal'
 import { LEGAL_ENTITY, LEGAL_URLS } from '../../config/legal'
@@ -44,7 +44,7 @@ export default function LandingFooter() {
                 aria-label="LinkedIn"
                 itemProp="sameAs"
               >
-                <Linkedin className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
               </a>
             ) : null}
             {SITE_SOCIAL.instagram ? (
@@ -56,7 +56,7 @@ export default function LandingFooter() {
                 aria-label="Instagram"
                 itemProp="sameAs"
               >
-                <Instagram className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
               </a>
             ) : null}
           </div>
@@ -75,13 +75,13 @@ export default function LandingFooter() {
             {t('landing.footer.terms')}
           </Link>
           <Link to={LEGAL_URLS.cookie} className="transition-colors hover:text-[#E8C872]">
-            Cookie
+            {t('landing.footer.cookie')}
           </Link>
           <Link to={LEGAL_URLS.dpa} className="transition-colors hover:text-[#E8C872]">
-            DPA
+            {t('landing.footer.dpa')}
           </Link>
           <Link to={LEGAL_URLS.guestPrivacy} className="transition-colors hover:text-[#E8C872]">
-            Ospiti
+            {t('landing.footer.guests')}
           </Link>
           <Link to={LEGAL_URLS.contact} className="transition-colors hover:text-[#E8C872]">
             {t('landing.footer.contact')}

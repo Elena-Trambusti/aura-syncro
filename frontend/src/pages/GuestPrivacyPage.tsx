@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
 import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 /**
  * Informativa per commensali/ospiti — il Titolare è il Ristorante, non Aura Syncro.
  * Il ristoratore può linkare questa pagina dal menu QR o dalla pagina prenotazioni.
  */
 export default function GuestPrivacyPage() {
+  const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.guestPrivacy.title'), t('publicMeta.guestPrivacy.description'))
+
   return (
     <LegalDocumentShell
       title="Informativa privacy per gli ospiti"

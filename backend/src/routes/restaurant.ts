@@ -9,6 +9,34 @@ import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { computeOnboardingReadiness } from '../lib/onboardingReadiness'
 
+const SENSITIVE_SETTINGS_FIELDS = new Set([
+  'stripeCustomerId',
+  'stripeSubscriptionId',
+  'stripeProSubscriptionId',
+  'posTerminalId',
+  'posMerchantId',
+  'posSetupNotes',
+])
+
+function serializeRestaurantResponse(
+  restaurant: (Awaited<ReturnType<typeof prisma.restaurant.findUnique>> & { settings?: Record<string, unknown> | null }) | null,
+) {
+  if (!restaurant) return null
+  const { settings, ...base } = restaurant
+  if (!settings) return { ...base, settings: null }
+
+  const safeSettings: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(settings)) {
+    if (!SENSITIVE_SETTINGS_FIELDS.has(key)) {
+      safeSettings[key] = value
+    }
+  }
+  safeSettings.hasStripeBilling = Boolean(settings.stripeCustomerId)
+  safeSettings.hasStripeProAddon = Boolean(settings.stripeProSubscriptionId)
+
+  return { ...base, settings: safeSettings }
+}
+
 export const restaurantRouter = Router()
 
 const emptyToNull = (val: unknown) =>
@@ -55,7 +83,11 @@ restaurantRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReque
     where: { id: req.restaurantId! },
     include: { settings: true },
   })
-  res.json(restaurant)
+  if (!restaurant) {
+    res.status(404).json({ error: 'Ristorante non trovato' })
+    return
+  }
+  res.json(serializeRestaurantResponse(restaurant))
 })
 
 /** Stato integrazione POS (sola lettura per owner/manager) */

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
-import { verifyAuthToken } from '../lib/jwtAuth'
+import { verifySessionToken } from '../lib/jwtAuth'
 import { extractBearerToken } from '../lib/sessionCookie'
 import { tenantForbidden } from '../lib/tenant'
 import { isDemoUserEmail, isDemoWritePathAllowed } from '../lib/demoSandbox'
@@ -28,7 +28,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     return
   }
   try {
-    const payload = verifyAuthToken(token)
+    const payload = verifySessionToken(token)
 
     const headerTenant = req.headers['x-restaurant-id']
     if (headerTenant && headerTenant !== payload.restaurantId) {
@@ -95,7 +95,7 @@ export async function verifySocketToken(token: string): Promise<{
   tokenVersion: number
 } | null> {
   try {
-    const payload = verifyAuthToken(token)
+    const payload = verifySessionToken(token)
     const user = await prisma.user.findFirst({
       where: {
         id: payload.userId,

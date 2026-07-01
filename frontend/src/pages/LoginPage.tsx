@@ -9,9 +9,11 @@ import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/errors'
 import { toast } from '@/lib/toast'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function LoginPage() {
   const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.login.title'), t('publicMeta.login.description'))
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

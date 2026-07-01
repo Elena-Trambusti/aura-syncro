@@ -462,7 +462,15 @@ export default function TablesPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => { if (confirm(t('tables.confirmDelete'))) deleteTable.mutate(table.id) }}
+                          onClick={async () => {
+                            const confirmed = await toast.confirm({
+                              title: t('tables.confirmDeleteTitle', { defaultValue: 'Elimina tavolo' }),
+                              description: t('tables.confirmDelete'),
+                              confirmLabel: t('common.delete'),
+                              cancelLabel: t('common.cancel'),
+                            })
+                            if (confirmed) deleteTable.mutate(table.id)
+                          }}
                           className="rounded-lg p-2 text-fumo hover:bg-red-500/10 hover:text-red-400"
                           title={t('common.delete')}
                         >

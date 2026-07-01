@@ -7,12 +7,15 @@ export function injectLandingStructuredData(
   lang: string,
   pageTitle: string,
   pageDescription: string,
+  canonicalPath = '/',
 ) {
   document.getElementById(STRUCTURED_DATA_SCRIPT_ID)?.remove()
 
   const sameAs = [SITE_SOCIAL.linkedIn, SITE_SOCIAL.instagram].filter(
     (url): url is string => Boolean(url),
   )
+
+  const pageUrl = `${SITE_ORIGIN}${canonicalPath === '/' ? '/' : canonicalPath}`
 
   const script = document.createElement('script')
   script.id = STRUCTURED_DATA_SCRIPT_ID
@@ -59,8 +62,8 @@ export function injectLandingStructuredData(
       },
       {
         '@type': 'WebPage',
-        '@id': `${SITE_ORIGIN}/#webpage`,
-        url: `${SITE_ORIGIN}/`,
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
         name: pageTitle,
         description: pageDescription,
         isPartOf: { '@id': `${SITE_ORIGIN}/#website` },

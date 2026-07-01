@@ -270,7 +270,7 @@ export default function CheckoutPage() {
     setItemAssignments(prev => ({ ...prev, [itemId]: guestIndex }))
   }
 
-  const taxLabel = fiscal.taxName
+  const taxLabel = tRegime(t, fiscal.taxRegion, 'table.tax')
 
   const receiptModal = finalizeResult ? (
     <ReceiptPreviewModal
@@ -476,7 +476,7 @@ export default function CheckoutPage() {
             </div>
           </div>
           {wantsTip && (
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <input
                 type="number"
                 min="0"

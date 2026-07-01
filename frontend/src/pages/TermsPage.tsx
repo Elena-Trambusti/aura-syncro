@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
 import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
+import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function TermsPage() {
+  const { t } = useTranslation()
+  usePublicPageMeta(t('publicMeta.terms.title'), t('publicMeta.terms.description'))
+
   return (
     <LegalDocumentShell
       title="Termini e Condizioni di Servizio (B2B)"

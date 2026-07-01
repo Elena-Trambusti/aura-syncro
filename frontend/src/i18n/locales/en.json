@@ -1100,7 +1100,18 @@
     "orderDismissed": "Order served and removed from kitchen",
     "typeDineIn": "Dine-in",
     "typeTakeaway": "Takeaway",
-    "typeDelivery": "Delivery"
+    "typeDelivery": "Delivery",
+    "partialReadyHint": "Use +1 to mark one portion ready",
+    "markOneReady": "Mark 1 portion ready",
+    "advanceStatus": "Advance status",
+    "dismissServed": "Served — remove",
+    "markAllReady": "Mark all ready",
+    "ofTotal": "of",
+    "toPrepare": "to prepare",
+    "footerHint": "Tap ✓ to advance · +1 marks one portion ready · Served removes the order",
+    "legendPending": "Pending",
+    "legendPreparing": "Prep.",
+    "legendReady": "Ready"
   },
   "offline": {
     "bannerOffline": "You are offline — orders will send when connection returns",
@@ -1647,7 +1658,48 @@
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
       "contact": "Contact",
+      "cookie": "Cookie",
+      "dpa": "DPA",
+      "guests": "Guests",
       "rights": "© {{year}} {{brand}}. All rights reserved."
     }
+  },
+  "publicMeta": {
+    "pricing": {
+      "title": "Aura Syncro Pricing | Restaurant cloud software",
+      "description": "Premium all-inclusive plan for structured restaurants: turnkey setup and subscription from €199/month. Italy, Spain and Canary Islands."
+    },
+    "contact": {
+      "title": "Contact Aura Syncro | Support and demo",
+      "description": "Contact the Aura Syncro team for demos, Premium onboarding and technical support."
+    },
+    "login": {
+      "title": "Sign in | Aura Syncro",
+      "description": "Sign in to the Aura Syncro dashboard to manage tables, orders, payments and fiscal reporting."
+    },
+    "privacy": {
+      "title": "Privacy Policy | Aura Syncro",
+      "description": "Privacy policy for the Aura Syncro restaurant SaaS platform."
+    },
+    "terms": {
+      "title": "Terms of Service | Aura Syncro",
+      "description": "Terms and conditions for using the Aura Syncro platform."
+    },
+    "cookie": {
+      "title": "Cookie Policy | Aura Syncro",
+      "description": "Cookie policy for the Aura Syncro website and application."
+    },
+    "dpa": {
+      "title": "DPA | Aura Syncro",
+      "description": "Data Processing Agreement for Aura Syncro."
+    },
+    "guestPrivacy": {
+      "title": "Guest privacy | Aura Syncro",
+      "description": "Privacy information for guests of restaurants using Aura Syncro."
+    }
+  },
+  "pwa": {
+    "updateAvailable": "New version available",
+    "reload": "Reload"
   }
 }

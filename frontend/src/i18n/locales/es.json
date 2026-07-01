@@ -711,6 +711,7 @@
     "subtitle": "Análisis financiero y food cost",
     "heroHint": "P&L, food cost y análisis de márgenes",
     "loadError": "Error al cargar los informes",
+    "taxRowLabel": "{{taxName}} ({{rate}}%)",
     "tabPl": "📊 P&L Mensual",
     "tabFoodCost": "🍽 Food Cost",
     "tabYearly": "📈 Tendencia Anual"
@@ -1346,6 +1347,7 @@
       "features": "Funciones",
       "pricing": "Precios",
       "login": "Acceder",
+      "register": "Registrarse",
       "tryNow": "Probar ahora"
     },
     "hero": {
@@ -1354,6 +1356,9 @@
       "subtitle": "{{brand}} es el software cloud para la restauración en Italia, España y Canarias: mesas, comandas e ingresos sincronizados en tiempo real. Fiscal al día, servicio fluido, control total cada noche.",
       "ctaPrimary": "Probar ahora",
       "ctaSecondary": "Acceder",
+      "previewKpi1": "Ingresos vs mes pasado",
+      "previewKpi2": "Cubiertos hoy",
+      "previewChart": "Tendencia del servicio (demo)",
       "ctaDemo": "Entrar a la Demo",
       "demoError": "Error en la demo: no se pudo conectar."
     },
@@ -1387,6 +1392,23 @@
       "ai": {
         "title": "IA predictiva",
         "desc": "Previsión de cubiertos y consumo para planificar personal, compras y producción con más precisión."
+      }
+    },
+    "gallery": {
+      "eyebrow": "El problema",
+      "title": "Los problemas reales de cada servicio",
+      "subtitle": "Cuando sala, cocina y administración no dialogan, pierdes margen cada noche — antes incluso de cerrar caja.",
+      "p1": {
+        "title": "Demasiadas herramientas, cero sincronía",
+        "desc": "TPV, reservas, delivery e inventario viven en mundos separados. Dobles entradas, errores en sala y datos que no cuadran."
+      },
+      "p2": {
+        "title": "Las plataformas erosionan el margen",
+        "desc": "Hasta un 30% en cada pedido delivery. Los clientes son tuyos, el beneficio se va a otro lado."
+      },
+      "p3": {
+        "title": "El cumplimiento fiscal te frena",
+        "desc": "Tickets, impuestos y facturación exigen precisión absoluta. Cada error puede significar sanciones y estrés con la asesoría."
       }
     },
     "pricing": {
