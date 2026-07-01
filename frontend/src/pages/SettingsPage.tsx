@@ -588,7 +588,7 @@ export default function SettingsPage() {
         <p className="text-sm text-fumo mb-4">Collega il tuo account Telegram per ricevere in tempo reale gli alert predittivi e i consigli sui riordini direttamente sul tuo smartphone.</p>
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => window.open(`https://t.me/AuraSyncroAlert_bot?start=${restaurantData?.id}`, '_blank')}
+            <button onClick={() => window.open(`https://t.me/AuraSyncroBot?start=${restaurantData?.id}`, '_blank')}
               className="flex items-center gap-2 px-4 py-2 bg-[#2AABEE] hover:bg-[#229ED9] text-white rounded-xl text-sm font-semibold transition-colors">
               <Send className="w-4 h-4" />
               Collega Telegram
