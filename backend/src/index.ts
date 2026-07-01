@@ -49,6 +49,7 @@ import { getVapidPublicKey } from './lib/webPush'
 import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
 import { serializeDecimals } from './lib/money'
+import { runTelegramDailyAlerts } from './lib/telegramScheduler'
 
 // In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
 // in locale carichiamo backend/.env tramite dotenv.
@@ -223,4 +224,9 @@ httpServer.listen(PORT, () => {
       console.error('[scheduler] Errore marketing:', err)
     }
   }, schedulerMs)
+
+  // Controllo orario per l'invio degli alert Telegram
+  setInterval(() => {
+    runTelegramDailyAlerts().catch(console.error)
+  }, 60 * 60 * 1000) // Controlla ogni ora
 })
