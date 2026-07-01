@@ -5,17 +5,17 @@ import {
   ShieldAlert,
   FileWarning,
   Ship,
-  Layers,
-  TrendingDown,
+  Workflow,
+  CircleDollarSign,
   Scale,
   type LucideIcon,
 } from 'lucide-react'
-import AuraIcon from '../ui/AuraIcon'
 import {
   LandingSectionHeader,
   LandingSectionShell,
   LUXURY_CARD_CLASS,
   LuxuryCardHoverLine,
+  LuxuryIconMedallion,
 } from './landingLuxury'
 
 type GalleryProblem = {
@@ -33,8 +33,8 @@ type GalleryData = {
 
 const GALLERY_PROBLEM_KEYS = ['p1', 'p2', 'p3'] as const
 const GALLERY_PROBLEM_ICONS: Record<(typeof GALLERY_PROBLEM_KEYS)[number], LucideIcon> = {
-  p1: Layers,
-  p2: TrendingDown,
+  p1: Workflow,
+  p2: CircleDollarSign,
   p3: Scale,
 }
 
@@ -124,18 +124,24 @@ export default function LandingGallery() {
             const Icon = problem.icon
             return (
               <article key={problem.title} className={LUXURY_CARD_CLASS}>
-                <div className="relative flex h-44 items-center justify-center overflow-hidden border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604]">
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.14),transparent_68%)] opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
-                  <div className="relative z-10 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-[#D4AF37]/25 bg-black/60 text-[#E8C872] shadow-[0_0_28px_rgba(212,175,55,0.18)] backdrop-blur-sm transition-all duration-500 group-hover:scale-105 group-hover:border-[#E8C872]/40 group-hover:shadow-[0_0_36px_rgba(212,175,55,0.28)]">
-                    <AuraIcon icon={Icon} size="2xl" weight="display" className="text-[#E8C872]" />
-                  </div>
+                <div className="relative flex h-44 items-center justify-center overflow-visible border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604]">
+                  <div
+                    className="pointer-events-none absolute h-28 w-28 rounded-full border border-[#D4AF37]/[0.08]"
+                    aria-hidden
+                  />
+                  <div
+                    className="pointer-events-none absolute h-40 w-40 rounded-full border border-[#D4AF37]/[0.05]"
+                    aria-hidden
+                  />
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.16),transparent_68%)] opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
+                  <LuxuryIconMedallion icon={Icon} size="lg" />
                 </div>
 
                 <div className="flex flex-1 flex-col p-7 sm:p-8">
                   <h3 className="font-display text-xl font-medium tracking-tight text-[#F0E6D2] transition-colors duration-300 group-hover:text-white">
                     {problem.title}
                   </h3>
-                  <p className="mt-3 flex-1 text-sm font-light leading-relaxed lux-text-soft">
+                  <p className="mt-3 flex-1 text-sm font-light leading-relaxed text-[#F0E6D2]/85">
                     {problem.desc}
                   </p>
                 </div>

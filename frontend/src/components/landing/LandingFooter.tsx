@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink, Mail } from 'lucide-react'
 import { BRAND } from '../../lib/brand'
+import BrandLogo from '../brand/BrandLogo'
 import { formatIssuerFooterLine } from '../../config/fiscal'
 import { LEGAL_ENTITY, LEGAL_URLS } from '../../config/legal'
 import { SITE_SOCIAL } from '../../lib/siteUrl'
@@ -22,8 +23,13 @@ export default function LandingFooter() {
       <LandingSectionDecor />
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-display text-xl font-medium tracking-tight text-[#F0E6D2]">{BRAND.name}</p>
-          <p className="mt-2 max-w-sm text-sm font-light leading-relaxed lux-text-soft">
+          <div className="flex items-center gap-2.5">
+            <BrandLogo size="sm" className="mx-0" />
+            <p className="lux-heading font-display text-xl font-medium tracking-tight drop-shadow-sm">
+              {BRAND.name}
+            </p>
+          </div>
+          <p className="mt-2 max-w-sm text-sm font-light leading-relaxed text-[#F0E6D2]">
             {t('landing.footer.tagline')}
           </p>
           <div className="mt-4 flex items-center gap-3">
@@ -60,14 +66,14 @@ export default function LandingFooter() {
               </a>
             ) : null}
           </div>
-          <p className="mt-5 text-xs font-light lux-text-muted">
+          <p className="mt-5 text-xs font-light text-[#F0E6D2]">
             {t('landing.footer.rights', { year, brand: BRAND.name })}
           </p>
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] lux-text-faint">
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] text-[#F0E6D2]/80">
             {formatIssuerFooterLine()}
           </p>
         </div>
-        <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-light lux-text-soft">
+        <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-light text-[#F0E6D2]">
           <Link to={LEGAL_URLS.privacy} className="transition-colors hover:text-[#E8C872]">
             {t('landing.footer.privacy')}
           </Link>

@@ -19,7 +19,7 @@ function nonBlockingCss(): Plugin {
         /<link rel="stylesheet"(?: crossorigin)? href="(\/assets\/[^"]+\.css)">/g,
         '<link rel="preload" as="style" href="$1" onload="this.onload=null;this.rel=\'stylesheet\'"><noscript><link rel="stylesheet" href="$1"></noscript>',
       )
-      // Evita download anticipato di chunk route (recharts, dashboard, …) sulla landing
+      // Evita download anticipato di chunk route (recharts, dashboard, landing below-fold, …)
       out = out.replace(/<link rel="modulepreload"[^>]+>/g, (tag) => {
         if (
           tag.includes('recharts')
@@ -29,13 +29,23 @@ function nonBlockingCss(): Plugin {
           || tag.includes('DashboardPage')
           || tag.includes('AnalyticsPage')
           || tag.includes('ReportsPage')
+          || tag.includes('LandingBelowFold')
+          || tag.includes('LandingPage')
           || tag.includes('vendor-sentry')
+          || tag.includes('vendor-axios')
+          || tag.includes('vendor-socket')
           || /\/assets\/(en|es-cn|es|fr|de)-[^"']+\.js/.test(tag)
+          || /\/assets\/(banknote|users|utensils|sparkles|trending|triangle|mail|minus|qr-code|check|credit-card|external-link|chevron|loader-circle|AccessDenied)-[^"']+\.js/.test(tag)
         ) {
           return ''
         }
         return tag
       })
+      // Script entry con alta priorità
+      out = out.replace(
+        /<script type="module" crossorigin src="(\/assets\/index-[^"]+\.js)"><\/script>/,
+        '<script type="module" crossorigin src="$1" fetchpriority="high"></script>',
+      )
       return out
     },
   }

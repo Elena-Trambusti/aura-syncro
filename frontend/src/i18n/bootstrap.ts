@@ -52,28 +52,57 @@ async function loadLocaleBundle(lng: SupportedLocale) {
   i18n.addResourceBundle(lng, 'translation', mod.default, true, true)
 }
 
-/** Lingua iniziale nel bundle principale (zero round-trip); fr/de on-demand. */
-export async function bootstrapI18n(): Promise<void> {
-  const initial = resolveInitialLocale()
-  const eager = EAGER_LOCALE_BUNDLES[initial]
-  const translation = eager ?? (await localeLoaders[initial]()).default
+let bootstrapped = false
 
-  await i18n.use(initReactI18next).init({
-    resources: { [initial]: { translation } },
-    lng: initial,
-    fallbackLng: 'it',
-    interpolation: { escapeValue: false },
-  })
-
-  document.documentElement.lang = initial.split('-')[0]
-
+function attachI18nListeners() {
   i18n.on('languageChanged', (lng) => {
     document.documentElement.lang = lng.split('-')[0]
     localStorage.setItem(STORAGE_KEY, lng)
     if (isSupportedLocale(lng)) void loadLocaleBundle(lng)
   })
+}
 
-  if (initial !== 'it') void loadLocaleBundle('it')
+/**
+ * Init sincrono — nessun await prima del first paint.
+ * IT nel bundle; altre lingue caricate subito dopo il render.
+ */
+export function bootstrapI18nSync(): void {
+  if (bootstrapped) return
+  bootstrapped = true
+
+  const initial = resolveInitialLocale()
+  const eager = EAGER_LOCALE_BUNDLES[initial]
+  const itTranslation = EAGER_LOCALE_BUNDLES.it!
+  const resources: Record<string, { translation: Record<string, unknown> }> = {
+    it: { translation: itTranslation },
+  }
+  if (eager && initial !== 'it') {
+    resources[initial] = { translation: eager }
+  }
+
+  void i18n.use(initReactI18next).init({
+    resources,
+    lng: eager ? initial : 'it',
+    fallbackLng: 'it',
+    interpolation: { escapeValue: false },
+  })
+
+  document.documentElement.lang = (eager ? initial : 'it').split('-')[0]
+  attachI18nListeners()
+
+  if (!eager) {
+    void loadLocaleBundle(initial).then(() => {
+      document.documentElement.lang = initial.split('-')[0]
+      void i18n.changeLanguage(initial)
+    })
+  } else if (initial !== 'it') {
+    void loadLocaleBundle('it')
+  }
+}
+
+/** @deprecated Usare bootstrapI18nSync — mantenuto per test */
+export async function bootstrapI18n(): Promise<void> {
+  bootstrapI18nSync()
 }
 
 export default i18n

@@ -17,8 +17,9 @@ import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import RouteLoadingFallback from './components/auth/RouteLoadingFallback'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
-import LandingPage from './pages/LandingPage'
 import LandingRoute from './components/landing/LandingRoute'
+
+const LandingPage = lazyRoute(() => import('./pages/LandingPage'))
 
 const LoginPage = lazyRoute(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))

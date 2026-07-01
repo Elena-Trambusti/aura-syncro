@@ -19,7 +19,7 @@ export default function LandingNav() {
           <BrandLogo size="sm" className="mx-0 shadow-sm" priority />
           <span className="font-display text-sm font-medium tracking-tight text-[#F0E6D2] sm:text-base">{BRAND.name}</span>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium lux-text-soft md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-[#F0E6D2] md:flex">
           <a href="#features" className="transition-colors hover:text-[#E8C872]">
             {t('landing.nav.features')}
           </a>

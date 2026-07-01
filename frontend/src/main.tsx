@@ -1,7 +1,7 @@
 import './instrument'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { bootstrapI18n } from './i18n/bootstrap'
+import { bootstrapI18nSync } from './i18n/bootstrap'
 import App from './App'
 import './index.css'
 import AppProviders from './components/AppProviders'
@@ -12,18 +12,16 @@ import SentryTestButton from './components/SentryTestButton'
 
 const root = createRoot(document.getElementById('root')!)
 
-// i18n pronto prima del first paint — evita che bot e utenti vedano chiavi grezze (es. common.loading)
-bootstrapI18n().then(() => {
-  root.render(
-    <StrictMode>
-      <ErrorBoundary>
-        <AppProviders>
-          <App />
-          <DeferredMetrics />
-          <AuraSonner />
-          <SentryTestButton />
-        </AppProviders>
-      </ErrorBoundary>
-    </StrictMode>,
-  )
-})
+bootstrapI18nSync()
+root.render(
+  <StrictMode>
+    <ErrorBoundary>
+      <AppProviders>
+        <App />
+        <DeferredMetrics />
+        <AuraSonner />
+        <SentryTestButton />
+      </AppProviders>
+    </ErrorBoundary>
+  </StrictMode>,
+)

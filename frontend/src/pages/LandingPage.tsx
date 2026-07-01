@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
@@ -9,7 +9,9 @@ import {
 } from '../lib/siteUrl'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
-import LandingBelowFold from '../components/landing/LandingBelowFold'
+import { LuxuryGoldGradientDefs } from '../components/landing/landingLuxury'
+
+const LandingBelowFold = lazy(() => import('../components/landing/LandingBelowFold'))
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation()
@@ -28,6 +30,10 @@ export default function LandingPage() {
   useEffect(() => {
     return injectLandingStructuredData(i18n.language, metaTitle, metaDescription, canonicalPath)
   }, [i18n.language, metaTitle, metaDescription, canonicalPath])
+
+  useEffect(() => {
+    document.getElementById('static-landing-fcp')?.remove()
+  }, [])
 
   return (
     <div lang={i18n.language} className="min-h-[100dvh] flex flex-col relative lux-text selection:bg-aura-gold/30 bg-[#020202] overflow-x-hidden">
@@ -49,9 +55,12 @@ export default function LandingPage() {
         }}
       />
       <LandingNav />
+      <LuxuryGoldGradientDefs />
       <main className="flex-1">
         <LandingHero />
-        <LandingBelowFold />
+        <Suspense fallback={null}>
+          <LandingBelowFold />
+        </Suspense>
       </main>
     </div>
   )

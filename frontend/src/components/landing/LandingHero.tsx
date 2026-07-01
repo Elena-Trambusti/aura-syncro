@@ -50,8 +50,7 @@ export default function LandingHero() {
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
         <div>
           <div
-            className="lux-hero-badge motion-reduce:animate-none"
-            style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+            className="lux-hero-badge motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
           >
             <span className="lux-hero-badge__icon" aria-hidden>
               <AuraIcon icon={Zap} size="sm" className="text-[#E8C872]" weight="display" />
@@ -60,20 +59,17 @@ export default function LandingHero() {
           </div>
           <h1 
             className="lux-heading text-[#C5A059] text-4xl font-display font-medium tracking-tight sm:text-5xl lg:text-7xl lg:leading-[1.1] drop-shadow-2xl"
-            style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '150ms' }}
           >
             {t('landing.hero.title')}
           </h1>
           <p
             itemProp="description"
             className="mt-6 max-w-xl text-base font-light leading-relaxed text-[#F0E6D2] sm:text-lg"
-            style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '300ms' }}
           >
             {t('landing.hero.subtitle', { brand: BRAND.name })}
           </p>
           <div 
-            className="mt-10 flex flex-col gap-4 sm:flex-row"
-            style={{ animation: 'reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '450ms' }}
+            className="mt-10 flex flex-col gap-4 sm:flex-row motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both]"
           >
             <RegisterLink
               className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_40px_rgba(212,175,55,0.4)] ring-1 ring-white/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(212,175,55,0.6)]"
@@ -98,8 +94,7 @@ export default function LandingHero() {
         </div>
 
         <div
-          className="lux-hero-preview group relative hidden pt-10 lg:block lg:pt-0"
-          style={{ animation: 'reveal-slide 1.4s cubic-bezier(0.16, 1, 0.3, 1) both', animationDelay: '600ms' }}
+          className="lux-hero-preview group relative hidden pt-10 lg:block lg:pt-0 motion-reduce:animate-none motion-safe:animate-[reveal-slide_0.9s_cubic-bezier(0.16,1,0.3,1)_200ms_both]"
         >
           <div className="lux-hero-preview__halo" aria-hidden />
           <div className="lux-hero-preview__shell">
