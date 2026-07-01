@@ -582,7 +582,7 @@ Audit esaustivo su tutto il codebase (routes, permessi, revenue, TZ, socket, mar
 | RZ7-08 | Sessione: token non più in `sessionStorage` (cookie httpOnly + memoria) |
 | RZ7-09 | `test-flow.ts`: rimborso CASH + verifica CRM storno |
 
-**Roadmap (non in scope codice):** soft-hold magazzino guest checkout (AB-LOG-02), Decimal Prisma (C-05).
+**Roadmap (non in scope codice):** ~~Decimal Prisma (C-05)~~ ✅ risolto; soft-hold magazzino opzionale oltre TX atomica (AB-LOG-02 mitigato).
 
 ---
 
@@ -626,7 +626,30 @@ Audit esaustivo su tutto il codebase (routes, permessi, revenue, TZ, socket, mar
 | RZ10-05 | `test:flow` produzione **verde** (CASH, CARD, split, CRM, marketing) |
 | RZ10-06 | CRM sync sincrono + storno rimborso senza deadlock |
 
-### Residuo accettato (roadmap Q3)
-- **C-05** Float → Decimal Prisma (migration dedicata, non bloccante)
+### Residuo accettato (roadmap opzionale)
+- ~~**C-05** Float → Decimal~~ ✅ Migration `20250630120000_money_float_to_decimal` (20/20 DB)
+- Saga POS completa (B-12), load test 50 tavoli, i18n errori pagine secondarie
 
 *Ultimo aggiornamento: 2026-07-01 — RZ10 completato. Go-live ~98%.*
+
+---
+
+# ROUND RZ11 — Verifica audit + allineamento C-05 (2026-07-01)
+
+| ID | Esito |
+|----|-------|
+| RZ11-01 | **C-05 RISOLTO** — confermato schema + migration + `money.ts` |
+| RZ11-02 | Suite test: **78/78** automatici (24 Vitest + 54 backend unit) |
+| RZ11-03 | `test:flow` produzione verde (ultimo run RZ10) |
+| RZ11-04 | Prisma: **20 migration**, database up to date |
+| RZ11-05 | Audit `audit_bug_assoluto.md` allineato — nessun CRITICO/ALTO aperto |
+
+### Residui documentati (bassa priorità)
+| ID | Nota |
+|----|------|
+| RC-12 | P&L food cost — stima interna, arrotondata |
+| i18n-B | CashDrawer, Marketing, Waitlist parziale senza `formatApiError` |
+| B-12 | Saga POS oltre auto-refund |
+| Load-50 | Stress test pre-scale |
+
+*Ultimo aggiornamento: 2026-07-01 — RZ11 completato. Go-live ~98%.*

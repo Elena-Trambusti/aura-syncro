@@ -612,4 +612,29 @@ Vedi sezione 8.
 
 ---
 
-*Audit eseguito da processo QA statico + remediation inline. Per validazione runtime eseguire test E2E su flussi: QR order → KDS → pagamento → dashboard KPI refresh.*
+## ROUND RZ11 — Verifica post-test (2026-07-01)
+
+### C-05 Decimal monetario
+✅ **Già completato** con migration `backend/prisma/migrations/20250630120000_money_float_to_decimal/`.
+Campi euro: `Order.*`, `MenuItem.price`, `CashTransaction.amount`, `Customer.totalSpent`, chiusure fiscali, fatture.
+Float residui: percentuali IVA/IGIC, coordinate tavoli, quantità magazzino (non importi).
+
+### Copertura test (riferimento `tests/README.md`)
+
+| Modulo | Test |
+|--------|------|
+| Cassa / split | `cassa.test.ts`, `split-checkout-ui.test.ts`, `cash-finalize-due.test.ts`, `splitSettlement.test.ts` |
+| Tavoli | `tavoli.test.ts`, `tableReleaseGuard.test.ts`, `integration-db.test.ts` |
+| Magazzino / cucina | `cucina-inventory.test.ts`, `stock-hold.test.ts`, `menuStock.test.ts` |
+| Fiscale | `taxEngine.test.ts`, `tipFiscal.test.ts`, `fiscalIntegrityChain.test.ts`, `fiscalStrategies.test.ts` |
+| Pagamenti live | `backend/scripts/test-flow.ts` (DO produzione) |
+
+**Totale automatico:** 78 test unit/integration + E2E smoke produzione.
+
+### Residui bassa priorità
+- **RC-12:** stima food cost P&L (non fiscale)
+- **i18n-B:** errori API su CashDrawer, Marketing, Waitlist (add/notify)
+- **B-12:** saga POS distribuita (auto-refund già attivo)
+- **Load-50:** stress test concorrenza tavoli
+
+*Audit aggiornato: 2026-07-01 — RZ11.*

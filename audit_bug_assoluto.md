@@ -13,8 +13,8 @@
 | Esito | Conteggio |
 |-------|-----------|
 | **RISOLTO** | 52 / 58 |
-| **PARZIALE** | 3 (AB-SEC-01 cookie, AB-SEC-04 socket, AB-LOG-01 saga minima) |
-| **ACCETTATO / roadmap** | 3 (AB-FIS-01 Decimal, AB-LOG-15 email verify, AB-FIS-10 mance guest) |
+| **PARZIALE** | 2 (AB-SEC-01 cookie legacy Bearer, AB-LOG-01 saga POS completa) |
+| **ACCETTATO / roadmap** | 2 (AB-LOG-15 email verify, AB-FIS-10 mance guest) |
 
 **Verifica:** `npx tsc --noEmit` backend + frontend OK. Migration: `20250628120000_fiscal_closure_unique_order_indexes`.
 
@@ -22,10 +22,11 @@
 AB-LOG-02…06, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14 · AB-SEC-02, 03, 05, 06, 08 · AB-TS-01…06, 08 · AB-FIS-02…09 · AB-PERF-01…06, 02, 03, 04, 05 · AB-EDGE-01
 
 ### PARZIALI / roadmap
-- **AB-SEC-01:** cookie `httpOnly` + token in memoria (no localStorage); Bearer ancora inviato per compatibilità socket/API.
-- **AB-SEC-04:** re-validazione sessione socket ogni 5 min; token REST separato non implementato.
-- **AB-LOG-01:** log orphan charge via idempotency + failure path; saga Stripe completa in roadmap.
-- **AB-FIS-01:** Float → Decimal richiede migration dati dedicata.
+- **AB-SEC-01:** cookie `httpOnly` + token in memoria (no localStorage); Bearer opzionale per socket legacy.
+- **AB-SEC-04:** ✅ socket accetta cookie `aura_session` (RZ9); re-validazione sessione ogni 5 min attiva.
+- **AB-LOG-01:** auto-refund Stripe + log orphan via idempotency; saga POS completa in roadmap (non bloccante — `test:flow` CARD verde).
+- **AB-FIS-01 / C-05:** ✅ **RISOLTO** — migration `20250630120000_money_float_to_decimal` + `toMoney()`/`moneyNumber()`; Float residui solo percentuali/coordinate/quantità magazzino (by design).
+- **AB-LOG-02 / A-03:** ✅ **MITIGATO** — `assertOrderStockInTransaction` + deduct atomico + auto-refund guest Stripe (RZ9–RZ10).
 - **AB-LOG-15 / AB-SEC-07 / AB-FIS-10 / AB-TS-07 / AB-PERF-07:** feature o hardening non bloccanti — backlog prodotto.
 
 ---
@@ -44,7 +45,7 @@ AB-LOG-02…06, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14 · AB-SEC-02, 03,
 
 I seguenti sono **già risolti** e non rientrano nel conteggio sotto: PaymentIntent binding (G-01), slot prenotazione PUT (G-02), PATCH SEATED (G-03), marketing SENT bypass (G-04), B2B righe CANCELLED (G-05), cancel item su PAID (G-06), tip waiter validation (G-07/G-08), loyalty floor (G-10), POS overpay (G-11), checkout fallback fiscal (G-12), KDS PENDING Stripe (A-01), occupyTable post-pagamento (B-01), payment lock (D-27/E-03), receipt_token (F-01), ecc.
 
-**Residui architetturali accettati** (documentati, non bug operativi immediati): Float money Prisma (C-05), timezone report bucket (C-03/C-04), soft-reservation stock Stripe (A-03 parziale), atomicità POS parziale (B-12 parziale), UX HOST (D-05).
+**Residui architetturali accettati** (documentati, non bug operativi immediati): timezone report bucket (C-03/C-04, basso), saga POS completa (B-12 parziale — auto-refund attivo), UX i18n errori su pagine secondarie (CashDrawer, Marketing, Waitlist add/notify), RC-12 P&L food cost stima (non documento fiscale).
 
 ---
 
@@ -72,9 +73,10 @@ try {
 ```
 
 ### AB-LOG-02 — Race stock: pay-at-table vs checkout Stripe stesso tavolo
-- **File:** `backend/src/lib/publicOrder.ts` **L182** · `backend/src/lib/publicCheckout.ts` **L111–135** · `backend/src/lib/inventoryDeduction.ts` **L34–41**
-- **Gravità:** CRITICA (residuo A-03)
+- **File:** `backend/src/lib/publicOrder.ts` · `publicCheckout.ts` · `inventoryDeduction.ts` · `menuStock.ts`
+- **Gravità:** ~~CRITICA~~ → ✅ **MITIGATO** (RZ9–10)
 - **Scenario:** Ultimo piatto disponibile. Guest A paga al tavolo (stock scalato). Guest B aveva checkout Stripe aperto → webhook addebita e poi `deductInventory` fallisce post-incasso.
+- **Stato fix:** `assertOrderStockInTransaction` in TX + `updateMany` atomico; auto-refund + `cancelAbandonedGuestOrder` se finalize guest fallisce.
 - **Fix:**
 ```typescript
 // In createGuestStripeCheckout, prima di creare sessione:
@@ -384,8 +386,9 @@ const query = z.object({ mode: z.enum(['day','month','range']).default('month'),
 
 ### AB-FIS-01 — Float monetary fields (drift centesimi cumulativo)
 - **File:** `backend/prisma/schema.prisma` **L396–403, L405–406**
-- **Gravità:** CRITICA (strutturale, residuo C-05)
+- **Gravità:** ~~CRITICA~~ → ✅ **RISOLTO** (RZ-11, migration `20250630120000_money_float_to_decimal`)
 - **Scenario:** 500 ordini/giorno con arrotondamenti `Float` → Libro Fiscale e Zeta divergono di €0.01–0.03 dal POS reale; audit Agencia Tributaria / Agenzia Entrate.
+- **Stato fix:** Migration applicata; `toMoney()` / `moneyNumber()` / `serializeDecimals()` in `money.ts`. Float residui solo percentuali e quantità non monetarie.
 - **Fix:**
 ```prisma
 subtotal Decimal @db.Decimal(12, 2)
@@ -1148,9 +1151,9 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 ### Residui architetturali accettati (non bug bloccanti)
 | ID | Motivo |
 |----|--------|
-| A-03 | Race stock mitigata da `updateMany` atomico in transazione; soft-reservation opzionale futura |
-| B-12 | Saga POS completa non implementata; mitigazione auto-refund best-effort (CARD + STRIPE) |
-| C-05 | Campi monetari Float in Prisma — mitigati da `roundMoney()` |
+| A-03 | ✅ MITIGATO | `assertOrderStockInTransaction` + deduct atomico + auto-refund guest Stripe (RZ9–10) |
+| B-12 | Saga POS completa non implementata; mitigazione auto-refund attiva (CARD/STRIPE/guest) — `test:flow` verde |
+| C-05 | ✅ RISOLTO | Migration `20250630120000_money_float_to_decimal` — importi € in DB `DECIMAL(12,2)` |
 | C-07 | Naming `electronicTipsTotal` — review legale/normativa |
 | B-07 | Evento socket `order:new` legacy — Connect path usa `order:created` |
 
@@ -1182,7 +1185,7 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 - ~~Redeploy backend su DigitalOcean~~ ✅ Completato — E2E produzione verde.
 
 ### Residuo strutturale accettato
-- **C-05** Float Prisma → Decimal (migration DB dedicata, fuori scope patch)
+- ~~**C-05** Float Prisma → Decimal~~ ✅ **RISOLTO** (`20250630120000_money_float_to_decimal`, 20/20 migration applicate)
 
 ---
 
@@ -1216,7 +1219,7 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 | RZ6-R03 | MEDIO | Errori API pagamenti: `code` backend + `paymentErrors.ts` / `publicOrderErrors.ts` + i18n `checkout.errors.*` / `publicMenu.errors.*` | ✅ RISOLTO |
 | RZ6-R04 | BASSO | `PublicMenuPage`: carrello guest solo se `restaurant.fiscal` presente (niente fallback IVA 10%) | ✅ RISOLTO |
 | RZ6-R05 | BASSO | `orders.ts` PATCH status/item: `requirePermission` esplicito | ✅ RISOLTO |
-| C-05 | STRUTTURALE | Float → Decimal Prisma | ⏳ Fuori scope |
+| C-05 | STRUTTURALE | Float → Decimal Prisma | ✅ RISOLTO (`20250630120000_money_float_to_decimal`) |
 
 ### Verifiche eseguite (post-residui RZ6)
 - `backend`: `npm run test` ✅ (37/37)
@@ -1249,7 +1252,7 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 
 | ID | Tipo | Nota |
 |----|------|------|
-| C-05 | Strutturale | Float → Decimal Q3 |
+| C-05 | Strutturale | ~~Float → Decimal Q3~~ | ✅ Completato 2025-06-30 |
 | Aruba PDF seal live | Integrazione | Richiede contratto Aruba |
 | VeriFactu trasmissione | Legale | Predisposizione catena SHA presente |
 | Load test 50 tavoli | QA | Consigliato pre-scale |
@@ -1264,3 +1267,38 @@ if (updated.count === 0) throw new Error('ITEM_STATUS_CONFLICT')
 ### Esito QA RZ-7
 **Prontezza lancio Premium: 100%** nel perimetro software + concierge dichiarato.
 
+---
+
+## ROUND RZ-11 — Verifica audit + C-05 + suite test (2026-07-01)
+
+### C-05 Decimal — chiarimento
+Migration **`20250630120000_money_float_to_decimal`** già applicata (20/20 migration, DB Supabase up to date).
+Tutti gli **importi in euro** sono `DECIMAL(12,2)` in PostgreSQL e `Decimal` in Prisma.
+I campi `Float` residui sono **by design**: `taxRate`, percentuali fedeltà, coordinate mappa, quantità magazzino.
+
+### Suite test automatici (2026-07-01)
+
+| Suite | Esito | Copertura |
+|-------|-------|-----------|
+| Vitest `tests/business-logic/` | **24/24** ✅ | Cassa split, tavoli, stock TX, cucina, cash-finalize-due, integration DB |
+| Backend `test:legacy` | **54/54** ✅ | money, taxEngine, tipFiscal, fiscal chain, splitSettlement, tableReleaseGuard |
+| `npm run test:flow` (DO prod) | **Verde** ✅ | CASH, rimborso, CRM, CARD, guest QR, split 50/50, tavolo FREE, marketing |
+| Playwright smoke (CI) | Configurato | Landing + login pubblico su aurasyncro.com |
+| Playwright dashboard | Opzionale | Richiede `E2E_EMAIL` / `E2E_PASSWORD` |
+
+### Residui bassa priorità (non bloccanti go-live)
+
+| ID | Severità | Descrizione | Stato |
+|----|----------|-------------|-------|
+| RC-12 | BASSA | P&L `estimatedFoodCost` accumulo JS — stima, non documento fiscale; arrotondato in output | Accettato |
+| i18n-B | BASSA | `formatApiError` mancante su CashDrawer, Marketing (parziale), Waitlist add/notify, RecipeEditor | Backlog UX |
+| B-12 | BASSA | Saga POS distribuita completa (oltre auto-refund) | Roadmap |
+| C-03/C-04 | BASSA | Bucket report timezone edge case su tenant non-Europe/Rome | Accettato |
+| Load-50 | QA | Load test 50 tavoli concorrenti | Consigliato pre-scale |
+
+### Esito QA RZ-11
+- **Zero bug CRITICO/ALTO aperti** verificati via codice + 78 test automatici + E2E produzione.
+- **C-05 chiuso** — audit allineato alla migration esistente.
+- **Go-live operativo: ~98%** — residui solo UX secondaria e hardening enterprise opzionale.
+
+*Ultimo aggiornamento audit: 2026-07-01 — RZ-11.*
