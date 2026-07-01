@@ -6,6 +6,7 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { enrichCategoriesWithStock } from '../lib/menuStock'
+import { io } from '../index'
 
 export const menuRouter = Router()
 
@@ -228,6 +229,7 @@ menuRouter.patch('/items/:id/availability', requirePermission('menu.availability
     tenantNotFound(res, 'Piatto non trovato')
     return
   }
+  io.to(tenantId(req)).emit('menu:updated', { itemId: req.params.id, available })
   const item = await prisma.menuItem.findFirst({ where: scopedWhere(req, req.params.id) })
   res.json(item)
 })

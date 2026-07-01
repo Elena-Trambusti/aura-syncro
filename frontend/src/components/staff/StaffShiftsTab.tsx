@@ -12,7 +12,8 @@ import { toast } from '@/lib/toast'
 import GlassModal from '../ui/GlassModal'
 import AuraSelect from '../ui/AuraSelect'
 import QueryErrorBanner from '../QueryErrorBanner'
-import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { useTenantQueryKey, useAuth } from '../../contexts/AuthContext'
+import { getIntlLocale } from '../../i18n'
 import { tq } from '../../lib/queryKeys'
 
 interface StaffMember {
@@ -77,6 +78,11 @@ interface StaffShiftsTabProps {
 
 export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabProps) {
   const { t } = useTranslation()
+  const { restaurant } = useAuth()
+  const tenantTz = restaurant?.timezone ?? 'Europe/Rome'
+  const locale = getIntlLocale()
+  const formatTenantDate = (d: Date, options: Intl.DateTimeFormatOptions) =>
+    d.toLocaleDateString(locale, { ...options, timeZone: tenantTz })
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
@@ -111,7 +117,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
   )
 
   const weekEnd = addDays(weekStart, 6)
-  const weekLabel = `${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+  const weekLabel = `${formatTenantDate(weekStart, { day: 'numeric', month: 'short' })} – ${formatTenantDate(weekEnd, { day: 'numeric', month: 'short', year: 'numeric' })}`
 
   const shiftsByDay = useMemo(() => {
     const map = new Map<string, Shift[]>()
@@ -282,7 +288,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
               >
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold capitalize text-pietra">
-                    {day.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}
+                    {formatTenantDate(day, { weekday: 'long', day: 'numeric', month: 'short' })}
                     {isToday && (
                       <span className="ml-2 rounded-full bg-aura-gold/20 px-2 py-0.5 text-[10px] font-bold uppercase text-aura-gold">
                         {t('staff.today')}

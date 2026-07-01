@@ -178,6 +178,24 @@ async function main() {
   const paidCash = await finalizeWithRetry(token, order.id, `test-flow-pay-cash-${order.id}`, 'CASH')
   console.log('✓ Pagamento CASH finalizzato — status', paidCash.order.status)
 
+  const refundCash = (await api(`/payments/orders/${order.id}/refund`, {
+    token,
+    method: 'POST',
+    body: {},
+  })) as { success: boolean; refundAmount: number }
+  console.log(`✓ Rimborso CASH — €${refundCash.refundAmount.toFixed(2)}`)
+
+  const customersAfterRefund = (await api('/customers', { token })) as Array<{
+    id: string
+    totalVisits: number
+    totalSpent: number
+  }>
+  const afterRefund = customersAfterRefund.find(c => c.id === customer.id)
+  if (!afterRefund || afterRefund.totalVisits !== 0) {
+    throw new Error('CRM non aggiornato dopo rimborso')
+  }
+  console.log('✓ CRM stornato dopo rimborso')
+
   const cardOrder = (await api('/orders', {
     token,
     method: 'POST',
@@ -242,6 +260,119 @@ async function main() {
     console.log(`✓ Sconto fedeltà applicato: €${orderWithDiscount.discount}`)
   }
 
+  await api(`/orders/${orderWithDiscount.id}/status`, {
+    token,
+    method: 'PATCH',
+    body: { status: 'READY' },
+  })
+  const paidDiscount = await finalizeWithRetry(
+    token,
+    orderWithDiscount.id,
+    `test-flow-pay-discount-${orderWithDiscount.id}`,
+    'CASH',
+  )
+  console.log('✓ Pagamento ordine sconto fedeltà — status', paidDiscount.order.status)
+
+  // ── Split parziale 50/50 (contanti) ─────────────────────────────────────
+  const splitOrder = (await api('/orders', {
+    token,
+    method: 'POST',
+    body: {
+      type: 'TAKEAWAY',
+      items: [{ menuItemId, quantity: 2 }],
+    },
+    idempotencyKey: `test-flow-split-order-${Date.now()}`,
+  })) as { id: string; total: number; status: string }
+  await api(`/orders/${splitOrder.id}/status`, {
+    token,
+    method: 'PATCH',
+    body: { status: 'READY' },
+  })
+
+  const splitBase = {
+    orderId: splitOrder.id,
+    paymentMethod: 'SPLIT' as const,
+    splitSettlement: 'CASH' as const,
+    tipAmount: 0,
+    split: { mode: 'equal' as const, guestCount: 2 },
+  }
+
+  const partial1 = (await api('/payments/finalize', {
+    token,
+    method: 'POST',
+    body: { ...splitBase, splitGuestIndex: 0 },
+    idempotencyKey: `test-flow-split-${splitOrder.id}-g0`,
+  })) as { partial?: boolean; remaining?: number; order?: { status: string; collectedAmount?: number } }
+
+  if (!partial1.partial || partial1.order?.status === 'PAID') {
+    throw new Error('Split parziale ospite 1: atteso partial=true e ordine non PAID')
+  }
+  const remaining1 = partial1.remaining ?? 0
+  if (remaining1 <= 0 || remaining1 >= splitOrder.total) {
+    throw new Error(`Split residuo incoerente dopo ospite 1: ${remaining1} (totale ${splitOrder.total})`)
+  }
+  console.log(`✓ Split parziale ospite 1 — residuo €${remaining1.toFixed(2)}`)
+
+  const partial2 = (await api('/payments/finalize', {
+    token,
+    method: 'POST',
+    body: { ...splitBase, splitGuestIndex: 1 },
+    idempotencyKey: `test-flow-split-${splitOrder.id}-g1`,
+  })) as { partial?: boolean; order?: { status: string } }
+
+  if (partial2.partial || partial2.order?.status !== 'PAID') {
+    throw new Error('Split ospite 2: attesa chiusura fiscale PAID')
+  }
+  console.log('✓ Split parziale completato — ordine PAID')
+
+  // ── Blocco tavolo FREE con ordine aperto ────────────────────────────────
+  const tables = (await api('/tables', { token })) as Array<{ id: string; number: number; status: string }>
+  let testTable = tables.find(t => t.status === 'FREE')
+  if (!testTable) {
+    testTable = (await api('/tables', {
+      token,
+      method: 'POST',
+      body: { number: 9_902, seats: 4 },
+    })) as { id: string; number: number; status: string }
+  }
+
+  const tableOrder = (await api('/orders', {
+    token,
+    method: 'POST',
+    body: {
+      type: 'DINE_IN',
+      tableId: testTable.id,
+      items: [{ menuItemId, quantity: 1 }],
+    },
+    idempotencyKey: `test-flow-table-order-${Date.now()}`,
+  })) as { id: string }
+
+  let tableBlocked = false
+  try {
+    await api(`/tables/${testTable.id}/status`, {
+      token,
+      method: 'PATCH',
+      body: { status: 'FREE' },
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('TABLE_HAS_ACTIVE_ORDER') || msg.includes('409')) {
+      tableBlocked = true
+    } else {
+      throw err
+    }
+  }
+  if (!tableBlocked) {
+    throw new Error('Tavolo liberato con ordine attivo — regressione TABLE_HAS_ACTIVE_ORDER')
+  }
+  console.log('✓ Tavolo FREE bloccato con ordine aperto')
+
+  await api(`/orders/${tableOrder.id}/status`, {
+    token,
+    method: 'PATCH',
+    body: { status: 'CANCELLED' },
+  }).catch(() => undefined)
+
   const customers = (await api('/customers', { token })) as Array<{
     id: string
     totalVisits: number
@@ -271,7 +402,7 @@ async function main() {
   })) as { sent?: number; skipped?: number }
   console.log('✓ Campagna inviata —', sent)
 
-  console.log('\n✅ Tutti i passaggi completati (CASH + CARD + guest QR).\n')
+  console.log('\n✅ Tutti i passaggi completati (CASH + CARD + split + tavoli + guest QR).\n')
 }
 
 main().catch(err => {

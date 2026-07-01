@@ -23,6 +23,7 @@ interface BookingInfo {
     openTime: string
     closeTime: string
     maxCoversPerSlot: number
+    effectiveMaxCoversPerSlot?: number
     reservationSlotMinutes: number
     depositRequired: boolean
     depositAmount: number
@@ -56,6 +57,8 @@ export default function PublicReservationPage() {
     enabled: Boolean(slug),
     staleTime: 5 * 60 * 1000,
   })
+
+  const maxCovers = data?.settings.effectiveMaxCoversPerSlot ?? data?.settings.maxCoversPerSlot ?? 20
 
   const bookMutation = useMutation({
     mutationFn: async () => {
@@ -263,13 +266,16 @@ export default function PublicReservationPage() {
                 required
                 type="number"
                 min={1}
-                max={data.settings.maxCoversPerSlot}
+                max={maxCovers}
                 value={form.covers}
-                onChange={e => setForm(f => ({ ...f, covers: Number(e.target.value) }))}
+                onChange={e => {
+                  const n = Number(e.target.value)
+                  setForm(f => ({ ...f, covers: Math.min(maxCovers, Math.max(1, n || 1)) }))
+                }}
                 className="w-full rounded-xl border border-white/[0.06] bg-navy-elevated/40 px-4 py-3.5 text-sm text-white shadow-inner transition-all hover:border-white/[0.1] focus:border-aura-gold/50 focus:bg-navy-elevated/80 focus:outline-none focus:ring-1 focus:ring-aura-gold/50"
               />
               <p className="mt-2 text-xs text-fumo/50">
-                {t('publicBooking.maxCovers', { max: data.settings.maxCoversPerSlot })}
+                {t('publicBooking.maxCovers', { max: maxCovers })}
               </p>
             </div>
 

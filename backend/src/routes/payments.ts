@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { z } from 'zod'
+import type { PaymentMethod } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_ENABLED } from '../lib/stripe'
 import { AuthRequest, authenticate } from '../middleware/auth'
@@ -21,7 +22,11 @@ import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount, 
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { resolveFrontendOrigin } from '../lib/frontendOrigin'
 import { verifyDepositReceiptToken, verifyOrderReceiptToken } from '../lib/paymentReceiptToken'
-import { moneyNumber } from '../lib/money'
+import { moneyNumber, sumFoodFromMoneyAgg } from '../lib/money'
+import { paidRevenueOrderWhere } from '../lib/analyticsFilters'
+import { loadTenantTimeRanges } from '../lib/analyticsSummary'
+import { buildMonthRangeInTimezone, calendarDateInTimezone } from '../lib/dates'
+import { resolveRevenueAmount } from '../lib/fiscalAmounts'
 
 export const paymentsRouter = Router()
 
@@ -52,6 +57,8 @@ const finalizeSchema = z.object({
   stripePaymentIntentId: z.string().optional(),
   discountCode: z.string().optional(),
   applyLoyaltyDiscount: z.boolean().optional().default(true),
+  /** Quota split da incassare in questo step (0-based). Omesso = chiusura intero conto. */
+  splitGuestIndex: z.number().int().min(0).optional(),
 })
 
 async function loadOrderForCheckout(orderId: string, restaurantId: string) {
@@ -120,7 +127,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
-  const { orderId, tipAmount, tipWaiterId, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount } = parsed.data
+  const { orderId, tipAmount, tipWaiterId, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount, splitGuestIndex } = parsed.data
   const idempotencyKey = readIdempotencyKey(req)
   if (idempotencyKey && req.restaurantId) {
     const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize')
@@ -236,6 +243,45 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       include: { settings: true },
     })
 
+    if (paymentMethod === 'SPLIT' && split && splitBreakdown && splitGuestIndex != null) {
+      const { recordSplitGuestPayment } = await import('../lib/splitGuestPayment')
+      const guestShare = splitBreakdown.guests[splitGuestIndex]?.share
+      if (guestShare == null) {
+        res.status(400).json({ error: 'Indice ospite split non valido', code: 'SPLIT_GUEST_INDEX_INVALID' })
+        return
+      }
+
+      const checkoutTotal = orderTotalForCheckout + Math.max(0, tipAmount)
+      const partial = await recordSplitGuestPayment({
+        orderId,
+        restaurantId: req.restaurantId!,
+        breakdown: splitBreakdown,
+        guestIndex: splitGuestIndex,
+        amount: guestShare,
+        checkoutTotal,
+        executorUserId: req.userId,
+        settlementMethod: splitSettlement ?? 'CASH',
+      })
+
+      if (!partial.fullyCollected) {
+        const partialOrder = await loadOrderForCheckout(orderId, req.restaurantId!)
+        const partialBody = {
+          partial: true,
+          remaining: partial.remaining,
+          collectedAmount: partial.collectedAmount,
+          splitBreakdown,
+          order: partialOrder,
+          fiscal: { row: null },
+          receipt: { emailSent: false, emailTo: null },
+        }
+        if (idempotencyKey && req.restaurantId) {
+          await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, partialBody)
+        }
+        res.json(partialBody)
+        return
+      }
+    }
+
     const { result, updatedOrder, posResult, emailSent } = await completeOrderPayment({
       finalize: {
         orderId,
@@ -320,6 +366,89 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     throw err
   }
 })
+
+// ── Rimborso ordine pagato (Stripe o contanti) ───────────────────────────────
+paymentsRouter.post(
+  '/orders/:orderId/refund',
+  authenticate,
+  requireDashboardAccess,
+  requirePermission('orders.pay'),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const schema = z.object({
+      amount: z.number().positive().optional(),
+      reason: z.string().optional(),
+    })
+    const parsed = schema.safeParse(req.body ?? {})
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dati non validi', code: 'VALIDATION_ERROR' })
+      return
+    }
+
+    const restaurantId = req.restaurantId!
+    const orderId = req.params.orderId
+
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, restaurantId, status: 'PAID' },
+      select: { paymentMethod: true },
+    })
+    if (!order) {
+      res.status(404).json({ error: 'Ordine non trovato o non rimborsabile', code: 'ORDER_NOT_REFUNDABLE' })
+      return
+    }
+
+    let cashSessionId: string | undefined
+    if (order.paymentMethod === 'CASH') {
+      const session = await prisma.cashRegisterSession.findFirst({
+        where: { restaurantId, status: 'OPEN' },
+        select: { id: true },
+      })
+      if (!session) {
+        res.status(400).json({
+          error: 'Apri un turno cassa per registrare il rimborso.',
+          code: 'CASH_SESSION_REQUIRED',
+        })
+        return
+      }
+      cashSessionId = session.id
+    }
+
+    try {
+      const { executeOrderRefund } = await import('../lib/orderRefund')
+      const { refundAmount } = await executeOrderRefund({
+        orderId,
+        restaurantId,
+        amount: parsed.data.amount,
+        reason: parsed.data.reason,
+        userId: req.userId,
+        cashSessionId,
+      })
+      res.json({ success: true, refundAmount })
+    } catch (err) {
+      const code = (err as { code?: string }).code
+      if (code === 'ORDER_ALREADY_REFUNDED') {
+        res.status(409).json({ error: 'Ordine già rimborsato', code })
+        return
+      }
+      if (code === 'ORDER_NOT_REFUNDABLE') {
+        res.status(404).json({ error: 'Ordine non rimborsabile', code })
+        return
+      }
+      if (code === 'CASH_SESSION_REQUIRED') {
+        res.status(400).json({ error: 'Apri un turno cassa per registrare il rimborso.', code })
+        return
+      }
+      if (code === 'STRIPE_REFUND_UNAVAILABLE' || code === 'STRIPE_NOT_CONFIGURED') {
+        res.status(400).json({ error: 'Rimborso carta non disponibile per questo ordine', code })
+        return
+      }
+      if (code === 'STRIPE_REFUND_FAILED') {
+        res.status(502).json({ error: 'Rimborso Stripe non riuscito', code })
+        return
+      }
+      throw err
+    }
+  },
+)
 
 // ── Checkout POS fisico (compat — delega a finalize) ─────────────────────────
 paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -627,56 +756,81 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
     res.status(401).json({ error: 'Tenant non autenticato' })
     return
   }
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const startOfYear = new Date(now.getFullYear(), 0, 1)
 
-  const [stripeOrders, monthStats, yearOrders, recentPayments, restaurantSettings] = await Promise.all([
+  const [ranges, restaurant] = await Promise.all([
+    loadTenantTimeRanges(restaurantId),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { timezone: true, settings: { select: { stripeConnectAccountId: true, defaultLocale: true } } },
+    }),
+  ])
+  const timeZone = restaurant?.timezone ?? ranges.timeZone
+  const locale = restaurant?.settings?.defaultLocale ?? 'it-IT'
+  const todayStr = calendarDateInTimezone(timeZone)
+  const year = Number(todayStr.slice(0, 4))
+  const month = Number(todayStr.slice(5, 7))
+  const { start: monthStart } = buildMonthRangeInTimezone(year, month, timeZone)
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year
+  const { start: monthEndExclusive } = buildMonthRangeInTimezone(nextYear, nextMonth, timeZone)
+  const { start: yearStart } = buildMonthRangeInTimezone(year, 1, timeZone)
+  const { start: yearEndExclusive } = buildMonthRangeInTimezone(year + 1, 1, timeZone)
+
+  const digitalMethods: PaymentMethod[] = ['STRIPE', 'CARD', 'DIGITAL']
+  const digitalBase = {
+    restaurantId,
+    status: 'PAID' as const,
+    refundedAt: null,
+    paymentMethod: { in: digitalMethods },
+  }
+
+  const [digitalOrders, monthStats, yearOrders, recentPayments] = await Promise.all([
     prisma.order.aggregate({
-      where: { restaurantId, paymentMethod: 'STRIPE' },
-      _sum: { total: true },
+      where: digitalBase,
+      _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
       _count: { _all: true },
     }),
     prisma.order.aggregate({
-      where: { restaurantId, paymentMethod: 'STRIPE', paidAt: { gte: startOfMonth } },
-      _sum: { total: true },
+      where: {
+        ...paidRevenueOrderWhere(restaurantId, monthStart, monthEndExclusive),
+        paymentMethod: { in: digitalMethods },
+      },
+      _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
       _count: { _all: true },
     }),
     prisma.order.findMany({
-      where: { restaurantId, paymentMethod: 'STRIPE', paidAt: { gte: startOfYear } },
-      select: { total: true, paidAt: true },
+      where: {
+        ...paidRevenueOrderWhere(restaurantId, yearStart, yearEndExclusive),
+        paymentMethod: { in: digitalMethods },
+      },
+      select: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true, paidAt: true, createdAt: true },
     }),
     prisma.order.findMany({
-      where: { restaurantId, paymentMethod: 'STRIPE' },
-      orderBy: { paidAt: 'desc' },
+      where: digitalBase,
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
       take: 20,
       include: { table: true, items: { include: { menuItem: true } } },
     }),
-    prisma.restaurantSettings.findUnique({
-      where: { restaurantId },
-      select: { stripeConnectAccountId: true },
-    })
   ])
 
-  // Raggruppa per mese in JS
   const monthlyData: Record<string, { month: string; amount: number; count: number }> = {}
-  for (let m = 0; m < 12; m++) {
-    const key = `${now.getFullYear()}-${String(m + 1).padStart(2, '0')}`
-    const label = new Date(now.getFullYear(), m, 1).toLocaleString('it-IT', { month: 'short' })
+  for (let m = 1; m <= 12; m++) {
+    const key = `${year}-${String(m).padStart(2, '0')}`
+    const label = new Date(year, m - 1, 1).toLocaleString(locale, { month: 'short', timeZone })
     monthlyData[key] = { month: label, amount: 0, count: 0 }
   }
   for (const order of yearOrders) {
-    if (!order.paidAt) continue
-    const key = `${order.paidAt.getFullYear()}-${String(order.paidAt.getMonth() + 1).padStart(2, '0')}`
+    const paid = order.paidAt ?? order.createdAt
+    const key = calendarDateInTimezone(timeZone, paid).slice(0, 7)
     if (monthlyData[key]) {
-      monthlyData[key].amount += moneyNumber(order.total)
+      monthlyData[key].amount += resolveRevenueAmount(order)
       monthlyData[key].count += 1
     }
   }
 
   res.json({
-    totale: { amount: stripeOrders._sum?.total ?? 0, count: stripeOrders._count._all },
-    mese: { amount: monthStats._sum?.total ?? 0, count: monthStats._count._all },
+    totale: { amount: sumFoodFromMoneyAgg(digitalOrders), count: digitalOrders._count?._all ?? 0 },
+    mese: { amount: sumFoodFromMoneyAgg(monthStats), count: monthStats._count?._all ?? 0 },
     mensile: Object.values(monthlyData),
     recentPayments: recentPayments.map(order => ({
       id: order.id,
@@ -692,11 +846,11 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
       })),
     })),
     stripeEnabled: STRIPE_ENABLED,
-    stripeConnectAccountId: restaurantSettings?.stripeConnectAccountId ?? null,
+    stripeConnectAccountId: restaurant?.settings?.stripeConnectAccountId ?? null,
   })
 })
 
-paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess, requirePermission('payments.overview'), async (req: AuthRequest, res: Response): Promise<void> => {
+paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess, requirePermission('payments.overview'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   if (!STRIPE_ENABLED) {
     res.status(503).json({ error: 'Stripe non configurato sulla piattaforma' })
     return
@@ -741,8 +895,8 @@ paymentsRouter.post('/connect-onboarding', authenticate, requireDashboardAccess,
 
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${originStr}/dashboard/pagamenti?connect=refresh`,
-      return_url: `${originStr}/dashboard/pagamenti?connect=success`,
+      refresh_url: `${originStr}/pagamenti?connect=refresh`,
+      return_url: `${originStr}/pagamenti?connect=success`,
       type: 'account_onboarding',
     })
 

@@ -19,7 +19,7 @@ interface Invoice {
   clienteRagioneSociale: string
   clientePiva?: string
   importoTotale: number
-  statoSdi: 'pending' | 'sent' | 'delivered' | 'rejected'
+  statoSdi: 'pending' | 'sent' | 'delivered' | 'rejected' | 'failed' | 'local_only'
   issuedAt: string
 }
 
@@ -114,7 +114,7 @@ function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation()
   if (status === 'delivered') return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-400"><CheckCircle2 className="h-3 w-3" /> {t('invoices.statusDelivered')}</span>
   if (status === 'sent') return <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400"><Clock className="h-3 w-3" /> {t('invoices.statusSent')}</span>
-  if (status === 'rejected') return <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400"><XCircle className="h-3 w-3" /> {t('invoices.statusRejected')}</span>
+  if (status === 'rejected' || status === 'failed') return <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400"><XCircle className="h-3 w-3" /> {t('invoices.statusRejected')}</span>
   return <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs font-medium text-fumo"><FileText className="h-3 w-3" /> {t('invoices.statusPending')}</span>
 }
 

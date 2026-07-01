@@ -196,7 +196,17 @@
     "apiNotConfigured": "Serveur API non configuré sur Vercel (BACKEND_URL manquant).",
     "backendUnreachable": "Backend inaccessible. Vérifiez que DigitalOcean est en ligne.",
     "apiBlocked": "Requête API bloquée. Redéployez le frontend avec la configuration mise à jour.",
-    "networkError": "Impossible de contacter le serveur. Vérifiez la connexion et la configuration BACKEND_URL."
+    "networkError": "Impossible de contacter le serveur. Vérifiez la connexion et la configuration BACKEND_URL.",
+    "serverError": "Erreur serveur. Réessayez dans un instant."
+  },
+  "apiErrors": {
+    "AUTH_REQUIRED": "Session expirée. Veuillez vous reconnecter.",
+    "FORBIDDEN": "Permissions insuffisantes.",
+    "PREMIUM_REQUIRED": "Plan Premium requis.",
+    "ORDER_NOT_REFUNDABLE": "Commande non remboursable.",
+    "ORDER_ALREADY_REFUNDED": "Commande déjà remboursée.",
+    "STRIPE_REFUND_FAILED": "Remboursement carte échoué.",
+    "CASH_SESSION_REQUIRED": "Ouvrez la caisse avant d'enregistrer un remboursement."
   },
   "dashboard": {
     "title": "Tableau de bord — {{name}}",
@@ -703,6 +713,10 @@
       "vipThanks": {
         "title": "Remerciement VIP",
         "description": "Message le lendemain pour les clients ayant dépensé plus de 200€ en une soirée."
+      },
+      "requestReview": {
+        "title": "Demande d'avis",
+        "description": "Message 24 h après la visite pour demander un avis en ligne."
       }
     }
   },
@@ -1102,6 +1116,13 @@
     "printSimulated": "Impression simulée",
     "emailSimulated": "Email simulé",
     "alreadyPaid": "Paiement déjà enregistré",
+    "alreadyRefunded": "Commande remboursée",
+    "refundCash": "Enregistrer remboursement espèces",
+    "refundCard": "Rembourser paiement carte",
+    "refundConfirmCash": "Confirmer le remboursement espèces ? CRM et fidélité seront annulés.",
+    "refundConfirmCard": "Confirmer le remboursement carte ? Le montant sera retourné via Stripe.",
+    "refundSuccess": "Remboursement enregistré",
+    "refundError": "Impossible d'enregistrer le remboursement",
     "errors": {
       "ORDER_NOT_FOUND": "Commande introuvable",
       "ORDER_ALREADY_PAID": "Commande déjà payée",
@@ -1119,7 +1140,11 @@
       "STRIPE_PI_ALREADY_USED": "PaymentIntent déjà utilisé",
       "INVALID_DISCOUNT_CODE": "Code promo invalide",
       "NO_LOYALTY_DISCOUNT": "Aucune remise fidélité pour ce client",
-      "INVALID_TIP_WAITER": "Serveur invalide"
+      "INVALID_TIP_WAITER": "Serveur invalide",
+      "ORDER_NOT_REFUNDABLE": "Commande non remboursable",
+      "ORDER_ALREADY_REFUNDED": "Commande déjà remboursée",
+      "STRIPE_REFUND_FAILED": "Remboursement carte échoué",
+      "STRIPE_REFUND_UNAVAILABLE": "Remboursement carte indisponible pour cette commande"
     }
   },
   "billing": {
@@ -1250,6 +1275,7 @@
     "tableNumber": "Numéro de table",
     "tableNumberPlaceholder": "ex. 12",
     "tableNumberHint": "Indiquez votre numéro de table",
+    "dineInRequiresQr": "Pour commander à table, scannez le QR code de la table.",
     "tableBadge": "Table {{number}}",
     "orderNotes": "Notes pour la cuisine",
     "orderNotesPlaceholder": "Allergies, préférences, horaires…",
@@ -1329,7 +1355,8 @@
     "installApp": "Installer l'app",
     "installSuccess": "Application installée ! Ouvrez-la depuis l'écran d'accueil.",
     "updateAvailable": "Une nouvelle version de l'application est disponible.",
-    "updateRefresh": "Mettre à jour"
+    "updateRefresh": "Mettre à jour",
+    "reload": "Recharger"
   },
   "export": {
     "receipt": "Ticket",

@@ -8,6 +8,7 @@ import { publicCheckoutLimiter, publicMenuLimiter, publicOrderLimiter, publicRes
 import { createReservation, ReservationValidationError } from '../lib/createReservation'
 import { createDepositCheckoutSession } from '../lib/depositCheckout'
 import { requiresDeposit } from '../lib/reservationRules'
+import { resolveMaxCoversPerSlot } from '../lib/reservationCapacity'
 import { parseLocalDateTimeInTimezone } from '../lib/romeDate'
 import { enrichCategoriesWithStock } from '../lib/menuStock'
 
@@ -78,6 +79,7 @@ publicRouter.get('/booking/:slug', publicReservationLimiter, async (req: Request
   }
 
   const s = restaurant.settings
+  const effectiveMaxCoversPerSlot = await resolveMaxCoversPerSlot(restaurant.id)
   res.json({
     restaurant: {
       name: restaurant.name,
@@ -92,6 +94,7 @@ publicRouter.get('/booking/:slug', publicReservationLimiter, async (req: Request
       openTime: s?.openTime ?? '12:00',
       closeTime: s?.closeTime ?? '23:00',
       maxCoversPerSlot: s?.maxCoversPerSlot ?? 20,
+      effectiveMaxCoversPerSlot,
       reservationSlotMinutes: s?.reservationSlotMinutes ?? 90,
       depositRequired: requiresDeposit(s),
       depositAmount: s?.depositAmount ?? 0,
@@ -263,6 +266,10 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
   } catch (err) {
     if (err instanceof PublicOrderError) {
       res.status(err.statusCode).json({ error: err.message, code: err.code })
+      return
+    }
+    if ((err as { code?: string }).code === 'INSUFFICIENT_STOCK') {
+      res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
       return
     }
     console.error('[public/checkout]', err)

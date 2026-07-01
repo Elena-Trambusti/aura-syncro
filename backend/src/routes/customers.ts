@@ -44,7 +44,7 @@ function serializeCustomer(customer: {
     name: buildCustomerName(firstName, lastName) || customer.name,
     tags: customer.tags ?? [],
     totalSpent: moneyNumber(customer.totalSpent),
-    birthDate: customer.birthdate,
+    birthDate: customer.birthdate ? formatBirthDateOutput(customer.birthdate) : null,
   }
 }
 
@@ -102,7 +102,7 @@ customersRouter.get('/:id', requirePermission('customers.read'), async (req: Aut
     where: { id: req.params.id, restaurantId: req.restaurantId! },
     include: {
       orders: {
-        where: { status: 'PAID' },
+        where: { status: 'PAID', refundedAt: null },
         orderBy: { paidAt: 'desc' },
         take: 12,
         select: {
@@ -128,6 +128,23 @@ customersRouter.get('/:id', requirePermission('customers.read'), async (req: Aut
 const emptyToNull = (val: unknown) =>
   val === '' || val === null || val === undefined ? null : val
 
+const birthDateInputSchema = z.union([
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  z.string().datetime(),
+])
+
+function parseBirthDateInput(value: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, mo, d] = value.split('-').map(Number)
+    return new Date(Date.UTC(y, mo - 1, d, 12, 0, 0, 0))
+  }
+  return new Date(value)
+}
+
+function formatBirthDateOutput(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
 const fiscalFieldsSchema = {
   taxId: z.preprocess(emptyToNull, z.string().max(32).nullable().optional()),
   fiscalCode: z.preprocess(emptyToNull, z.string().max(32).nullable().optional()),
@@ -145,7 +162,7 @@ customersRouter.post('/', requirePermission('customers.manage'), async (req: Aut
     name: z.string().trim().min(2).optional(),
     email: z.preprocess(emptyToUndefined, z.string().email().optional()),
     phone: z.preprocess(emptyToUndefined, z.string().optional()),
-    birthDate: z.preprocess(emptyToUndefined, z.string().datetime().optional()),
+    birthDate: z.preprocess(emptyToUndefined, birthDateInputSchema.optional()),
     notes: z.preprocess(emptyToUndefined, z.string().optional()),
     allergens: z.preprocess(emptyToUndefined, z.string().optional()),
     tags: z.array(z.string().trim().min(1)).optional(),
@@ -185,7 +202,7 @@ customersRouter.post('/', requirePermission('customers.manage'), async (req: Aut
         totalVisits: 0,
         totalSpent: 0,
         loyaltyPoints: 0,
-        ...(result.data.birthDate ? { birthdate: new Date(result.data.birthDate) } : {}),
+        ...(result.data.birthDate ? { birthdate: parseBirthDateInput(result.data.birthDate) } : {}),
       },
     })
     await ensureDefaultLoyaltyTiers(req.restaurantId!)
@@ -210,7 +227,7 @@ customersRouter.put('/:id', requirePermission('customers.manage'), async (req: A
     notes: z.string().optional().nullable(),
     allergens: z.string().optional().nullable(),
     tags: z.array(z.string().trim().min(1)).optional(),
-    birthDate: z.string().datetime().optional().nullable(),
+    birthDate: birthDateInputSchema.optional().nullable(),
     ...fiscalFieldsSchema,
   })
   const result = schema.safeParse(req.body)
@@ -245,7 +262,7 @@ customersRouter.put('/:id', requirePermission('customers.manage'), async (req: A
       sdiRecipientCode: result.data.sdiRecipientCode,
       pec: result.data.pec,
       ...(result.data.birthDate !== undefined
-        ? { birthdate: result.data.birthDate ? new Date(result.data.birthDate) : null }
+        ? { birthdate: result.data.birthDate ? parseBirthDateInput(result.data.birthDate) : null }
         : {}),
     },
   })

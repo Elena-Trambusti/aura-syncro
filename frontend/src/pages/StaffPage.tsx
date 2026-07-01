@@ -41,7 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   HOST: 'bg-pink-500/15 text-pink-300',
 }
 
-const MIN_PASSWORD_LENGTH = 6
+const MIN_PASSWORD_LENGTH = 8
 
 function apiErrorMessage(err: unknown, fallback: string): string {
   const axiosErr = err as AxiosError<{ error?: string }>

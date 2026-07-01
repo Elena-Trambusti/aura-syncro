@@ -4,87 +4,19 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { calendarDateInTimezone, dayBoundsInTimezone, hourInTimezone, shiftCalendarDate } from '../lib/dates'
 import { resolveRevenueAmount } from '../lib/fiscalAmounts'
-import { loadTenantTimeRanges } from '../lib/analyticsSummary'
-import { sumFoodFromMoneyAgg, moneyNumber } from '../lib/money'
+import { buildDashboardSummary, loadTenantTimeRanges } from '../lib/analyticsSummary'
+import { paidRevenueOrderWhere } from '../lib/analyticsFilters'
+import { moneyNumber } from '../lib/money'
 
 export const analyticsRouter = Router()
 
-/** PAID orders whose payment date (paidAt or createdAt fallback) falls in [start, end). */
-function paidInRange(start: Date, end: Date) {
-  return {
-    status: 'PAID' as const,
-    OR: [
-      { paidAt: { gte: start, lt: end } },
-      { paidAt: null, createdAt: { gte: start, lt: end } },
-    ],
-  }
-}
-
+/** @deprecated Usare GET /summary — delega a buildDashboardSummary per evitare drift. */
 analyticsRouter.get('/dashboard', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const restaurantId = req.restaurantId!
-  const ranges = await loadTenantTimeRanges(restaurantId)
-
-  const [
-    todayOrders,
-    todayRevenue,
-    monthRevenue,
-    lastMonthRevenue,
-    totalCustomers,
-    todayReservations,
-    activeOrders,
-    lowStockItems,
-  ] = await Promise.all([
-    prisma.order.count({ where: { restaurantId, createdAt: { gte: ranges.todayStart, lt: ranges.todayEnd }, status: { notIn: ['CANCELLED'] } } }),
-    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(ranges.todayStart, ranges.todayEnd) }, _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true } }),
-    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(ranges.monthStart, ranges.monthEndExclusive) }, _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true } }),
-    prisma.order.aggregate({ where: { restaurantId, ...paidInRange(ranges.lastMonthStart, ranges.lastMonthEndExclusive) }, _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true } }),
-    prisma.customer.count({ where: { restaurantId } }),
-    prisma.reservation.count({ where: { restaurantId, date: { gte: ranges.todayStart, lt: ranges.todayEnd }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } } }),
-    prisma.order.count({ where: { restaurantId, status: { notIn: ['PAID', 'CANCELLED'] } } }),
-    prisma.inventoryItem.count({ where: { restaurantId, quantity: { lte: prisma.inventoryItem.fields.minQuantity } } }),
-  ])
-
-  const monthFood = sumFoodFromMoneyAgg(monthRevenue)
-  const lastMonthFood = sumFoodFromMoneyAgg(lastMonthRevenue)
-  const revenueGrowth = lastMonthFood
-    ? ((monthFood - lastMonthFood) / lastMonthFood) * 100
-    : 0
-
-  const turnoverOrders = await prisma.order.findMany({
-    where: { restaurantId, ...paidInRange(ranges.todayStart, ranges.todayEnd), tableId: { not: null } },
-    select: { createdAt: true, paidAt: true },
-  })
-  let totalMinutes = 0
-  let turnoverCount = 0
-  turnoverOrders.forEach(o => {
-    if (o.paidAt) {
-      totalMinutes += (o.paidAt.getTime() - o.createdAt.getTime()) / 60000
-      turnoverCount++
-    }
-  })
-  const avgTurnoverMinutes = turnoverCount > 0 ? Math.round(totalMinutes / turnoverCount) : 0
-
-  res.json({
-    today: {
-      orders: todayOrders,
-      revenue: sumFoodFromMoneyAgg(todayRevenue),
-      tips: moneyNumber(todayRevenue._sum.tipAmount),
-      collected: moneyNumber(todayRevenue._sum.total),
-      reservations: todayReservations,
-      activeOrders,
-    },
-    month: {
-      revenue: monthFood,
-      tips: moneyNumber(monthRevenue._sum.tipAmount),
-      collected: moneyNumber(monthRevenue._sum.total),
-      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
-    },
-    totals: { customers: totalCustomers, lowStockAlerts: lowStockItems, avgTurnoverMinutes },
-  })
+  const summary = await buildDashboardSummary(req.restaurantId!)
+  res.json(summary)
 })
 
-analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { period = '7d' } = req.query
+analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {  const { period = '7d' } = req.query
   const restaurantId = req.restaurantId!
   const ranges = await loadTenantTimeRanges(restaurantId)
   const days = period === '30d' ? 30 : period === '90d' ? 90 : 7
@@ -95,14 +27,7 @@ analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req:
   const { lt: endDate } = dayBoundsInTimezone(shiftCalendarDate(todayStr, 1), ranges.timeZone)
 
   const orders = await prisma.order.findMany({
-    where: {
-      restaurantId,
-      status: 'PAID',
-      OR: [
-        { paidAt: { gte: startDate, lt: endDate } },
-        { paidAt: null, createdAt: { gte: startDate, lt: endDate } },
-      ],
-    },
+    where: paidRevenueOrderWhere(restaurantId, startDate, endDate),
     select: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true, paidAt: true, createdAt: true },
     orderBy: { createdAt: 'asc' },
   })
@@ -139,7 +64,10 @@ analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (re
 
   const items = await prisma.orderItem.groupBy({
     by: ['menuItemId'],
-    where: { order: { restaurantId, status: 'PAID', createdAt: { gte: thirtyDaysAgo } } },
+    where: {
+      status: { not: 'CANCELLED' },
+      order: paidRevenueOrderWhere(restaurantId, thirtyDaysAgo, new Date()),
+    },
     _sum: { quantity: true },
     _count: { id: true },
     orderBy: { _sum: { quantity: 'desc' } },
@@ -154,16 +82,30 @@ analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (re
     select: { id: true, name: true, price: true, category: { select: { name: true } } },
   })
 
+  const orderItems = await prisma.orderItem.findMany({
+    where: {
+      menuItemId: { in: items.map(i => i.menuItemId) },
+      status: { not: 'CANCELLED' },
+      order: paidRevenueOrderWhere(restaurantId, thirtyDaysAgo, new Date()),
+    },
+    select: { menuItemId: true, quantity: true, unitPrice: true },
+  })
+
+  const revenueByItem = new Map<string, number>()
+  for (const oi of orderItems) {
+    const gross = moneyNumber(oi.unitPrice) * oi.quantity
+    revenueByItem.set(oi.menuItemId, (revenueByItem.get(oi.menuItemId) ?? 0) + gross)
+  }
+
   const result = items.map((item) => {
     const menuItem = menuItems.find(m => m.id === item.menuItemId)
-    const price = moneyNumber(menuItem?.price)
     return {
       menuItemId: item.menuItemId,
-      name: menuItem?.name || 'Sconosciuto',
+      name: menuItem?.name || '—',
       category: menuItem?.category.name || '',
-      price,
+      price: moneyNumber(menuItem?.price),
       quantity: item._sum.quantity || 0,
-      revenue: price * (item._sum.quantity || 0),
+      revenue: Math.round((revenueByItem.get(item.menuItemId) ?? 0) * 100) / 100,
     }
   })
 
@@ -177,7 +119,7 @@ analyticsRouter.get('/hourly', requirePermission('analytics.read'), async (req: 
   const { gte: sevenDaysAgo } = dayBoundsInTimezone(sevenDaysAgoStr, ranges.timeZone)
 
   const orders = await prisma.order.findMany({
-    where: { restaurantId, status: 'PAID', createdAt: { gte: sevenDaysAgo } },
+    where: paidRevenueOrderWhere(restaurantId, sevenDaysAgo, new Date()),
     select: { createdAt: true, paidAt: true, revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
   })
 

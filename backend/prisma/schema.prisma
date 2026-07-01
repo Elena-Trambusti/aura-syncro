@@ -85,6 +85,7 @@ model Restaurant {
   loyaltyTiers           LoyaltyTier[]
   campaigns              Campaign[]
   marketingAutomations   MarketingAutomation[]
+  marketingAutomationSends MarketingAutomationSend[]
   waitlist               WaitlistEntry[]
   invoices               Invoice[]
   fiscalSequences        FiscalSequence[]
@@ -224,6 +225,20 @@ model RestaurantSettings {
    * Account Stripe Connect del ristorante (Express) per ricevere pagamenti diretti
    */
   stripeConnectAccountId  String?
+  /**
+   * Tariffa oraria stimata per report P&L (€/h)
+   */
+  laborHourlyRate         Float              @default(12)
+  /**
+   * Sede fiscale — dettaglio per XML fatture B2B
+   */
+  legalCity               String?
+  legalZip                String?
+  legalProvince           String?
+  /**
+   * Checklist concierge onboarding (persistita)
+   */
+  onboardingConcierge     Json?
 }
 
 // ===== UTENTI =====
@@ -249,6 +264,7 @@ model User {
   openedCashSessions CashRegisterSession[] @relation("OpenedSessions")
   closedCashSessions CashRegisterSession[] @relation("ClosedSessions")
   cashTransactions   CashTransaction[]
+  inventoryAdjustments InventoryAdjustment[]
 
   @@unique([restaurantId, email])
 }
@@ -437,6 +453,15 @@ model Order {
    * Timestamp certificato di chiusura conto
    */
   fiscalClosedAt       DateTime?
+  /**
+   * Rimborso registrato — escluso dai KPI revenue
+   */
+  refundedAt           DateTime?
+  refundAmount         Decimal        @default(0) @db.Decimal(12, 2)
+  /** Incasso cumulativo split conto (quote parziali prima di PAID) */
+  collectedAmount      Decimal        @default(0) @db.Decimal(12, 2)
+  /** Indici ospiti split già saldati (0-based) */
+  splitPaidGuestIndexes Int[]         @default([])
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 
@@ -591,6 +616,7 @@ model Customer {
   orders              Order[]
   reservations        Reservation[]
   loyaltyTransactions LoyaltyTransaction[]
+  marketingAutomationSends MarketingAutomationSend[]
 
   @@unique([restaurantId, email])
 }
@@ -775,6 +801,20 @@ model MarketingAutomation {
   @@unique([restaurantId, type])
 }
 
+model MarketingAutomationSend {
+  id             String         @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  automationType AutomationType
+  customerId     String
+  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  calendarDay    String
+  createdAt      DateTime       @default(now())
+
+  @@unique([restaurantId, automationType, customerId, calendarDay])
+  @@index([restaurantId, calendarDay])
+}
+
 // ===== LISTA D'ATTESA =====
 model WaitlistEntry {
   id            String         @id @default(cuid())
@@ -815,7 +855,24 @@ model InventoryItem {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  menuLinks InventoryItemLink[]
+  menuLinks     InventoryItemLink[]
+  adjustments   InventoryAdjustment[]
+}
+
+model InventoryAdjustment {
+  id              String        @id @default(cuid())
+  restaurantId    String
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  delta           Float
+  quantityBefore  Float
+  quantityAfter   Float
+  reason          String?
+  createdAt       DateTime      @default(now())
+
+  @@index([restaurantId, inventoryItemId])
 }
 
 model InventoryItemLink {

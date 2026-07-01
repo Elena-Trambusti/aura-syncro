@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { ClipboardList, CalendarHeart, Info, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useAuth } from '../contexts/AuthContext'
+import { useRole } from '../hooks/useRole'
 import { api } from '../lib/api'
+import { formatApiError } from '../lib/errors'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
@@ -23,6 +25,8 @@ type OnboardingReadiness = {
 export default function OnboardingPage() {
   const { t } = useTranslation()
   const { restaurant, refreshRestaurant } = useAuth()
+  const { canAccessAdminNav } = useRole()
+  const isAdmin = canAccessAdminNav()
   const [searchParams, setSearchParams] = useSearchParams()
   const [concierge, setConcierge] = useState({ menu: false, call: false })
 
@@ -32,9 +36,34 @@ export default function OnboardingPage() {
   const { data: readiness, isLoading: readinessLoading, refetch: refetchReadiness } = useQuery<OnboardingReadiness>({
     queryKey: ['onboarding-readiness', restaurant?.id],
     queryFn: () => api.get('/restaurant/onboarding-readiness').then(r => r.data),
-    enabled: Boolean(restaurant?.id),
-    refetchInterval: 15_000,
+    enabled: Boolean(restaurant?.id) && isAdmin,
+    refetchInterval: isAdmin ? 15_000 : false,
   })
+
+  const { data: savedConcierge } = useQuery<{ menu?: boolean; call?: boolean }>({
+    queryKey: ['onboarding-concierge', restaurant?.id],
+    queryFn: () => api.get('/restaurant/onboarding-concierge').then(r => r.data),
+    enabled: Boolean(restaurant?.id) && isAdmin,
+  })
+
+  const saveConcierge = useMutation({
+    mutationFn: (next: { menu: boolean; call: boolean }) =>
+      api.patch('/restaurant/onboarding-concierge', next).then(r => r.data),
+    onError: (err: unknown) => toast.error(formatApiError(err)),
+  })
+
+  useEffect(() => {
+    if (savedConcierge) {
+      setConcierge({ menu: !!savedConcierge.menu, call: !!savedConcierge.call })
+    }
+  }, [savedConcierge])
+
+  const toggleConcierge = (key: 'menu' | 'call') => {
+    if (!isAdmin) return
+    const next = { ...concierge, [key]: !concierge[key] }
+    setConcierge(next)
+    saveConcierge.mutate(next)
+  }
 
   const systemDone = readiness?.checks.filter(c => c.ok).length ?? 0
   const systemTotal = readiness?.checks.length ?? 0
@@ -72,8 +101,12 @@ export default function OnboardingPage() {
       <section className="rounded-xl premium-card p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="font-bold text-pietra">{t('onboarding.systemChecklistTitle')}</h2>
-          {readinessLoading && <Loader2 className="h-4 w-4 animate-spin text-fumo" />}
+          {isAdmin && readinessLoading && <Loader2 className="h-4 w-4 animate-spin text-fumo" />}
         </div>
+        {!isAdmin ? (
+          <p className="text-sm text-fumo">{t('onboarding.staffReadinessHint', { defaultValue: 'La checklist tecnica è visibile a titolare e manager. Contatta il responsabile per completare il setup.' })}</p>
+        ) : (
+          <>
         <p className="mb-4 text-sm text-fumo">
           {t('onboarding.systemProgressLabel', { done: systemDone, total: systemTotal })}
         </p>
@@ -100,10 +133,16 @@ export default function OnboardingPage() {
             {t('onboarding.systemReady')}
           </p>
         )}
+          </>
+        )}
       </section>
 
       <section className="rounded-xl premium-card p-5 shadow-sm">
         <h2 className="mb-3 font-bold text-pietra">{t('onboarding.checklistTitle')}</h2>
+        {!isAdmin ? (
+          <p className="text-sm text-fumo">{t('onboarding.staffConciergeHint', { defaultValue: 'I passaggi concierge sono gestiti dal titolare o dal manager del locale.' })}</p>
+        ) : (
+          <>
         <p className="mb-4 text-sm text-fumo">{t('onboarding.progressLabel', { done: conciergeDone, total: 2 })}</p>
         <ul className="space-y-3">
           {([
@@ -113,7 +152,7 @@ export default function OnboardingPage() {
             <li key={item.key}>
               <button
                 type="button"
-                onClick={() => setConcierge(c => ({ ...c, [item.key]: !c[item.key] }))}
+                onClick={() => toggleConcierge(item.key)}
                 className="flex w-full items-center gap-3 rounded-lg border border-white/[0.08] px-4 py-3 text-left text-sm hover:bg-white/[0.03]"
               >
                 {concierge[item.key]
@@ -128,6 +167,8 @@ export default function OnboardingPage() {
           ))}
         </ul>
         <p className="mt-4 text-sm text-fumo leading-relaxed">{t('onboarding.posSetupNote')}</p>
+          </>
+        )}
       </section>
 
       <div className="grid gap-6">

@@ -6,6 +6,7 @@ import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { Star, Gift, TrendingUp, Users, ChevronRight, Sparkles } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '../lib/errors'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -40,6 +41,9 @@ export default function LoyaltyPage() {
   const [adjustPoints, setAdjustPoints] = useState(0)
   const [adjustNote, setAdjustNote] = useState('')
 
+  const [customerPage, setCustomerPage] = useState(1)
+  const CUSTOMERS_PAGE_SIZE = 20
+
   const { data: overview, isError: overviewError } = useQuery<Overview>({
     queryKey: tq(tk, 'loyalty', 'overview'),
     queryFn: () => api.get('/loyalty/overview').then(r => r.data),
@@ -62,11 +66,17 @@ export default function LoyaltyPage() {
       setShowAdjustModal(false); setSelectedCustomer(null); setAdjustPoints(0); setAdjustNote('')
       toast.success(t('loyalty.pointsUpdated'))
     },
+    onError: (err: unknown) => toast.error(formatApiError(err)),
   })
 
   const tiers = [...(overview?.tiers || [])].sort((a, b) => b.minPoints - a.minPoints)
   const stats = overview?.stats
   const topCustomers = overview?.topCustomers || []
+  const totalCustomerPages = Math.max(1, Math.ceil(customers.length / CUSTOMERS_PAGE_SIZE))
+  const pagedCustomers = customers.slice(
+    (customerPage - 1) * CUSTOMERS_PAGE_SIZE,
+    customerPage * CUSTOMERS_PAGE_SIZE,
+  )
 
   return (
     <ExecutivePageShell className="space-y-6">
@@ -163,7 +173,7 @@ export default function LoyaltyPage() {
 
         {/* Mobile: card layout */}
         <div className="space-y-3 md:hidden">
-          {customers.slice(0, 20).map(c => (
+          {pagedCustomers.map(c => (
             <div key={c.id} className="premium-card p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -199,7 +209,7 @@ export default function LoyaltyPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06]">
-                {customers.slice(0, 20).map(c => (
+                {pagedCustomers.map(c => (
                   <tr key={c.id} className="hover:bg-white/[0.05] transition-colors">
                     <td className="px-4 py-3 font-medium text-pietra">{c.name}</td>
                     <td className="px-4 py-3">
@@ -223,6 +233,30 @@ export default function LoyaltyPage() {
             </table>
           </div>
         </div>
+
+        {customers.length > CUSTOMERS_PAGE_SIZE && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              disabled={customerPage <= 1}
+              onClick={() => setCustomerPage(p => Math.max(1, p - 1))}
+              className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-fumo disabled:opacity-40"
+            >
+              {t('common.previous', { defaultValue: 'Precedente' })}
+            </button>
+            <span className="text-sm text-fumo">
+              {t('loyalty.pageOf', { page: customerPage, total: totalCustomerPages, defaultValue: 'Pagina {{page}} di {{total}}' })}
+            </span>
+            <button
+              type="button"
+              disabled={customerPage >= totalCustomerPages}
+              onClick={() => setCustomerPage(p => Math.min(totalCustomerPages, p + 1))}
+              className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-fumo disabled:opacity-40"
+            >
+              {t('common.next', { defaultValue: 'Successivo' })}
+            </button>
+          </div>
+        )}
       </div>
 
       {showAdjustModal && selectedCustomer && (

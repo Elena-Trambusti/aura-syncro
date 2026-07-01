@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { prisma } from './prisma'
+import { calendarDateInTimezone, shiftCalendarDate } from './dates'
+import { dayBoundsInTimezone } from './romeDate'
 
 export type CustomerFilter = {
   minSpent?: number
@@ -23,6 +25,7 @@ export const MARKETING_SEGMENTS = {
   frequent: { minVisits: 10 },
   newCustomers: { newWithinDays: 30 },
   vip: { vipOnly: true },
+  birthdayMonth: { birthdayMonth: true },
 } as const satisfies Record<string, CustomerFilter>
 
 export type MarketingSegmentKey = keyof typeof MARKETING_SEGMENTS
@@ -73,6 +76,13 @@ export function parseCustomerFilter(filterJson: string | null | undefined): Cust
 export async function getTargetCustomers(restaurantId: string, filterJson: string | null) {
   const filter = parseCustomerFilter(filterJson)
 
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { timezone: true },
+  })
+  const timeZone = restaurant?.timezone ?? 'Europe/Rome'
+  const todayStr = calendarDateInTimezone(timeZone)
+
   const where: Record<string, unknown> = { restaurantId, email: { contains: '@' } }
   const andConditions: any[] = []
 
@@ -81,19 +91,19 @@ export async function getTargetCustomers(restaurantId: string, filterJson: strin
   if (filter.tierId) where.loyaltyTierId = filter.tierId
 
   if (filter.inactiveDays) {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - filter.inactiveDays)
+    const cutoffStr = shiftCalendarDate(todayStr, -filter.inactiveDays)
+    const { gte: cutoffStart } = dayBoundsInTimezone(cutoffStr, timeZone)
     andConditions.push({
       OR: [
-        { lastVisit: { lte: cutoff } },
-        { lastVisit: null, createdAt: { lte: cutoff } },
+        { lastVisit: { lt: cutoffStart } },
+        { lastVisit: null, createdAt: { lt: cutoffStart } },
       ],
     })
   }
 
   if (filter.newWithinDays) {
-    const since = new Date()
-    since.setDate(since.getDate() - filter.newWithinDays)
+    const sinceStr = shiftCalendarDate(todayStr, -filter.newWithinDays)
+    const { gte: since } = dayBoundsInTimezone(sinceStr, timeZone)
     where.createdAt = { gte: since }
   }
 
@@ -111,15 +121,13 @@ export async function getTargetCustomers(restaurantId: string, filterJson: strin
     where.AND = andConditions
   }
   if (filter.birthdayMonth) {
-    const now = new Date()
-    const month = now.getMonth()
+    const month = Number(todayStr.slice(5, 7)) - 1
     where.birthdate = { not: null }
-    // Filtraggio mese lato applicazione (Prisma non supporta extract month su tutti i DB)
     const all = await prisma.customer.findMany({
       where,
       select: { id: true, name: true, email: true, phone: true, birthdate: true },
     })
-    return all.filter(c => c.birthdate && new Date(c.birthdate).getMonth() === month)
+    return all.filter(c => c.birthdate && new Date(c.birthdate).getUTCMonth() === month)
   }
 
   return prisma.customer.findMany({

@@ -7,7 +7,7 @@ import AutomationCard from '../components/marketing/AutomationCard'
 import GlassModal from '../components/ui/GlassModal'
 import AuraSelect from '../components/ui/AuraSelect'
 import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
-import { Cake, RefreshCw, Crown, Plus, Send, Trash2 } from 'lucide-react'
+import { Cake, RefreshCw, Crown, Plus, Send, Trash2, Star } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
@@ -18,7 +18,7 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import PageSkeleton from '../components/ui/PageSkeleton'
 
-type AutomationType = 'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS'
+type AutomationType = 'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS' | 'REQUEST_REVIEW'
 type MarketingTab = 'automations' | 'campaigns'
 
 interface MarketingAutomation {
@@ -47,6 +47,7 @@ const AUTOMATION_META: Record<
   BIRTHDAY: { icon: Cake, titleKey: 'marketing.automations.birthday.title', descKey: 'marketing.automations.birthday.description' },
   WIN_BACK: { icon: RefreshCw, titleKey: 'marketing.automations.winBack.title', descKey: 'marketing.automations.winBack.description' },
   VIP_THANKS: { icon: Crown, titleKey: 'marketing.automations.vipThanks.title', descKey: 'marketing.automations.vipThanks.description' },
+  REQUEST_REVIEW: { icon: Star, titleKey: 'marketing.automations.requestReview.title', descKey: 'marketing.automations.requestReview.description' },
 }
 
 const CAMPAIGN_STATUS_CLASS: Record<Campaign['status'], string> = {
@@ -252,7 +253,7 @@ export default function MarketingPage() {
   })
 
   const ordered = useMemo(() => {
-    const order: AutomationType[] = ['BIRTHDAY', 'WIN_BACK', 'VIP_THANKS']
+    const order: AutomationType[] = ['BIRTHDAY', 'WIN_BACK', 'VIP_THANKS', 'REQUEST_REVIEW']
     return order
       .map(type => automations.find(a => a.type === type))
       .filter(Boolean) as MarketingAutomation[]

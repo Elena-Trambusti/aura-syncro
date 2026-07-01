@@ -11,8 +11,9 @@ import { tRegime } from '../lib/fiscalRegime'
 import { printReceipt } from '../lib/export'
 import ReceiptPreviewModal, { type CheckoutFinalizeResult } from '../components/checkout/ReceiptPreviewModal'
 import CustomerPicker from '../components/checkout/CustomerPicker'
+import { useRole } from '../hooks/useRole'
 import {
-  ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt,
+  ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt, RotateCcw,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import {
@@ -20,6 +21,11 @@ import {
   isPaymentInProgress,
   resolvePaymentErrorMessage,
 } from '../lib/paymentErrors'
+import {
+  isSplitGuestPaid,
+  nextUnpaidSplitGuest,
+  splitProgressLabel,
+} from '../lib/splitCheckout'
 
 type PaymentMethod = 'CARD' | 'CASH' | 'SPLIT'
 type SplitMode = 'equal' | 'by_items'
@@ -34,8 +40,7 @@ interface OrderItem {
 }
 
 function lineGross(item: OrderItem): number {
-  const modifierTotal = item.modifiers?.reduce((s, m) => s + moneyNumber(m.price), 0) ?? 0
-  return lineGrossMoney(item.quantity, item.unitPrice, modifierTotal)
+  return lineGrossMoney(item.quantity, item.unitPrice)
 }
 
 interface CheckoutOrder {
@@ -46,6 +51,11 @@ interface CheckoutOrder {
   total: number
   discount?: number
   taxRateApplied?: number | null
+  paymentMethod?: string | null
+  stripePaymentIntent?: string | null
+  refundedAt?: string | null
+  collectedAmount?: number
+  splitPaidGuestIndexes?: number[]
   table?: { number: number } | null
   type: string
   createdAt: string
@@ -61,6 +71,8 @@ export default function CheckoutPage() {
   const { restaurant } = useAuth()
   const tk = useTenantQueryKey()
   const fiscal = useFiscalRegime()
+  const { can } = useRole()
+  const canPay = can('orders.pay')
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CARD')
   const [splitSettlement, setSplitSettlement] = useState<'CARD' | 'CASH'>('CARD')
@@ -82,7 +94,7 @@ export default function CheckoutPage() {
   const { data: cashSession } = useQuery<{ id: string; status: string } | null>({
     queryKey: tq(tk, 'cash', 'current'),
     queryFn: () => api.get('/cash/session/current').then(r => r.data),
-    enabled: paymentMethod === 'CASH' || (paymentMethod === 'SPLIT' && splitSettlement === 'CASH'),
+    enabled: Boolean(orderId) && canPay,
   })
 
   const { data, isLoading, isError, refetch } = useQuery<{
@@ -129,6 +141,20 @@ export default function CheckoutPage() {
     onError: () => toast.error(t('checkout.discountInvalid')),
   })
 
+  const refundOrder = useMutation({
+    mutationFn: () => api.post(`/payments/orders/${orderId}/refund`),
+    onSuccess: () => {
+      void refetch()
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'customers') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'analytics') })
+      toast.success(t('checkout.refundSuccess'))
+    },
+    onError: (err: { response?: { data?: { error?: string; code?: string } } }) => {
+      toast.error(resolvePaymentErrorMessage(t, err.response?.data))
+    },
+  })
+
   const activeItems = useMemo(
     () => order?.items.filter(i => i.status !== 'CANCELLED') ?? [],
     [order?.items],
@@ -170,37 +196,56 @@ export default function CheckoutPage() {
     }))
   }, [paymentMethod, order, guestCount, splitMode, itemAssignments, activeItems, grandTotal, t])
 
+  const splitProgress = useMemo(() => {
+    if (!order || paymentMethod !== 'SPLIT') return null
+    return splitProgressLabel(moneyNumber(order.collectedAmount), grandTotal)
+  }, [order, paymentMethod, grandTotal])
+
+  const splitUsesIncrementalCash = paymentMethod === 'SPLIT' && splitSettlement === 'CASH'
+  const unpaidSplitGuest = paymentMethod === 'SPLIT'
+    ? nextUnpaidSplitGuest(guestCount, order?.splitPaidGuestIndexes)
+    : null
+  const showMainFinalize = canPay && (paymentMethod !== 'SPLIT' || !splitUsesIncrementalCash)
+
+  const buildFinalizePayload = (splitGuestIndex?: number) => {
+    const payload: Record<string, unknown> = {
+      orderId,
+      tipAmount: parsedTip,
+      tipWaiterId: tipWaiterId || undefined,
+      paymentMethod,
+      splitSettlement: paymentMethod === 'SPLIT' ? splitSettlement : undefined,
+      simulateEmail: receiptEmail || undefined,
+      discountCode: discountCode.trim() || undefined,
+    }
+
+    if (paymentMethod === 'SPLIT') {
+      payload.split = {
+        mode: splitMode,
+        guestCount,
+        assignments: splitMode === 'by_items'
+          ? activeItems.map(it => ({
+            itemId: it.id,
+            guestIndex: itemAssignments[it.id] ?? 0,
+          }))
+          : undefined,
+      }
+      if (splitGuestIndex != null) {
+        payload.splitGuestIndex = splitGuestIndex
+      }
+    }
+    return payload
+  }
+
   const finalize = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (splitGuestIndex?: number) => {
       if (!navigator.onLine) {
         throw new Error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
       }
 
-      const payload: Record<string, unknown> = {
-        orderId,
-        tipAmount: parsedTip,
-        tipWaiterId: tipWaiterId || undefined,
-        paymentMethod,
-        splitSettlement: paymentMethod === 'SPLIT' ? splitSettlement : undefined,
-        simulateEmail: receiptEmail || undefined,
-        discountCode: discountCode.trim() || undefined,
-      }
-
-      if (paymentMethod === 'SPLIT') {
-        payload.split = {
-          mode: splitMode,
-          guestCount,
-          assignments: splitMode === 'by_items'
-            ? activeItems.map(it => ({
-              itemId: it.id,
-              guestIndex: itemAssignments[it.id] ?? 0,
-            }))
-            : undefined,
-        }
-      }
-
+      const payload = buildFinalizePayload(splitGuestIndex)
+      const idempotencySuffix = splitGuestIndex != null ? `:split:${splitGuestIndex}` : ''
       const headers = finalizeIdempotencyKey
-        ? { 'X-Idempotency-Key': finalizeIdempotencyKey }
+        ? { 'X-Idempotency-Key': `${finalizeIdempotencyKey}${idempotencySuffix}` }
         : undefined
       const maxAttempts = 3
       let lastErr: unknown
@@ -219,12 +264,19 @@ export default function CheckoutPage() {
       }
       throw lastErr
     },
-    onSuccess: (result: CheckoutFinalizeResult) => {
+    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number }) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reports', 'fiscal') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
+
+      if (result.partial) {
+        void refetch()
+        toast.success(t('checkout.splitPartialSuccess', { remaining: formatCurrency(result.remaining ?? 0) }))
+        return
+      }
+
       setFinalizeResult(result)
       toast.success(
         (result as CheckoutFinalizeResult & { alreadyPaid?: boolean }).alreadyPaid
@@ -318,10 +370,36 @@ export default function CheckoutPage() {
   }
 
   if (order.status === 'PAID') {
+    const isRefunded = Boolean(order.refundedAt)
+    const isCash = order.paymentMethod === 'CASH'
+    const isDigital = order.paymentMethod === 'STRIPE' || order.paymentMethod === 'CARD' || order.paymentMethod === 'DIGITAL'
+    const canRefund = canPay && !isRefunded && (
+      (isCash && cashSession?.status === 'OPEN')
+      || (isDigital && Boolean(order.stripePaymentIntent))
+    )
+    const refundLabel = isCash ? t('checkout.refundCash') : t('checkout.refundCard')
+    const refundConfirmKey = isCash ? 'checkout.refundConfirmCash' : 'checkout.refundConfirmCard'
+
     return (
-      <div className="mx-auto max-w-lg rounded-xl premium-card p-8 text-center shadow-sm">
-        <p className="text-pietra font-medium">{t('checkout.alreadyPaid')}</p>
-        <button type="button" onClick={() => navigate('/tavoli')} className="mt-4 text-sm text-aura-gold hover:underline">
+      <div className="mx-auto max-w-lg rounded-xl premium-card p-8 text-center shadow-sm space-y-4">
+        <p className="text-pietra font-medium">
+          {isRefunded ? t('checkout.alreadyRefunded') : t('checkout.alreadyPaid')}
+        </p>
+        {canRefund && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm(t(refundConfirmKey))) return
+              refundOrder.mutate()
+            }}
+            disabled={refundOrder.isPending}
+            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {refundOrder.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            {refundLabel}
+          </button>
+        )}
+        <button type="button" onClick={() => navigate('/tavoli')} className="block mx-auto text-sm text-aura-gold hover:underline">
           {t('nav.tables')}
         </button>
       </div>
@@ -591,13 +669,49 @@ export default function CheckoutPage() {
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase text-fumo">{t('checkout.splitPreview')}</p>
+                {splitProgress && splitProgress.collected > 0 && (
+                  <p className="mb-2 text-xs text-emerald-700">
+                    {t('checkout.splitProgress', {
+                      collected: formatCurrency(splitProgress.collected),
+                      remaining: formatCurrency(splitProgress.remaining),
+                    })}
+                  </p>
+                )}
                 <div className="space-y-2">
-                  {splitPreview?.map(g => (
-                    <div key={g.index} className="flex justify-between rounded-lg border border-white/[0.08] px-3 py-2 text-sm">
-                      <span className="font-medium text-pietra">{g.label}</span>
-                      <span className="tabular-nums text-pietra">{formatCurrency(g.total)}</span>
-                    </div>
-                  ))}
+                  {splitPreview?.map(g => {
+                    const paid = isSplitGuestPaid(g.index, order.splitPaidGuestIndexes)
+                    return (
+                      <div
+                        key={g.index}
+                        className={cn(
+                          'flex flex-col gap-2 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between',
+                          paid ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/[0.08]',
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-pietra">{g.label}</span>
+                          {paid && (
+                            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                              {t('checkout.splitGuestPaid')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="tabular-nums text-pietra">{formatCurrency(g.total)}</span>
+                          {splitUsesIncrementalCash && canPay && !paid && !needsCashSession && (
+                            <button
+                              type="button"
+                              onClick={() => finalize.mutate(g.index)}
+                              disabled={finalize.isPending}
+                              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+                            >
+                              {finalize.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : t('checkout.splitPayGuest')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -640,15 +754,20 @@ export default function CheckoutPage() {
             <span className="text-lg font-bold text-pietra">{t('checkout.grandTotal')}</span>
             <span className="text-2xl font-black tabular-nums text-pietra">{formatCurrency(grandTotal)}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => finalize.mutate()}
-            disabled={finalize.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60"
-          >
-            {finalize.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-            {t('checkout.finalize')}
-          </button>
+          {splitUsesIncrementalCash && unpaidSplitGuest != null && (
+            <p className="mb-3 text-sm text-fumo">{t('checkout.splitIncrementalHint')}</p>
+          )}
+          {showMainFinalize && (
+            <button
+              type="button"
+              onClick={() => finalize.mutate(undefined)}
+              disabled={finalize.isPending || needsCashSession}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60"
+            >
+              {finalize.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              {paymentMethod === 'SPLIT' ? t('checkout.splitFinalizeAll') : t('checkout.finalize')}
+            </button>
+          )}
         </div>
       </div>
     </>

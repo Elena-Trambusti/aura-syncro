@@ -138,7 +138,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/admin', adminRouter)
 
-app.get('/api/analytics/summary', authenticate, requireDashboardAccess, requireProPlan, requirePermission('analytics.read'), async (req, res) => {
+app.get('/api/analytics/summary', authenticate, requireDashboardAccess, requirePermission('analytics.read'), async (req, res) => {
   try {
     const restaurantId = (req as AuthRequest).restaurantId
     if (!restaurantId) {
@@ -158,7 +158,7 @@ app.use('/api/push', authenticate, requireDashboardAccess, pushRouter)
 app.use('/api/tables', authenticate, requireDashboardAccess, tablesRouter)
 app.use('/api/menu', authenticate, requireDashboardAccess, menuRouter)
 app.use('/api/orders', authenticate, requireDashboardAccess, ordersRouter)
-app.use('/api/invoices', authenticate, requireDashboardAccess, invoicesRouter)
+app.use('/api/invoices', authenticate, requireDashboardAccess, requireProPlan, invoicesRouter)
 app.use('/api/reservations', authenticate, requireDashboardAccess, reservationsRouter)
 app.use('/api/cash', authenticate, requireDashboardAccess, cashRouter)
 app.use('/api/customers', authenticate, requireDashboardAccess, requireProPlan, customersRouter)

@@ -22,6 +22,9 @@ interface RestaurantSettings {
   taxId?: string | null
   legalName?: string | null
   legalAddress?: string | null
+  legalCity?: string | null
+  legalZip?: string | null
+  legalProvince?: string | null
   fiscalCode?: string | null
   pec?: string | null
   sdiRecipientCode?: string | null
@@ -31,6 +34,7 @@ interface RestaurantSettings {
   depositAmount?: number | null
   posProviderLabel?: string | null
   posTerminalId?: string | null
+  laborHourlyRate?: number | null
 }
 
 interface RestaurantData {
@@ -56,6 +60,9 @@ type SettingsForm = {
   taxId: string
   legalName: string
   legalAddress: string
+  legalCity: string
+  legalZip: string
+  legalProvince: string
   fiscalCode: string
   pec: string
   sdiRecipientCode: string
@@ -64,6 +71,7 @@ type SettingsForm = {
   depositAmount: number | ''
   posProviderLabel: string
   posTerminalId: string
+  laborHourlyRate: number | ''
 }
 
 function buildSavePayload(data: SettingsForm) {
@@ -77,10 +85,13 @@ function buildSavePayload(data: SettingsForm) {
     settings: {
       countryCode: data.countryCode,
       taxRegion: data.taxRegion,
-      taxRate: data.taxRate === '' ? 0 : data.taxRate,
+      taxRate: data.taxRate === '' ? undefined : data.taxRate,
       taxId: emptyToNull(data.taxId),
       legalName: emptyToNull(data.legalName),
       legalAddress: emptyToNull(data.legalAddress),
+      legalCity: emptyToNull(data.legalCity),
+      legalZip: emptyToNull(data.legalZip),
+      legalProvince: emptyToNull(data.legalProvince),
       fiscalCode: emptyToNull(data.fiscalCode),
       pec: emptyToNull(data.pec),
       sdiRecipientCode: emptyToNull(data.sdiRecipientCode),
@@ -89,6 +100,7 @@ function buildSavePayload(data: SettingsForm) {
       depositAmount: data.depositAmount === '' ? 0 : data.depositAmount,
       posProviderLabel: emptyToNull(data.posProviderLabel),
       posTerminalId: emptyToNull(data.posTerminalId),
+      ...(data.laborHourlyRate !== '' ? { laborHourlyRate: data.laborHourlyRate } : {}),
     },
   }
 }
@@ -116,6 +128,9 @@ export default function SettingsPage() {
     taxId: '',
     legalName: '',
     legalAddress: '',
+    legalCity: '',
+    legalZip: '',
+    legalProvince: '',
     fiscalCode: '',
     pec: '',
     sdiRecipientCode: '',
@@ -124,6 +139,7 @@ export default function SettingsPage() {
     depositAmount: 20,
     posProviderLabel: '',
     posTerminalId: '',
+    laborHourlyRate: '',
   })
 
   useEffect(() => {
@@ -140,6 +156,9 @@ export default function SettingsPage() {
       taxId: restaurantData.settings?.taxId || '',
       legalName: restaurantData.settings?.legalName || '',
       legalAddress: restaurantData.settings?.legalAddress || '',
+      legalCity: restaurantData.settings?.legalCity || '',
+      legalZip: restaurantData.settings?.legalZip || '',
+      legalProvince: restaurantData.settings?.legalProvince || '',
       fiscalCode: restaurantData.settings?.fiscalCode || '',
       pec: restaurantData.settings?.pec || '',
       sdiRecipientCode: restaurantData.settings?.sdiRecipientCode || '',
@@ -148,6 +167,7 @@ export default function SettingsPage() {
       depositAmount: restaurantData.settings?.depositAmount ?? 20,
       posProviderLabel: restaurantData.settings?.posProviderLabel || '',
       posTerminalId: restaurantData.settings?.posTerminalId || '',
+      laborHourlyRate: restaurantData.settings?.laborHourlyRate ?? '',
     })
   }, [restaurantData, restaurant?.name])
 
@@ -295,6 +315,31 @@ export default function SettingsPage() {
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.legalCity')}</label>
+            <input
+              value={form.legalCity}
+              onChange={e => update('legalCity', e.target.value)}
+              className="w-full px-4 py-2.5 saas-input"
+            />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.legalZip')}</label>
+            <input
+              value={form.legalZip}
+              onChange={e => update('legalZip', e.target.value)}
+              className="w-full px-4 py-2.5 saas-input"
+            />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.legalProvince')}</label>
+            <input
+              value={form.legalProvince}
+              onChange={e => update('legalProvince', e.target.value.toUpperCase().slice(0, 2))}
+              maxLength={2}
+              className="w-full px-4 py-2.5 saas-input font-mono"
+            />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.fiscalCode')}</label>
             <input
               value={form.fiscalCode}
@@ -368,8 +413,8 @@ export default function SettingsPage() {
       </div>
 
       <div className="premium-card p-6">
-        <h2 className="text-base font-semibold text-pietra mb-1">Prenotazioni & Anti No-Show</h2>
-        <p className="text-sm text-fumo mb-4">Richiedi una carta di credito a garanzia per confermare i tavoli.</p>
+        <h2 className="text-base font-semibold text-pietra mb-1">{t('settings.reservationsTitle')}</h2>
+        <p className="text-sm text-fumo mb-4">{t('settings.reservationsDesc')}</p>
         <div className="space-y-4">
           <label className="flex items-start gap-3">
             <input
@@ -379,13 +424,13 @@ export default function SettingsPage() {
               className="mt-1 h-4 w-4 rounded border-white/20 bg-navy-surface text-aura-gold focus:ring-aura-gold/30"
             />
             <div>
-              <span className="block text-sm font-medium text-pietra">Richiedi caparra per confermare i tavoli</span>
-              <span className="block text-xs text-fumo">I clienti dovranno pre-autorizzare l'importo tramite Stripe.</span>
+              <span className="block text-sm font-medium text-pietra">{t('settings.depositRequired')}</span>
+              <span className="block text-xs text-fumo">{t('settings.depositHint')}</span>
             </div>
           </label>
           {form.noShowDepositRequired && (
             <div>
-              <label className="block text-sm font-medium text-fumo mb-1.5">Importo Caparra (€)</label>
+              <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.depositAmountLabel')}</label>
               <input
                 type="number"
                 min={1}
@@ -484,25 +529,41 @@ export default function SettingsPage() {
       </div>
 
       <div className="premium-card p-6">
-        <h2 className="text-base font-semibold text-pietra mb-3">Registratore di Cassa / Stampante Fiscale</h2>
-        <p className="text-sm text-fumo mb-4">Configura il collegamento diretto alla cassa per la stampa degli scontrini fisici.</p>
+        <h2 className="text-base font-semibold text-pietra mb-3">{t('settings.laborRate')}</h2>
+        <p className="text-sm text-fumo mb-4">{t('settings.laborRateDesc')}</p>
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.laborRateUnit')}</label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={form.laborHourlyRate}
+            onChange={e => update('laborHourlyRate', e.target.value === '' ? '' : Number(e.target.value))}
+            className="w-full px-4 py-2.5 saas-input"
+          />
+        </div>
+      </div>
+
+      <div className="premium-card p-6">
+        <h2 className="text-base font-semibold text-pietra mb-3">{t('settings.posFiscalTitle')}</h2>
+        <p className="text-sm text-fumo mb-4">{t('settings.posFiscalDesc')}</p>
         
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-sm font-medium text-fumo mb-1.5">Marca Registratore</label>
+            <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.posBrandLabel')}</label>
             <select
               value={form.posProviderLabel}
               onChange={e => update('posProviderLabel', e.target.value)}
               className="w-full px-4 py-2.5 saas-input"
             >
-              <option value="">Nessuno (Usa solo gestionale)</option>
+              <option value="">{t('settings.posNone')}</option>
               <option value="CUSTOM">Custom</option>
               <option value="EPSON">Epson</option>
             </select>
           </div>
           
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-sm font-medium text-fumo mb-1.5">Indirizzo IP Locale (es. 192.168.1.50)</label>
+            <label className="block text-sm font-medium text-fumo mb-1.5">{t('settings.posIpLabel')}</label>
             <input
               type="text"
               value={form.posTerminalId}
@@ -516,7 +577,7 @@ export default function SettingsPage() {
         
         {form.posProviderLabel && (
           <p className="mt-4 text-xs text-aura-gold/80 bg-aura-gold/10 p-3 rounded-lg border border-aura-gold/20">
-            Assicurati che il tablet e il registratore di cassa siano collegati alla stessa rete Wi-Fi. La stampa avverrà tramite comunicazione diretta sulla rete locale.
+            {t('settings.posNetworkHint')}
           </p>
         )}
       </div>

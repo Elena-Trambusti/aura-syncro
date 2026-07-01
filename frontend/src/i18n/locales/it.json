@@ -205,6 +205,29 @@
     "timeout": "Richiesta scaduta. Riprova.",
     "serverError": "Errore del server. Riprova tra poco."
   },
+  "apiErrors": {
+    "AUTH_REQUIRED": "Sessione scaduta. Effettua di nuovo l'accesso.",
+    "AUTH_INVALID": "Sessione non valida. Effettua di nuovo l'accesso.",
+    "SESSION_INVALID": "Sessione scaduta o account disattivato.",
+    "SESSION_REVOKED": "Sessione non più valida. Effettua di nuovo l'accesso.",
+    "FORBIDDEN": "Permessi insufficienti.",
+    "DEMO_READ_ONLY": "Account demo in sola lettura.",
+    "PREMIUM_REQUIRED": "Funzione disponibile con piano Premium.",
+    "ORDER_NOT_REFUNDABLE": "Ordine non rimborsabile.",
+    "ORDER_ALREADY_REFUNDED": "Ordine già rimborsato.",
+    "STRIPE_REFUND_FAILED": "Rimborso carta non riuscito. Riprova o contatta il supporto.",
+    "STRIPE_REFUND_UNAVAILABLE": "Rimborso carta non disponibile per questo ordine.",
+    "STRIPE_NOT_CONFIGURED": "Pagamenti Stripe non configurati.",
+    "CASH_SESSION_REQUIRED": "Apri la cassa prima di registrare il rimborso.",
+    "INSUFFICIENT_STOCK": "Piatto esaurito — ingredienti insufficienti.",
+    "MENU_ITEM_SOLD_OUT": "Piatto esaurito.",
+    "SLOT_CONFLICT": "Slot o tavolo non più disponibile.",
+    "TABLE_HAS_ACTIVE_ORDER": "Impossibile liberare il tavolo: ordine ancora aperto.",
+    "CAMPAIGN_ALREADY_SENT": "Campagna già inviata.",
+    "INVOICES_IT_ONLY": "Fatturazione elettronica disponibile solo per ristoranti italiani.",
+    "LOYALTY_ALREADY_EARNED": "Punti già assegnati per questo ordine.",
+    "INSUFFICIENT_POINTS": "Punti fedeltà insufficienti."
+  },
   "dashboard": {
     "title": "Dashboard — {{name}}",
     "todayRevenue": "Incasso Oggi",
@@ -225,6 +248,7 @@
     "performance": "Performance",
     "analyticsSection": "Analytics avanzate",
     "liveSync": "Sync live · 30s",
+    "liveCommandError": "Impossibile aggiornare i dati live. Riprovo automaticamente…",
     "opsService": "Servizio",
     "opsServiceLive": "In corso",
     "opsServiceIdle": "Pronto",
@@ -305,6 +329,7 @@
     "filterKitchen": "In cucina",
     "filterReady": "Pronti",
     "statusUpdated": "Stato aggiornato",
+    "splitOpen": "Split {{collected}} / {{total}}",
     "noOrders": "Nessun ordine trovato",
     "cancel": "Annulla",
     "csvHeaders": {
@@ -391,6 +416,23 @@
     "posStatusStripe": "Stripe Terminal collegato",
     "posStatusExternal": "Registratore esterno: {{provider}}",
     "posLegalNote": "La ricevuta fiscale legale è emessa dal POS certificato del ristorante quando configurato come registratore esterno.",
+    "laborRate": "Costo orario personale",
+    "laborRateDesc": "Usato nei report P&L per stimare il costo del personale.",
+    "laborRateUnit": "€ / ora",
+    "legalCity": "Città",
+    "legalZip": "CAP",
+    "legalProvince": "Provincia",
+    "posFiscalTitle": "Registratore di cassa / stampante fiscale",
+    "posFiscalDesc": "Configura il collegamento diretto alla cassa per la stampa degli scontrini fisici.",
+    "posBrandLabel": "Marca registratore",
+    "posNone": "Nessuno (solo gestionale)",
+    "posIpLabel": "Indirizzo IP locale",
+    "posNetworkHint": "Tablet e registratore devono essere sulla stessa rete Wi-Fi. La stampa avviene in locale.",
+    "reservationsTitle": "Prenotazioni e anti no-show",
+    "reservationsDesc": "Richiedi una carta di credito a garanzia per confermare i tavoli.",
+    "depositRequired": "Richiedi caparra per confermare i tavoli",
+    "depositHint": "I clienti pre-autorizzano l'importo tramite Stripe.",
+    "depositAmountLabel": "Importo caparra (€)",
     "accountInfo": "Informazioni Account",
     "restaurantId": "ID Ristorante",
     "slug": "Slug (URL)",
@@ -447,6 +489,8 @@
     "payDeposit": "Paga caparra",
     "depositRequiredNotice": "Prenotazione confermata — è richiesto il pagamento della caparra",
     "depositPayError": "Impossibile avviare il pagamento della caparra",
+    "noShowChargeSuccess": "Penale no-show addebitata con successo",
+    "noShowChargeError": "Errore durante l'addebito della penale",
     "howItWorksTitle": "Come funziona questa sezione",
     "howItWorksBookings": "Prenotazioni: prenotazioni con data e ora (telefono, manuale o dal link pubblico). Flusso: Conferma + assegna tavolo → Al tavolo → Completata.",
     "howItWorksWaitlist": "Lista d'attesa: ospiti walk-in senza prenotazione quando la sala è piena — non è la stessa cosa delle prenotazioni.",
@@ -720,6 +764,7 @@
     "spent": "{{amount}} spesi",
     "pointsShort": "pt",
     "allCustomers": "Tutti i Clienti",
+    "pageOf": "Pagina {{page}} di {{total}}",
     "tableCustomer": "Cliente",
     "tableLevel": "Livello",
     "tablePoints": "Punti",
@@ -802,6 +847,10 @@
       "vipThanks": {
         "title": "Ringraziamento VIP",
         "description": "Messaggio il giorno dopo a chi ha speso più di 200€ in un'unica serata."
+      },
+      "requestReview": {
+        "title": "Richiesta recensione",
+        "description": "Invia un messaggio 24 ore dopo la visita per chiedere una recensione online."
       }
     }
   },
@@ -861,6 +910,7 @@
     "csvTurnover": "Fatturato",
     "pieces": "pz",
     "zetaButton": "Chiusura Cassa",
+    "zetaDate": "Data chiusura Zeta",
     "zetaConfirm": "Vuoi generare la chiusura di cassa di fine giornata? Questa operazione non è annullabile.",
     "zetaSuccess": "Chiusura di cassa generata con successo",
     "zetaError": "Errore durante la chiusura fiscale",
@@ -907,6 +957,8 @@
     "transactionsMeta": "{{count}} transazioni · {{period}}",
     "loading": "Caricamento dati fiscali...",
     "loadError": "Errore nel caricamento dei dati fiscali",
+    "rangeTooLarge": "Intervallo massimo {{max}} giorni. Restringi il periodo selezionato.",
+    "pageOf": "Pagina {{page}} di {{total}}",
     "emptyTitle": "Nessuna transazione pagata in questo periodo",
     "emptyHint": "Seleziona un altro intervallo di date o registra pagamenti con mancia",
     "noData": "Nessun dato per il periodo selezionato",
@@ -1098,7 +1150,9 @@
     "setupStep1": "Crea un account su stripe.com",
     "setupStep2": "Vai in Sviluppatori → Chiavi API e copia le chiavi di test",
     "setupStep3": "Incollale nel file backend/.env (STRIPE_SECRET_KEY e STRIPE_PUBLISHABLE_KEY)",
-    "setupStep4": "Riavvia il backend — i clienti potranno pagare dal menu QR"
+    "setupStep4": "Riavvia il backend — i clienti potranno pagare dal menu QR",
+    "stripeAccount": "Il tuo conto Stripe",
+    "connectBank": "Collega conto bancario"
   },
   "depositSuccess": {
     "verifying": "Verifica pagamento in corso...",
@@ -1342,6 +1396,12 @@
     "guest": "Ospite {{n}}",
     "splitPreview": "Anteprima ripartizione",
     "splitSettlementHint": "Metodo di registro fiscale per l'incasso",
+    "splitPayGuest": "Incassa quota",
+    "splitGuestPaid": "Pagato",
+    "splitPartialSuccess": "Quota registrata. Residuo {{remaining}}",
+    "splitProgress": "Incassato {{collected}} · Residuo {{remaining}}",
+    "splitIncrementalHint": "Incassa ogni quota con il pulsante accanto all'ospite. La ricevuta fiscale si chiude all'ultimo pagamento.",
+    "splitFinalizeAll": "Finalizza intero conto (carta)",
     "splitBreakdown": "Dettaglio split",
     "receiptEmail": "Email ricevuta (simulata)",
     "receiptEmailPlaceholder": "ospite@email.com",
@@ -1380,6 +1440,14 @@
     "customerRemove": "Rimuovi",
     "loyaltyTierBadge": "{{tier}} — sconto {{pct}}% al pagamento",
     "alreadyPaid": "Pagamento già registrato",
+    "alreadyRefunded": "Ordine rimborsato",
+    "refundCash": "Registra rimborso contanti",
+    "refundCard": "Rimborsa pagamento carta",
+    "refundConfirmCash": "Confermi il rimborso contanti? Verranno stornati CRM e punti fedeltà.",
+    "refundConfirmCard": "Confermi il rimborso carta? L'importo verrà restituito su Stripe e stornati CRM e punti fedeltà.",
+    "refundConfirm": "Confermi il rimborso? Verranno stornati CRM e punti fedeltà.",
+    "refundSuccess": "Rimborso registrato",
+    "refundError": "Impossibile registrare il rimborso",
     "errors": {
       "ORDER_NOT_FOUND": "Ordine non trovato",
       "ORDER_ALREADY_PAID": "Ordine già pagato",
@@ -1397,7 +1465,14 @@
       "STRIPE_PI_ALREADY_USED": "PaymentIntent già utilizzato",
       "INVALID_DISCOUNT_CODE": "Codice sconto non valido",
       "NO_LOYALTY_DISCOUNT": "Nessuno sconto fedeltà disponibile per questo cliente",
-      "INVALID_TIP_WAITER": "Cameriere non valido"
+      "INVALID_TIP_WAITER": "Cameriere non valido",
+      "ORDER_NOT_REFUNDABLE": "Ordine non rimborsabile",
+      "ORDER_ALREADY_REFUNDED": "Ordine già rimborsato",
+      "STRIPE_REFUND_FAILED": "Rimborso carta non riuscito",
+      "STRIPE_REFUND_UNAVAILABLE": "Rimborso carta non disponibile per questo ordine",
+      "SPLIT_AMOUNT_MISMATCH": "Importo non corrisponde alla quota split",
+      "SPLIT_GUEST_INDEX_INVALID": "Ospite split non valido",
+      "SPLIT_ALREADY_PAID": "Quota split già incassata"
     }
   },
   "billing": {
@@ -1427,7 +1502,43 @@
     "checkoutCanceled": "Pagamento annullato. Puoi riprovare quando vuoi.",
     "checkoutError": "Impossibile avviare il checkout. Riprova.",
     "checkoutUrlMissing": "URL di checkout non ricevuto da Stripe",
-    "secureNote": "Pagamento crittografato e gestito da Stripe"
+    "secureNote": "Pagamento crittografato e gestito da Stripe",
+    "plansPageTitle": "Piani e fatturazione",
+    "plansPageSubtitle": "Gestisci il tuo abbonamento ad Aura Syncro",
+    "activePlanLabel": "Abbonamento attivo: {{plan}}",
+    "setupOnce": "setup una tantum",
+    "activatePlan": "Attiva {{plan}}",
+    "activeServices": "Servizi attivi per il piano {{plan}}",
+    "openPortal": "Gestisci abbonamento",
+    "portalUrlMissing": "URL portale non ricevuto da Stripe",
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "tagline": "Per piccoli locali o food truck.",
+        "features": [
+          "Gestione fino a 12 tavoli",
+          "1 singola area (Sala)",
+          "Menu QR digitale",
+          "Pagamenti Stripe integrati"
+        ],
+        "missing": [
+          "AI Predittiva e Analytics",
+          "Gestione Turni e Scorte"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "tagline": "Per ristoranti che esigono il massimo.",
+        "features": [
+          "Aree e tavoli illimitati",
+          "AI Predittiva e Analytics",
+          "Onboarding chiavi in mano",
+          "Gestione Turni e Scorte",
+          "Marketing Automation"
+        ],
+        "missing": []
+      }
+    }
   },
   "onboarding": {
     "badge": "Concierge Aura Syncro",
@@ -1441,6 +1552,8 @@
     "callPlaceholder": "Calendario Calendly — inserisci l'URL in VITE_ONBOARDING_CALENDLY_URL",
     "iframeEnvHint": "Configura l'iframe nel file .env del frontend",
     "teamNote": "Il nostro team sta preparando il tuo ambiente di lavoro. Riceverai una notifica non appena tutto sarà pronto.",
+    "staffReadinessHint": "La checklist tecnica è visibile a titolare e manager. Contatta il responsabile per completare il setup.",
+    "staffConciergeHint": "I passaggi concierge sono gestiti dal titolare o dal manager del locale.",
     "welcomeToast": "Pagamento completato! Benvenuto in Aura Syncro Premium.",
     "checklistTitle": "Checklist setup",
     "checklistMenu": "Compila il modulo (categorie, piatti, prezzi)",
@@ -1530,6 +1643,7 @@
     "tableNumber": "Numero tavolo",
     "tableNumberPlaceholder": "Es. 12",
     "tableNumberHint": "Indica il tavolo dove ti trovi",
+    "dineInRequiresQr": "Per ordinare al tavolo scansiona il QR del tavolo.",
     "tableBadge": "Tavolo {{number}}",
     "orderNotes": "Note per la cucina",
     "orderNotesPlaceholder": "Allergie, preferenze, tempi…",
@@ -1639,7 +1753,8 @@
     "installApp": "Installa app",
     "installSuccess": "App installata! Aprila dalla schermata Home.",
     "updateAvailable": "È disponibile una nuova versione dell'app.",
-    "updateRefresh": "Aggiorna ora"
+    "updateRefresh": "Aggiorna ora",
+    "reload": "Ricarica"
   },
   "export": {
     "receipt": "Scontrino",
@@ -1804,9 +1919,5 @@
       "title": "Informativa ospiti | Aura Syncro",
       "description": "Informativa privacy per gli ospiti dei ristoranti che usano Aura Syncro."
     }
-  },
-  "pwa": {
-    "updateAvailable": "Nuova versione disponibile",
-    "reload": "Ricarica"
   }
 }

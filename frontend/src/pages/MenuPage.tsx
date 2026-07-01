@@ -10,6 +10,7 @@ import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { Plus, Edit2, Trash2, BookOpen, Package } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '../lib/formatApiError'
 import GlassModal from '../components/ui/GlassModal'
 import AuraSelect from '../components/ui/AuraSelect'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -17,6 +18,7 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import RecipeEditorModal from '../components/menu/RecipeEditorModal'
+import { useRealtimeQuery } from '../hooks/useRealtimeInvalidation'
 import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface MenuItem {
@@ -147,6 +149,8 @@ export default function MenuPage() {
   const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string } | null>(null)
   const [recipeItem, setRecipeItem] = useState<{ id: string; name: string } | null>(null)
 
+  useRealtimeQuery(['menu:updated'], 'menu')
+
   const { data: categories = [], isError } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
     queryFn: () => api.get('/menu/categories').then(r => r.data),
@@ -168,8 +172,8 @@ export default function MenuPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
       toast.success(res.data?.archived ? t('menu.archived') : t('menu.deleted'))
     },
-    onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error || t('menu.deleteError'))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'menu.deleteError'))
     },
   })
   const toggleAvail = useMutation({
@@ -185,7 +189,7 @@ export default function MenuPage() {
       setCategoryForm(null)
       toast.success(t('menu.categoryAdded'))
     },
-    onError: () => toast.error(t('menu.categorySaveError')),
+    onError: (err: unknown) => toast.error(formatApiError(t, err, 'menu.categorySaveError')),
   })
 
   const updateCategory = useMutation({
@@ -195,7 +199,7 @@ export default function MenuPage() {
       setCategoryForm(null)
       toast.success(t('menu.categoryUpdated'))
     },
-    onError: () => toast.error(t('menu.categorySaveError')),
+    onError: (err: unknown) => toast.error(formatApiError(t, err, 'menu.categorySaveError')),
   })
 
   const deleteCategory = useMutation({
@@ -205,8 +209,8 @@ export default function MenuPage() {
       if (selectedCat === deletedId) setSelectedCat(null)
       toast.success(t('menu.categoryDeleted'))
     },
-    onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error || t('menu.categorySaveError'))
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'menu.categorySaveError'))
     },
   })
 

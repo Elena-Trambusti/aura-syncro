@@ -8,6 +8,7 @@ import {
 } from './orderPayment'
 import { chargePosCard } from './posCharge'
 import { loadRestaurantFiscalConfig } from './taxEngine'
+import { loadRestaurantPosConfig } from './posIntegration'
 import { computePosPaymentAmounts, type OrderAmounts } from './tipFiscal'
 import { resolveDiscountForOrder } from './orderDiscount'
 import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
@@ -91,6 +92,61 @@ export async function completeOrderPayment(input: {
     if (input.finalize.paymentMethod === 'CARD') {
       const posAmounts = computePosPaymentAmounts(fiscal, orderAmounts, input.finalize.tipAmount)
       chargedAmount = posAmounts.totalCustomerAmount
+      const posConfig = await loadRestaurantPosConfig(input.finalize.restaurantId)
+
+      // POS esterno: finalizza prima (incasso già avvenuto sul terminale fisico).
+      if (posConfig.mode === 'EXTERNAL') {
+        const result = await finalizeOrderPayment(input.finalize, {
+          splitBreakdown: input.splitBreakdown,
+          serveItemsOnPayment: input.serveItemsOnPayment,
+          precomputedTotals,
+          fiscalConfig: fiscal,
+        })
+        const { updatedOrder } = result
+
+        posResult = await chargePosCard(
+          {
+            taxableAmount: posAmounts.taxableChargeAmount,
+            tipAmount: posAmounts.tipChargeAmount,
+            totalCustomerAmount: posAmounts.totalCustomerAmount,
+            taxRegion: fiscal.taxRegion,
+          },
+          { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+          input.stripePaymentIntentId,
+        )
+
+        if (result.updatedTable) {
+          io.to(input.finalize.restaurantId).emit('table:updated', result.updatedTable)
+        }
+        io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+
+        schedulePaymentSideEffects({
+          orderId: input.finalize.orderId,
+          restaurantId: input.finalize.restaurantId,
+          paidAt: result.paidAt,
+          serveItemsOnPayment: input.serveItemsOnPayment !== false,
+          transactionId: result.transactionId,
+          total: result.total,
+          receiptEmail: input.receiptEmail,
+          restaurantName: input.restaurantName,
+          stripePaymentIntentId: posResult?.stripePaymentIntentId ?? input.stripePaymentIntentId,
+        })
+
+        await saveIdempotentResponse(
+          input.finalize.restaurantId,
+          lockKey,
+          'PAYMENT_FINALIZE',
+          200,
+          { orderId: input.finalize.orderId, completed: true },
+        )
+
+        return {
+          result,
+          updatedOrder,
+          posResult,
+          emailSent: Boolean(input.receiptEmail),
+        }
+      }
 
       posResult = await chargePosCard(
         {

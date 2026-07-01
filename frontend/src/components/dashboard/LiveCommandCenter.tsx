@@ -11,6 +11,7 @@ import { cn, formatTime, toDateInputInTimezone } from '../../lib/utils'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { useRole } from '../../hooks/useRole'
+import QueryErrorBanner from '../QueryErrorBanner'
 import {
   useRealtimeTables,
   useRealtimeOrders,
@@ -58,21 +59,21 @@ export default function LiveCommandCenter() {
   useRealtimeOrders()
   useRealtimeReservations()
 
-  const { data: tables = [], isLoading: loadingTables } = useQuery<FloorTable[]>({
+  const { data: tables = [], isLoading: loadingTables, isError: tablesError } = useQuery<FloorTable[]>({
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
     enabled: canTables,
     refetchInterval: 60_000,
   })
 
-  const { data: reservations = [], isLoading: loadingRes } = useQuery<ReservationRow[]>({
+  const { data: reservations = [], isLoading: loadingRes, isError: reservationsError } = useQuery<ReservationRow[]>({
     queryKey: tq(tk, 'reservations', 'today'),
     queryFn: () => api.get(`/reservations?date=${localToday(tenantTz)}`).then(r => r.data),
     enabled: canReservations,
     refetchInterval: 60_000,
   })
 
-  const { data: activeOrders = [], isLoading: loadingOrders } = useQuery<ActiveOrder[]>({
+  const { data: activeOrders = [], isLoading: loadingOrders, isError: ordersError } = useQuery<ActiveOrder[]>({
     queryKey: tq(tk, 'orders', 'active'),
     queryFn: () => api.get('/orders/active').then(r => r.data),
     enabled: canOrders,
@@ -208,6 +209,10 @@ export default function LiveCommandCenter() {
           {t('dashboard.liveSync')}
         </span>
       </div>
+
+      {(tablesError || reservationsError || ordersError) && (
+        <QueryErrorBanner message={t('dashboard.liveCommandError', { defaultValue: 'Impossibile aggiornare i dati live. Riprovo automaticamente…' })} />
+      )}
 
       <div className={cn('aura-command-center__grid', modules.length === 2 && 'aura-command-center__grid--2')}>
         {modules.map(mod => {

@@ -196,7 +196,17 @@
     "apiNotConfigured": "Servidor API no configurado en Vercel (falta BACKEND_URL).",
     "backendUnreachable": "Backend no accesible. Verifica que DigitalOcean esté en línea.",
     "apiBlocked": "Solicitud API bloqueada. Vuelve a desplegar el frontend con la configuración actualizada.",
-    "networkError": "No se puede contactar con el servidor. Comprueba la conexión y la configuración BACKEND_URL."
+    "networkError": "No se puede contactar con el servidor. Comprueba la conexión y la configuración BACKEND_URL.",
+    "serverError": "Error del servidor. Inténtalo de nuevo en un momento."
+  },
+  "apiErrors": {
+    "AUTH_REQUIRED": "Sesión caducada. Inicia sesión de nuevo.",
+    "FORBIDDEN": "Permisos insuficientes.",
+    "PREMIUM_REQUIRED": "Plan Premium requerido.",
+    "ORDER_NOT_REFUNDABLE": "Pedido no reembolsable.",
+    "ORDER_ALREADY_REFUNDED": "Pedido ya reembolsado.",
+    "STRIPE_REFUND_FAILED": "Reembolso con tarjeta fallido.",
+    "CASH_SESSION_REQUIRED": "Abre la caja antes de registrar un reembolso."
   },
   "dashboard": {
     "title": "Panel — {{name}}",
@@ -703,6 +713,10 @@
       "vipThanks": {
         "title": "Agradecimiento VIP",
         "description": "Mensaje al día siguiente a quien haya gastado más de 200€ en una sola noche."
+      },
+      "requestReview": {
+        "title": "Solicitud de reseña",
+        "description": "Mensaje 24 horas después de la visita pidiendo una reseña online."
       }
     }
   },
@@ -1102,6 +1116,13 @@
     "printSimulated": "Impresión simulada",
     "emailSimulated": "Email simulado",
     "alreadyPaid": "Pago ya registrado",
+    "alreadyRefunded": "Pedido reembolsado",
+    "refundCash": "Registrar reembolso en efectivo",
+    "refundCard": "Reembolsar pago con tarjeta",
+    "refundConfirmCash": "¿Confirmar reembolso en efectivo? Se revertirán CRM y puntos de fidelidad.",
+    "refundConfirmCard": "¿Confirmar reembolso con tarjeta? El importe se devolverá vía Stripe.",
+    "refundSuccess": "Reembolso registrado",
+    "refundError": "No se pudo registrar el reembolso",
     "errors": {
       "ORDER_NOT_FOUND": "Pedido no encontrado",
       "ORDER_ALREADY_PAID": "Pedido ya pagado",
@@ -1119,7 +1140,11 @@
       "STRIPE_PI_ALREADY_USED": "PaymentIntent ya utilizado",
       "INVALID_DISCOUNT_CODE": "Código de descuento no válido",
       "NO_LOYALTY_DISCOUNT": "Sin descuento de fidelidad para este cliente",
-      "INVALID_TIP_WAITER": "Camarero no válido"
+      "INVALID_TIP_WAITER": "Camarero no válido",
+      "ORDER_NOT_REFUNDABLE": "Pedido no reembolsable",
+      "ORDER_ALREADY_REFUNDED": "Pedido ya reembolsado",
+      "STRIPE_REFUND_FAILED": "Reembolso con tarjeta fallido",
+      "STRIPE_REFUND_UNAVAILABLE": "Reembolso con tarjeta no disponible para este pedido"
     }
   },
   "billing": {
@@ -1250,6 +1275,7 @@
     "tableNumber": "Número de mesa",
     "tableNumberPlaceholder": "ej. 12",
     "tableNumberHint": "Indica el número de tu mesa",
+    "dineInRequiresQr": "Para pedir en mesa, escanea el código QR de la mesa.",
     "tableBadge": "Mesa {{number}}",
     "orderNotes": "Notas para cocina",
     "orderNotesPlaceholder": "Alergias, preferencias, tiempos…",
@@ -1329,7 +1355,8 @@
     "installApp": "Instalar app",
     "installSuccess": "¡App instalada! Ábrela desde la pantalla de inicio.",
     "updateAvailable": "Hay una nueva versión de la app disponible.",
-    "updateRefresh": "Actualizar ahora"
+    "updateRefresh": "Actualizar ahora",
+    "reload": "Recargar"
   },
   "export": {
     "receipt": "Ticket",

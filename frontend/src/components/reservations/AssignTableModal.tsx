@@ -7,6 +7,7 @@ import { Loader2, Users } from 'lucide-react'
 import { useTenantQueryKey } from '@/contexts/AuthContext'
 import { tq } from '@/lib/queryKeys'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '@/lib/formatApiError'
 import {
   AuraDialog,
   AuraDialogBody,
@@ -53,7 +54,7 @@ export default function AssignTableModal({ reservation, onSuccess, onCancel }: A
       onSuccess()
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error ?? t('reservations.tableAssignError'))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'reservations.tableAssignError'))
     },
   })
 

@@ -13,7 +13,8 @@ import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/order
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer, assertCustomerInTenant } from '../lib/customerResolver'
-import { assertMenuItemOrderable } from '../lib/menuStock'
+import { assertMenuItemOrderable, assertOrderStockInTransaction } from '../lib/menuStock'
+import { kitchenTicketsAfterOrderAttempt } from '../lib/kitchenEmitGuard'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
 import {
   acquireIdempotencyLock,
@@ -89,7 +90,7 @@ ordersRouter.get('/active', requirePermission('orders.read'), async (req: AuthRe
   const orders = await prisma.order.findMany({
     where: kitchenActiveOrdersWhere(req.restaurantId!),
     include: orderInclude,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: 'asc' },
   })
   res.json(orders)
 })
@@ -277,6 +278,12 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
         }
       }
 
+      await assertOrderStockInTransaction(
+        tx,
+        req.restaurantId!,
+        itemsWithPrice.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+      )
+
       const created = await tx.order.create({
         data: {
           restaurantId: req.restaurantId!,
@@ -351,7 +358,9 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   }
 
   io.to(req.restaurantId!).emit('order:created', finalOrder)
-  io.to(req.restaurantId!).emit('print:kitchen', { type: 'kitchen', order: finalOrder })
+  for (const ticket of kitchenTicketsAfterOrderAttempt(finalOrder)) {
+    io.to(req.restaurantId!).emit('print:kitchen', { type: 'kitchen', order: ticket })
+  }
 
   const tableLabel = finalOrder.table ? `tavolo ${finalOrder.table.number}` : finalOrder.type.toLowerCase()
   void broadcastNewOrderNotification(
@@ -496,6 +505,8 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
 
     // Ricalcolo totali se annullamento (skip ordini PAID chiusi fiscalmente)
     if (targetStatus === 'CANCELLED' && order.status !== 'PAID' && precomputedTotals) {
+      const foodRevenue = precomputedTotals.subtotal + precomputedTotals.tax
+      const allCancelled = precomputedTotals.total === 0
       await tx.order.updateMany({
         where: { id: req.params.orderId },
         data: {
@@ -503,7 +514,8 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
           tax: toMoney(precomputedTotals.tax),
           total: toMoney(precomputedTotals.total),
           taxRateApplied: precomputedTotals.taxRateApplied,
-          revenueAmount: toMoney(precomputedTotals.total),
+          revenueAmount: toMoney(foodRevenue),
+          ...(allCancelled ? { discount: 0 } : {}),
         },
       })
     }
@@ -526,8 +538,12 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
 
   // Apply discounts again if totals changed (never on fiscal-closed PAID orders)
   if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
-    const orderToDiscount = await prisma.order.findUnique({ where: { id: req.params.orderId } })
-    if (orderToDiscount && (orderToDiscount.customerId || moneyNumber(orderToDiscount.discount) > 0)) {
+    const orderToDiscount = await prisma.order.findUnique({
+      where: { id: req.params.orderId },
+      include: { items: { select: { status: true } } },
+    })
+    const hasActiveItems = orderToDiscount?.items?.some(i => i.status !== 'CANCELLED')
+    if (orderToDiscount && hasActiveItems && (orderToDiscount.customerId || moneyNumber(orderToDiscount.discount) > 0)) {
       await applyDiscountToOrder(req.params.orderId, req.restaurantId!, { applyLoyalty: true })
     }
   }
@@ -716,7 +732,7 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
 
   const schema = z.object({
     menuItemId: z.string(),
-    quantity: z.number().int().positive(),
+    quantity: z.number().int().positive().max(99),
     course: z.number().int().positive().optional().default(1),
     modifiers: z.array(z.string()).optional(),
     notes: z.string().optional(),
@@ -788,25 +804,6 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
      }
   }
 
-  const existingLines = await prisma.orderItem.findMany({
-    where: { orderId: req.params.id },
-    select: { quantity: true, unitPrice: true, menuItemId: true, status: true },
-  })
-  const precomputedTotals = await computeTaxForOrderItems(tenantId(req), [
-    ...existingLines.map(i => ({
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
-      menuItemId: i.menuItemId,
-      status: i.status,
-    })),
-    {
-      quantity: result.data.quantity,
-      unitPrice,
-      menuItemId: result.data.menuItemId,
-      status: 'PENDING',
-    },
-  ])
-
   let createdItem
   try {
     const txResult = await runOrderTransaction(async tx => {
@@ -829,14 +826,20 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
         include: { menuItem: true },
       })
 
+      const allLines = await tx.orderItem.findMany({
+        where: { orderId: req.params.id },
+        select: { quantity: true, unitPrice: true, menuItemId: true, status: true },
+      })
+      const totals = await computeTaxForOrderItems(tenantId(req), allLines)
+
       await tx.order.updateMany({
         where: scopedWhere(req, req.params.id),
         data: {
-          subtotal: toMoney(precomputedTotals.subtotal),
-          tax: toMoney(precomputedTotals.tax),
-          total: toMoney(precomputedTotals.total),
-          taxRateApplied: precomputedTotals.taxRateApplied,
-          revenueAmount: toMoney(precomputedTotals.total),
+          subtotal: toMoney(totals.subtotal),
+          tax: toMoney(totals.tax),
+          total: toMoney(totals.total),
+          taxRateApplied: totals.taxRateApplied,
+          revenueAmount: toMoney(totals.total),
         },
       })
       

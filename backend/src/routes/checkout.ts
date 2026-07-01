@@ -105,3 +105,50 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
     res.status(500).json({ error: 'Errore durante la creazione del checkout', details: message })
   }
 })
+
+/** POST /api/checkout/portal — Stripe Customer Portal (gestione abbonamento / fatture) */
+checkoutRouter.post('/portal', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!STRIPE_ENABLED) {
+    res.status(503).json({ error: 'Stripe non configurato' })
+    return
+  }
+
+  const restaurantId = req.restaurantId
+  if (!restaurantId) {
+    res.status(401).json({ error: 'Autenticazione richiesta' })
+    return
+  }
+
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId },
+    select: { stripeCustomerId: true },
+  })
+
+  if (!settings?.stripeCustomerId) {
+    res.status(400).json({
+      error: 'Nessun abbonamento Stripe collegato a questo ristorante',
+      code: 'NO_STRIPE_CUSTOMER',
+    })
+    return
+  }
+
+  const frontendUrl = resolvePrimaryFrontendUrl()
+
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: settings.stripeCustomerId,
+      return_url: `${frontendUrl}/dashboard/billing`,
+    })
+
+    if (!session.url) {
+      res.status(500).json({ error: 'Impossibile aprire il portale Stripe' })
+      return
+    }
+
+    res.json({ portalUrl: session.url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Errore Stripe sconosciuto'
+    console.error('[checkout/portal] Stripe portal error:', message)
+    res.status(500).json({ error: 'Errore durante l\'apertura del portale Stripe', details: message })
+  }
+})

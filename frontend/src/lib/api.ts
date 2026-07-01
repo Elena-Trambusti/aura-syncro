@@ -7,6 +7,7 @@ import { readAuthCache } from './authCache'
 import { isDemoUserEmail } from './demoAccounts'
 import { isDemoMutationAllowed } from './demoRestrictions'
 import { getSessionToken, clearSessionToken } from './sessionToken'
+import { resolveApiErrorMessage } from './apiError'
 
 const RESTAURANT_ID_KEY = 'restaurantId'
 
@@ -74,6 +75,12 @@ async function initApi(): Promise<AxiosInstance> {
         toast.error(i18n.t('errors.networkError', { defaultValue: 'Impossibile contattare il server. Verifica la connessione.' }))
       } else if (err.code === 'ECONNABORTED') {
         toast.error(i18n.t('errors.timeout', { defaultValue: 'Richiesta scaduta. Riprova.' }))
+      } else if (err.response.status >= 400 && err.response.status < 500) {
+        const payload = err.response.data as { code?: string; error?: string } | undefined
+        if (payload?.code) {
+          ;(err as { translatedMessage?: string }).translatedMessage =
+            resolveApiErrorMessage(i18n.t.bind(i18n), payload)
+        }
       } else if (err.response.status >= 500) {
         toast.error(i18n.t('errors.serverError', { defaultValue: 'Errore del server. Riprova tra poco.' }))
       }

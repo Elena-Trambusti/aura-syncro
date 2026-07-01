@@ -1,15 +1,21 @@
-/** Token JWT in memoria + sessionStorage (sopravvive a F5, non a localStorage/XSS persistente). */
+/** Token JWT in memoria (API usa cookie httpOnly; Bearer solo per socket finché non migriamo auth socket). */
 let memoryToken: string | null = null
 
 const LEGACY_KEY = 'token'
 const SESSION_KEY = 'aura_session_token'
 
-/** Migrazione one-shot da localStorage legacy. */
+function hasSessionCookie(): boolean {
+  if (typeof document === 'undefined') return false
+  return document.cookie.split(';').some(c => c.trim().startsWith('aura_session='))
+}
+
+/** Migrazione one-shot da sessionStorage/localStorage legacy — non persiste più il token. */
 export function bootstrapSessionToken(): string | null {
   if (memoryToken) return memoryToken
   if (typeof sessionStorage !== 'undefined') {
     const stored = sessionStorage.getItem(SESSION_KEY)
     if (stored) {
+      sessionStorage.removeItem(SESSION_KEY)
       memoryToken = stored
       return stored
     }
@@ -18,9 +24,6 @@ export function bootstrapSessionToken(): string | null {
   if (legacy) {
     memoryToken = legacy
     localStorage.removeItem(LEGACY_KEY)
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem(SESSION_KEY, legacy)
-    }
   }
   return memoryToken
 }
@@ -32,8 +35,7 @@ export function getSessionToken(): string | null {
 export function setSessionToken(token: string | null): void {
   memoryToken = token
   if (typeof sessionStorage !== 'undefined') {
-    if (token) sessionStorage.setItem(SESSION_KEY, token)
-    else sessionStorage.removeItem(SESSION_KEY)
+    sessionStorage.removeItem(SESSION_KEY)
   }
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(LEGACY_KEY)
@@ -42,4 +44,9 @@ export function setSessionToken(token: string | null): void {
 
 export function clearSessionToken(): void {
   setSessionToken(null)
+}
+
+/** Hint per bootstrap auth: cache locale o cookie sessione httpOnly. */
+export function hasAuthSessionHint(cachedRestaurantId?: string | null): boolean {
+  return Boolean(cachedRestaurantId || getSessionToken() || hasSessionCookie())
 }

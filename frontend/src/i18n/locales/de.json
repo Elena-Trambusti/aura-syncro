@@ -196,7 +196,17 @@
     "apiNotConfigured": "API-Server auf Vercel nicht konfiguriert (BACKEND_URL fehlt).",
     "backendUnreachable": "Backend nicht erreichbar. Prüfen Sie, ob DigitalOcean online ist.",
     "apiBlocked": "API-Anfrage blockiert. Frontend mit aktualisierter Konfiguration neu deployen.",
-    "networkError": "Server nicht erreichbar. Verbindung und BACKEND_URL-Konfiguration prüfen."
+    "networkError": "Server nicht erreichbar. Verbindung und BACKEND_URL-Konfiguration prüfen.",
+    "serverError": "Serverfehler. Bitte später erneut versuchen."
+  },
+  "apiErrors": {
+    "AUTH_REQUIRED": "Sitzung abgelaufen. Bitte erneut anmelden.",
+    "FORBIDDEN": "Unzureichende Berechtigungen.",
+    "PREMIUM_REQUIRED": "Premium-Plan erforderlich.",
+    "ORDER_NOT_REFUNDABLE": "Bestellung nicht erstattungsfähig.",
+    "ORDER_ALREADY_REFUNDED": "Bestellung bereits erstattet.",
+    "STRIPE_REFUND_FAILED": "Kartenerstattung fehlgeschlagen.",
+    "CASH_SESSION_REQUIRED": "Kasse öffnen, bevor eine Erstattung erfasst wird."
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
@@ -703,6 +713,10 @@
       "vipThanks": {
         "title": "VIP-Dankeschön",
         "description": "Nachricht am Tag danach an Gäste, die an einem Abend über 200€ ausgegeben haben."
+      },
+      "requestReview": {
+        "title": "Bewertungsanfrage",
+        "description": "Nachricht 24 Stunden nach dem Besuch mit Bitte um Online-Bewertung."
       }
     }
   },
@@ -1102,6 +1116,13 @@
     "printSimulated": "Druck simuliert",
     "emailSimulated": "E-Mail simuliert",
     "alreadyPaid": "Zahlung bereits erfasst",
+    "alreadyRefunded": "Bestellung erstattet",
+    "refundCash": "Barerstattung erfassen",
+    "refundCard": "Kartenzahlung erstatten",
+    "refundConfirmCash": "Barerstattung bestätigen? CRM und Treuepunkte werden storniert.",
+    "refundConfirmCard": "Kartenerstattung bestätigen? Betrag wird über Stripe zurückgebucht.",
+    "refundSuccess": "Erstattung erfasst",
+    "refundError": "Erstattung nicht möglich",
     "errors": {
       "ORDER_NOT_FOUND": "Bestellung nicht gefunden",
       "ORDER_ALREADY_PAID": "Bestellung bereits bezahlt",
@@ -1119,7 +1140,11 @@
       "STRIPE_PI_ALREADY_USED": "PaymentIntent bereits verwendet",
       "INVALID_DISCOUNT_CODE": "Ungültiger Rabattcode",
       "NO_LOYALTY_DISCOUNT": "Kein Treuerabatt für diesen Kunden",
-      "INVALID_TIP_WAITER": "Ungültiger Kellner"
+      "INVALID_TIP_WAITER": "Ungültiger Kellner",
+      "ORDER_NOT_REFUNDABLE": "Bestellung nicht erstattungsfähig",
+      "ORDER_ALREADY_REFUNDED": "Bestellung bereits erstattet",
+      "STRIPE_REFUND_FAILED": "Kartenerstattung fehlgeschlagen",
+      "STRIPE_REFUND_UNAVAILABLE": "Kartenerstattung für diese Bestellung nicht verfügbar"
     }
   },
   "billing": {
@@ -1250,6 +1275,7 @@
     "tableNumber": "Tischnummer",
     "tableNumberPlaceholder": "z. B. 12",
     "tableNumberHint": "Geben Sie Ihre Tischnummer an",
+    "dineInRequiresQr": "Zum Bestellen am Tisch scannen Sie den QR-Code des Tisches.",
     "tableBadge": "Tisch {{number}}",
     "orderNotes": "Hinweise für die Küche",
     "orderNotesPlaceholder": "Allergien, Wünsche, Zeiten…",
@@ -1329,7 +1355,8 @@
     "installApp": "App installieren",
     "installSuccess": "App installiert! Öffne sie über den Startbildschirm.",
     "updateAvailable": "Eine neue Version der App ist verfügbar.",
-    "updateRefresh": "Jetzt aktualisieren"
+    "updateRefresh": "Jetzt aktualisieren",
+    "reload": "Neu laden"
   },
   "export": {
     "receipt": "Beleg",

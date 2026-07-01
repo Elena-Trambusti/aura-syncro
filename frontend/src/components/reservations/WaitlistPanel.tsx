@@ -9,6 +9,7 @@ import {
   Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, ListOrdered,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '@/lib/formatApiError'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import {
@@ -177,7 +178,7 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
       toast.success(t('waitlist.confirmed'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error ?? t('waitlist.confirmError', { defaultValue: 'Conferma non riuscita' }))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'waitlist.confirmError'))
     },
   })
 

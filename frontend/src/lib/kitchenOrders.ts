@@ -68,15 +68,19 @@ export function kitchenColumnForOrder(order: KitchenOrder): 'pending' | 'prepari
 }
 
 export function filterKitchenOrders(orders: KitchenOrder[]): KitchenOrder[] {
-  return orders.filter(orderNeedsKitchenAttention)
+  return orders
+    .filter(orderNeedsKitchenAttention)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 }
 
 export function mergeKitchenOrder(orders: KitchenOrder[], updated: KitchenOrder): KitchenOrder[] {
   const merged = orders.map(o => (o.id === updated.id ? updated : o))
   if (!orders.some(o => o.id === updated.id)) {
-    merged.unshift(updated)
+    merged.push(updated)
   }
-  return filterKitchenOrders(merged)
+  return filterKitchenOrders(merged).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )
 }
 
 export function applyOptimisticItemStatus(

@@ -3,7 +3,7 @@ import i18n from '../i18n'
 import { toast } from '@/lib/toast'
 import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
-import { bootstrapSessionToken, clearSessionToken, getSessionToken, setSessionToken } from '../lib/sessionToken'
+import { bootstrapSessionToken, clearSessionToken, hasAuthSessionHint, setSessionToken } from '../lib/sessionToken'
 import { applyTenantCssVars } from '../lib/tenantTheme'
 import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
 import { clearAuthCache, readAuthCache, writeAuthCache } from '../lib/authCache'
@@ -206,8 +206,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [commitRestaurant])
 
   useEffect(() => {
-    if (token) void connectSocket(token)
-  }, [token])
+    if (token || hasAuthSessionHint(restaurant?.id)) {
+      void connectSocket(token)
+    }
+  }, [token, restaurant?.id])
 
   useEffect(() => {
     if (discardDemoSession) {
@@ -221,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       applyTenantCssVars(cached.restaurant.colorTheme)
     }
 
-    const hasAuthHint = Boolean(getSessionToken() || cached)
+    const hasAuthHint = hasAuthSessionHint(cached?.restaurant.id)
     if (!hasAuthHint) {
       setIsLoading(false)
       return
@@ -242,8 +244,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSessionToken(res.data.token)
           setToken(res.data.token)
           void connectSocket(res.data.token)
-        } else if (getSessionToken()) {
-          void connectSocket(getSessionToken()!)
+        } else {
+          void connectSocket()
         }
         setUser(res.data.user)
         const normalized = normalizeRestaurant(res.data.restaurant)

@@ -5,7 +5,7 @@ import { loadRestaurantFiscalConfig, type FiscalConfig } from './taxEngine'
 import { appendFiscalChainLink } from './fiscal/fiscalIntegrityChain'
 import { snapshotOrderBillingFromCustomer } from './fiscalInvoice'
 import { releaseTableAfterPaymentTx } from './orderSession'
-import { toMoney } from './money'
+import { toMoney, moneyNumber } from './money'
 import { runOrderTransaction } from './prismaTransactions'
 
 export interface FinalizePaymentInput {
@@ -194,23 +194,28 @@ export async function finalizeOrderPayment(
     await snapshotOrderBillingFromCustomer(tx, order.id, order.customerId)
 
     if (input.paymentMethod === 'CASH') {
-      const openSession = await tx.cashRegisterSession.findFirst({
-        where: { restaurantId: input.restaurantId, status: 'OPEN' },
-      })
-      if (!openSession) throw new Error('CASH_SESSION_REQUIRED')
-      const resolvedUserId = input.executorUserId || order.waiterId
-      if (!resolvedUserId) throw new Error('CASH_USER_REQUIRED')
+      const due = cashRegisterDueAtFinalize(moneyNumber(split.total), moneyNumber(order.collectedAmount))
+      if (due > 0) {
+        const openSession = await tx.cashRegisterSession.findFirst({
+          where: { restaurantId: input.restaurantId, status: 'OPEN' },
+        })
+        if (!openSession) throw new Error('CASH_SESSION_REQUIRED')
+        const resolvedUserId = input.executorUserId || order.waiterId
+        if (!resolvedUserId) throw new Error('CASH_USER_REQUIRED')
 
-      await tx.cashTransaction.create({
-        data: {
-          sessionId: openSession.id,
-          userId: resolvedUserId,
-          type: 'SALE',
-          amount: toMoney(split.total),
-          reason: `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
-          orderId: order.id,
-        },
-      })
+        await tx.cashTransaction.create({
+          data: {
+            sessionId: openSession.id,
+            userId: resolvedUserId,
+            type: 'SALE',
+            amount: toMoney(due),
+            reason: moneyNumber(order.collectedAmount) > 0
+              ? `Saldo contanti Ordine #${order.id.slice(-6).toUpperCase()}`
+              : `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
+            orderId: order.id,
+          },
+        })
+      }
     }
 
     let tableUpdate: Awaited<ReturnType<typeof releaseTableAfterPaymentTx>> = null
@@ -252,7 +257,11 @@ export async function decrementInventoryForOrder(
   await deductInventoryForOrderBatched(tx, orderId, restaurantId)
 }
 
-export { releaseTableIfSessionComplete as releaseTableIfEmpty } from './orderSession'
+/** Importo da registrare in cassa al finalize (0 se split già incassato). */
+export function cashRegisterDueAtFinalize(total: number, priorCollected: number): number {
+  const due = moneyNumber(total) - moneyNumber(priorCollected)
+  return due > 0.009 ? Math.round(due * 100) / 100 : 0
+}
 
 /** Calcola ripartizione split (solo presentazione — un solo incasso fiscale) */
 export function computeSplitBreakdown(
@@ -265,8 +274,8 @@ export function computeSplitBreakdown(
   },
 ): SplitBreakdown {
   const guestCount = Math.max(1, config.guestCount)
-  const lineGross = (item: { quantity: number; unitPrice: number; modifierTotal?: number }) =>
-    item.quantity * item.unitPrice + (item.modifierTotal ?? 0)
+  const lineGross = (item: { quantity: number; unitPrice: number }) =>
+    item.quantity * item.unitPrice
   const lineTotal = (id: string) => {
     const item = items.find(i => i.id === id)
     return item ? lineGross(item) : 0
@@ -310,11 +319,18 @@ export function computeSplitBreakdown(
   }
 
   const foodTotal = items.reduce((s, it) => s + lineGross(it), 0)
-  for (const g of guests) {
+  for (let i = 0; i < guests.length; i++) {
+    const g = guests[i]
     g.share = foodTotal > 0
       ? Math.round((g.subtotal / foodTotal) * totalWithTip * 100) / 100
       : Math.round((totalWithTip / guestCount) * 100) / 100
   }
+  if (guests.length > 0) {
+    const sumShares = guests.slice(0, -1).reduce((s, g) => s + g.share, 0)
+    guests[guests.length - 1].share = Math.round((totalWithTip - sumShares) * 100) / 100
+  }
 
   return { mode: 'by_items', guestCount, guests }
 }
+
+export { releaseTableIfSessionComplete as releaseTableIfEmpty } from './orderSession'

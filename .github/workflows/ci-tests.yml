@@ -1,0 +1,51 @@
+name: CI — Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Business logic tests (Vitest)
+        run: npm run test:vitest
+
+      - name: Backend unit tests
+        working-directory: backend
+        run: npm run test:legacy
+
+      - name: Typecheck backend
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npx tsc -b

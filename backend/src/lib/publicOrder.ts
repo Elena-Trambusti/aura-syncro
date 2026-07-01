@@ -2,16 +2,18 @@ import { z } from 'zod'
 import { prisma } from './prisma'
 import { computeTaxFromGrossLines } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
-import { assertMenuItemOrderable } from './menuStock'
+import { assertMenuItemOrderable, assertOrderStockInTransaction } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
 import { acquireIdempotencyLock, getIdempotentResponse, saveIdempotentResponse } from './apiIdempotency'
 import { occupyTableIfAvailable } from './orderSession'
+import { verifyTableToken } from './tableToken'
 import { runOrderTransaction } from './prismaTransactions'
 import { ModifierValidationError, resolveMenuItemLine } from './orderModifiers'
 
 export const publicOrderSchema = z.object({
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
   tableNumber: z.number().int().positive().optional(),
+  tableToken: z.string().min(8).optional(),
   notes: z.string().optional(),
   guestEmail: z.string().email().optional(),
   guestPhone: z.string().min(6).optional(),
@@ -96,10 +98,19 @@ export async function resolveGuestItemsWithStock(
  * `restaurantId` deve provenire dal tenant risolto via slug (route pubblica).
  */
 export async function createPublicOrder(restaurantId: string, input: PublicOrderInput) {
-  const { items, tableNumber, guestEmail, guestPhone, guestName, clientRequestId, ...orderData } = input
+  const { items, tableNumber, tableToken, guestEmail, guestPhone, guestName, clientRequestId, ...orderData } = input
 
   if (!restaurantId) {
     throw new PublicOrderError('Ristorante non trovato', 404, 'RESTAURANT_NOT_FOUND')
+  }
+
+  if (orderData.type === 'DINE_IN') {
+    if (!tableNumber) {
+      throw new PublicOrderError('Numero tavolo obbligatorio per ordini in sala', 400, 'TABLE_NUMBER_REQUIRED')
+    }
+    if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
+      throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
+    }
   }
 
   if (clientRequestId) {
@@ -170,6 +181,12 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
         throw new PublicOrderError('Tavolo non disponibile', 409, 'TABLE_UNAVAILABLE')
       }
     }
+
+    await assertOrderStockInTransaction(
+      tx,
+      restaurantId,
+      itemsWithPrice.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+    )
 
     const created = await tx.order.create({
       data: {

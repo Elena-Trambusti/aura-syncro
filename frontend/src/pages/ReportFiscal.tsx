@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -27,6 +27,16 @@ import {
 import { toast } from '@/lib/toast'
 
 type FilterMode = 'day' | 'month' | 'range'
+
+const MAX_FISCAL_RANGE_DAYS = 366
+const FISCAL_ROW_PAGE_SIZE = 50
+
+function countRangeDays(from: string, to: string): number {
+  const start = new Date(`${from}T12:00:00`).getTime()
+  const end = new Date(`${to}T12:00:00`).getTime()
+  if (end < start) return 0
+  return Math.floor((end - start) / 86_400_000) + 1
+}
 
 interface FiscalApiResponse extends FiscalReportData {
   period: { mode: string; start: string; end: string }
@@ -91,12 +101,26 @@ function ReportFiscalContent() {
   const [rangeFrom, setRangeFrom] = useState(() => toDateInputInTimezone(tenantTz))
   const [rangeTo, setRangeTo] = useState(() => toDateInputInTimezone(tenantTz))
   const [isExporting, setIsExporting] = useState(false)
+  const [rowPage, setRowPage] = useState(1)
+
+  const rangeTooLarge = mode === 'range' && countRangeDays(rangeFrom, rangeTo) > MAX_FISCAL_RANGE_DAYS
+
+  useEffect(() => {
+    setRowPage(1)
+  }, [mode, dayDate, year, month, rangeFrom, rangeTo])
 
   const { data, isLoading, isFetching, isError } = useQuery<FiscalApiResponse>({
     queryKey: tq(tenantQueryKey, 'reports', 'fiscal', mode, dayDate, year, month, rangeFrom, rangeTo),
     queryFn: () => api.get(`/reports/fiscal?${queryParams(mode, dayDate, year, month, rangeFrom, rangeTo)}`).then(r => r.data),
-    enabled: !!restaurant?.id,
+    enabled: !!restaurant?.id && !rangeTooLarge,
   })
+
+  const totalRowPages = Math.max(1, Math.ceil((data?.rows.length ?? 0) / FISCAL_ROW_PAGE_SIZE))
+  const pagedRows = useMemo(() => {
+    if (!data?.rows?.length) return []
+    const start = (rowPage - 1) * FISCAL_ROW_PAGE_SIZE
+    return data.rows.slice(start, start + FISCAL_ROW_PAGE_SIZE)
+  }, [data?.rows, rowPage])
 
   const { data: vatBreakdown } = useQuery<{
     breakdown: Array<{ taxRate: number; taxableBase: number; tax: number; count: number }>
@@ -104,7 +128,7 @@ function ReportFiscalContent() {
   }>({
     queryKey: tq(tenantQueryKey, 'reports', 'fiscal-vat', mode, dayDate, year, month, rangeFrom, rangeTo),
     queryFn: () => api.get(`/reports/fiscal/vat-breakdown?${queryParams(mode, dayDate, year, month, rangeFrom, rangeTo)}`).then(r => r.data),
-    enabled: !!restaurant?.id,
+    enabled: !!restaurant?.id && !rangeTooLarge,
   })
 
   const activeRegime = data?.fiscalRegime ?? fiscalRegime
@@ -517,6 +541,12 @@ function ReportFiscalContent() {
               </label>
             </div>
           )}
+
+          {rangeTooLarge && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {t('reportFiscal.rangeTooLarge', { max: MAX_FISCAL_RANGE_DAYS, defaultValue: 'Intervallo massimo {{max}} giorni. Restringi il periodo.' })}
+            </p>
+          )}
         </div>
 
         {data && (
@@ -540,7 +570,7 @@ function ReportFiscalContent() {
           </div>
         )}
 
-        {isError && !isLoading && (
+        {isError && !isLoading && !rangeTooLarge && (
           <div className="flex flex-col items-center gap-3 py-16 text-rose-400">
             <AlertCircle className="h-10 w-10 opacity-60" />
             <p className="text-sm">{t('reportFiscal.loadError')}</p>
@@ -571,7 +601,7 @@ function ReportFiscalContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.06]">
-                    {data.rows.map(row => (
+                    {pagedRows.map(row => (
                       <tr
                         key={row.orderId}
                         className="transition-colors hover:bg-white/[0.03]"
@@ -610,6 +640,33 @@ function ReportFiscalContent() {
                     ))}
                   </tbody>
                 </table>
+                {data.rows.length > FISCAL_ROW_PAGE_SIZE && (
+                  <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-3">
+                    <button
+                      type="button"
+                      disabled={rowPage <= 1}
+                      onClick={() => setRowPage(p => Math.max(1, p - 1))}
+                      className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-fumo disabled:opacity-40"
+                    >
+                      {t('common.previous', { defaultValue: 'Precedente' })}
+                    </button>
+                    <span className="text-sm text-fumo">
+                      {t('reportFiscal.pageOf', {
+                        page: rowPage,
+                        total: totalRowPages,
+                        defaultValue: 'Pagina {{page}} di {{total}}',
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={rowPage >= totalRowPages}
+                      onClick={() => setRowPage(p => Math.min(totalRowPages, p + 1))}
+                      className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-fumo disabled:opacity-40"
+                    >
+                      {t('common.next', { defaultValue: 'Successivo' })}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -1,8 +1,10 @@
 import { useRef, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import AuraQrCanvas from '../components/qr/AuraQrCanvas'
 import { useAuth } from '../contexts/AuthContext'
+import { api } from '../lib/api'
 import { Download, ExternalLink, Copy, BookOpen, CalendarDays } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../lib/utils'
@@ -29,8 +31,17 @@ export default function QRBuilderPage() {
   const slug = restaurant?.slug ?? ''
   const baseMenuUrl = `${origin}/menu/${slug}`
   const parsedTable = tableNumber.trim() ? Number.parseInt(tableNumber, 10) : NaN
-  const menuUrl = Number.isFinite(parsedTable) && parsedTable > 0
-    ? `${baseMenuUrl}?tavolo=${parsedTable}`
+  const hasValidTable = Number.isFinite(parsedTable) && parsedTable > 0
+
+  const { data: qrTokenData } = useQuery({
+    queryKey: ['table-qr-token', parsedTable],
+    queryFn: () => api.get(`/tables/${parsedTable}/qr-token`).then(r => r.data as { token: string }),
+    enabled: hasValidTable,
+    staleTime: 60 * 60 * 1000,
+  })
+
+  const menuUrl = hasValidTable && qrTokenData?.token
+    ? `${baseMenuUrl}?tavolo=${parsedTable}&tok=${encodeURIComponent(qrTokenData.token)}`
     : baseMenuUrl
   const bookingUrl = `${origin}/prenota/${slug}`
   const activeUrl = mode === 'menu' ? menuUrl : bookingUrl

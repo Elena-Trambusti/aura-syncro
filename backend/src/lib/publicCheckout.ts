@@ -3,6 +3,8 @@ import { prisma } from './prisma'
 import { stripe, STRIPE_ENABLED, STRIPE_APPLICATION_FEE_PCT } from './stripe'
 import { computeTaxFromGrossLines } from './orderTax'
 import { PublicOrderError, resolveGuestItemsWithStock } from './publicOrder'
+import { assertOrderStockInTransaction } from './menuStock'
+import { verifyTableToken } from './tableToken'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
@@ -20,6 +22,7 @@ export const guestCheckoutSchema = z.object({
   slug: z.string().min(1),
   type: z.enum(['DINE_IN', 'TAKEAWAY']).default('DINE_IN'),
   tableNumber: z.number().int().positive().optional(),
+  tableToken: z.string().min(8).optional(),
   notes: z.string().optional(),
   customerName: z.string().optional(),
   customerEmail: z.string().email().optional(),
@@ -62,7 +65,7 @@ export async function createGuestStripeCheckout(
     throw new PublicOrderError('Pagamenti online non configurati', 503)
   }
 
-  const { items, tableNumber, slug, customerName, customerEmail, clientRequestId, tipAmount = 0, ...orderData } = input
+  const { items, tableNumber, tableToken, slug, customerName, customerEmail, clientRequestId, tipAmount = 0, ...orderData } = input
 
   const restaurant = await prisma.restaurant.findUnique({ 
     where: { slug },
@@ -73,6 +76,16 @@ export async function createGuestStripeCheckout(
   }
 
   const restaurantId = restaurant.id
+
+  if (orderData.type === 'DINE_IN') {
+    if (!tableNumber) {
+      throw new PublicOrderError('Numero tavolo obbligatorio per ordini in sala', 400, 'TABLE_NUMBER_REQUIRED')
+    }
+    if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
+      throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
+    }
+  }
+
   const connectAccountId = restaurant.settings.stripeConnectAccountId
   const idemKey = clientRequestId ? `guest-checkout:${clientRequestId}` : null
   let idempotencyLocked = false
@@ -147,6 +160,12 @@ export async function createGuestStripeCheckout(
   }
 
   const order = await runOrderTransaction(async tx => {
+    await assertOrderStockInTransaction(
+      tx,
+      restaurantId,
+      itemsWithPriceRaw.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+    )
+
     const created = await tx.order.create({
       data: {
         restaurantId,

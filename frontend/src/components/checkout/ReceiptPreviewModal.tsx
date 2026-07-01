@@ -6,7 +6,10 @@ import { X, Printer, Mail, CheckCircle2 } from 'lucide-react'
 import { AuraDialog, AuraDialogFooter } from '@/components/ui/AuraDialog'
 
 export interface CheckoutFinalizeResult {
-  transactionId: string
+  transactionId?: string
+  partial?: boolean
+  remaining?: number
+  collectedAmount?: number
   fiscal: {
     row: {
       baseImponible: number
@@ -15,7 +18,7 @@ export interface CheckoutFinalizeResult {
       tipAmount: number
       total: number
       paymentMethod?: string | null
-    }
+    } | null
   }
   order?: {
     id: string
@@ -25,6 +28,8 @@ export interface CheckoutFinalizeResult {
     revenueAmount?: number
     tipAmount?: number
     paymentMethod?: string
+    collectedAmount?: number
+    splitPaidGuestIndexes?: number[]
     table?: { number: number }
     type: string
     createdAt: string
@@ -56,6 +61,7 @@ export default function ReceiptPreviewModal({
   const { t } = useTranslation()
   const fiscal = useFiscalRegime()
   const row = result.fiscal.row
+  if (!row) return null
 
   return (
     <AuraDialog onClose={onClose} maxWidth="md" hideClose className="flex max-h-[90vh] flex-col overflow-hidden p-0">
@@ -72,7 +78,7 @@ export default function ReceiptPreviewModal({
       <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="rounded-lg border border-white/[0.08] bg-navy-surface/50 p-4 font-mono text-xs text-pietra">
             <p className="text-center text-sm font-bold">{restaurantName}</p>
-            <p className="mt-1 text-center text-fumo">{t('checkout.transactionId', { id: result.transactionId })}</p>
+            <p className="mt-1 text-center text-fumo">{t('checkout.transactionId', { id: result.transactionId ?? '—' })}</p>
             <div className="my-3 border-t border-dashed border-white/[0.1]" />
             <div className="space-y-1">
               <div className="flex justify-between">

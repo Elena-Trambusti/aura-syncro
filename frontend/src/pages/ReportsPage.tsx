@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { formatCurrency, monthYearInTimezone } from '../lib/utils'
+import { formatCurrency, monthYearInTimezone, toDateInputInTimezone } from '../lib/utils'
 import { TrendingUp, TrendingDown, FileText, Download, Save } from 'lucide-react'
 import { downloadCSV } from '../lib/export'
 import { LuxuryChartFrame } from '../components/charts'
@@ -14,6 +14,7 @@ import { tRegime } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { usePlanTier } from '../hooks/usePlanTier'
+import { formatApiError } from '../lib/formatApiError'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -46,6 +47,11 @@ export default function ReportsPage() {
   const [selectedYear, setSelectedYear] = useState(defaultPeriod.year)
   const [selectedMonth, setSelectedMonth] = useState(defaultPeriod.month)
   const [activeTab, setActiveTab] = useState<'pl' | 'foodcost' | 'annuale'>('pl')
+  const [zetaDate, setZetaDate] = useState(() => toDateInputInTimezone(tenantTz))
+
+  useEffect(() => {
+    setZetaDate(toDateInputInTimezone(tenantTz))
+  }, [tenantTz])
 
   const monthNames = t('reportFiscal.months', { returnObjects: true }) as string[]
 
@@ -81,9 +87,9 @@ export default function ReportsPage() {
   }
 
   const { mutate: generateZeta, isPending: isGeneratingZeta } = useMutation({
-    mutationFn: () => api.post('/reports/zeta').then(r => r.data),
+    mutationFn: () => api.post('/reports/zeta', { date: zetaDate }).then(r => r.data),
     onSuccess: () => toast.success(t('reports.zetaSuccess')),
-    onError: (err: any) => toast.error(err.response?.data?.error || t('reports.zetaError'))
+    onError: (err: unknown) => toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'reports.zetaError')),
   })
 
   const exportFoodCost = () => {
@@ -108,19 +114,29 @@ export default function ReportsPage() {
         actions={(
           <div className="flex items-center gap-2">
             {showZeta && (
-              <button
-                onClick={() => {
-                  if (window.confirm(t('reports.zetaConfirm'))) {
-                    generateZeta()
-                  }
-                }}
-                disabled={isGeneratingZeta}
-                className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light shadow-sm transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15 disabled:opacity-50"
-              >
-                <Save className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
-                {isGeneratingZeta ? '...' : t('reports.zetaButton')}
-              </button>
+              <>
+                <input
+                  type="date"
+                  value={zetaDate}
+                  onChange={e => setZetaDate(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  aria-label={t('reports.zetaDate', { defaultValue: 'Data chiusura Zeta' })}
+                />
+                <button
+                  onClick={() => {
+                    if (window.confirm(t('reports.zetaConfirm'))) {
+                      generateZeta()
+                    }
+                  }}
+                  disabled={isGeneratingZeta}
+                  className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light shadow-sm transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15 disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
+                  {isGeneratingZeta ? '...' : t('reports.zetaButton')}
+                </button>
+              </>
             )}
+            {canAccessAdminNav() && (
             <Link
               to="/report/fiscal"
               className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15"
@@ -128,6 +144,7 @@ export default function ReportsPage() {
               <FileText className="h-4 w-4 shrink-0 text-aura-gold" aria-hidden />
               {t('reportFiscal.linkLabel')}
             </Link>
+            )}
             <select value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
               {[defaultPeriod.year - 1, defaultPeriod.year, defaultPeriod.year + 1].map(y => <option key={y} value={y}>{y}</option>)}
             </select>

@@ -8,6 +8,7 @@ import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
 import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from '../lib/taxEngine'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { computeOnboardingReadiness } from '../lib/onboardingReadiness'
+import { resolveMaxCoversPerSlot } from '../lib/reservationCapacity'
 
 const SENSITIVE_SETTINGS_FIELDS = new Set([
   'stripeCustomerId',
@@ -66,6 +67,14 @@ const settingsSchema = z.object({
   autoConfirmReservations: z.boolean().optional(),
   noShowDepositRequired: z.boolean().optional(),
   depositAmount: z.number().min(0).optional(),
+  laborHourlyRate: z.number().min(0).max(500).optional(),
+  legalCity: z.preprocess(emptyToNull, z.string().max(100).nullable().optional()),
+  legalZip: z.preprocess(emptyToNull, z.string().max(12).nullable().optional()),
+  legalProvince: z.preprocess(emptyToNull, z.string().max(4).nullable().optional()),
+  onboardingConcierge: z.object({
+    menu: z.boolean().optional(),
+    call: z.boolean().optional(),
+  }).optional(),
 }).optional()
 
 const updateSchema = z.object({
@@ -87,7 +96,15 @@ restaurantRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReque
     res.status(404).json({ error: 'Ristorante non trovato' })
     return
   }
-  res.json(serializeRestaurantResponse(restaurant))
+  const effectiveMaxCoversPerSlot = await resolveMaxCoversPerSlot(req.restaurantId!)
+  const payload = serializeRestaurantResponse(restaurant)
+  if (payload?.settings && typeof payload.settings === 'object') {
+    payload.settings = {
+      ...payload.settings,
+      effectiveMaxCoversPerSlot,
+    }
+  }
+  res.json(payload)
 })
 
 /** Stato integrazione POS (sola lettura per owner/manager) */
@@ -100,6 +117,38 @@ restaurantRouter.get('/pos-status', requireRole('OWNER', 'MANAGER'), async (req:
 restaurantRouter.get('/onboarding-readiness', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const readiness = await computeOnboardingReadiness(req.restaurantId!)
   res.json(readiness)
+})
+
+restaurantRouter.get('/onboarding-concierge', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId: req.restaurantId! },
+    select: { onboardingConcierge: true },
+  })
+  const raw = settings?.onboardingConcierge as { menu?: boolean; call?: boolean } | null
+  res.json({ menu: Boolean(raw?.menu), call: Boolean(raw?.call) })
+})
+
+restaurantRouter.patch('/onboarding-concierge', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = z.object({
+    menu: z.boolean().optional(),
+    call: z.boolean().optional(),
+  }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+  const current = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId: req.restaurantId! },
+    select: { onboardingConcierge: true },
+  })
+  const prev = (current?.onboardingConcierge as { menu?: boolean; call?: boolean } | null) ?? {}
+  const next = { ...prev, ...parsed.data }
+  await prisma.restaurantSettings.upsert({
+    where: { restaurantId: req.restaurantId! },
+    update: { onboardingConcierge: next },
+    create: { restaurantId: req.restaurantId!, onboardingConcierge: next },
+  })
+  res.json(next)
 })
 
 restaurantRouter.put('/', requirePermission('settings.manage'), requireFullDashboardAccess, async (req: AuthRequest, res: Response): Promise<void> => {

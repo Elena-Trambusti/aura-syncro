@@ -3,22 +3,14 @@ import {
   buildMonthRangeInTimezone,
   calendarDateInTimezone,
   dayBoundsInTimezone,
+  shiftCalendarDate,
 } from './dates'
 import { buildFiscalConfig } from './taxEngine'
 import { kitchenActiveOrdersWhere } from './orderSession'
 import { sumFoodFromMoneyAgg, moneyNumber } from './money'
+import { paidRevenueOrderWhere } from './analyticsFilters'
 
-function paidInRange(start: Date, end: Date) {
-  return {
-    status: 'PAID' as const,
-    OR: [
-      { paidAt: { gte: start, lt: end } },
-      { paidAt: null, createdAt: { gte: start, lt: end } },
-    ],
-  }
-}
-
-async function loadTenantTimeRanges(restaurantId: string) {
+export async function loadTenantTimeRanges(restaurantId: string) {
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     include: { settings: true },
@@ -41,6 +33,15 @@ async function loadTenantTimeRanges(restaurantId: string) {
   const prevMonthEndStart = `${year}-${String(month).padStart(2, '0')}-01`
   const { gte: lastMonthEndExclusive } = dayBoundsInTimezone(prevMonthEndStart, timeZone)
 
+  const dayOfMonth = Number(todayStr.slice(8, 10))
+  const prevMonthDays = new Date(prevYear, prevMonth, 0).getDate()
+  const clampedDay = Math.min(dayOfMonth, prevMonthDays)
+  const lastMonthPartialDayStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+  const { lt: lastMonthPartialEnd } = dayBoundsInTimezone(
+    shiftCalendarDate(lastMonthPartialDayStr, 1),
+    timeZone,
+  )
+
   return {
     timeZone,
     todayStart,
@@ -49,6 +50,7 @@ async function loadTenantTimeRanges(restaurantId: string) {
     monthEndExclusive,
     lastMonthStart,
     lastMonthEndExclusive,
+    lastMonthPartialEnd,
   }
 }
 
@@ -60,11 +62,12 @@ export async function buildDashboardSummary(restaurantId: string) {
     todayOrders,
     todayRevenue,
     monthRevenue,
-    lastMonthRevenue,
+    lastMonthPartialRevenue,
     totalCustomers,
     todayReservations,
     activeOrders,
     lowStockItems,
+    turnoverOrders,
   ] = await Promise.all([
     prisma.order.count({
       where: {
@@ -74,15 +77,15 @@ export async function buildDashboardSummary(restaurantId: string) {
       },
     }),
     prisma.order.aggregate({
-      where: { restaurantId, ...paidInRange(ranges.todayStart, ranges.todayEnd) },
+      where: paidRevenueOrderWhere(restaurantId, ranges.todayStart, ranges.todayEnd),
       _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
     }),
     prisma.order.aggregate({
-      where: { restaurantId, ...paidInRange(ranges.monthStart, ranges.monthEndExclusive) },
+      where: paidRevenueOrderWhere(restaurantId, ranges.monthStart, ranges.monthEndExclusive),
       _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
     }),
     prisma.order.aggregate({
-      where: { restaurantId, ...paidInRange(ranges.lastMonthStart, ranges.lastMonthEndExclusive) },
+      where: paidRevenueOrderWhere(restaurantId, ranges.lastMonthStart, ranges.lastMonthPartialEnd),
       _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
     }),
     prisma.customer.count({ where: { restaurantId } }),
@@ -97,11 +100,30 @@ export async function buildDashboardSummary(restaurantId: string) {
     prisma.inventoryItem.count({
       where: { restaurantId, quantity: { lte: prisma.inventoryItem.fields.minQuantity } },
     }),
+    prisma.order.findMany({
+      where: {
+        ...paidRevenueOrderWhere(restaurantId, ranges.todayStart, ranges.todayEnd),
+        tableId: { not: null },
+      },
+      select: { createdAt: true, paidAt: true },
+    }),
   ])
 
   const monthFood = sumFoodFromMoneyAgg(monthRevenue)
-  const lastMonthFood = sumFoodFromMoneyAgg(lastMonthRevenue)
+  const lastMonthFood = sumFoodFromMoneyAgg(lastMonthPartialRevenue)
   const revenueGrowth = lastMonthFood ? ((monthFood - lastMonthFood) / lastMonthFood) * 100 : 0
+
+  let totalMinutes = 0
+  let turnoverCount = 0
+  for (const o of turnoverOrders) {
+    const paid = o.paidAt ?? o.createdAt
+    const mins = (paid.getTime() - o.createdAt.getTime()) / 60_000
+    if (mins > 0 && mins < 480) {
+      totalMinutes += mins
+      turnoverCount++
+    }
+  }
+  const avgTurnoverMinutes = turnoverCount > 0 ? Math.round(totalMinutes / turnoverCount) : 0
 
   return {
     today: {
@@ -118,8 +140,6 @@ export async function buildDashboardSummary(restaurantId: string) {
       collected: moneyNumber(monthRevenue._sum.total),
       revenueGrowth: Math.round(revenueGrowth * 10) / 10,
     },
-    totals: { customers: totalCustomers, lowStockAlerts: lowStockItems },
+    totals: { customers: totalCustomers, lowStockAlerts: lowStockItems, avgTurnoverMinutes },
   }
 }
-
-export { loadTenantTimeRanges }

@@ -13,6 +13,21 @@ import { moneyNumber } from '../lib/money'
 
 const router = Router()
 
+router.use(async (req: AuthRequest, res: Response, next) => {
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId: tenantId(req) },
+    select: { countryCode: true },
+  })
+  if (settings?.countryCode !== 'IT') {
+    res.status(403).json({
+      error: 'Fatturazione B2B disponibile solo per ristoranti in Italia',
+      code: 'INVOICES_IT_ONLY',
+    })
+    return
+  }
+  next()
+})
+
 const invoiceSchema = z.object({
   orderId: z.string().optional(),
   clientePiva: z.string().optional(),
@@ -43,6 +58,11 @@ router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: 
       where: { restaurantId },
     })
 
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { address: true },
+    })
+
     if (!settings || !settings.legalName || !settings.taxId || !settings.legalAddress) {
       res.status(400).json({ error: 'Dati fiscali ristorante incompleti' })
       return
@@ -68,7 +88,7 @@ router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: 
 
     if (data.orderId) {
       const order = await prisma.order.findFirst({
-        where: { id: data.orderId, restaurantId, status: 'PAID' },
+        where: { id: data.orderId, restaurantId, status: 'PAID', refundedAt: null },
         include: {
           items: {
             include: { menuItem: true, modifiers: true },
@@ -76,7 +96,10 @@ router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: 
         },
       })
       if (!order) {
-        res.status(404).json({ error: 'Ordine pagato non trovato per questo tenant' })
+        res.status(400).json({
+          error: 'Ordine non fatturabile (non trovato, non pagato o già rimborsato)',
+          code: 'ORDER_NOT_INVOICEABLE',
+        })
         return
       }
       const taxRate = order.taxRateApplied ?? defaultTaxRate
@@ -151,9 +174,9 @@ router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: 
         issuerLegalName: settings.legalName!,
         issuerFiscalCode: settings.fiscalCode || undefined,
         issuerAddress: settings.legalAddress!,
-        issuerCity: 'N/D',
-        issuerZip: '00000',
-        issuerProvince: 'ND',
+        issuerCity: settings.legalCity || restaurant?.address?.split(',')[0]?.trim() || 'N/D',
+        issuerZip: settings.legalZip || '00000',
+        issuerProvince: settings.legalProvince || 'ND',
         issuerCountry: settings.countryCode,
         clientVat: data.clientePiva,
         clientFiscalCode: data.clienteCodiceFiscale,

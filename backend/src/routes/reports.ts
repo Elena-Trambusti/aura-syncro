@@ -11,6 +11,7 @@ import {
   buildMonthRange,
   buildMonthRangeInTimezone,
   calendarDateInTimezone,
+  dayBoundsInTimezone,
   dayRangeInTimezone,
   effectivePaidAt,
   endOfLocalDay,
@@ -23,6 +24,7 @@ import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { buildFiscalSummary, buildFiscalTransactionRow } from '../lib/tipFiscal'
 import { verifyFiscalChainSequence } from '../lib/fiscal/fiscalIntegrityChain'
 import { moneyNumber, sumFoodFromMoneyAgg, toMoney } from '../lib/money'
+import { isFiscalRangeWithinLimit, MAX_FISCAL_RANGE_DAYS } from '../lib/fiscalReportLimits'
 
 export const reportsRouter = Router()
 
@@ -46,15 +48,10 @@ const fiscalOrderSelect = {
 } as const
 
 async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: Date) {
-  const orders = await prisma.order.findMany({
+  return prisma.order.findMany({
     where: paidOrdersInPeriodWhere(restaurantId, start, end),
     select: fiscalOrderSelect,
-  })
-
-  return orders.sort((a, b) => {
-    const da = effectivePaidAt(a.paidAt, a.createdAt).getTime()
-    const db = effectivePaidAt(b.paidAt, b.createdAt).getTime()
-    return da - db
+    orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }],
   })
 }
 
@@ -66,6 +63,7 @@ async function resolveChainInitialPrevHash(
     where: {
       restaurantId,
       status: 'PAID',
+      refundedAt: null,
       fiscalIntegrityHash: { not: null },
       OR: [
         { paidAt: { lt: rangeStart } },
@@ -123,6 +121,8 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
   }
 
   // Costo personale stimato (ore lavorate × tariffa media)
+  const hourlyRate = restaurant?.settings?.laborHourlyRate ?? 12
+
   const shifts = await prisma.shift.findMany({
     where: {
       restaurantId,
@@ -131,7 +131,7 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
     },
   })
 
-  const HOURLY_RATE = 12 // €/ora stimato
+  const HOURLY_RATE = hourlyRate
   let laborCost = 0
   for (const s of shifts) {
     const [sh, sm] = s.startTime.split(':').map(Number)
@@ -399,6 +399,14 @@ reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, as
     res.status(400).json({ error: 'Filtro date non valido' })
     return
   }
+  if (!isFiscalRangeWithinLimit(range.start, range.end)) {
+    res.status(400).json({
+      error: 'Intervallo troppo ampio',
+      code: 'FISCAL_RANGE_TOO_LARGE',
+      maxDays: MAX_FISCAL_RANGE_DAYS,
+    })
+    return
+  }
 
   const orders = await fetchPaidOrdersInPeriod(restaurantId, range.start, range.end)
   const strategy = getFiscalStrategyFromConfig(fiscal)
@@ -491,6 +499,14 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER', 'MANAGER'), requ
     res.status(400).json({ error: 'Filtro date non valido' })
     return
   }
+  if (!isFiscalRangeWithinLimit(range.start, range.end)) {
+    res.status(400).json({
+      error: 'Intervallo troppo ampio',
+      code: 'FISCAL_RANGE_TOO_LARGE',
+      maxDays: MAX_FISCAL_RANGE_DAYS,
+    })
+    return
+  }
 
   const orders = await fetchPaidOrdersInPeriod(restaurantId, range.start, range.end)
   const byRate = new Map<number, { taxRate: number; taxableBase: number; tax: number; count: number }>()
@@ -533,6 +549,15 @@ reportsRouter.get('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, asyn
 reportsRouter.post('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
+  const bodySchema = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  })
+  const bodyParsed = bodySchema.safeParse(req.body ?? {})
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: 'Data chiusura non valida (YYYY-MM-DD)' })
+    return
+  }
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     include: { settings: true },
@@ -549,10 +574,11 @@ reportsRouter.post('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, asy
     return
   }
 
-  const { start: startOfDay, end: endOfDay } = dayRangeInTimezone(zetaTimeZone)
+  const targetDateStr = bodyParsed.data.date ?? calendarDateInTimezone(zetaTimeZone)
+  const { gte: startOfDay, lt: endExclusive } = dayBoundsInTimezone(targetDateStr, zetaTimeZone)
+  const endOfDay = new Date(endExclusive.getTime() - 1)
 
-  // 1. Controlla se c'è già una chiusura oggi (calendario tenant)
-  const dayKey = calendarDateInTimezone(zetaTimeZone)
+  const dayKey = targetDateStr
   const existing = await prisma.fiscalClosure.findFirst({
     where: {
       restaurantId,

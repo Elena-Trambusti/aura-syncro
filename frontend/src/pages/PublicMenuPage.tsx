@@ -166,6 +166,11 @@ function parseTableFromSearch(params: URLSearchParams): number | null {
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
+function parseTableTokenFromSearch(params: URLSearchParams): string | null {
+  const raw = params.get('tok') ?? params.get('token')
+  return raw?.trim() || null
+}
+
 export default function PublicMenuPage() {
   const { slug } = useParams<{ slug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -177,6 +182,7 @@ export default function PublicMenuPage() {
   const cart = useGuestCart(slug)
 
   const tableNumber = useMemo(() => parseTableFromSearch(searchParams), [searchParams])
+  const tableToken = useMemo(() => parseTableTokenFromSearch(searchParams), [searchParams])
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -205,7 +211,8 @@ export default function PublicMenuPage() {
   }>({
     queryKey: ['public-menu', slug],
     queryFn: () => api.get(`/public/menu/${slug}`).then(r => r.data),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   })
 
@@ -459,6 +466,7 @@ export default function PublicMenuPage() {
             stripeEnabled={data.stripeEnabled ?? false}
             fiscal={restaurantFiscal ? { ...restaurantFiscal, taxRegion: restaurantFiscal.taxRegion ?? 'IT_MAIN' } : { taxRate: 10, taxName: 'IVA', taxRegion: 'IT_MAIN' }}
             tableNumber={tableNumber}
+            tableToken={tableToken}
             items={cart.items}
             subtotal={cart.subtotal}
             onSetQuantity={cart.setQuantity}

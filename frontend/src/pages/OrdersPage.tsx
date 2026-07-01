@@ -13,6 +13,7 @@ import { tq } from '../lib/queryKeys'
 import { useRole } from '../hooks/useRole'
 import { useRealtimeOrders } from '../hooks/useRealtimeInvalidation'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '../lib/formatApiError'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -38,6 +39,8 @@ interface Order {
   total: number
   subtotal: number
   tax: number
+  collectedAmount?: number
+  splitPaidGuestIndexes?: number[]
   notes?: string
   createdAt: string
   table?: { number: number }
@@ -82,8 +85,8 @@ export default function OrdersPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
       toast.success(t('orders.statusUpdated'))
     },
-    onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error ?? t('common.saveError', { defaultValue: 'Operazione non riuscita' }))
+    onError: (err: { response?: { data?: { error?: string; code?: string } }; translatedMessage?: string }) => {
+      toast.error(err.translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
@@ -169,6 +172,14 @@ export default function OrdersPage() {
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
                       {ORDER_STATUS_LABELS[order.status]}
                     </span>
+                    {(order.collectedAmount ?? 0) > 0 && order.status !== 'PAID' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/20 text-amber-800">
+                        {t('orders.splitOpen', {
+                          collected: formatCurrency(order.collectedAmount ?? 0),
+                          total: formatCurrency(order.total),
+                        })}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 mt-1 text-xs text-fumo">
                     <Clock className="w-3 h-3" />

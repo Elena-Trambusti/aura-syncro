@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 
 export interface StockLink {
@@ -108,5 +109,45 @@ export function assertMenuItemOrderable(
   }
   if (!canFulfillQuantity(menuItem.inventoryLinks, quantity)) {
     throw Object.assign(new Error('sold out'), { code: 'MENU_ITEM_SOLD_OUT' })
+  }
+}
+
+/**
+ * AB-LOG-02: ri-valida stock dentro la transazione ordine (quantità fresche)
+ * prima di creare l'ordine o scalare magazzino — evita race TOCTOU tra lettura UI e commit.
+ */
+export async function assertOrderStockInTransaction(
+  tx: Prisma.TransactionClient,
+  restaurantId: string,
+  items: Array<{ menuItemId: string; quantity: number }>,
+): Promise<void> {
+  if (items.length === 0) return
+
+  const menuItems = await tx.menuItem.findMany({
+    where: {
+      id: { in: items.map(i => i.menuItemId) },
+      restaurantId,
+      archived: false,
+    },
+    include: {
+      inventoryLinks: { include: { inventoryItem: { select: { quantity: true } } } },
+    },
+  })
+
+  const byId = new Map(menuItems.map(m => [m.id, m]))
+  for (const line of items) {
+    const menuItem = byId.get(line.menuItemId)
+    if (!menuItem) {
+      throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
+    }
+    try {
+      assertMenuItemOrderable(menuItem, line.quantity)
+    } catch (e) {
+      const code = (e as { code?: string }).code
+      if (code === 'MENU_ITEM_SOLD_OUT') {
+        throw Object.assign(new Error('INSUFFICIENT_STOCK'), { code: 'INSUFFICIENT_STOCK' })
+      }
+      throw e
+    }
   }
 }

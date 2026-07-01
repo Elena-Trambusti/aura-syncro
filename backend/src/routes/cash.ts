@@ -179,3 +179,59 @@ cashRouter.get('/transactions', requirePermission('orders.pay'), async (req: Aut
   
   res.json(txs)
 })
+
+// POST /cash/orders/:orderId/refund — registra rimborso contanti e aggiorna ordine
+cashRouter.post('/orders/:orderId/refund', requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const schema = z.object({
+    amount: z.number().positive().optional(),
+    reason: z.string().optional(),
+  })
+  const result = schema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Dati non validi' })
+    return
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id: req.params.orderId, restaurantId: tenantId(req), status: 'PAID' },
+    select: { id: true, total: true, refundedAt: true },
+  })
+  if (!order) {
+    tenantNotFound(res, 'Ordine non trovato o non rimborsabile')
+    return
+  }
+  if (order.refundedAt) {
+    res.status(409).json({ error: 'Ordine già rimborsato', code: 'ORDER_ALREADY_REFUNDED' })
+    return
+  }
+
+  const session = await prisma.cashRegisterSession.findFirst({
+    where: { restaurantId: tenantId(req), status: 'OPEN' },
+  })
+  if (!session) {
+    res.status(400).json({ error: 'Apri un turno cassa per registrare il rimborso.', code: 'CASH_SESSION_REQUIRED' })
+    return
+  }
+
+  const refundAmount = result.data.amount ?? moneyNumber(order.total)
+
+  try {
+    const { executeOrderRefund } = await import('../lib/orderRefund')
+    const { refundAmount: refunded } = await executeOrderRefund({
+      orderId: order.id,
+      restaurantId: tenantId(req),
+      amount: refundAmount,
+      reason: result.data.reason,
+      userId: req.userId!,
+      cashSessionId: session.id,
+    })
+    res.json({ success: true, refundAmount: refunded })
+  } catch (err) {
+    const code = (err as { code?: string }).code
+    if (code === 'ORDER_NOT_REFUNDABLE' || code === 'ORDER_ALREADY_REFUNDED') {
+      res.status(409).json({ error: 'Ordine non rimborsabile', code })
+      return
+    }
+    throw err
+  }
+})

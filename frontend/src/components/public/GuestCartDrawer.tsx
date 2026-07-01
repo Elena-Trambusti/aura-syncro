@@ -26,6 +26,7 @@ interface GuestCartDrawerProps {
   stripeEnabled: boolean
   fiscal: FiscalInfo
   tableNumber: number | null
+  tableToken: string | null
   items: GuestCartItem[]
   subtotal: number
   onSetQuantity: (cartLineId: string, quantity: number) => void
@@ -43,6 +44,7 @@ export default function GuestCartDrawer({
   stripeEnabled,
   fiscal,
   tableNumber,
+  tableToken,
   items,
   subtotal,
   onSetQuantity,
@@ -74,6 +76,8 @@ export default function GuestCartDrawer({
     ? parsedTable
     : undefined
 
+  const dineInRequiresToken = orderType === 'DINE_IN' && !tableToken
+
   const payloadItems = items.map(i => ({
     menuItemId: i.menuItemId,
     quantity: i.quantity,
@@ -88,6 +92,7 @@ export default function GuestCartDrawer({
     slug,
     type: orderType,
     tableNumber: effectiveTable,
+    tableToken: orderType === 'DINE_IN' && effectiveTable && tableToken ? tableToken : undefined,
     notes: notes.trim() || undefined,
     items: payloadItems,
     tipAmount: stripeEnabled && parsedTip > 0 ? parsedTip : undefined,
@@ -95,6 +100,10 @@ export default function GuestCartDrawer({
 
   async function handlePayWithCard() {
     if (items.length === 0) return
+    if (dineInRequiresToken) {
+      toast.error(t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' }))
+      return
+    }
     setLoading('card')
     const clientRequestId = createClientRequestId()
     try {
@@ -114,6 +123,10 @@ export default function GuestCartDrawer({
 
   async function handleOrderAtTable() {
     if (items.length === 0) return
+    if (dineInRequiresToken) {
+      toast.error(t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' }))
+      return
+    }
     setLoading('table')
     const clientRequestId = createClientRequestId()
     try {
@@ -256,10 +269,15 @@ export default function GuestCartDrawer({
                         min={1}
                         value={tableInput}
                         onChange={e => setTableInput(e.target.value)}
+                        readOnly={Boolean(tableToken)}
                         placeholder={t('publicMenu.tableNumberPlaceholder')}
-                        className="w-full rounded-xl border border-white/[0.08] bg-navy-surface px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20"
+                        className="w-full rounded-xl border border-white/[0.08] bg-navy-surface px-4 py-2.5 text-sm text-pietra placeholder:text-fumo/60 focus:border-aura-gold focus:outline-none focus:ring-2 focus:ring-aura-gold/20 read-only:opacity-80"
                       />
-                      <p className="mt-1 text-xs text-fumo/70">{t('publicMenu.tableNumberHint')}</p>
+                      <p className="mt-1 text-xs text-fumo/70">
+                        {tableToken
+                          ? t('publicMenu.tableNumberLocked', { defaultValue: 'Tavolo associato al QR scansionato.' })
+                          : t('publicMenu.tableNumberHint')}
+                      </p>
                     </div>
                   )}
 
@@ -343,7 +361,7 @@ export default function GuestCartDrawer({
                   {stripeEnabled ? (
                     <button
                       type="button"
-                      disabled={loading !== null}
+                      disabled={loading !== null || dineInRequiresToken}
                       onClick={() => void handlePayWithCard()}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-3.5 text-sm font-semibold text-navy hover:bg-aura-gold-light disabled:opacity-60"
                     >
@@ -356,9 +374,15 @@ export default function GuestCartDrawer({
                     <p className="text-center text-xs text-fumo">{t('publicMenu.stripeUnavailable')}</p>
                   )}
 
+                  {dineInRequiresToken && (
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      {t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' })}
+                    </p>
+                  )}
+
                   <button
                     type="button"
-                    disabled={loading !== null}
+                    disabled={loading !== null || dineInRequiresToken}
                     onClick={() => void handleOrderAtTable()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/[0.12] py-3.5 text-sm font-semibold text-pietra hover:bg-white/5 disabled:opacity-60"
                   >

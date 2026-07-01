@@ -17,6 +17,7 @@ import { ui } from '../lib/ui'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
+import { formatApiError } from '../lib/formatApiError'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -42,10 +43,20 @@ interface RestaurantProfile {
   settings?: {
     noShowDepositRequired?: boolean
     depositAmount?: number
+    effectiveMaxCoversPerSlot?: number
+    maxCoversPerSlot?: number
   } | null
 }
 
-function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, string | number>) => void; onCancel: () => void }) {
+function ReservationForm({
+  maxCovers,
+  onSave,
+  onCancel,
+}: {
+  maxCovers: number
+  onSave: (data: Record<string, string | number>) => void
+  onCancel: () => void
+}) {
   const { t } = useTranslation()
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -84,11 +95,11 @@ function ReservationForm({ onSave, onCancel }: { onSave: (data: Record<string, s
               <input
                 type="number"
                 min={1}
-                max={20}
+                max={maxCovers}
                 value={form.covers}
                 onChange={e => {
                   const n = parseInt(e.target.value, 10)
-                  update('covers', Number.isNaN(n) ? 1 : Math.min(20, Math.max(1, n)))
+                  update('covers', Number.isNaN(n) ? 1 : Math.min(maxCovers, Math.max(1, n)))
                 }}
                 className={ui.input}
               />
@@ -212,6 +223,10 @@ export default function ReservationsPage() {
   })
 
   const depositPolicyActive = requiresDepositFromSettings(restaurantProfile?.settings)
+  const maxCoversPerSlot =
+    restaurantProfile?.settings?.effectiveMaxCoversPerSlot
+    ?? restaurantProfile?.settings?.maxCoversPerSlot
+    ?? 20
 
   const { data: reservations = [], isError: reservationsError } = useQuery<Reservation[]>({
     queryKey: tq(tk, 'reservations', selectedDate),
@@ -258,10 +273,10 @@ export default function ReservationsPage() {
     mutationFn: (reservationId: string) => api.post(`/reservations/${reservationId}/charge-no-show`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
-      toast.success('Penale No-Show addebitata con successo!')
+      toast.success(t('reservations.noShowChargeSuccess'))
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Errore durante l\'addebito')
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'reservations.noShowChargeError'))
     }
   })
 
@@ -552,6 +567,7 @@ export default function ReservationsPage() {
 
       {showForm && (
         <ReservationForm
+          maxCovers={maxCoversPerSlot}
           onSave={data => createReservation.mutate(data)}
           onCancel={() => setShowForm(false)}
         />

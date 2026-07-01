@@ -1,5 +1,7 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
+import { countActiveTableOrders } from './orderSession'
+import { resolveMaxCoversPerSlot } from './reservationCapacity'
 
 export class ReservationValidationError extends Error {
   constructor(
@@ -28,7 +30,7 @@ export async function validateReservationSlot(
     where: { restaurantId },
   })
 
-  const maxCovers = settings?.maxCoversPerSlot ?? 999
+  const maxCovers = await resolveMaxCoversPerSlot(restaurantId, db)
   const autoConfirm = settings?.autoConfirmReservations ?? true
 
   if (input.covers > maxCovers) {
@@ -75,6 +77,27 @@ export async function validateReservationSlot(
       throw new ReservationValidationError(
         'Tavolo già prenotato in questo orario',
         'TABLE_UNAVAILABLE',
+      )
+    }
+
+    const table = await db.table.findFirst({
+      where: { id: input.tableId, restaurantId },
+      select: { status: true },
+    })
+    if (!table) {
+      throw new ReservationValidationError('Tavolo non trovato', 'TABLE_NOT_FOUND')
+    }
+    if (!['FREE', 'RESERVED'].includes(table.status)) {
+      throw new ReservationValidationError(
+        'Tavolo non disponibile per prenotazione',
+        'TABLE_OCCUPIED',
+      )
+    }
+    const activeOrders = await countActiveTableOrders(input.tableId, restaurantId, db)
+    if (activeOrders > 0) {
+      throw new ReservationValidationError(
+        'Tavolo con ordine attivo — non prenotabile',
+        'TABLE_OCCUPIED',
       )
     }
   }

@@ -188,13 +188,6 @@ reservationsRouter.post('/', requirePermission('reservations.manage'), async (re
     })
 
     io.to(tenantId(req)).emit('reservation:created', reservation)
-    if (reservation.tableId && reservation.status === 'CONFIRMED') {
-      await prisma.table.update({
-        where: { id: reservation.tableId },
-        data: { status: 'RESERVED' },
-      })
-      io.to(tenantId(req)).emit('table:updated', await prisma.table.findUnique({ where: { id: reservation.tableId } }))
-    }
     res.status(201).json({ ...reservation, depositRequired })
   } catch (err) {
     if (err instanceof ReservationValidationError) {

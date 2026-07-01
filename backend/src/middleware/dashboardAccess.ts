@@ -12,6 +12,8 @@ export const FREE_TIER_API_PREFIXES = [
   '/api/tables',
   '/api/reservations',
   '/api/waitlist',
+  '/api/reports',
+  '/api/analytics/summary',
 ] as const
 
 function isPremiumActive(settings: { hasActiveSubscription?: boolean | null } | null | undefined): boolean {

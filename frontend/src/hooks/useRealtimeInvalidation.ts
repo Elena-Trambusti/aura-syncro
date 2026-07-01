@@ -29,13 +29,15 @@ export function useRealtimeTables(): void {
       queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'tables') })
     }
 
-    void ensureSocketConnected().then((s) => {
-      if (cancelled) return
-      socket = s
-      for (const event of TABLE_EVENTS) {
-        s.on(event, refresh)
-      }
-    })
+    void ensureSocketConnected()
+      .then((s) => {
+        if (cancelled) return
+        socket = s
+        for (const event of TABLE_EVENTS) {
+          s.on(event, refresh)
+        }
+      })
+      .catch(() => { /* polling fallback via React Query */ })
 
     return () => {
       cancelled = true
@@ -51,6 +53,7 @@ export function useRealtimeOrders(): void {
   useRealtimeQuery(['order:created', 'order:updated'], 'orders')
   useRealtimeQuery(['order:created', 'order:updated'], 'inventory')
   useRealtimeQuery(['order:created', 'order:updated'], 'menu')
+  useRealtimeQuery(['order:created', 'order:updated'], 'analytics')
 }
 
 const RESERVATION_EVENTS = [
@@ -78,13 +81,15 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
       queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
     }
 
-    void ensureSocketConnected().then((s) => {
-      if (cancelled) return
-      socket = s
-      for (const event of eventList) {
-        s.on(event, refresh)
-      }
-    })
+    void ensureSocketConnected()
+      .then((s) => {
+        if (cancelled) return
+        socket = s
+        for (const event of eventList) {
+          s.on(event, refresh)
+        }
+      })
+      .catch(() => { /* polling fallback via React Query */ })
 
     return () => {
       cancelled = true

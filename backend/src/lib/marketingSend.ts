@@ -2,6 +2,9 @@ import { prisma } from './prisma'
 import { sendEmail, renderTemplate } from './email'
 import { splitCustomerName } from './crmCustomer'
 import { getTargetCustomers } from './marketingTargets'
+import { recordAutomationSend, shouldSendAutomation } from './marketingDedup'
+import { calendarDateInTimezone } from './dates'
+import { automationEmailSubject } from './marketingAutomationSubjects'
 
 export async function sendCampaignEmails(
   restaurantId: string,
@@ -44,12 +47,30 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
-    select: { name: true },
+    select: { name: true, timezone: true, settings: { select: { defaultLocale: true } } },
   })
+  const timeZone = restaurant?.timezone ?? 'Europe/Rome'
+  const defaultLocale = restaurant?.settings?.defaultLocale ?? 'it-IT'
+  const restaurantName = restaurant?.name ?? ''
 
   let sentCount = 0
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayStr = calendarDateInTimezone(timeZone)
+  const today = new Date(`${todayStr}T12:00:00`)
+
+  async function trySend(
+    type: import('@prisma/client').AutomationType,
+    customerId: string,
+    email: string,
+    subject: string,
+    body: string,
+  ): Promise<void> {
+    if (!(await shouldSendAutomation(restaurantId, type, customerId, timeZone))) return
+    const r = await sendEmail({ to: email, subject, text: body })
+    if (r.sent) {
+      await recordAutomationSend(restaurantId, type, customerId, timeZone)
+      sentCount += 1
+    }
+  }
 
   for (const auto of automations) {
     if (auto.type === 'BIRTHDAY') {
@@ -66,35 +87,45 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
         const body = renderTemplate(auto.messageTemplate, {
           firstName,
           name: c.name,
-          restaurantName: restaurant?.name ?? '',
+          restaurantName,
         })
-        const r = await sendEmail({ to: c.email, subject: `Auguri da ${restaurant?.name ?? ''}`, text: body })
-        if (r.sent) sentCount += 1
+        await trySend(
+          'BIRTHDAY',
+          c.id,
+          c.email,
+          automationEmailSubject('BIRTHDAY', defaultLocale, { restaurantName }),
+          body,
+        )
       }
     }
 
     if (auto.type === 'WIN_BACK') {
-      const cutoffEnd = new Date(today)
-      cutoffEnd.setDate(cutoffEnd.getDate() - 60)
-      const cutoffStart = new Date(today)
-      cutoffStart.setDate(cutoffStart.getDate() - 61)
+      const inactiveSince = new Date(today)
+      inactiveSince.setDate(inactiveSince.getDate() - 90)
+      const inactiveUntil = new Date(today)
+      inactiveUntil.setDate(inactiveUntil.getDate() - 45)
 
       const customers = await prisma.customer.findMany({
         where: {
           restaurantId,
           email: { contains: '@' },
           OR: [
-            { lastVisit: { gte: cutoffStart, lt: cutoffEnd } },
-            { lastVisit: null, createdAt: { gte: cutoffStart, lt: cutoffEnd } },
+            { lastVisit: { gte: inactiveSince, lt: inactiveUntil } },
+            { lastVisit: null, createdAt: { gte: inactiveSince, lt: inactiveUntil } },
           ],
         },
       })
       for (const c of customers) {
         if (!c.email) continue
         const { firstName } = splitCustomerName(c.name)
-        const body = renderTemplate(auto.messageTemplate, { firstName, name: c.name, restaurantName: restaurant?.name ?? '' })
-        const r = await sendEmail({ to: c.email, subject: 'Ci manchi!', text: body })
-        if (r.sent) sentCount += 1
+        const body = renderTemplate(auto.messageTemplate, { firstName, name: c.name, restaurantName })
+        await trySend(
+          'WIN_BACK',
+          c.id,
+          c.email,
+          automationEmailSubject('WIN_BACK', defaultLocale, { restaurantName }),
+          body,
+        )
       }
     }
 
@@ -120,20 +151,20 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
         const body = renderTemplate(auto.messageTemplate, {
           firstName,
           name: c.name,
-          restaurantName: restaurant?.name ?? '',
+          restaurantName,
         })
-        const r = await sendEmail({
-          to: c.email,
-          subject: `Grazie da ${restaurant?.name ?? 'noi'}`,
-          text: body,
-        })
-        if (r.sent) sentCount += 1
+        await trySend(
+          'VIP_THANKS',
+          c.id,
+          c.email,
+          automationEmailSubject('VIP_THANKS', defaultLocale, { restaurantName }),
+          body,
+        )
       }
     }
 
     if (auto.type === 'REQUEST_REVIEW') {
       const now = new Date()
-      // Controlla il range "tra 2 ore fa e 1 ora fa" esatta per evitare duplicati
       const endWindow = new Date(now.getTime() - 1 * 60 * 60 * 1000)
       const startWindow = new Date(now.getTime() - 2 * 60 * 60 * 1000)
 
@@ -142,7 +173,7 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
           restaurantId,
           email: { contains: '@' },
           lastVisit: { gte: startWindow, lt: endWindow },
-          totalSpent: { gte: 50 }, // Solo tavoli che hanno speso almeno 50€
+          totalSpent: { gte: 50 },
         },
       })
       for (const c of customers) {
@@ -151,14 +182,15 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
         const body = renderTemplate(auto.messageTemplate, {
           firstName,
           name: c.name,
-          restaurantName: restaurant?.name ?? '',
+          restaurantName,
         })
-        const r = await sendEmail({
-          to: c.email,
-          subject: `Come sei stato da ${restaurant?.name ?? 'noi'}?`,
-          text: body,
-        })
-        if (r.sent) sentCount += 1
+        await trySend(
+          'REQUEST_REVIEW',
+          c.id,
+          c.email,
+          automationEmailSubject('REQUEST_REVIEW', defaultLocale, { restaurantName }),
+          body,
+        )
       }
     }
   }

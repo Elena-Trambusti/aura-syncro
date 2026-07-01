@@ -10,12 +10,12 @@ import { LuxuryLineChart } from '../components/charts/lazy'
 import ChartSuspense from '../components/charts/ChartSuspense'
 import { cn } from '../lib/utils'
 import { usePredictiveAI, type PredictiveAlert, type AlertSeverity } from '../hooks/usePredictiveAI'
+import { useTenantQueryKey } from '../contexts/AuthContext'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import EmptyState from '../components/ui/EmptyState'
 import AuraIcon from '../components/ui/AuraIcon'
-import { ui } from '../lib/ui'
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 
@@ -27,25 +27,25 @@ const SEVERITY_STYLES: Record<AlertSeverity, {
   badgeText: string
 }> = {
   critical: {
-    card: 'aura-glass border-rose-500/20',
+    card: 'premium-card border border-rose-200 bg-white',
     icon: AlertTriangle,
-    iconColor: 'text-rose-400',
-    badge: 'bg-rose-500/10 border border-rose-500/15',
-    badgeText: 'text-rose-300',
+    iconColor: 'text-rose-500',
+    badge: 'bg-rose-50 border border-rose-100',
+    badgeText: 'text-rose-700',
   },
   optimization: {
-    card: 'aura-glass aura-glass--satin',
+    card: 'premium-card border border-amber-200 bg-white',
     icon: CloudRain,
-    iconColor: 'text-aura-gold',
-    badge: 'bg-aura-gold/10 border border-aura-gold/15',
-    badgeText: 'text-aura-gold-light',
+    iconColor: 'text-amber-600',
+    badge: 'bg-amber-50 border border-amber-100',
+    badgeText: 'text-amber-800',
   },
   opportunity: {
-    card: 'aura-glass border-emerald-500/20',
+    card: 'premium-card border border-emerald-200 bg-white',
     icon: TrendingUp,
-    iconColor: 'text-emerald-400',
-    badge: 'bg-emerald-500/10 border border-emerald-500/15',
-    badgeText: 'text-emerald-300',
+    iconColor: 'text-emerald-600',
+    badge: 'bg-emerald-50 border border-emerald-100',
+    badgeText: 'text-emerald-700',
   },
 }
 
@@ -99,8 +99,13 @@ export default function AIPredictivePage() {
 
 function AIPredictivePageContent() {
   const { t, i18n } = useTranslation()
+  const tk = useTenantQueryKey()
   const { forecast, alerts, factorsUsed, engineVersion, generatedAt, weatherSource, isLoading, isFetching, isError, refetch } = usePredictiveAI()
   const toastedAlertsRef = useRef(new Set<string>())
+
+  useEffect(() => {
+    toastedAlertsRef.current.clear()
+  }, [tk])
 
   useEffect(() => {
     if (isLoading || alerts.length === 0) return
@@ -142,7 +147,7 @@ function AIPredictivePageContent() {
         meta={(
           <>
             {engineVersion && (
-              <span className={cn('inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-fumo', ui.glass)}>
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-sm">
                 <AuraIcon icon={Brain} size="xs" className="text-aura-gold" />
                 {t('aiPredictive.engineLabel', { version: engineVersion })}
                 {weatherSource && (
@@ -157,7 +162,7 @@ function AIPredictivePageContent() {
                 {factorsUsed.map(f => (
                   <span
                     key={f}
-                    className={cn('inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-fumo', ui.glass)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-sm"
                   >
                     <AuraIcon icon={Sparkles} size="xs" className="text-aura-gold" />
                     {factorLabels[f]}
@@ -180,6 +185,7 @@ function AIPredictivePageContent() {
               type="button"
               disabled={isFetching}
               onClick={async () => {
+                toastedAlertsRef.current.clear()
                 const result = await refetch()
                 if (result.isError) toast.error(t('aiPredictive.loadError'))
                 else toast.success(t('aiPredictive.refreshed', { defaultValue: 'Dati aggiornati' }))

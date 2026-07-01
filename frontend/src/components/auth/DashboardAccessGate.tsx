@@ -11,7 +11,7 @@ interface DashboardAccessGateProps {
  * SBARRAMENTO CENTRALE della dashboard Aura Syncro.
  *
  * Valuta i 3 stati tassativi del tenant (da /auth/me, già risolto lato server):
- * 1. unsubscribed  → anteprima free (dashboard, ordini, menu, pagamenti, report) + billing
+ * 1. unsubscribed  → anteprima free (dashboard, ordini, menu, report) + billing
  * 2. onboarding    → solo /dashboard/onboarding
  * 3. operational   → accesso completo (+ RBAC a valle)
  *

@@ -95,7 +95,7 @@ export default function PaymentsPage() {
               className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
             >
               <ExternalLink className="w-4 h-4" />
-              Il tuo conto Stripe
+              {t('payments.stripeAccount', { defaultValue: 'Il tuo conto Stripe' })}
             </a>
           ) : (
             <button
@@ -103,7 +103,7 @@ export default function PaymentsPage() {
               className="flex items-center justify-center gap-2 bg-[#635BFF] hover:bg-[#5248e8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
             >
               <ExternalLink className="w-4 h-4" />
-              Collega Conto Bancario
+              {t('payments.connectBank', { defaultValue: 'Collega conto bancario' })}
             </button>
           )
         ) : undefined}

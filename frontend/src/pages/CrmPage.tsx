@@ -6,8 +6,10 @@ import { formatCurrency, formatDate, cn } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { customerDisplayName, isVipCustomer, tagBadgeClass } from '../lib/customerTags'
 import CustomerSlideOver, { type CustomerDetail, type CustomerEditData } from '../components/crm/CustomerSlideOver'
+import { useRole } from '../hooks/useRole'
 import { Search, Users, TrendingUp, Award, Plus, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import { formatApiError } from '../lib/formatApiError'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -61,6 +63,8 @@ export default function CrmPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const tk = useTenantQueryKey()
+  const { can } = useRole()
+  const canManageCustomers = can('customers.manage')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -96,7 +100,7 @@ export default function CrmPage() {
         lastName: data.lastName.trim(),
         ...(data.email.trim() ? { email: data.email.trim() } : {}),
         ...(data.phone.trim() ? { phone: data.phone.trim() } : {}),
-        ...(data.birthDate.trim() ? { birthdate: new Date(data.birthDate).toISOString() } : {}),
+        ...(data.birthDate.trim() ? { birthDate: data.birthDate.trim() } : {}),
         ...(data.notes.trim() ? { notes: data.notes.trim() } : {}),
         ...(data.tags.trim()
           ? { tags: data.tags.split(',').map(tag => tag.trim()).filter(Boolean) }
@@ -110,7 +114,7 @@ export default function CrmPage() {
       toast.success(t('crm.created'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error || t('crm.saveError'))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'crm.saveError'))
     },
   })
 
@@ -121,7 +125,7 @@ export default function CrmPage() {
         lastName: data.lastName.trim(),
         email: data.email.trim() || null,
         phone: data.phone.trim() || null,
-        birthdate: data.birthDate ? new Date(data.birthDate).toISOString() : null,
+        birthDate: data.birthDate?.trim() || null,
         notes: data.notes.trim() || null,
         allergens: data.allergens.trim() || null,
         tags: data.tags.trim()
@@ -137,7 +141,7 @@ export default function CrmPage() {
       toast.success(t('crm.updated'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error || t('crm.saveError'))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'crm.saveError'))
     },
   })
 
@@ -149,7 +153,7 @@ export default function CrmPage() {
       toast.success(t('crm.deleted', { defaultValue: 'Cliente eliminato' }))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
-      toast.error(err.response?.data?.error || t('crm.deleteError', { defaultValue: 'Impossibile eliminare il cliente' }))
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'crm.deleteError'))
     },
   })
 
@@ -194,7 +198,7 @@ export default function CrmPage() {
       <ExecutivePageHeader
         title={t('crm.title')}
         subtitle={t('crm.subtitle')}
-        actions={(
+        actions={canManageCustomers ? (
           <button
             type="button"
             onClick={() => { setForm(emptyForm()); setShowCreateModal(true) }}
@@ -203,7 +207,7 @@ export default function CrmPage() {
             <Plus className="w-4 h-4" />
             {t('crm.newCustomer')}
           </button>
-        )}
+        ) : undefined}
       />
 
       {(customersError || statsError) && <QueryErrorBanner />}
@@ -246,7 +250,9 @@ export default function CrmPage() {
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.visits')}</th>
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.spent')}</th>
                 <th className={cn('text-left px-4 py-3', ui.tableHead)}>{t('crm.table.lastVisit')}</th>
-                <th className={cn('text-right px-4 py-3', ui.tableHead)}>{t('crm.table.actions', { defaultValue: 'Azioni' })}</th>
+                <th className={cn('text-right px-4 py-3', ui.tableHead)}>
+                  {canManageCustomers ? t('crm.table.actions', { defaultValue: 'Azioni' }) : ''}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -302,6 +308,7 @@ export default function CrmPage() {
                     {customer.lastVisit ? formatDate(customer.lastVisit) : t('crm.neverVisited')}
                   </td>
                   <td className="px-4 py-3.5">
+                    {canManageCustomers && (
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
@@ -321,6 +328,7 @@ export default function CrmPage() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
+                    )}
                   </td>
                 </tr>
               ))
@@ -337,10 +345,10 @@ export default function CrmPage() {
         isLoading={detailLoading && Boolean(selectedId)}
         isSaving={updateCustomer.isPending}
         startInEditMode={openCustomerEdit}
-        onSave={async data => {
-          if (selectedId) await updateCustomer.mutateAsync({ id: selectedId, data })
-        }}
-        onDelete={selectedId ? async () => {
+        onSave={canManageCustomers && selectedId ? async data => {
+          await updateCustomer.mutateAsync({ id: selectedId, data })
+        } : undefined}
+        onDelete={canManageCustomers && selectedId ? async () => {
           const c = customers.find(x => x.id === selectedId)
           if (!c) return
           if (!window.confirm(t('crm.confirmDelete', { name: customerDisplayName(c), defaultValue: `Eliminare ${customerDisplayName(c)}?` }))) return

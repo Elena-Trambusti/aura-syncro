@@ -65,20 +65,28 @@ export function useKitchenOrders() {
       patchCache(prev => mergeKitchenOrder(prev, order))
     }
 
-    void ensureSocketConnected().then((s) => {
-      if (cancelled) return
-      socket = s
-      s.on('order:created', onNewOrder)
-      s.on('order:updated', onOrderUpdated)
-    })
+    const onReconnect = () => {
+      void queryClient.invalidateQueries({ queryKey })
+    }
+
+    void ensureSocketConnected()
+      .then((s) => {
+        if (cancelled) return
+        socket = s
+        s.on('order:created', onNewOrder)
+        s.on('order:updated', onOrderUpdated)
+        s.on('connect', onReconnect)
+      })
+      .catch(() => { /* polling fallback */ })
 
     return () => {
       cancelled = true
       if (!socket) return
       socket.off('order:created', onNewOrder)
       socket.off('order:updated', onOrderUpdated)
+      socket.off('connect', onReconnect)
     }
-  }, [patchCache])
+  }, [patchCache, queryClient, queryKey])
 
   const trackAction = useCallback((key: string, orderId: string) => {
     inFlightRef.current.add(key)

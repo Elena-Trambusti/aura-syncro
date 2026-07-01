@@ -150,7 +150,7 @@ function AppRoutes() {
         <Route path="crm" element={<RequireProPlan><RequirePermission permissions={['customers.read']}><CrmPage /></RequirePermission></RequireProPlan>} />
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
-        <Route path="dashboard/onboarding" element={<OnboardingPage />} />
+        <Route path="dashboard/onboarding" element={<RequireRole roles={ADMIN_NAV_ROLES}><OnboardingPage /></RequireRole>} />
         <Route path="dashboard/billing" element={<BillingPage />} />
         <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<RequirePermission permissions={['inventory.read']}><InventoryPage /></RequirePermission>} />
@@ -161,7 +161,7 @@ function AppRoutes() {
           <Route index element={<RequirePermission permissions={['reports.read']}><ReportsPage /></RequirePermission>} />
           <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />
         </Route>
-        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><PaymentsPage /></RequireProPlan></RequireRole>} />
+        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequirePermission permissions={['payments.overview']}><RequireProPlan><PaymentsPage /></RequireProPlan></RequirePermission></RequireRole>} />
         <Route path="fatture" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><InvoicesPage /></RequireProPlan></RequireRole>} />
         <Route path="dashboard/ai-predictive" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AIPredictivePage /></RequirePermission></RequireProPlan>} />
         <Route path="dashboard/qr-builder" element={<RequirePermission permissions={['menu.manage']}><QRBuilderPage /></RequirePermission>} />

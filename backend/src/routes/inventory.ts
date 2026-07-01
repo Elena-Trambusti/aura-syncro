@@ -75,16 +75,34 @@ inventoryRouter.patch('/:id/quantity', requirePermission('inventory.manage'), as
   }
 
   const newQuantity = operation === 'set' ? delta : current.quantity + delta
-  const updated = await prisma.inventoryItem.updateMany({
-    where: scopedWhere(req, req.params.id),
-    data: { quantity: Math.max(0, newQuantity) },
+  const quantityAfter = Math.max(0, newQuantity)
+
+  const updated = await prisma.$transaction(async tx => {
+    const result = await tx.inventoryItem.updateMany({
+      where: scopedWhere(req, req.params.id),
+      data: { quantity: quantityAfter },
+    })
+    if (result.count === 0) return null
+
+    await tx.inventoryAdjustment.create({
+      data: {
+        restaurantId: tenantId(req),
+        inventoryItemId: req.params.id,
+        userId: req.userId ?? null,
+        delta: quantityAfter - current.quantity,
+        quantityBefore: current.quantity,
+        quantityAfter,
+        reason: operation === 'set' ? 'manual_set' : 'manual_adjust',
+      },
+    })
+    return tx.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
   })
-  if (updated.count === 0) {
+
+  if (!updated) {
     tenantNotFound(res, 'Prodotto non trovato')
     return
   }
-  const item = await prisma.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
-  res.json(item)
+  res.json(updated)
 })
 
 inventoryRouter.delete('/:id', requirePermission('inventory.manage'), async (req: AuthRequest, res: Response): Promise<void> => {

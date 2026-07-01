@@ -7,6 +7,9 @@ import { io } from '../index'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { transferOrderBetweenTables } from '../lib/transferTable'
 import { countActiveTableOrders } from '../lib/orderSession'
+import { assertTableCanBeSetFree, TABLE_HAS_ACTIVE_ORDER } from '../lib/tableReleaseGuard'
+import { isManualTableTransitionAllowed, TABLE_TRANSITION_ERROR } from '../lib/tableStatus'
+import { signTableToken } from '../lib/tableToken'
 import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
 
 export const tablesRouter = Router()
@@ -32,6 +35,10 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
               items: { some: { status: { notIn: ['SERVED', 'CANCELLED'] } } },
             },
           ],
+          NOT: {
+            status: 'PENDING',
+            stripeSessionId: { not: null },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -41,6 +48,8 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
           total: true,
           type: true,
           createdAt: true,
+          stripeSessionId: true,
+          items: { select: { status: true } },
           customer: {
             select: {
               id: true,
@@ -192,7 +201,6 @@ tablesRouter.put('/:id', requirePermission('tables.manage'), async (req: AuthReq
     posY: z.number().optional(),
     shape: z.enum(['SQUARE', 'ROUND', 'RECTANGLE']).optional(),
     area: z.string().optional(),
-    status: z.enum(['FREE', 'OCCUPIED', 'RESERVED', 'CLEANING']).optional(),
   })
   const result = schema.safeParse(req.body)
   if (!result.success) {
@@ -247,14 +255,36 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
   }
   const { status } = parsed.data
 
+  const currentTable = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!currentTable) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+
+  if (status !== currentTable.status && !isManualTableTransitionAllowed(currentTable.status, status)) {
+    res.status(409).json({
+      error: 'Transizione di stato non consentita',
+      code: TABLE_TRANSITION_ERROR,
+      from: currentTable.status,
+      to: status,
+    })
+    return
+  }
+
   if (status === 'FREE') {
     const activeCount = await countActiveTableOrders(req.params.id, tenantId(req))
-    if (activeCount > 0) {
-      res.status(409).json({
-        error: 'Impossibile liberare il tavolo: ordine o conto ancora aperti',
-        code: 'TABLE_HAS_ACTIVE_ORDER',
-      })
-      return
+    try {
+      assertTableCanBeSetFree(activeCount)
+    } catch (err) {
+      const code = (err as { code?: string }).code
+      if (code === TABLE_HAS_ACTIVE_ORDER) {
+        res.status(409).json({
+          error: err instanceof Error ? err.message : 'Impossibile liberare il tavolo',
+          code: TABLE_HAS_ACTIVE_ORDER,
+        })
+        return
+      }
+      throw err
     }
   }
 
@@ -269,6 +299,24 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
   const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
   io.to(tenantId(req)).emit('table:updated', table)
   res.json(table)
+})
+
+tablesRouter.get('/:number/qr-token', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const tableNumber = Number.parseInt(req.params.number, 10)
+  if (!Number.isFinite(tableNumber) || tableNumber <= 0) {
+    res.status(400).json({ error: 'Numero tavolo non valido' })
+    return
+  }
+  const table = await prisma.table.findFirst({
+    where: { restaurantId: tenantId(req), number: tableNumber },
+    select: { id: true, number: true },
+  })
+  if (!table) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+  const token = signTableToken(tenantId(req), table.number)
+  res.json({ tableNumber: table.number, token })
 })
 
 tablesRouter.post(

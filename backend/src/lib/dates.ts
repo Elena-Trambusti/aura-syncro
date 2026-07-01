@@ -83,21 +83,35 @@ export function paidOrdersWhere(restaurantId: string, start: Date, end: Date) {
   return {
     restaurantId,
     status: 'PAID' as const,
+    refundedAt: null,
     paidAt: { gte: start, lte: end },
   }
 }
 
 /**
- * Filtro unificato: paidAt nel periodo oppure legacy (paidAt null + createdAt nel periodo).
- * Usato da P&L, fiscal, yearly, food-cost e analytics.
+ * Filtro unificato revenue: paidAt nel periodo oppure legacy (paidAt null + createdAt).
+ * @param endExclusive — se true, fine periodo esclusiva `[start, end)` (dayBounds `lt`);
+ *   se false, fine inclusiva `[start, end]` (endOfLocalDay).
  */
-export function paidOrdersInPeriodWhere(restaurantId: string, start: Date, end: Date) {
+export function paidOrdersInPeriodWhere(
+  restaurantId: string,
+  start: Date,
+  end: Date,
+  endExclusive = false,
+) {
+  const paidAtBound = endExclusive
+    ? { gte: start, lt: end }
+    : { gte: start, lte: end }
+  const createdAtBound = endExclusive
+    ? { gte: start, lt: end }
+    : { gte: start, lte: end }
   return {
     restaurantId,
     status: 'PAID' as const,
+    refundedAt: null,
     OR: [
-      { paidAt: { gte: start, lte: end } },
-      { paidAt: null, createdAt: { gte: start, lte: end } },
+      { paidAt: paidAtBound },
+      { paidAt: null, createdAt: createdAtBound },
     ],
   }
 }

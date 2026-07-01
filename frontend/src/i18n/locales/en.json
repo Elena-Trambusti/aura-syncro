@@ -198,7 +198,31 @@
     "apiNotConfigured": "API server not configured on Vercel (BACKEND_URL missing).",
     "backendUnreachable": "Backend unreachable. Check that DigitalOcean is online.",
     "apiBlocked": "API request blocked. Redeploy the frontend with updated configuration.",
-    "networkError": "Unable to contact server. Check connection and BACKEND_URL configuration."
+    "networkError": "Unable to contact server. Check connection and BACKEND_URL configuration.",
+    "timeout": "Request timed out. Try again.",
+    "serverError": "Server error. Try again shortly."
+  },
+  "apiErrors": {
+    "AUTH_REQUIRED": "Session expired. Please sign in again.",
+    "AUTH_INVALID": "Invalid session. Please sign in again.",
+    "SESSION_INVALID": "Session expired or account deactivated.",
+    "SESSION_REVOKED": "Session no longer valid. Please sign in again.",
+    "FORBIDDEN": "Insufficient permissions.",
+    "DEMO_READ_ONLY": "Demo account is read-only.",
+    "PREMIUM_REQUIRED": "Premium plan required.",
+    "ORDER_NOT_REFUNDABLE": "Order cannot be refunded.",
+    "ORDER_ALREADY_REFUNDED": "Order already refunded.",
+    "STRIPE_REFUND_FAILED": "Card refund failed. Try again or contact support.",
+    "STRIPE_REFUND_UNAVAILABLE": "Card refund not available for this order.",
+    "STRIPE_NOT_CONFIGURED": "Stripe payments not configured.",
+    "CASH_SESSION_REQUIRED": "Open the cash register before recording a refund.",
+    "INSUFFICIENT_STOCK": "Dish sold out — insufficient ingredients.",
+    "MENU_ITEM_SOLD_OUT": "Dish sold out.",
+    "SLOT_CONFLICT": "Slot or table no longer available.",
+    "CAMPAIGN_ALREADY_SENT": "Campaign already sent.",
+    "INVOICES_IT_ONLY": "E-invoicing available only for Italian restaurants.",
+    "LOYALTY_ALREADY_EARNED": "Points already earned for this order.",
+    "INSUFFICIENT_POINTS": "Insufficient loyalty points."
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
@@ -219,6 +243,7 @@
     "topDishes": "Top Dishes — Last 30 days",
     "liveCommandTitle": "Command center",
     "liveCommandSubtitle": "Live operational overview of service",
+    "liveCommandError": "Unable to refresh live data. Retrying automatically…",
     "tableStatus": "Floor status",
     "viewFloor": "Open table map",
     "upcomingReservations": "Upcoming reservations",
@@ -278,6 +303,7 @@
     "filterKitchen": "In kitchen",
     "filterReady": "Ready",
     "statusUpdated": "Status updated",
+    "splitOpen": "Split {{collected}} / {{total}}",
     "noOrders": "No orders found",
     "cancel": "Cancel",
     "csvHeaders": {
@@ -364,6 +390,23 @@
     "posStatusStripe": "Stripe Terminal connected",
     "posStatusExternal": "External register: {{provider}}",
     "posLegalNote": "The legally valid fiscal receipt is issued by the restaurant's certified POS when configured as an external register.",
+    "laborRate": "Staff hourly cost",
+    "laborRateDesc": "Used in P&L reports to estimate labor cost.",
+    "laborRateUnit": "€ / hour",
+    "legalCity": "City",
+    "legalZip": "Postal code",
+    "legalProvince": "Province",
+    "posFiscalTitle": "Cash register / fiscal printer",
+    "posFiscalDesc": "Configure direct connection to the register for physical receipts.",
+    "posBrandLabel": "Register brand",
+    "posNone": "None (software only)",
+    "posIpLabel": "Local IP address",
+    "posNetworkHint": "Tablet and register must be on the same Wi-Fi network. Printing is local.",
+    "reservationsTitle": "Reservations & no-show protection",
+    "reservationsDesc": "Require a credit card guarantee to confirm tables.",
+    "depositRequired": "Require deposit to confirm tables",
+    "depositHint": "Guests pre-authorize the amount via Stripe.",
+    "depositAmountLabel": "Deposit amount (€)",
     "accountInfo": "Account Information",
     "restaurantId": "Restaurant ID",
     "slug": "Slug (URL)",
@@ -420,6 +463,8 @@
     "payDeposit": "Pay deposit",
     "depositRequiredNotice": "Reservation confirmed — deposit payment required",
     "depositPayError": "Could not start deposit payment",
+    "noShowChargeSuccess": "No-show penalty charged successfully",
+    "noShowChargeError": "Error while charging the penalty",
     "howItWorksTitle": "How this section works",
     "howItWorksBookings": "Bookings: reservations with date and time (phone, manual, or public link). Flow: Confirm + assign table → Seated → Completed.",
     "howItWorksWaitlist": "Waitlist: walk-in guests without a reservation when the dining room is full — not the same as bookings.",
@@ -665,6 +710,7 @@
     "spent": "{{amount}} spent",
     "pointsShort": "pt",
     "allCustomers": "All Customers",
+    "pageOf": "Page {{page}} of {{total}}",
     "tableCustomer": "Customer",
     "tableLevel": "Tier",
     "tablePoints": "Points",
@@ -727,6 +773,10 @@
       "vipThanks": {
         "title": "VIP Thank You",
         "description": "Send a thank-you message the day after a guest spends over €200."
+      },
+      "requestReview": {
+        "title": "Review request",
+        "description": "Send a message 24 hours after the visit asking for an online review."
       }
     }
   },
@@ -786,6 +836,7 @@
     "csvTurnover": "Turnover",
     "pieces": "pcs",
     "zetaButton": "End-of-day closure",
+    "zetaDate": "Zeta closure date",
     "zetaConfirm": "Generate end-of-day cash closure? This cannot be undone.",
     "zetaSuccess": "Cash closure generated successfully",
     "zetaError": "Error during fiscal closure",
@@ -832,6 +883,8 @@
     "transactionsMeta": "{{count}} transactions · {{period}}",
     "loading": "Loading fiscal data...",
     "loadError": "Error loading fiscal data",
+    "rangeTooLarge": "Maximum range is {{max}} days. Narrow the selected period.",
+    "pageOf": "Page {{page}} of {{total}}",
     "emptyTitle": "No paid transactions in this period",
     "emptyHint": "Select another date range or register payments with tips",
     "noData": "No data for the selected period",
@@ -1014,7 +1067,9 @@
     "setupStep1": "Create an account at stripe.com",
     "setupStep2": "Go to Developers → API keys and copy your test keys",
     "setupStep3": "Paste them in backend/.env (STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY)",
-    "setupStep4": "Restart the backend — customers can pay from the QR menu"
+    "setupStep4": "Restart the backend — customers can pay from the QR menu",
+    "stripeAccount": "Your Stripe account",
+    "connectBank": "Connect bank account"
   },
   "depositSuccess": {
     "verifying": "Verifying payment...",
@@ -1240,6 +1295,12 @@
     "guest": "Guest {{n}}",
     "splitPreview": "Split preview",
     "splitSettlementHint": "Fiscal settlement method",
+    "splitPayGuest": "Collect share",
+    "splitGuestPaid": "Paid",
+    "splitPartialSuccess": "Share recorded. Remaining {{remaining}}",
+    "splitProgress": "Collected {{collected}} · Remaining {{remaining}}",
+    "splitIncrementalHint": "Collect each guest share with the button next to their name. Fiscal receipt closes on the last payment.",
+    "splitFinalizeAll": "Finalize full bill (card)",
     "splitBreakdown": "Split breakdown",
     "receiptEmail": "Receipt email (simulated)",
     "receiptEmailPlaceholder": "guest@email.com",
@@ -1278,6 +1339,14 @@
     "customerRemove": "Remove",
     "loyaltyTierBadge": "{{tier}} — {{pct}}% discount at checkout",
     "alreadyPaid": "Payment already recorded",
+    "alreadyRefunded": "Order refunded",
+    "refundCash": "Record cash refund",
+    "refundCard": "Refund card payment",
+    "refundConfirmCash": "Confirm cash refund? CRM and loyalty points will be reversed.",
+    "refundConfirmCard": "Confirm card refund? The amount will be returned via Stripe and CRM/loyalty will be reversed.",
+    "refundConfirm": "Confirm refund? CRM and loyalty points will be reversed.",
+    "refundSuccess": "Refund recorded",
+    "refundError": "Could not record refund",
     "errors": {
       "ORDER_NOT_FOUND": "Order not found",
       "ORDER_ALREADY_PAID": "Order already paid",
@@ -1295,7 +1364,11 @@
       "STRIPE_PI_ALREADY_USED": "PaymentIntent already used",
       "INVALID_DISCOUNT_CODE": "Invalid discount code",
       "NO_LOYALTY_DISCOUNT": "No loyalty discount available for this customer",
-      "INVALID_TIP_WAITER": "Invalid waiter"
+      "INVALID_TIP_WAITER": "Invalid waiter",
+      "ORDER_NOT_REFUNDABLE": "Order cannot be refunded",
+      "ORDER_ALREADY_REFUNDED": "Order already refunded",
+      "STRIPE_REFUND_FAILED": "Card refund failed",
+      "STRIPE_REFUND_UNAVAILABLE": "Card refund not available for this order"
     }
   },
   "billing": {
@@ -1325,7 +1398,43 @@
     "checkoutCanceled": "Payment canceled. You can try again anytime.",
     "checkoutError": "Unable to start checkout. Please try again.",
     "checkoutUrlMissing": "Checkout URL not received from Stripe",
-    "secureNote": "Encrypted payment powered by Stripe"
+    "secureNote": "Encrypted payment powered by Stripe",
+    "plansPageTitle": "Plans & billing",
+    "plansPageSubtitle": "Manage your Aura Syncro subscription",
+    "activePlanLabel": "Active subscription: {{plan}}",
+    "setupOnce": "one-time setup",
+    "activatePlan": "Activate {{plan}}",
+    "activeServices": "Active services for {{plan}} plan",
+    "openPortal": "Manage subscription",
+    "portalUrlMissing": "Portal URL not received from Stripe",
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "tagline": "For small venues or food trucks.",
+        "features": [
+          "Up to 12 tables",
+          "Single dining area",
+          "Digital QR menu",
+          "Integrated Stripe payments"
+        ],
+        "missing": [
+          "Predictive AI & Analytics",
+          "Shifts & inventory"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "tagline": "For restaurants that demand the best.",
+        "features": [
+          "Unlimited areas and tables",
+          "Predictive AI & Analytics",
+          "Concierge onboarding",
+          "Shifts & inventory",
+          "Marketing automation"
+        ],
+        "missing": []
+      }
+    }
   },
   "onboarding": {
     "badge": "Aura Syncro Concierge",
@@ -1339,6 +1448,8 @@
     "callPlaceholder": "Calendly calendar — set URL in VITE_ONBOARDING_CALENDLY_URL",
     "iframeEnvHint": "Configure the iframe URL in the frontend .env file",
     "teamNote": "Our team is preparing your workspace. You will receive a notification as soon as everything is ready.",
+    "staffReadinessHint": "The technical checklist is visible to owners and managers. Contact your manager to complete setup.",
+    "staffConciergeHint": "Concierge steps are managed by the owner or venue manager.",
     "welcomeToast": "Payment complete! Welcome to Aura Syncro Premium.",
     "checklistTitle": "Setup checklist",
     "checklistMenu": "Complete the menu form (categories, dishes, prices)",
@@ -1428,6 +1539,7 @@
     "tableNumber": "Table number",
     "tableNumberPlaceholder": "e.g. 12",
     "tableNumberHint": "Enter the table where you are seated",
+    "dineInRequiresQr": "To order at your table, scan the table QR code.",
     "tableBadge": "Table {{number}}",
     "orderNotes": "Notes for the kitchen",
     "orderNotesPlaceholder": "Allergies, preferences, timing…",
@@ -1535,7 +1647,8 @@
     "installApp": "Install app",
     "installSuccess": "App installed! Open it from your Home screen.",
     "updateAvailable": "A new version of the app is available.",
-    "updateRefresh": "Update now"
+    "updateRefresh": "Update now",
+    "reload": "Reload"
   },
   "export": {
     "receipt": "Receipt",
@@ -1699,9 +1812,5 @@
       "title": "Guest privacy | Aura Syncro",
       "description": "Privacy information for guests of restaurants using Aura Syncro."
     }
-  },
-  "pwa": {
-    "updateAvailable": "New version available",
-    "reload": "Reload"
   }
 }

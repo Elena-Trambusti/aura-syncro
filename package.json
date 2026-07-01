@@ -11,6 +11,12 @@
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./avvia-app.ps1",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
+    "test": "vitest run && npm run test:legacy --prefix backend",
+    "test:vitest": "vitest run",
+    "test:watch": "vitest",
+    "test:business": "vitest run tests/business-logic",
+    "test:unit": "npm run test:legacy --prefix backend",
+    "test:e2e": "npm run test:e2e --prefix frontend",
     "db:push": "npm run db:push --prefix backend",
     "db:migrate": "npm run db:migrate --prefix backend",
     "db:generate": "npm run db:generate --prefix backend",
@@ -21,5 +27,9 @@
   "dependencies": {
     "@sentry/node": "^10.61.0",
     "@sentry/react": "^10.61.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }

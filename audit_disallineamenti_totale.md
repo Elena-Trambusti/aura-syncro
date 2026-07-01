@@ -515,3 +515,100 @@
 **Analisi completata.** Residui architetturali accettati per go-live: Float→Decimal (roadmap Q3), soft-reservation stock (v2), VeriFactu/Aruba live (credenziali cliente). Tutti i disallineamenti operativi critici/alti: **risolti**.
 
 *Ultimo aggiornamento: 2026-06-29 — commit post go-live 100% (test:flow CASH+CARD+guest QR, onboarding-readiness, i18n completo).*
+
+---
+
+# ROUND RZ5 — Allineamento trasversale moduli (2026-07-01)
+
+Verifica incrociata post-remediation `audit_logica_moduli.md` + audit storici. Fix applicati:
+
+| ID | Area | Fix |
+|----|------|-----|
+| RZ5-01 | Revenue ↔ CRM | `reversePostPaymentEffects()` su rimborso; CRM ordini esclude `refundedAt` |
+| RZ5-02 | Filtri revenue | `paidOrdersInPeriodWhere` unificato con flag `endExclusive`; `paidRevenueOrderWhere` delega |
+| RZ5-03 | Pagamenti overview | TZ tenant, `paidRevenueOrderWhere`, `resolveRevenueAmount`, locale `defaultLocale` |
+| RZ5-04 | AI predictive | Ordini PAID filtrati su `paidAt ?? createdAt` (non solo `createdAt`) |
+| RZ5-05 | Tavoli ↔ KDS | `GET /tables` esclude PENDING+`stripeSessionId`; include `items.status` |
+| RZ5-06 | FE `isActiveTableOrder` | PAID senza items → non attivo (allineato BE) |
+| RZ5-07 | QR pubblico | DINE_IN richiede sempre `tableNumber` + `tableToken` (BE) |
+| RZ5-08 | Dashboard summary | Rimosso `requireProPlan` da `/api/analytics/summary` (KPI Base) |
+| RZ5-10 | Fatture | `requireProPlan` + guard `countryCode === IT` su router |
+| RZ5-11/12 | Permessi FE | `/pagamenti` `payments.overview`; onboarding `ADMIN_NAV_ROLES` |
+| RZ5-14/13 | i18n | Toasts no-show + Settings senza `defaultValue` IT |
+| RZ5-18 | maxCovers | `effectiveMaxCoversPerSlot` in API pubblica/restaurant + UI staff/guest |
+| RZ5-19/20 | Cancel item | `discount: 0` se tutti annullati; `revenueAmount` = food net |
+
+**Verifiche:** `backend tsc` ✅ | `frontend tsc -b` ✅ | `npm test` 51/51 ✅
+
+**Residui roadmap (invariati):** C-05 Decimal, httpOnly cookie, saga POS completa, soft-reserve stock Stripe.
+
+*Ultimo aggiornamento: 2026-07-01 — allineamento trasversale moduli completato.*
+
+---
+
+# ROUND RZ6 — Sweep completo codice (2026-07-01)
+
+Audit esaustivo su tutto il codebase (routes, permessi, revenue, TZ, socket, marketing, CRM, free tier).
+
+| ID | Severità | Fix |
+|----|----------|-----|
+| RZ6-01 | CRITICO | `birthdayMonth` aggiunto a `MARKETING_SEGMENTS` |
+| RZ6-02 | ALTO | UI rimborso contanti in `CheckoutPage` → `POST /cash/orders/:id/refund` |
+| RZ6-03 | ALTO | Free tier: `/api/analytics/summary` + `/api/reports` in `FREE_TIER_API_PREFIXES` |
+| RZ6-04 | MEDIO | `requireProPlan` su `POST /payments/connect-onboarding` |
+| RZ6-05 | MEDIO | CRM: mutazioni nascoste senza `customers.manage` |
+| RZ6-07 | MEDIO | Fattura B2B: `refundedAt: null` su ordine sorgente |
+| RZ6-08 | MEDIO | Marketing targeting con timezone tenant |
+| RZ6-09 | MEDIO | CRM `birthDate` come `YYYY-MM-DD` (no shift UTC) |
+| RZ6-11 | MEDIO | `lastVisit` ricalcolato dopo rimborso |
+| RZ6-12 | MEDIO | `menu:updated` socket → `MenuPage` realtime |
+| RZ6-13 | BASSO | Tipo `statoSdi` FE allineato a BE |
+
+**Residuo accettato:** RZ6-10 errori BE italiani raw in toast (debito i18n trasversale, non bloccante).
+
+---
+
+# ROUND RZ7 — Residui audit (2026-07-01)
+
+| ID | Fix |
+|----|-----|
+| RZ7-01 | Rimborso unificato `POST /payments/orders/:id/refund` (Stripe + contanti) + UI checkout carta |
+| RZ7-02 | `/pagamenti` rimosso da `FREE_TIER_NAV_PATHS` (route già Pro-gated) |
+| RZ7-03 | POS `EXTERNAL`: finalize prima dell'ack terminale fisico |
+| RZ7-04 | Oggetti email automazioni da `defaultLocale` tenant (`marketingAutomationSubjects.ts`) |
+| RZ7-05 | Marketing automazioni: timezone tenant per compleanni |
+| RZ7-06 | i18n errori API comuni (`apiErrors.*`) + checkout refund |
+| RZ7-07 | Catena fiscale: `refundedAt: null` in `resolveChainInitialPrevHash` |
+| RZ7-08 | Sessione: token non più in `sessionStorage` (cookie httpOnly + memoria) |
+| RZ7-09 | `test-flow.ts`: rimborso CASH + verifica CRM storno |
+
+**Roadmap (non in scope codice):** soft-hold magazzino guest checkout (AB-LOG-02), Decimal Prisma (C-05).
+
+---
+
+# ROUND RZ8 — Chiusura test + split UI (2026-07-01)
+
+| ID | Fix |
+|----|-----|
+| RZ8-01 | `test-flow.ts`: split parziale 50/50 + blocco tavolo FREE |
+| RZ8-02 | UI ordini: badge split aperto (`collectedAmount` / `total`) |
+| RZ8-03 | `cashRegisterDueAtFinalize` — anti doppio incasso cassa |
+| RZ8-04 | i18n globale: `translatedMessage` su errori API + `formatApiError` |
+| RZ8-05 | Test business `cash-finalize-due.test.ts` |
+| RZ8-06 | CI GitHub Actions `.github/workflows/ci-tests.yml` |
+
+*Ultimo aggiornamento: 2026-07-01 — RZ8 completato.*
+
+---
+
+# ROUND RZ9 — Stock race + socket cookie + i18n residui (2026-07-01)
+
+| ID | Fix |
+|----|-----|
+| RZ9-01 | `assertOrderStockInTransaction` — ri-validazione stock dentro TX (POS, QR, Stripe guest) — AB-LOG-02 |
+| RZ9-02 | Socket: connessione con cookie httpOnly senza token in memoria |
+| RZ9-03 | `formatApiError` su Menu, Reports, Reservations, Waitlist, AssignTable |
+| RZ9-04 | Test `stock-hold.test.ts` (Vitest) |
+| RZ9-05 | Migrazione `order_split_collected_amount` applicata su DB Supabase |
+
+*Ultimo aggiornamento: 2026-07-01 — RZ9 completato.*

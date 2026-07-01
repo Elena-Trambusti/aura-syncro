@@ -56,10 +56,22 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
   const forecastEnd = new Date()
   forecastEnd.setDate(forecastEnd.getDate() + 7)
 
-  const dateFilter = {
+  const paidOrderWhere = {
+    restaurantId,
+    status: 'PAID' as const,
+    refundedAt: null,
+    OR: [
+      { paidAt: { gte: windowStart } },
+      { paidAt: null, createdAt: { gte: windowStart } },
+      { paidAt: { gte: yoyStart, lt: yoyEnd } },
+      { paidAt: null, createdAt: { gte: yoyStart, lt: yoyEnd } },
+    ],
+  }
+
+  const itemOrderDateFilter = {
     OR: [
       { createdAt: { gte: windowStart } },
-      { createdAt: { gte: yoyStart, lte: yoyEnd } },
+      { createdAt: { gte: yoyStart, lt: yoyEnd } },
     ],
   }
 
@@ -79,13 +91,10 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     restaurant,
   ] = await Promise.all([
     prisma.order.findMany({
-      where: {
-        restaurantId,
-        ...dateFilter,
-        status: 'PAID',
-      },
+      where: paidOrderWhere,
       select: {
         createdAt: true,
+        paidAt: true,
         type: true,
         tableId: true,
         table: { select: { seats: true } },
@@ -101,7 +110,7 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
       where: {
         order: {
           restaurantId,
-          ...dateFilter,
+          ...itemOrderDateFilter,
           status: { notIn: ['CANCELLED'] },
         },
       },
@@ -138,10 +147,11 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     if (order.type === 'DINE_IN' && order.table?.seats) {
       covers = order.table.seats
     }
+    const effectiveDate = order.paidAt ?? order.createdAt
     coverHistory.push({
-      date: order.createdAt,
+      date: effectiveDate,
       quantity: covers,
-      dayOfWeek: order.createdAt.getDay(),
+      dayOfWeek: effectiveDate.getDay(),
     })
   }
 

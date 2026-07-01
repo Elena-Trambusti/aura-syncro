@@ -219,6 +219,8 @@ loyaltyRouter.post('/adjust', requirePermission('loyalty.manage'), async (req: A
       return [transaction, updated] as const
     }, { isolationLevel: 'Serializable' })
 
+    await updateCustomerTier(restaurantId, customerId, updatedCustomer.loyaltyPoints)
+
     res.status(201).json({ transaction: tx, newPoints: updatedCustomer.loyaltyPoints })
   } catch (err) {
     const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined

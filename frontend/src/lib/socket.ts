@@ -13,17 +13,22 @@ function getSocketUrl(): string | undefined {
   return resolveBackendUrl()
 }
 
+function buildSocketAuth(): { token?: string } {
+  const token = getSessionToken()
+  return token ? { token } : {}
+}
+
 async function loadIo() {
   if (!ioModule) ioModule = await import('socket.io-client')
   return ioModule
 }
 
-/** Socket realtime — caricato on-demand (non nel bundle critico della landing). */
+/** Socket realtime — cookie httpOnly o Bearer in memoria (fallback legacy). */
 export async function getSocket(): Promise<Socket> {
   if (!socket) {
     const { io } = await loadIo()
     socket = io(getSocketUrl() ?? '/', {
-      auth: { token: getSessionToken() },
+      auth: buildSocketAuth(),
       autoConnect: false,
       withCredentials: true,
     })
@@ -37,14 +42,16 @@ export async function ensureSocketConnected(): Promise<Socket> {
   return s
 }
 
-export async function connectSocket(token: string): Promise<void> {
+/** Connette il socket; senza token usa il cookie di sessione httpOnly. */
+export async function connectSocket(token?: string | null): Promise<void> {
+  const resolved = token ?? getSessionToken()
   const existingToken = socket ? (socket.auth as { token?: string }).token : undefined
-  if (socket?.connected && existingToken && existingToken !== token) {
+  if (socket?.connected && existingToken && resolved && existingToken !== resolved) {
     socket.disconnect()
     socket = null
   }
   const s = await getSocket()
-  s.auth = { token }
+  s.auth = resolved ? { token: resolved } : {}
   if (!s.connected) {
     s.connect()
   }

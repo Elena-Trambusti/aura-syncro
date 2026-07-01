@@ -12,7 +12,7 @@ export function isActiveTableOrder(order: {
   if (order.status === 'CANCELLED') return false
   if (order.status !== 'PAID') return true
   // GET /tables summary: ordini PAID inclusi solo se hanno item aperti (filtro API)
-  if (!order.items || order.items.length === 0) return true
+  if (!order.items || order.items.length === 0) return false
   return order.items.some(i => !KITCHEN_DONE_ITEM_STATUSES.has(i.status))
 }
 
