@@ -14,10 +14,15 @@ export default function LandingNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[#D4AF37]/10 bg-[#020202]/95 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_30px_rgba(0,0,0,0.55)] backdrop-blur-md">
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent" />
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <BrandLogo size="sm" className="mx-0 shadow-sm" priority />
-          <span className="font-display text-sm font-medium tracking-tight text-[#F0E6D2] sm:text-base">{BRAND.name}</span>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+        <Link
+          to="/"
+          className="relative z-10 flex min-w-0 max-w-[calc(100%-3.5rem)] items-center gap-2 sm:max-w-none sm:gap-2.5"
+        >
+          <BrandLogo size="sm" className="mx-0 shrink-0 shadow-sm" priority />
+          <span className="truncate font-display text-sm font-medium tracking-tight text-[#F0E6D2] sm:text-base">
+            {BRAND.name}
+          </span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-[#F0E6D2] md:flex">
           <a href="#features" className="transition-colors hover:text-[#E8C872]">
@@ -27,8 +32,8 @@ export default function LandingNav() {
             {t('landing.nav.pricing')}
           </a>
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <LanguageSwitcher />
+        <div className="relative z-10 flex shrink-0 items-center gap-2 sm:gap-3">
+          <LanguageSwitcher compact />
           {isLoading ? (
             <div className="hidden h-9 w-32 animate-pulse rounded-lg bg-white/5 sm:block" />
           ) : user && !isDemoUserEmail(user.email) ? (

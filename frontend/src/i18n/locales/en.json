@@ -1473,6 +1473,92 @@
       "staff": "At least one staff user"
     }
   },
+  "onboardingForm": {
+    "badge": "White-glove setup",
+    "stepProgress": "Step {{current}} of {{total}}",
+    "submittedTitle": "Form submitted successfully",
+    "submittedHint": "The Aura Syncro team received your data. We will contact you at your booked time to finish configuration.",
+    "submitSuccess": "Onboarding submitted. Appointment confirmed.",
+    "steps": {
+      "fiscal": "Fiscal & contact",
+      "fiscalHint": "Legal name, VAT/NIF and venue contact details",
+      "room": "Dining room",
+      "roomHint": "Areas, seats and table layout",
+      "menu": "Menu & cuisine",
+      "menuHint": "Upload your menu or describe it — select cuisine type",
+      "hardware": "Hardware & POS",
+      "hardwareHint": "Cash points, printers and terminal preferences",
+      "calendar": "Setup appointment",
+      "calendarHint": "Pick a day and time for your configuration call"
+    },
+    "fields": {
+      "restaurantName": "Restaurant name",
+      "legalName": "Legal business name",
+      "taxId": "VAT / NIF",
+      "address": "Full address",
+      "email": "Email",
+      "phone": "Phone",
+      "totalSeats": "Total seats",
+      "areaName": "Area name (e.g. Main room, Terrace)",
+      "newArea": "New area",
+      "tableLabel": "Table",
+      "cuisineType": "Cuisine type",
+      "selectCuisine": "Select…",
+      "menuDetails": "Menu details (free text)",
+      "menuDetailsPlaceholder": "Categories, dishes, prices, allergens…",
+      "cashPoints": "Cash register points",
+      "printersKitchen": "Kitchen printers",
+      "printersBar": "Bar printers",
+      "printersCash": "Cash desk printers",
+      "posPreference": "POS preference",
+      "posNotes": "Hardware notes / terminal brand",
+      "appointmentNotes": "Notes for the call (optional)"
+    },
+    "menu": {
+      "dropTitle": "Drop your menu here (PDF or image)",
+      "dropHint": "Max 10 MB — or fill in the text field below",
+      "browse": "Browse files"
+    },
+    "cuisine": {
+      "pizzeria": "Pizzeria",
+      "gourmet": "Gourmet / Fine dining",
+      "meat": "Meat / Steakhouse",
+      "fish": "Seafood",
+      "regional": "Regional cuisine",
+      "fusion": "Fusion / Contemporary",
+      "other": "Other"
+    },
+    "pos": {
+      "pending": "To be defined on the call",
+      "stripe": "Stripe Terminal",
+      "external": "External fiscal register",
+      "simulation": "Training only (simulation)"
+    },
+    "calendar": {
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "loading": "Loading availability…",
+      "noSlots": "No slots on this day",
+      "selected": "Appointment: {{datetime}}"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit & book setup",
+      "addTable": "Add table",
+      "addArea": "Add area"
+    },
+    "errors": {
+      "required": "Required field",
+      "areaRequired": "Add at least one area",
+      "tableRequired": "Add at least one table per area",
+      "seatsMismatch": "Total seats do not match the sum of table seats",
+      "menuRequired": "Upload a menu file or enter text details",
+      "slotRequired": "Select an appointment time",
+      "invalidFileType": "Unsupported format (PDF, JPG, PNG, WebP)",
+      "fileTooLarge": "File too large (max 10 MB)"
+    }
+  },
   "paywall": {
     "title": "Premium Feature",
     "description": "Unlock the Fiscal Register, Predictive AI and more with Aura Syncro Premium.",

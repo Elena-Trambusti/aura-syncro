@@ -98,6 +98,7 @@ export function paidOrdersInPeriodWhere(
   start: Date,
   end: Date,
   endExclusive = false,
+  includeRefunded = false,
 ) {
   const paidAtBound = endExclusive
     ? { gte: start, lt: end }
@@ -105,15 +106,21 @@ export function paidOrdersInPeriodWhere(
   const createdAtBound = endExclusive
     ? { gte: start, lt: end }
     : { gte: start, lte: end }
-  return {
+    
+  const where: any = {
     restaurantId,
     status: 'PAID' as const,
-    refundedAt: null,
     OR: [
       { paidAt: paidAtBound },
       { paidAt: null, createdAt: createdAtBound },
     ],
   }
+  
+  if (!includeRefunded) {
+    where.refundedAt = null
+  }
+  
+  return where
 }
 
 /** Legacy orders: paid before paidAt column was populated — match by createdAt. */

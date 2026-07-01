@@ -1577,6 +1577,92 @@
       "staff": "Almeno un utente staff"
     }
   },
+  "onboardingForm": {
+    "badge": "Setup chiavi in mano",
+    "stepProgress": "Step {{current}} di {{total}}",
+    "submittedTitle": "Modulo inviato con successo",
+    "submittedHint": "Il team Aura Syncro ha ricevuto i tuoi dati. Ti contatteremo all'orario prenotato per completare la configurazione.",
+    "submitSuccess": "Onboarding inviato. Appuntamento confermato.",
+    "steps": {
+      "fiscal": "Dati fiscali",
+      "fiscalHint": "Ragione sociale, Partita IVA e contatti del locale",
+      "room": "Sala e tavoli",
+      "roomHint": "Aree, posti a sedere e disposizione tavoli",
+      "menu": "Menù e cucina",
+      "menuHint": "Carica il menù o descrivilo — indica la tipologia di cucina",
+      "hardware": "Hardware e POS",
+      "hardwareHint": "Punti cassa, stampanti e preferenze terminali",
+      "calendar": "Appuntamento setup",
+      "calendarHint": "Scegli giorno e ora per la call di configurazione con il team"
+    },
+    "fields": {
+      "restaurantName": "Nome ristorante",
+      "legalName": "Ragione sociale",
+      "taxId": "Partita IVA / NIF",
+      "address": "Indirizzo completo",
+      "email": "Email",
+      "phone": "Telefono",
+      "totalSeats": "Posti totali",
+      "areaName": "Nome area (es. Sala Interna, Terrazza)",
+      "newArea": "Nuova area",
+      "tableLabel": "Tavolo",
+      "cuisineType": "Tipologia cucina",
+      "selectCuisine": "Seleziona…",
+      "menuDetails": "Dettagli menù (testo libero)",
+      "menuDetailsPlaceholder": "Categorie, piatti, prezzi, allergeni…",
+      "cashPoints": "Punti cassa",
+      "printersKitchen": "Stampanti cucina",
+      "printersBar": "Stampanti bar",
+      "printersCash": "Stampanti cassa",
+      "posPreference": "Preferenza POS",
+      "posNotes": "Note hardware / marca terminale",
+      "appointmentNotes": "Note per la call (opzionale)"
+    },
+    "menu": {
+      "dropTitle": "Trascina qui il menù (PDF o immagine)",
+      "dropHint": "Max 10 MB — oppure compila il campo testo sotto",
+      "browse": "Sfoglia file"
+    },
+    "cuisine": {
+      "pizzeria": "Pizzeria",
+      "gourmet": "Gourmet / Fine dining",
+      "meat": "Carne / Steakhouse",
+      "fish": "Pesce",
+      "regional": "Cucina regionale",
+      "fusion": "Fusion / Contemporanea",
+      "other": "Altra"
+    },
+    "pos": {
+      "pending": "Da definire in call",
+      "stripe": "Stripe Terminal",
+      "external": "Registratore esterno",
+      "simulation": "Solo formazione (simulazione)"
+    },
+    "calendar": {
+      "prevWeek": "Settimana precedente",
+      "nextWeek": "Settimana successiva",
+      "loading": "Caricamento disponibilità…",
+      "noSlots": "Nessuno slot in questo giorno",
+      "selected": "Appuntamento: {{datetime}}"
+    },
+    "actions": {
+      "back": "Indietro",
+      "next": "Avanti",
+      "submit": "Invia e prenota setup",
+      "addTable": "Aggiungi tavolo",
+      "addArea": "Aggiungi area"
+    },
+    "errors": {
+      "required": "Campo obbligatorio",
+      "areaRequired": "Aggiungi almeno un'area",
+      "tableRequired": "Aggiungi almeno un tavolo per area",
+      "seatsMismatch": "I posti totali non corrispondono alla somma dei tavoli",
+      "menuRequired": "Carica un file menù o inserisci i dettagli testuali",
+      "slotRequired": "Seleziona un orario per l'appuntamento",
+      "invalidFileType": "Formato non supportato (PDF, JPG, PNG, WebP)",
+      "fileTooLarge": "File troppo grande (max 10 MB)"
+    }
+  },
   "paywall": {
     "title": "Funzionalità Premium",
     "description": "Per sbloccare il Libro Registro Fiscale, l'AI Predittiva e molto altro, passa ad Aura Syncro Premium.",

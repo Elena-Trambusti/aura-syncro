@@ -28,6 +28,7 @@ backend/prisma/*.db
 # ── Build e output ─────────────────────────────────────────
 dist/
 build/
+backend/uploads/
 frontend/dist/
 backend/dist/
 

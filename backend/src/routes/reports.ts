@@ -49,7 +49,7 @@ const fiscalOrderSelect = {
 
 async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: Date) {
   return prisma.order.findMany({
-    where: paidOrdersInPeriodWhere(restaurantId, start, end),
+    where: paidOrdersInPeriodWhere(restaurantId, start, end, false, true),
     select: fiscalOrderSelect,
     orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }],
   })
@@ -63,7 +63,6 @@ async function resolveChainInitialPrevHash(
     where: {
       restaurantId,
       status: 'PAID',
-      refundedAt: null,
       fiscalIntegrityHash: { not: null },
       OR: [
         { paidAt: { lt: rangeStart } },

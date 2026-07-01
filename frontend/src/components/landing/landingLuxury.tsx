@@ -174,7 +174,7 @@ export function LuxuryIconMedallion({
   const iconSize = size === 'lg' ? 'xl' : 'lg'
 
   return (
-    <div className={cn('relative flex shrink-0 items-center justify-center', shell, className)}>
+    <div className={cn('relative mx-auto flex shrink-0 items-center justify-center', shell, className)}>
       <div
         className="pointer-events-none absolute inset-0 rounded-full border border-[#D4AF37]/22 opacity-80 transition-all duration-500 group-hover:scale-[1.04] group-hover:border-[#D4AF37]/38 group-hover:opacity-100"
         aria-hidden

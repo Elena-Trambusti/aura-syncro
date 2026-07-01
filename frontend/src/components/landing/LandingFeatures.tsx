@@ -34,17 +34,17 @@ function FeatureCard({
   return (
     <article className={cn(LUXURY_CARD_CLASS, className)}>
       {featured ? (
-        <div className="relative flex min-h-[11rem] flex-1 items-center justify-center overflow-visible border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604] lg:min-h-[14rem]">
+        <div className="relative flex w-full min-h-[11rem] flex-col items-center justify-center overflow-hidden border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604] lg:min-h-[14rem] lg:overflow-visible">
           <div
-            className="pointer-events-none absolute h-28 w-28 rounded-full border border-[#D4AF37]/[0.08]"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#D4AF37]/[0.08]"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute h-40 w-40 rounded-full border border-[#D4AF37]/[0.05]"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#D4AF37]/[0.05]"
             aria-hidden
           />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.16),transparent_70%)] opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
-          <LuxuryIconMedallion icon={icon} size="lg" />
+          <LuxuryIconMedallion icon={icon} size="lg" className="mx-auto" />
         </div>
       ) : (
         <div className="border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08]/80 to-transparent px-6 pb-5 pt-6 sm:px-7 sm:pt-7">
@@ -52,7 +52,14 @@ function FeatureCard({
         </div>
       )}
 
-      <div className={cn('flex flex-1 flex-col', featured ? 'p-7 sm:p-8' : 'px-6 pb-7 pt-5 sm:px-7 sm:pb-8')}>
+      <div
+        className={cn(
+          'flex flex-1 flex-col',
+          featured
+            ? 'items-center p-7 text-center sm:p-8 lg:items-start lg:p-8 lg:text-left'
+            : 'px-6 pb-7 pt-5 sm:px-7 sm:pb-8',
+        )}
+      >
         <h3 className="font-display text-lg font-medium tracking-tight text-[#F0E6D2] transition-colors duration-300 group-hover:text-white sm:text-xl">
           {title}
         </h3>

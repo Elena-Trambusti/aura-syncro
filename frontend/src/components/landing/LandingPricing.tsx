@@ -98,7 +98,7 @@ export default function LandingPricing() {
                   <p className="lux-heading font-display text-3xl font-medium tracking-tight sm:text-4xl">
                     {plan.price}
                   </p>
-                  <p className="mt-2 text-sm font-light lux-text-muted">
+                  <p className="mt-2 text-sm font-light text-[#F0E6D2]">
                     {plan.setup}
                   </p>
                 </div>
