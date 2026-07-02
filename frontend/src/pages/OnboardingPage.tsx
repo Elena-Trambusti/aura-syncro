@@ -99,8 +99,8 @@ export default function OnboardingPage() {
     return () => window.clearInterval(interval)
   }, [refreshRestaurant, refetchReadiness, searchParams, restaurant?.hasActiveSubscription])
 
-  const systemDone = readiness?.checks.filter(c => c.ok).length ?? 0
-  const systemTotal = readiness?.checks.length ?? 0
+  const systemDone = (readiness?.checks || []).filter(c => c.ok).length
+  const systemTotal = (readiness?.checks || []).length
   const checkLabel = (id: string) => t(`onboarding.systemChecks.${id}`, { defaultValue: id })
 
   return (
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
       {isAdmin && (
         <>
           {intakeLoadError ? (
-            <section className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+            <section className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 text-sm text-red-400 shadow-lg">
               <p className="font-semibold">{t('onboardingForm.loadErrorTitle', { defaultValue: 'Modulo onboarding non ancora attivo' })}</p>
               <p className="mt-2">{t('onboardingForm.loadErrorHint', { defaultValue: 'Il server deve essere aggiornato con la nuova versione e la migration database. Se stai in locale, avvia il backend e lancia: npx prisma migrate deploy' })}</p>
             </section>
@@ -128,11 +128,12 @@ export default function OnboardingPage() {
               }}
             />
           ) : (
-            <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-              <h2 className="font-bold text-emerald-900">{t('onboardingForm.submittedTitle')}</h2>
-              <p className="mt-2 text-sm text-emerald-800">{t('onboardingForm.submittedHint')}</p>
+            <section className="rounded-xl border border-[#D4AF37]/30 bg-[#0A0A0A] p-6 shadow-2xl">
+              <h2 className="text-xl font-serif text-[#D4AF37]">{t('onboardingForm.submittedTitle')}</h2>
+              <p className="mt-2 text-sm text-gray-400">{t('onboardingForm.submittedHint')}</p>
               {intakeData?.appointment?.slotStart && (
-                <p className="mt-3 text-sm font-medium text-emerald-900">
+                <p className="mt-4 rounded-lg bg-[#111111] border border-[#222222] p-4 text-sm font-medium text-white shadow-inner">
+                  <span className="text-[#D4AF37] mr-2">📅</span>
                   {t('onboardingForm.calendar.selected', {
                     datetime: new Date(intakeData.appointment.slotStart).toLocaleString(i18n.language, {
                       weekday: 'long',
@@ -150,41 +151,42 @@ export default function OnboardingPage() {
       )}
 
       {!isAdmin && (
-        <p className="text-sm text-slate-500">{t('onboarding.staffConciergeHint')}</p>
+        <p className="text-sm text-gray-500 italic">{t('onboarding.staffConciergeHint')}</p>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-bold text-slate-900">{t('onboarding.systemChecklistTitle')}</h2>
-          {isAdmin && readinessLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+      <section className="rounded-xl border border-[#333333] bg-[#0A0A0A] p-6 shadow-2xl">
+        <div className="mb-6 flex items-center justify-between gap-3 border-b border-[#222222] pb-4">
+          <h2 className="text-xl font-serif text-white tracking-wide">{t('onboarding.systemChecklistTitle')}</h2>
+          {isAdmin && readinessLoading && <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />}
         </div>
         {!isAdmin ? (
-          <p className="text-sm text-slate-500">{t('onboarding.staffReadinessHint')}</p>
+          <p className="text-sm text-gray-400">{t('onboarding.staffReadinessHint')}</p>
         ) : (
           <>
-            <p className="mb-4 text-sm text-slate-500">
+            <p className="mb-5 text-sm font-medium text-[#D4AF37] uppercase tracking-wider">
               {t('onboarding.systemProgressLabel', { done: systemDone, total: systemTotal })}
             </p>
-            <ul className="space-y-2">
-              {(readiness?.checks ?? []).map(item => (
+            <ul className="space-y-3">
+              {(readiness?.checks || []).map(item => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                  className="flex items-center gap-4 rounded-xl border border-[#222222] bg-[#111111] px-5 py-4 text-sm shadow-sm transition-all hover:border-[#333333]"
                 >
                   {item.ok
-                    ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
-                    : <Circle className="h-5 w-5 shrink-0 text-amber-500" />}
-                  <span className={item.ok ? 'text-slate-500' : 'text-slate-900 font-medium'}>
+                    ? <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
+                    : <Circle className="h-6 w-6 shrink-0 text-[#AA8A2E]" />}
+                  <span className={item.ok ? 'text-gray-400' : 'text-white font-medium'}>
                     {checkLabel(item.id)}
                   </span>
                   {item.detail && (
-                    <span className="ml-auto text-xs text-slate-500">{item.detail}</span>
+                    <span className="ml-auto text-xs font-semibold uppercase tracking-wider text-gray-500">{item.detail}</span>
                   )}
                 </li>
               ))}
             </ul>
             {readiness?.readyForService && (
-              <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <p className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-4 text-sm font-medium text-emerald-400 shadow-inner flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
                 {t('onboarding.systemReady')}
               </p>
             )}
@@ -192,8 +194,8 @@ export default function OnboardingPage() {
         )}
       </section>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-        <p className="text-sm leading-relaxed text-amber-900">{t('onboarding.teamNote')}</p>
+      <div className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 p-5 shadow-lg">
+        <p className="text-sm leading-relaxed text-[#D4AF37] font-medium">{t('onboarding.teamNote')}</p>
       </div>
     </ExecutivePageShell>
   )

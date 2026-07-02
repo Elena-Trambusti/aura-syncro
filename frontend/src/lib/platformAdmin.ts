@@ -39,6 +39,8 @@ export interface PlatformRegistration {
   hasActiveSubscription: boolean
   planTier: string
   countryCode: string
+  onboardingIntake?: any
+  onboardingSubmittedAt?: string
 }
 
 export interface RegistrationsResponse {
@@ -59,7 +61,12 @@ export interface PendingSetupRestaurant {
   email: string | null
   isSetupComplete: boolean
   createdAt: string
-  settings: { hasActiveSubscription: boolean; planTier: string } | null
+  settings: { 
+    hasActiveSubscription: boolean; 
+    planTier: string;
+    onboardingIntake?: any;
+    onboardingSubmittedAt?: string;
+  } | null
   users: PendingSetupOwner[]
 }
 

@@ -43,20 +43,20 @@ const STEP_ICONS: Record<OnboardingStepId, typeof Building2> = {
 
 const CUISINE_KEYS = ['pizzeria', 'gourmet', 'meat', 'fish', 'regional', 'fusion', 'other'] as const
 
-function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return (
-    <label className="mb-1.5 block text-sm font-medium text-slate-700">
-      {children}
-      {required && <span className="ml-0.5 text-amber-600">*</span>}
-    </label>
+function inputClass(hasError?: boolean) {
+  return cn(
+    'w-full rounded-xl border bg-[#111111] px-4 py-3 text-sm text-white shadow-sm transition-colors',
+    'placeholder:text-gray-500 focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20',
+    hasError ? 'border-red-500/50' : 'border-[#333333]',
   )
 }
 
-function inputClass(hasError?: boolean) {
-  return cn(
-    'w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition-colors',
-    'placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20',
-    hasError ? 'border-red-300' : 'border-slate-200',
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="mb-1.5 block text-sm font-medium text-gray-300">
+      {children}
+      {required && <span className="ml-0.5 text-[#D4AF37]">*</span>}
+    </label>
   )
 }
 
@@ -171,18 +171,18 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-md overflow-hidden">
+    <div className="rounded-2xl border border-[#333333] bg-[#0A0A0A] shadow-2xl overflow-hidden">
       {/* Progress header */}
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-5 sm:px-8">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 shadow-sm">
-            <Zap className="h-5 w-5 text-white" />
+      <div className="border-b border-[#333333] bg-[#111111] px-4 py-5 sm:px-8">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4AF37] to-[#AA8A2E] shadow-lg shadow-[#D4AF37]/10">
+            <Zap className="h-5 w-5 text-black" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              {t('onboardingForm.badge')}
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#D4AF37]">
+              {t('onboardingForm.badge', { defaultValue: 'Concierge Aura Syncro' })}
             </p>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-base font-serif text-white tracking-wide">
               {t('onboardingForm.stepProgress', { current: stepIndex + 1, total: ONBOARDING_STEPS.length })}
             </p>
           </div>
@@ -199,14 +199,14 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                 disabled={readOnly || i > stepIndex}
                 onClick={() => i <= stepIndex && setStepIndex(i)}
                 className={cn(
-                  'flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-center transition-colors sm:px-2',
-                  active && 'bg-white shadow-sm ring-1 ring-amber-500/30',
-                  done && !active && 'opacity-80',
-                  !active && !done && 'opacity-50',
+                  'flex flex-1 flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-all duration-300',
+                  active && 'bg-[#222222] shadow-sm ring-1 ring-[#D4AF37]/50',
+                  done && !active && 'opacity-70 hover:opacity-100 hover:bg-[#1A1A1A]',
+                  !active && !done && 'opacity-30',
                 )}
               >
-                <Icon className={cn('h-4 w-4', active ? 'text-amber-600' : 'text-slate-400')} />
-                <span className={cn('hidden text-[10px] font-medium sm:block', active ? 'text-slate-900' : 'text-slate-500')}>
+                <Icon className={cn('h-5 w-5', active ? 'text-[#D4AF37]' : 'text-gray-400')} />
+                <span className={cn('hidden text-[10px] font-medium uppercase tracking-wider sm:block', active ? 'text-[#D4AF37]' : 'text-gray-400')}>
                   {t(`onboardingForm.steps.${id}`)}
                 </span>
               </button>
@@ -216,14 +216,14 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
       </div>
 
       {/* Step body */}
-      <div className="px-4 py-6 sm:px-8 sm:py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 ring-1 ring-amber-200">
-            <StepIcon className="h-5 w-5 text-amber-600" />
+      <div className="px-4 py-8 sm:px-8 sm:py-10">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#222222] ring-1 ring-[#D4AF37]/30">
+            <StepIcon className="h-6 w-6 text-[#D4AF37]" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{t(`onboardingForm.steps.${step}`)}</h3>
-            <p className="text-sm text-slate-500">{t(`onboardingForm.steps.${step}Hint`)}</p>
+            <h3 className="text-xl font-serif text-white tracking-wide">{t(`onboardingForm.steps.${step}`)}</h3>
+            <p className="text-sm text-gray-400 mt-1">{t(`onboardingForm.steps.${step}Hint`)}</p>
           </div>
         </div>
 
@@ -264,13 +264,13 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
 
         {step === 'room' && (
           <div className="space-y-6">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              {t('onboardingForm.fields.totalSeats')}: <strong>{computedSeats}</strong>
-              {errors.totalSeats && <span className="ml-2 text-red-600">{errors.totalSeats}</span>}
+            <div className="rounded-xl border border-[#333333] bg-[#111111] px-5 py-4 text-sm text-gray-300 flex items-center justify-between">
+              <span>{t('onboardingForm.fields.totalSeats')}: <strong className="text-[#D4AF37] text-lg ml-2">{computedSeats}</strong></span>
+              {errors.totalSeats && <span className="ml-2 text-red-500">{errors.totalSeats}</span>}
             </div>
             {form.room.areas.map((area, ai) => (
-              <div key={ai} className="rounded-xl border border-slate-200 p-4">
-                <div className="mb-3 flex items-center gap-2">
+              <div key={ai} className="rounded-xl border border-[#222222] bg-[#0A0A0A] p-5 shadow-lg">
+                <div className="mb-4 flex items-center gap-3">
                   <input
                     className={inputClass(!!errors[`area-${ai}-name`])}
                     value={area.name}
@@ -283,15 +283,15 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                     }}
                   />
                   {!readOnly && form.room.areas.length > 1 && (
-                    <button type="button" className="rounded-lg p-2 text-red-500 hover:bg-red-50"
+                    <button type="button" className="rounded-xl p-3 text-red-500/70 hover:bg-red-500/10 hover:text-red-500 transition-colors"
                       onClick={() => syncTotalSeats(form.room.areas.filter((_, i) => i !== ai))}>
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </button>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {area.tables.map((table, ti) => (
-                    <div key={ti} className="flex gap-2">
+                    <div key={ti} className="flex gap-3 items-center">
                       <input className={inputClass()} value={table.label} disabled={readOnly}
                         placeholder={t('onboardingForm.fields.tableLabel')}
                         onChange={e => {
@@ -301,7 +301,7 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                           areas[ai] = { ...areas[ai], tables }
                           syncTotalSeats(areas)
                         }} />
-                      <input type="number" min={1} max={24} className={cn(inputClass(), 'w-24')} value={table.seats} disabled={readOnly}
+                      <input type="number" min={1} max={50} className={cn(inputClass(), 'w-24')} value={table.seats} disabled={readOnly}
                         onChange={e => {
                           const areas = [...form.room.areas]
                           const tables = [...areas[ai].tables]
@@ -310,7 +310,7 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                           syncTotalSeats(areas)
                         }} />
                       {!readOnly && area.tables.length > 1 && (
-                        <button type="button" className="rounded-lg p-2 text-red-500 hover:bg-red-50"
+                        <button type="button" className="rounded-lg p-2 text-red-500/70 hover:bg-red-500/10 hover:text-red-500 transition-colors"
                           onClick={() => {
                             const areas = [...form.room.areas]
                             areas[ai] = { ...areas[ai], tables: areas[ai].tables.filter((_, i) => i !== ti) }
@@ -323,7 +323,7 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                   ))}
                 </div>
                 {!readOnly && (
-                  <button type="button" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800"
+                  <button type="button" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#D4AF37] hover:text-[#AA8A2E] transition-colors"
                     onClick={() => {
                       const areas = [...form.room.areas]
                       const n = areas[ai].tables.length + 1
@@ -336,9 +336,9 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
               </div>
             ))}
             {!readOnly && (
-              <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-400 hover:bg-amber-50"
+              <button type="button" className="w-full justify-center inline-flex items-center gap-2 rounded-xl border border-dashed border-[#333333] px-4 py-4 text-sm font-medium text-[#D4AF37] hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 transition-all"
                 onClick={() => syncTotalSeats([...form.room.areas, { name: t('onboardingForm.fields.newArea'), tables: [{ label: 'T1', seats: 4 }] }])}>
-                <Plus className="h-4 w-4" /> {t('onboardingForm.actions.addArea')}
+                <Plus className="h-5 w-5" /> {t('onboardingForm.actions.addArea')}
               </button>
             )}
           </div>
@@ -358,9 +358,9 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
             </div>
             <div
               className={cn(
-                'rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors',
-                dragOver ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-slate-50',
-                errors.menu && 'border-red-300',
+                'rounded-xl border-2 border-dashed px-6 py-12 text-center transition-all duration-300',
+                dragOver ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-[#333333] bg-[#111111]',
+                errors.menu && 'border-red-500/50',
               )}
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
@@ -370,18 +370,18 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
                 if (!readOnly) handleMenuFile(e.dataTransfer.files[0] ?? null)
               }}
             >
-              <Upload className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-              <p className="text-sm font-medium text-slate-800">{t('onboardingForm.menu.dropTitle')}</p>
-              <p className="mt-1 text-xs text-slate-500">{t('onboardingForm.menu.dropHint')}</p>
+              <Upload className="mx-auto mb-4 h-10 w-10 text-[#D4AF37]" />
+              <p className="text-base font-serif text-white">{t('onboardingForm.menu.dropTitle')}</p>
+              <p className="mt-2 text-sm text-gray-400">{t('onboardingForm.menu.dropHint')}</p>
               {!readOnly && (
-                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+                <label className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#AA8A2E] px-6 py-3 text-sm font-bold text-black shadow-lg hover:shadow-[#D4AF37]/20 transition-all">
                   {t('onboardingForm.menu.browse')}
                   <input type="file" className="hidden" accept=".pdf,image/jpeg,image/png,image/webp"
                     onChange={e => handleMenuFile(e.target.files?.[0] ?? null)} />
                 </label>
               )}
               {form.menu.menuFile && (
-                <p className="mt-3 text-sm text-emerald-700">{form.menu.menuFile.name}</p>
+                <p className="mt-4 text-sm font-medium text-emerald-400">{form.menu.menuFile.name}</p>
               )}
             </div>
             <div>
@@ -451,13 +451,13 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
 
       {/* Footer nav */}
       {!readOnly && (
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-8">
+        <div className="flex items-center justify-between gap-3 border-t border-[#333333] bg-[#0A0A0A] px-4 py-5 sm:px-8">
           <button type="button" onClick={goBack} disabled={stepIndex === 0}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-40 hover:bg-slate-100">
+            className="inline-flex items-center gap-2 rounded-lg border border-[#333333] bg-[#111111] px-5 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-[#222222] hover:text-white disabled:opacity-40">
             <ChevronLeft className="h-4 w-4" /> {t('onboardingForm.actions.back')}
           </button>
           <button type="button" onClick={goNext} disabled={submitMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-600 disabled:opacity-60">
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#AA8A2E] px-8 py-2.5 text-sm font-bold text-black shadow-lg shadow-[#D4AF37]/20 transition-all hover:brightness-110 disabled:opacity-60">
             {submitMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {isLast ? t('onboardingForm.actions.submit') : t('onboardingForm.actions.next')}
             {!isLast && !submitMutation.isPending && <ChevronRight className="h-4 w-4" />}

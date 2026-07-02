@@ -70,18 +70,18 @@ export default function SetupCalendar({ value, onChange }: Props) {
         <button
           type="button"
           onClick={() => setWeekStart(prev => addDays(prev, -7))}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#333333] bg-[#111111] px-4 py-2 text-sm text-gray-300 hover:bg-[#222222] hover:text-white transition-all"
         >
           <ChevronLeft className="h-4 w-4" />
           {t('onboardingForm.calendar.prevWeek')}
         </button>
-        <p className="text-sm font-medium text-slate-700">
+        <p className="text-sm font-medium text-white tracking-wide">
           {fmtDay(weekStart)} — {fmtDay(addDays(weekStart, 4))}
         </p>
         <button
           type="button"
           onClick={() => setWeekStart(prev => addDays(prev, 7))}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#333333] bg-[#111111] px-4 py-2 text-sm text-gray-300 hover:bg-[#222222] hover:text-white transition-all"
         >
           {t('onboardingForm.calendar.nextWeek')}
           <ChevronRight className="h-4 w-4" />
@@ -89,8 +89,8 @@ export default function SetupCalendar({ value, onChange }: Props) {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-slate-500">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        <div className="flex items-center justify-center py-12 text-gray-400">
+          <Loader2 className="mr-3 h-6 w-6 animate-spin text-[#D4AF37]" />
           {t('onboardingForm.calendar.loading')}
         </div>
       ) : (
@@ -99,10 +99,10 @@ export default function SetupCalendar({ value, onChange }: Props) {
             const key = day.toLocaleDateString('sv-SE')
             const daySlots = slotsByDay.get(key) ?? []
             return (
-              <div key={key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="mb-3 text-sm font-semibold text-slate-900">{fmtDay(day)}</p>
+              <div key={key} className="rounded-xl border border-[#222222] bg-[#0A0A0A] p-5 shadow-lg">
+                <p className="mb-4 text-sm font-bold tracking-wider text-[#D4AF37] uppercase">{fmtDay(day)}</p>
                 {daySlots.length === 0 ? (
-                  <p className="text-xs text-slate-500">{t('onboardingForm.calendar.noSlots')}</p>
+                  <p className="text-xs text-gray-500 italic">{t('onboardingForm.calendar.noSlots')}</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {daySlots.map(slot => {
@@ -114,10 +114,10 @@ export default function SetupCalendar({ value, onChange }: Props) {
                           disabled={!slot.available}
                           onClick={() => onChange(slot.start)}
                           className={cn(
-                            'rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-                            !slot.available && 'cursor-not-allowed bg-slate-100 text-slate-400 line-through',
-                            slot.available && !selected && 'border border-slate-200 bg-slate-50 text-slate-800 hover:border-amber-400 hover:bg-amber-50',
-                            selected && 'border border-amber-500 bg-amber-500 text-white shadow-sm',
+                            'rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200',
+                            !slot.available && 'cursor-not-allowed bg-[#1A1A1A] text-gray-600 line-through',
+                            slot.available && !selected && 'border border-[#333333] bg-[#111111] text-gray-300 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5',
+                            selected && 'border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#AA8A2E] text-black shadow-lg shadow-[#D4AF37]/20',
                           )}
                         >
                           {fmtTime(slot.start)}
@@ -133,7 +133,7 @@ export default function SetupCalendar({ value, onChange }: Props) {
       )}
 
       {value && (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/5 px-5 py-4 text-sm font-medium text-[#D4AF37] flex items-center justify-center">
           {t('onboardingForm.calendar.selected', {
             datetime: new Date(value).toLocaleString(i18n.language, {
               weekday: 'long',

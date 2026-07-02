@@ -58,6 +58,8 @@ const restaurantSummarySelect = {
     select: {
       hasActiveSubscription: true,
       planTier: true,
+      onboardingIntake: true,
+      onboardingSubmittedAt: true,
     },
   },
   users: {
@@ -171,6 +173,8 @@ adminRouter.get('/registrations', async (req: Request, res: Response): Promise<v
               hasActiveSubscription: true,
               planTier: true,
               countryCode: true,
+              onboardingIntake: true,
+              onboardingSubmittedAt: true,
             },
           },
         },
@@ -193,6 +197,8 @@ adminRouter.get('/registrations', async (req: Request, res: Response): Promise<v
     hasActiveSubscription: u.restaurant.settings?.hasActiveSubscription === true,
     planTier: u.restaurant.settings?.planTier ?? 'BASE',
     countryCode: u.restaurant.settings?.countryCode ?? 'IT',
+    onboardingIntake: u.restaurant.settings?.onboardingIntake,
+    onboardingSubmittedAt: u.restaurant.settings?.onboardingSubmittedAt,
   }))
 
   if (dateFilter) {

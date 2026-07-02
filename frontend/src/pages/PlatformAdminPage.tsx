@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, Shield, Users, RefreshCw, LogOut, Unlock, Clock } from 'lucide-react'
+import { Loader2, Shield, Users, RefreshCw, LogOut, Unlock, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react'
 import {
   clearStoredAdminKey,
   completeSetup,
@@ -35,6 +35,7 @@ export default function PlatformAdminPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const parseAdminError = useCallback((err: unknown): { msg: string; status?: number } => {
     const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string }
@@ -298,6 +299,17 @@ export default function PlatformAdminPage() {
                           </p>
                         </div>
                         <div className="flex gap-2 items-center">
+                          {r.settings?.onboardingIntake && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-[#222222] border border-[#333333] text-stone-300 hover:text-white px-3 py-2 text-sm font-semibold transition-all"
+                            >
+                              <FileText className="w-4 h-4" />
+                              Dati Onboarding
+                              {expandedId === r.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                          )}
                           <button
                             type="button"
                             disabled={deletingId === r.id}
@@ -322,6 +334,15 @@ export default function PlatformAdminPage() {
                           </button>
                         </div>
                       </div>
+                      
+                      {expandedId === r.id && r.settings?.onboardingIntake && (
+                        <div className="mt-4 pt-4 border-t border-stone-800 bg-[#111111] -mx-5 -mb-5 px-5 pb-5 rounded-b-xl overflow-x-auto text-sm">
+                          <p className="text-stone-400 mb-2 font-semibold">Modulo inviato il: {r.settings.onboardingSubmittedAt ? new Date(r.settings.onboardingSubmittedAt).toLocaleString('it-IT') : 'N/D'}</p>
+                          <pre className="text-stone-300 font-mono text-xs whitespace-pre-wrap max-h-64 overflow-y-auto custom-scrollbar">
+                            {JSON.stringify(r.settings.onboardingIntake, null, 2)}
+                          </pre>
+                        </div>
+                      )}
                     </article>
                   )
                 })}
@@ -405,6 +426,17 @@ export default function PlatformAdminPage() {
                         </div>
                       </dl>
                       <div className="mt-4 flex justify-end gap-2 relative z-10">
+                        {r.onboardingIntake && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(expandedId === r.restaurantId ? null : r.restaurantId)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#222222] border border-[#333333] text-stone-300 hover:text-white px-3 py-2 text-sm font-semibold transition-all mr-auto"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Dati Onboarding
+                            {expandedId === r.restaurantId ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={deletingId === r.restaurantId}
@@ -430,6 +462,15 @@ export default function PlatformAdminPage() {
                           </button>
                         )}
                       </div>
+
+                      {expandedId === r.restaurantId && r.onboardingIntake && (
+                        <div className="mt-4 pt-4 border-t border-stone-800 bg-[#111111] -mx-5 -mb-5 px-5 pb-5 rounded-b-xl overflow-x-auto text-sm">
+                          <p className="text-stone-400 mb-2 font-semibold">Modulo inviato il: {r.onboardingSubmittedAt ? new Date(r.onboardingSubmittedAt).toLocaleString('it-IT') : 'N/D'}</p>
+                          <pre className="text-stone-300 font-mono text-xs whitespace-pre-wrap max-h-64 overflow-y-auto custom-scrollbar">
+                            {JSON.stringify(r.onboardingIntake, null, 2)}
+                          </pre>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
