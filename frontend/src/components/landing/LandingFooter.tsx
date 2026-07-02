@@ -33,14 +33,7 @@ export default function LandingFooter() {
             {t('landing.footer.tagline')}
           </p>
           <div className="mt-4 flex items-center gap-3">
-            <a
-              href={`mailto:${LEGAL_ENTITY.email}`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37]/20 text-[#E8C872] transition-colors hover:border-[#D4AF37]/45 hover:bg-[#D4AF37]/10"
-              aria-label={t('landing.footer.email', { defaultValue: 'Email' })}
-              itemProp="email"
-            >
-              <Mail className="h-4 w-4" />
-            </a>
+
             {SITE_SOCIAL.linkedIn ? (
               <a
                 href={SITE_SOCIAL.linkedIn}

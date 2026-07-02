@@ -184,9 +184,14 @@ function TableTile({
     : table.status === 'RESERVED' ? 'table-tile-glow--reserved'
     : 'table-tile-glow--cleaning'
 
+  const isFree = table.status === 'FREE'
+  const isOccupied = table.status === 'OCCUPIED'
+  const isCleaning = table.status === 'CLEANING'
+
   const renderChairs = () => {
     const chairs = []
-    const padding = 12 // Distance from table edge
+    const padding = isFree ? 2 : 12 // Distance from table edge
+    const chairOpacity = isFree ? 'opacity-30' : 'opacity-100'
     const chairSize = 20
     
     if (shape === 'ROUND') {
@@ -199,7 +204,7 @@ function TableTile({
         chairs.push(
           <div
             key={`chair-${i}`}
-            className="table-chair absolute rounded-full"
+            className={cn("table-chair absolute rounded-full transition-all duration-500", chairOpacity)}
             style={{ width: chairSize, height: chairSize, left: `calc(50% + ${x}px - ${chairSize / 2}px)`, top: `calc(50% + ${y}px - ${chairSize / 2}px)` }}
           />
         )
@@ -230,7 +235,8 @@ function TableTile({
             <div
               key={`chair-${side}-${i}`}
               className={cn(
-                'table-chair absolute rounded-sm',
+                'table-chair absolute rounded-sm transition-all duration-500',
+                chairOpacity,
                 side === 'left' || side === 'right' ? 'h-6 w-3.5' : 'h-3.5 w-6',
               )}
               style={{ left, top, transform: 'translate(-50%, -50%)' }}
@@ -247,58 +253,71 @@ function TableTile({
     return chairs;
   }
 
+  const shapeClasses = 
+    shape === 'ROUND' ? 'rounded-full' :
+    'rounded-[24px]' // 2.5D smooth corners for square/rect
+
+  const depthClasses = 'backdrop-blur-md bg-gradient-to-br from-[#1E232E]/90 to-[#0A0D14]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_15px_35px_-10px_rgba(0,0,0,0.8)] border border-white/5'
+
   return (
-    <div className={cn('absolute', className)} style={style}>
+    <div className={cn('absolute transition-all duration-500', className)} style={style}>
+      {/* 2.5D Ambient Glow */}
       <div
         className={cn(
-          'table-tile-glow pointer-events-none absolute left-0 top-0',
-          glowClass,
-          shape === 'ROUND' && 'rounded-full',
+          'pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 blur-[30px] transition-all duration-1000 rounded-full',
+          isOccupied ? 'bg-[#D4AF37]/50 w-[150%] h-[150%] animate-[pulse_4s_ease-in-out_infinite]' :
+          isCleaning ? 'bg-[#1E3A8A]/50 w-[150%] h-[150%] animate-[pulse_4s_ease-in-out_infinite]' :
+          'bg-transparent w-full h-full'
         )}
-        style={{ width: w, height: h }}
       />
 
-      <div className="pointer-events-none absolute left-0 top-0" style={{ width: w, height: h }}>
+      {/* Chairs Layer */}
+      <div className="pointer-events-none absolute left-0 top-0 transition-all duration-500" style={{ width: w, height: h }}>
         {renderChairs()}
       </div>
 
+      {/* 2.5D Table Surface */}
       <button
         type="button"
         onClick={onClick}
         disabled={isDisabledInTransfer}
         style={{ width: w, height: h }}
         className={cn(
-          'table-tile table-tile--static',
-          STATUS_CLASS[table.status],
-          orderTotal && 'table-tile--has-order',
-          shape === 'ROUND' && 'rounded-full',
-          transferRole === 'source' && 'table-tile--transfer-source',
-          transferRole === 'target' && 'table-tile--transfer-target',
-          transferRole === 'disabled' && 'table-tile--transfer-disabled',
+          'relative flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),0_20px_40px_-10px_rgba(0,0,0,0.9)]',
+          depthClasses,
+          shapeClasses,
+          orderTotal && 'ring-1 ring-[#D4AF37]/40',
+          transferRole === 'source' && 'ring-2 ring-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]',
+          transferRole === 'target' && 'ring-2 ring-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)] cursor-pointer',
+          transferRole === 'disabled' && 'opacity-40 grayscale cursor-not-allowed',
         )}
         aria-label={`Tavolo ${table.number}, ${seatsLabel(table.seats)}, ${statusLabel(table.status)}`}
       >
-        <span className="relative z-10 text-base font-bold leading-none text-[#E8C872] drop-shadow-md">T{table.number}</span>
-        <span className="relative z-10 text-xs leading-none text-[#C5A059]/80">{table.seats}p</span>
+        {/* Inner Highlight for Glassmorphism */}
+        <div className={cn('pointer-events-none absolute inset-0 rounded-inherit border border-white/5 bg-gradient-to-b from-white/10 to-transparent opacity-20', shapeClasses)} />
+        
+        <span className="relative z-10 text-xl font-bold tracking-tight text-[#E8C872] drop-shadow-md">T{table.number}</span>
+        <span className="relative z-10 text-xs font-medium text-[#C5A059]/70">{table.seats}p</span>
+        
         {table.status !== 'FREE' && (
           <span className={cn(
-            'relative z-10 mt-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none',
-            'border-[#D4AF37]/40 bg-[#1a1408]/90 text-[#E8C872]',
-            table.status === 'CLEANING' && 'border-[#D4AF37]/25 text-[#C5A059]/70',
+            'relative z-10 mt-1.5 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest backdrop-blur-sm',
+            'border-[#D4AF37]/40 bg-[#1a1408]/80 text-[#E8C872] shadow-inner',
+            table.status === 'CLEANING' && 'border-[#3b82f6]/40 bg-[#0f172a]/80 text-[#93c5fd]',
           )}>
             {statusLabel(table.status as TableStatus)}
           </span>
         )}
           {orderTotal && transferRole !== 'target' && (
-            <span className="table-tile__total relative z-10">{orderTotal}</span>
+            <span className="relative z-10 mt-1.5 text-xs font-semibold text-emerald-400 drop-shadow-sm">{orderTotal}</span>
           )}
           {reservationHint && !orderTotal && transferRole !== 'target' && (
-            <span className="relative z-10 mt-1 max-w-[92%] truncate px-1.5 text-center text-xs font-semibold leading-tight text-[#E8C872]/90 drop-shadow-md">
+            <span className="relative z-10 mt-1.5 max-w-[90%] truncate px-2 text-center text-[10px] font-semibold text-[#E8C872]/80">
               {reservationHint}
             </span>
           )}
           {transferHint && (
-            <span className="relative z-10 mt-0.5 rounded-full border border-[#D4AF37]/30 bg-[#1a1408]/95 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none text-[#E8C872] shadow-md">
+            <span className="relative z-10 mt-1.5 rounded-full border border-blue-500/30 bg-blue-900/40 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-200">
               {transferHint}
             </span>
           )}

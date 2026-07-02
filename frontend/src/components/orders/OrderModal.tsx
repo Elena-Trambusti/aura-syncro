@@ -236,8 +236,8 @@ export default function OrderModal({
 
   const cartTotal = cart.reduce((sum, item) => addMoney(sum, lineGrossMoney(item.quantity, item.price)), 0)
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
-  const activeOrderItems = activeOrder?.items ?? []
-  const orderBadgeCount = cartCount > 0 ? cartCount : activeOrderItems.reduce((s, i) => s + i.quantity, 0)
+  const activeOrderItems = activeOrderDetail?.items ?? []
+  const orderBadgeCount = cartCount > 0 ? cartCount : activeOrderItems.reduce((s, i) => s + (i.quantity ?? 0), 0)
 
   const goToCheckout = () => {
     if (!activeOrder) return
