@@ -204,9 +204,13 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
 
   let validatedTipWaiterId: string | undefined
   try {
-    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId)
+    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId, req.userId, req.userRole, refreshedOrder.waiterId)
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'UNAUTHORIZED_TIP_ASSIGNMENT') {
+      res.status(403).json({ error: 'Non sei autorizzato ad assegnare mance ad altri colleghi', code })
+      return
+    }
     if (code === 'INVALID_TIP_WAITER') {
       res.status(400).json({ error: 'Cameriere non valido', code })
       return
@@ -469,9 +473,15 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
 
   let validatedTipWaiterId: string | undefined
   try {
-    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId)
+    // Per pos-checkout, proviamo a ricaricare l'ordine per ottenere l'order.waiterId originale
+    const posOrder = await prisma.order.findFirst({ where: { id: orderId, restaurantId: req.restaurantId! }, select: { waiterId: true } })
+    validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId, req.userId, req.userRole, posOrder?.waiterId)
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
+    if (code === 'UNAUTHORIZED_TIP_ASSIGNMENT') {
+      res.status(403).json({ error: 'Non sei autorizzato ad assegnare mance ad altri colleghi', code })
+      return
+    }
     if (code === 'INVALID_TIP_WAITER') {
       res.status(400).json({ error: 'Cameriere non valido', code })
       return

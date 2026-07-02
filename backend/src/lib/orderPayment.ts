@@ -64,12 +64,20 @@ const paymentOrderInclude = {
   },
 } as const
 
-/** Valida che il cameriere delle mance appartenga al tenant ed sia attivo. */
 export async function resolveTipWaiterId(
   restaurantId: string,
   tipWaiterId?: string,
+  executorUserId?: string,
+  executorRole?: string,
+  orderWaiterId?: string | null,
 ): Promise<string | undefined> {
   if (!tipWaiterId) return undefined
+
+  if (executorRole && ['WAITER', 'BARTENDER'].includes(executorRole)) {
+    if (executorUserId && tipWaiterId !== executorUserId && tipWaiterId !== orderWaiterId) {
+      throw new Error('UNAUTHORIZED_TIP_ASSIGNMENT')
+    }
+  }
 
   const waiter = await prisma.user.findFirst({
     where: {
