@@ -1,36 +1,11 @@
-import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import RegisterLink from './RegisterLink'
+
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Zap, BarChart3, Loader2 } from 'lucide-react'
+import { ArrowRight, BarChart3 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
-import { toast } from '@/lib/toast'
 import { BRAND } from '../../lib/brand'
-import { useAuth } from '../../contexts/AuthContext'
-import { resolveDemoMarket } from '../../lib/demoAccounts'
-import { markDemoSession } from '../../lib/demoSession'
-
 export default function LandingHero() {
-  const { t, i18n } = useTranslation()
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [isDemoLoading, setIsDemoLoading] = useState(false)
-
-  const handleDemoLogin = async () => {
-    try {
-      setIsDemoLoading(true)
-      const demo = resolveDemoMarket(location.pathname, i18n.language)
-      await login(demo.email, demo.password, demo.slug)
-      markDemoSession()
-      navigate('/dashboard')
-    } catch (error) {
-      toast.error(t('landing.hero.demoError'))
-      console.error(error)
-    } finally {
-      setIsDemoLoading(false)
-    }
-  }
+  const { t } = useTranslation()
 
   return (
     <section
@@ -53,7 +28,7 @@ export default function LandingHero() {
             className="lux-hero-badge motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
           >
             <span className="lux-hero-badge__icon" aria-hidden>
-              <AuraIcon icon={Zap} size="sm" className="text-[#E8C872]" weight="display" />
+              <img src="/brand/aura-syncro-logo-new.png" alt="" className="h-3.5 w-3.5 object-contain" />
             </span>
             <span className="lux-hero-badge__text">{t('landing.hero.badge')}</span>
           </div>
@@ -69,27 +44,15 @@ export default function LandingHero() {
             {t('landing.hero.subtitle', { brand: BRAND.name })}
           </p>
           <div 
-            className="mt-10 flex flex-col gap-4 sm:flex-row motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both]"
+            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both]"
           >
-            <RegisterLink
-              className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_40px_rgba(212,175,55,0.4)] ring-1 ring-white/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(212,175,55,0.6)]"
+            <Link
+              to="/login"
+              className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-neutral-950/90 backdrop-blur-md border border-[#C5A059]/40 px-8 py-4 text-[#C5A059] font-medium tracking-widest uppercase text-sm transition-all duration-300 hover:border-[#C5A059] hover:shadow-[0_0_15px_rgba(197,160,89,0.2)]"
             >
-              <div className="absolute inset-0 hidden w-[50%] bg-gradient-to-r from-transparent via-white/40 to-transparent motion-safe:md:block motion-safe:md:animate-[shimmer-sweep_3s_ease-in-out_infinite]" />
-              <span className="relative">{t('landing.hero.ctaPrimary')}</span>
-              <AuraIcon icon={ArrowRight} size="md" className="relative text-black" />
-            </RegisterLink>
-            <button
-              onClick={handleDemoLogin}
-              disabled={isDemoLoading}
-              className="inline-flex items-center justify-center gap-3 rounded-full border border-[#D4AF37]/20 bg-neutral-950/80 px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] lux-text-bright transition-all duration-500 hover:-translate-y-1 hover:border-aura-gold/50 hover:bg-[#D4AF37]/5 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)]"
-            >
-              {isDemoLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-aura-gold" strokeWidth={1.25} />
-              ) : (
-                <AuraIcon icon={Zap} size="md" className="text-aura-gold" />
-              )}
-              {t('landing.hero.ctaDemo')}
-            </button>
+              Accedi
+              <AuraIcon icon={ArrowRight} size="md" className="group-hover:translate-x-1 transition-all duration-300" />
+            </Link>
           </div>
         </div>
 
@@ -102,7 +65,7 @@ export default function LandingHero() {
             <div className="rounded-[2rem] border border-[#D4AF37]/12 bg-[#050505]/95 p-5 lux-text-soft shadow-inner transition-colors duration-700 group-hover:border-[#D4AF37]/22">
               <div className="flex items-center justify-between rounded-2xl bg-[#0a0a0a] px-5 py-4 ring-1 ring-[#D4AF37]/10">
                 <div className="flex items-center gap-3 text-sm font-bold tracking-wide lux-text-bright">
-                  <AuraIcon icon={Zap} size="md" className="text-aura-gold" />
+                  <img src="/brand/aura-syncro-logo-new.png" alt="" className="h-5 w-5 object-contain" />
                   {BRAND.name}
                 </div>
                 <span className="rounded-full border border-aura-gold/20 bg-aura-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-aura-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]">

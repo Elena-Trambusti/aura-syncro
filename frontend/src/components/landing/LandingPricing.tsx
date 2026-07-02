@@ -1,4 +1,4 @@
-import RegisterLink from './RegisterLink'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Minus, Sparkles, ArrowRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -10,9 +10,11 @@ import {
   LUXURY_CTA_CLASS,
   LuxuryCardHoverLine,
 } from './landingLuxury'
+import DemoBookingModal from './DemoBookingModal'
 
 export default function LandingPricing() {
   const { t } = useTranslation()
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   const PLANS = [
     {
@@ -77,7 +79,7 @@ export default function LandingPricing() {
                 className={cn(
                   LUXURY_CARD_CLASS,
                   'p-8 sm:p-9',
-                  isPro && '!overflow-visible ring-1 ring-[#D4AF37]/25 md:scale-[1.02]',
+                  isPro && '!overflow-visible ring-1 ring-[#D4AF37]/25',
                 )}
               >
                 {isPro && plan.badge && (
@@ -122,11 +124,19 @@ export default function LandingPricing() {
                   ))}
                 </ul>
 
-                <RegisterLink className={cn(LUXURY_CTA_CLASS, 'mt-10')}>
-                  <div className="absolute inset-0 hidden w-[50%] bg-gradient-to-r from-transparent via-white/35 to-transparent motion-safe:md:block motion-safe:md:animate-[shimmer-sweep_3s_ease-in-out_infinite]" />
-                  <span className="relative">{t('landing.pricing.cta', { defaultValue: 'Inizia Ora' })}</span>
-                  <AuraIcon icon={ArrowRight} size="md" className="relative text-black" />
-                </RegisterLink>
+                <div className="mt-4 min-h-[48px] flex items-end justify-center">
+                  <p className={cn("text-neutral-400 text-xs italic text-center", !isPro && "invisible")}>
+                    Il piano include il servizio Concierge: mappatura personalizzata della sala in 2.5D e caricamento del menu digitale a cura del nostro team tecnico prima del go-live.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
+                  className="mt-6 w-full group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-neutral-950/90 backdrop-blur-md border border-[#C5A059]/40 px-8 py-4 text-[#C5A059] font-medium tracking-widest uppercase text-sm transition-all duration-300 hover:border-[#C5A059] hover:shadow-[0_0_15px_rgba(197,160,89,0.2)]"
+                >
+                  Riserva una Demo Privata
+                  <AuraIcon icon={ArrowRight} size="md" className="group-hover:translate-x-1 transition-all duration-300" />
+                </button>
 
                 <LuxuryCardHoverLine />
               </article>
@@ -134,6 +144,7 @@ export default function LandingPricing() {
           })}
         </div>
       </div>
+      <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </LandingSectionShell>
   )
 }
