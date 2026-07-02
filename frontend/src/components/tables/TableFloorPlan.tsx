@@ -27,12 +27,6 @@ export interface FloorTable {
   upcomingReservation?: TableReservationPreview | null
 }
 
-const STATUS_CLASS: Record<TableStatus, string> = {
-  FREE: 'table-tile--free',
-  OCCUPIED: 'table-tile--occupied',
-  RESERVED: 'table-tile--reserved',
-  CLEANING: 'table-tile--cleaning',
-}
 
 function tableSize(seats: number, shape: string) {
   if (shape === 'RECTANGLE') {
@@ -177,12 +171,6 @@ function TableTile({
   const { w, h } = tableSize(table.seats, shape)
 
   const isDisabledInTransfer = transferRole === 'disabled'
-  const glowClass =
-    orderTotal ? 'table-tile-glow--order'
-    : table.status === 'FREE' ? 'table-tile-glow--free'
-    : table.status === 'OCCUPIED' ? 'table-tile-glow--occupied'
-    : table.status === 'RESERVED' ? 'table-tile-glow--reserved'
-    : 'table-tile-glow--cleaning'
 
   const isFree = table.status === 'FREE'
   const isOccupied = table.status === 'OCCUPIED'

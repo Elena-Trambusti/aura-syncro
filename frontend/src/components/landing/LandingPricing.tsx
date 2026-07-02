@@ -7,7 +7,6 @@ import {
   LandingSectionHeader,
   LandingSectionShell,
   LUXURY_CARD_CLASS,
-  LUXURY_CTA_CLASS,
   LuxuryCardHoverLine,
 } from './landingLuxury'
 import DemoBookingModal from './DemoBookingModal'

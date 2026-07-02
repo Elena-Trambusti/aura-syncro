@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, Send } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { AuraDialog } from '@/components/ui/AuraDialog'
 import AuraIcon from '../ui/AuraIcon'
 import { toast } from '@/lib/toast'
@@ -12,7 +11,6 @@ export default function DemoBookingModal({
   isOpen: boolean
   onClose: () => void
 }) {
-  const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
