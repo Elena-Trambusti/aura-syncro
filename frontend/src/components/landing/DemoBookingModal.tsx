@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { X } from 'lucide-react'
 import { AuraDialog } from '@/components/ui/AuraDialog'
 
 export default function DemoBookingModal({
@@ -9,11 +9,21 @@ export default function DemoBookingModal({
   isOpen: boolean
   onClose: () => void
 }) {
-  const [isLoaded, setIsLoaded] = useState(false)
+  useEffect(() => {
+    if (isOpen) {
+      const script = document.createElement('script')
+      script.src = 'https://assets.calendly.com/assets/external/widget.js'
+      script.async = true
+      document.body.appendChild(script)
+      return () => {
+        document.body.removeChild(script)
+      }
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
-  // Aggiunti i parametri per il Dark Mode (background_color=0A0A0A, text_color=F0E6D2)
+  // Parametri URL passati direttamente a Calendly (gestiscono il tema scuro)
   const CALENDLY_URL = "https://calendly.com/aurasyncro/30min?hide_landing_page_details=1&hide_gdpr_banner=1&background_color=0A0A0A&text_color=F0E6D2&primary_color=C5A059"
 
   return (
@@ -37,22 +47,12 @@ export default function DemoBookingModal({
           </p>
         </div>
 
-        {/* Contenitore Iframe con Loader */}
-        <div className="relative flex-1 w-full bg-[#0A0A0A]">
-          {!isLoaded && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0A0A]">
-              <Loader2 className="w-8 h-8 animate-spin text-[#C5A059] mb-4" />
-              <p className="text-[#F0E6D2] text-sm tracking-widest uppercase font-medium">Caricamento Calendario...</p>
-            </div>
-          )}
-          <iframe
-            src={CALENDLY_URL}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            className={`w-full h-full transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-            title="Prenota una Demo"
-            onLoad={() => setIsLoaded(true)}
+        {/* Widget Calendly Ufficiale */}
+        <div className="flex-1 w-full bg-[#0A0A0A] overflow-hidden">
+          <div 
+            className="calendly-inline-widget w-full h-full" 
+            data-url={CALENDLY_URL} 
+            style={{ minWidth: '320px', height: '100%' }}
           />
         </div>
       </div>
