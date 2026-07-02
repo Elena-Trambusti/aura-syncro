@@ -38,13 +38,13 @@ export default function LandingHero() {
           <h1 
             className="lux-heading text-[#C5A059] text-4xl font-display font-medium tracking-tight sm:text-5xl lg:text-7xl lg:leading-[1.1] drop-shadow-2xl"
           >
-            {t('landing.hero.title')}
+            Il tuo ristorante ha bisogno di un unico ritmo.
           </h1>
           <p
             itemProp="description"
             className="mt-6 max-w-xl text-base font-light leading-relaxed text-[#F0E6D2] sm:text-lg"
           >
-            {t('landing.hero.subtitle', { brand: BRAND.name })}
+            Centralizza sala, cucina e amministrazione. Ottimizza i margini, elimina il caos, riprendi il controllo.
           </p>
           <div 
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both]"

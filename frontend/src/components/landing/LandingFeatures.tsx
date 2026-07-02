@@ -1,6 +1,7 @@
-import { useTranslation } from 'react-i18next'
-import { UtensilsCrossed, QrCode, CreditCard, Scale, BrainCircuit, Users, type LucideIcon } from 'lucide-react'
+import { useState } from 'react'
+import { TrendingDown, RefreshCcw, FileWarning, ArrowRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import AuraIcon from '../ui/AuraIcon'
 import {
   LandingSectionHeader,
   LandingSectionShell,
@@ -8,96 +9,69 @@ import {
   LuxuryCardHoverLine,
   LuxuryIconMedallion,
 } from './landingLuxury'
+import DemoBookingModal from './DemoBookingModal'
 
-const FEATURES: Array<{ key: string; icon: LucideIcon; className: string; featured?: boolean }> = [
-  { key: 'tables', icon: UtensilsCrossed, className: 'lg:col-span-2 lg:row-span-2', featured: true },
-  { key: 'qrMenu', icon: QrCode, className: '' },
-  { key: 'stripe', icon: CreditCard, className: '' },
-  { key: 'fiscal', icon: Scale, className: 'lg:col-span-2' },
-  { key: 'crm', icon: Users, className: 'lg:col-span-2' },
-  { key: 'ai', icon: BrainCircuit, className: 'lg:col-span-2' },
+const PROBLEMS = [
+  {
+    title: 'Erosione margini delivery',
+    desc: 'Ogni ordine esterno ti costa fino al 30%. Senza un sistema integrato che bilancia i canali, lavori per coprire le commissioni degli altri.',
+    icon: TrendingDown,
+  },
+  {
+    title: 'Disallineamento dati',
+    desc: 'Sala, cucina e cassa viaggiano a velocità diverse. Comande perse, ritardi e incomprensioni distruggono l\'esperienza del cliente e il tuo scontrino medio.',
+    icon: RefreshCcw,
+  },
+  {
+    title: 'Burocrazia soffocante',
+    desc: 'Gestire corrispettivi, fatture e chiusure di cassa a fine serata ti ruba ore preziose. Il rischio di errori e sanzioni è sempre dietro l\'angolo.',
+    icon: FileWarning,
+  },
 ]
 
-function FeatureCard({
-  icon,
-  title,
-  desc,
-  featured,
-  className,
-}: {
-  icon: LucideIcon
-  title: string
-  desc: string
-  featured?: boolean
-  className?: string
-}) {
-  return (
-    <article className={cn(LUXURY_CARD_CLASS, className)}>
-      {featured ? (
-        <div className="relative flex w-full min-h-[11rem] flex-col items-center justify-center overflow-hidden border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08] to-[#080604] lg:min-h-[14rem] lg:overflow-visible">
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#D4AF37]/[0.08]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#D4AF37]/[0.05]"
-            aria-hidden
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.16),transparent_70%)] opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
-          <LuxuryIconMedallion icon={icon} size="lg" className="mx-auto" />
-        </div>
-      ) : (
-        <div className="border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08]/80 to-transparent px-6 pb-5 pt-6 sm:px-7 sm:pt-7">
-          <LuxuryIconMedallion icon={icon} size="md" />
-        </div>
-      )}
-
-      <div
-        className={cn(
-          'flex flex-1 flex-col',
-          featured
-            ? 'items-center p-7 text-center sm:p-8 lg:items-start lg:p-8 lg:text-left'
-            : 'px-6 pb-7 pt-5 sm:px-7 sm:pb-8',
-        )}
-      >
-        <h3 className="font-display text-lg font-medium tracking-tight text-[#F0E6D2] transition-colors duration-300 group-hover:text-white sm:text-xl">
-          {title}
-        </h3>
-        <p className="mt-3 flex-1 text-sm font-light leading-relaxed text-[#F0E6D2]/85">
-          {desc}
-        </p>
-      </div>
-
-      <LuxuryCardHoverLine />
-    </article>
-  )
-}
-
 export default function LandingFeatures() {
-  const { t } = useTranslation()
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   return (
-    <LandingSectionShell id="features">
+    <LandingSectionShell id="problems">
       <LandingSectionHeader
-        eyebrow={t('landing.features.eyebrow')}
-        title={t('landing.features.title')}
-        subtitle={t('landing.features.subtitle')}
+        title="Perché ogni sera perdi margine prima ancora di chiudere la cassa"
+        subtitle="Sei troppo concentrato sull'operatività quotidiana per accorgerti dei micro-sprechi che erodono il tuo utile netto."
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          {FEATURES.map(({ key, icon, className, featured }) => (
-            <FeatureCard
-              key={key}
-              icon={icon}
-              featured={featured}
-              className={className}
-              title={t(`landing.features.${key}.title`)}
-              desc={t(`landing.features.${key}.desc`)}
-            />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+          {PROBLEMS.map((problem) => (
+            <article key={problem.title} className={LUXURY_CARD_CLASS}>
+              <div className="border-b border-[#D4AF37]/10 bg-gradient-to-br from-[#120e08]/80 to-transparent px-6 pb-5 pt-6 sm:px-7 sm:pt-7">
+                <LuxuryIconMedallion icon={problem.icon} size="md" />
+              </div>
+
+              <div className="flex flex-1 flex-col px-6 pb-7 pt-5 sm:px-7 sm:pb-8">
+                <h3 className="font-display text-xl font-medium tracking-tight text-[#F0E6D2] transition-colors duration-300 group-hover:text-white">
+                  {problem.title}
+                </h3>
+                <p className="mt-3 flex-1 text-sm font-light leading-relaxed text-[#F0E6D2]/85">
+                  {problem.desc}
+                </p>
+              </div>
+
+              <LuxuryCardHoverLine />
+            </article>
           ))}
         </div>
+        
+        <div className="mt-16 flex justify-center">
+          <button
+            onClick={() => setIsDemoModalOpen(true)}
+            className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-neutral-950/90 backdrop-blur-md border border-[#C5A059]/40 px-8 py-4 text-[#C5A059] font-medium tracking-widest uppercase text-sm transition-all duration-300 hover:border-[#C5A059] hover:shadow-[0_0_15px_rgba(197,160,89,0.2)]"
+          >
+            Riserva una Demo Privata
+            <AuraIcon icon={ArrowRight} size="md" className="group-hover:translate-x-1 transition-all duration-300" />
+          </button>
+        </div>
       </div>
+      <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </LandingSectionShell>
   )
 }
