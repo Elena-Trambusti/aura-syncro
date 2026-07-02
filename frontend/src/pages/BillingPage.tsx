@@ -13,7 +13,7 @@ import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 
-const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-tally.svg'
+const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-new.png'
 
 const PLAN_IDS = ['STARTER', 'PREMIUM'] as const
 type PlanId = typeof PLAN_IDS[number]

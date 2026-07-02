@@ -8,7 +8,7 @@ const SIZES = {
   lg: { img: 'h-14 w-14', text: 'text-lg' },
 } as const
 
-const ICON_SRC = '/brand/aura-syncro-icon.svg'
+const ICON_SRC = '/brand/aura-syncro-logo-new.png'
 
 type BrandLogoSize = keyof typeof SIZES
 

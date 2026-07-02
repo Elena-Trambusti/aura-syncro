@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const publicDir = join(root, 'public')
-const svgPath = join(publicDir, 'brand', 'aura-syncro-icon.svg')
-const logoTallyPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.svg')
+const svgPath = join(publicDir, 'brand', 'aura-syncro-logo-new.png')
+const logoTallyPath = join(publicDir, 'brand', 'aura-syncro-logo-new.png')
 const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
 
