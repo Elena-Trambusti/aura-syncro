@@ -203,16 +203,10 @@ function TableTile({
   const borderColor = isOccupied ? 'border-[#D4AF37]/80' : isCleaning ? 'border-[#3b82f6]/80' : 'border-[#8A6D23]/50'
 
   const renderLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }) => (
-    <>
-      <div 
-        className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom" 
-        style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) rotateY(45deg)` }} 
-      />
-      <div 
-        className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom" 
-        style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) rotateY(-45deg)` }} 
-      />
-    </>
+    <div 
+      className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom shadow-md" 
+      style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} 
+    />
   )
 
   const renderChairs = () => {
@@ -234,20 +228,20 @@ function TableTile({
               width: chairSize, height: chairSize, 
               left: `calc(50% + ${x}px - ${chairSize / 2}px)`, 
               top: `calc(50% + ${y}px - ${chairSize / 2}px)`, 
-              transform: `rotateZ(${angle + Math.PI / 2}rad)`, 
+              transform: `translate(0, 0)`, 
               transformStyle: 'preserve-3d' 
             }}
           >
-            {/* Gambe della sedia */}
+            {/* Gambe della sedia (Sempre dritte) */}
             {renderLeg({ left: '10%', top: '10%' })}
             {renderLeg({ right: '10%', top: '10%' })}
             {renderLeg({ left: '10%', bottom: '10%' })}
             {renderLeg({ right: '10%', bottom: '10%' })}
             
-            {/* Seduta (Rettangolo Minimalista) */}
+            {/* Seduta (Rettangolo Minimalista ruotato) */}
             <div 
               className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-lg")} 
-              style={{ transform: `translateZ(${chairZ}px)` }} 
+              style={{ transform: `translateZ(${chairZ}px) rotateZ(${angle + Math.PI / 2}rad)` }} 
             />
           </div>
         )
@@ -273,16 +267,16 @@ function TableTile({
             <div
               key={`chair-${side}-${i}`}
               className="absolute transition-all duration-500"
-              style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%) rotateZ(${rotation}deg)`, transformStyle: 'preserve-3d' }}
+              style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%)`, transformStyle: 'preserve-3d' }}
             >
-              {/* Gambe della sedia */}
+              {/* Gambe della sedia (Sempre dritte come il tavolo) */}
               {renderLeg({ left: '10%', top: '10%' })}
               {renderLeg({ right: '10%', top: '10%' })}
               {renderLeg({ left: '10%', bottom: '10%' })}
               {renderLeg({ right: '10%', bottom: '10%' })}
               
-              {/* Seduta Minimalista */}
-              <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px)` }} />
+              {/* Seduta Minimalista (ruotata individualmente) */}
+              <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px) rotateZ(${rotation}deg)` }} />
             </div>
           )
         }
@@ -384,7 +378,7 @@ function TableTile({
             )}
             style={{ fontFamily: '"Inter", "Montserrat", sans-serif' }}
             >
-              {table.name}
+              T{table.number}
             </span>
             
             {/* PAX Indicator */}
