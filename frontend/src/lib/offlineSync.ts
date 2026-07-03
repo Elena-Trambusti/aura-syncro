@@ -12,7 +12,6 @@ import {
   listPendingMutations,
   removeMutation,
   updateMutationFailure,
-  updateMutationPayload,
 } from './offlineQueue'
 
 export type SubmitResult = 'synced' | 'queued'
@@ -88,24 +87,20 @@ function isLikelyIdempotencyDuplicate(err: unknown): boolean {
   )
 }
 
-async function postOrderItem(orderId: string, item: OrderLinePayload, itemKey: string): Promise<void> {
+async function postOrderItemsBatch(orderId: string, items: OrderLinePayload[], mutationId: string): Promise<void> {
   await api.post(
-    `/orders/${orderId}/items`,
+    `/orders/${orderId}/items/batch`,
     {
-      menuItemId: item.menuItemId,
-      quantity: item.quantity,
-      course: item.course,
-      modifiers: item.modifiers,
-      notes: item.notes,
+      items: items.map(i => ({
+        menuItemId: i.menuItemId,
+        quantity: i.quantity,
+        course: i.course,
+        modifiers: i.modifiers,
+        notes: i.notes,
+      })),
     },
-    { headers: { 'X-Idempotency-Key': itemKey } },
+    { headers: { 'X-Idempotency-Key': mutationId } },
   )
-}
-
-function itemIdempotencyKey(baseMutationId: string, item: OrderLinePayload, index: number): string {
-  const modifiers = (item.modifiers ?? []).join(',')
-  const notes = item.notes ?? ''
-  return `${baseMutationId}:${item.menuItemId}:${index}:${item.quantity}:${item.course ?? 1}:${modifiers}:${notes}`
 }
 
 async function executeMutation(mutation: OfflineMutation): Promise<void> {
@@ -133,48 +128,19 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
   }
 
   const payload = mutation.payload as AddOrderItemsPayload
-  for (const [index, item] of payload.items.entries()) {
-    const itemKey = itemIdempotencyKey(mutation.id, item, index)
-    await postOrderItem(payload.orderId, item, itemKey)
-  }
+  await postOrderItemsBatch(payload.orderId, payload.items, mutation.id)
 }
 
 async function executeMutationPartial(mutation: OfflineMutation): Promise<'done' | 'partial' | 'failed'> {
-  if (mutation.kind === 'CREATE_ORDER') {
-    try {
-      await executeMutation(mutation)
-    } catch (err) {
-      if (isLikelyIdempotencyDuplicate(err)) {
-        return 'done'
-      }
-      throw err
+  try {
+    await executeMutation(mutation)
+  } catch (err) {
+    if (isLikelyIdempotencyDuplicate(err)) {
+      return 'done'
     }
-    return 'done'
+    throw err
   }
-
-  const payload = mutation.payload as AddOrderItemsPayload
-  const remaining: OrderLinePayload[] = []
-
-  for (const [index, item] of payload.items.entries()) {
-    const itemKey = itemIdempotencyKey(mutation.id, item, index)
-    try {
-      await postOrderItem(payload.orderId, item, itemKey)
-    } catch (err) {
-      if (isLikelyIdempotencyDuplicate(err)) {
-        continue
-      }
-      if (isPermanentClientError(err)) {
-        remaining.push(item)
-      } else {
-        throw err
-      }
-    }
-  }
-
-  if (remaining.length === 0) return 'done'
-  if (remaining.length === payload.items.length) return 'failed'
-  await updateMutationPayload(mutation.id, { ...payload, items: remaining })
-  return 'partial'
+  return 'done'
 }
 
 export async function flushOfflineQueue(): Promise<{ synced: number; failed: number }> {

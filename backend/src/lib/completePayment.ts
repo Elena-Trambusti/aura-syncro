@@ -15,7 +15,6 @@ import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse 
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { moneyNumber } from './money'
 import { schedulePaymentSideEffects } from './paymentSideEffects'
-import { applyPostPaymentEffects } from './postPayment'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 
 function paymentLockKey(orderId: string): string {
@@ -122,8 +121,6 @@ export async function completeOrderPayment(input: {
         }
         io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
 
-        await applyPostPaymentEffects(input.finalize.orderId, input.finalize.restaurantId)
-
         schedulePaymentSideEffects({
           orderId: input.finalize.orderId,
           restaurantId: input.finalize.restaurantId,
@@ -177,8 +174,6 @@ export async function completeOrderPayment(input: {
       io.to(input.finalize.restaurantId).emit('table:updated', result.updatedTable)
     }
     io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
-
-    await applyPostPaymentEffects(input.finalize.orderId, input.finalize.restaurantId)
 
     schedulePaymentSideEffects({
       orderId: input.finalize.orderId,

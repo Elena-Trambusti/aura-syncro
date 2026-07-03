@@ -9,12 +9,10 @@ import { io } from '../index'
 import { dayBoundsInTimezone } from '../lib/romeDate'
 import { releaseTableIfEmpty } from '../lib/orderPayment'
 import { computeTaxForExistingOrder, computeTaxFromGrossLines, computeTaxForOrderItems } from '../lib/orderTax'
-import { broadcastNewOrderNotification, formatOrderCurrency } from '../lib/orderNotifications'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer, assertCustomerInTenant } from '../lib/customerResolver'
 import { assertMenuItemOrderable, assertOrderStockInTransaction } from '../lib/menuStock'
-import { kitchenTicketsAfterOrderAttempt } from '../lib/kitchenEmitGuard'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
 import {
   acquireIdempotencyLock,
@@ -31,6 +29,7 @@ import {
 } from '../lib/orderSession'
 import { moneyNumber, toMoney } from '../lib/money'
 import { runOrderTransaction, isRetriableTransactionError } from '../lib/prismaTransactions'
+import { scheduleOrderCommitEffects } from '../lib/orderSideEffects'
 
 export const ordersRouter = Router()
 
@@ -53,6 +52,14 @@ const orderInclude = {
 }
 
 const itemStatusSchema = z.enum(['PENDING', 'PREPARING', 'READY', 'SERVED', 'CANCELLED'])
+
+const orderLineInputSchema = z.object({
+  menuItemId: z.string(),
+  quantity: z.number().int().positive().max(99),
+  course: z.number().int().positive().optional().default(1),
+  modifiers: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+})
 
 const orderListQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -313,7 +320,13 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
             })),
           },
         },
-        include: orderInclude,
+        select: {
+          id: true,
+          tableId: true,
+          type: true,
+          status: true,
+          total: true,
+        },
       })
       
       await deductInventoryForOrder(tx, created.id, req.restaurantId!)
@@ -343,38 +356,30 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     throw e
   }
 
-  let finalOrder = order
-  if (resolvedCustomerId) {
-    await applyDiscountToOrder(order.id, req.restaurantId!, { applyLoyalty: true })
-    finalOrder = await prisma.order.findFirst({
-      where: { id: order.id, restaurantId: req.restaurantId! },
-      include: orderInclude,
-    }) ?? order
+  const responseBody = {
+    id: order.id,
+    tableId: order.tableId,
+    status: order.status,
+    type: order.type,
+    total: moneyNumber(order.total),
   }
-
-  if (orderData.tableId) {
-    const table = await prisma.table.findFirst({ where: { id: orderData.tableId, restaurantId: tenantId(req) } })
-    if (table) io.to(req.restaurantId!).emit('table:updated', table)
-  }
-
-  io.to(req.restaurantId!).emit('order:created', finalOrder)
-  for (const ticket of kitchenTicketsAfterOrderAttempt(finalOrder)) {
-    io.to(req.restaurantId!).emit('print:kitchen', { type: 'kitchen', order: ticket })
-  }
-
-  const tableLabel = finalOrder.table ? `tavolo ${finalOrder.table.number}` : finalOrder.type.toLowerCase()
-  void broadcastNewOrderNotification(
-    req.restaurantId!,
-    finalOrder.id,
-    `Nuovo ordine da ${tableLabel} — ${formatOrderCurrency(moneyNumber(finalOrder.total))}`,
-  )
 
   if (idempotencyKey && req.restaurantId) {
-    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders', 201, finalOrder)
+    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders', 201, responseBody)
     idempotencyLocked = false
   }
 
-  res.status(201).json(finalOrder)
+  res.status(201).json(responseBody)
+
+  scheduleOrderCommitEffects({
+    kind: 'created',
+    restaurantId: req.restaurantId!,
+    orderId: order.id,
+    tableId: order.tableId,
+    applyDiscount: Boolean(resolvedCustomerId),
+    orderType: order.type,
+    orderTotal: moneyNumber(order.total),
+  })
 })
 
 ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.kitchen_status', 'orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -701,6 +706,229 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
 
   io.to(req.restaurantId!).emit('order:updated', order)
   res.json(order)
+})
+
+/** Aggiunge più righe in un'unica transazione (evita N round-trip sequenziali). */
+ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const idempotencyKey = readIdempotencyKey(req)
+  let idempotencyLocked = false
+  const releaseBatchLock = async () => {
+    if (idempotencyKey && req.restaurantId && idempotencyLocked) {
+      await releaseIdempotencyLock(req.restaurantId, idempotencyKey)
+      idempotencyLocked = false
+    }
+  }
+  if (idempotencyKey && req.restaurantId) {
+    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items/batch')
+    if (cached) {
+      if (cached.statusCode === 202) {
+        res.status(409).json({ error: 'Richiesta già in elaborazione' })
+        return
+      }
+      res.status(cached.statusCode).json(cached.responseBody)
+      return
+    }
+    const locked = await acquireIdempotencyLock(req.restaurantId, idempotencyKey, 'POST /orders/:id/items/batch')
+    if (!locked) {
+      res.status(409).json({ error: 'Richiesta duplicata bloccata' })
+      return
+    }
+    idempotencyLocked = true
+  }
+
+  const schema = z.object({
+    items: z.array(orderLineInputSchema).min(1).max(50),
+  })
+  const parsed = schema.safeParse(req.body)
+  if (!parsed.success) {
+    await releaseBatchLock()
+    res.status(400).json({ error: 'Dati non validi', details: parsed.error.flatten() })
+    return
+  }
+  const { items } = parsed.data
+
+  const order = await prisma.order.findFirst({
+    where: scopedWhere(req, req.params.id),
+  })
+  if (!order) {
+    await releaseBatchLock()
+    tenantNotFound(res, 'Ordine non trovato')
+    return
+  }
+  if (['PAID', 'CANCELLED'].includes(order.status)) {
+    await releaseBatchLock()
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
+
+  let itemsWithPrice
+  try {
+    const menuItems = await prisma.menuItem.findMany({
+      where: { id: { in: items.map(i => i.menuItemId) }, restaurantId: tenantId(req) },
+      include: {
+        inventoryLinks: { include: { inventoryItem: { select: { quantity: true } } } },
+        modifierGroups: { include: { options: true } },
+      },
+    })
+    itemsWithPrice = items.map(item => {
+      const menuItem = menuItems.find(m => m.id === item.menuItemId)
+      if (!menuItem) throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
+      assertMenuItemOrderable(menuItem, item.quantity)
+      let unitPrice = moneyNumber(menuItem.price)
+      const selectedOptions: Array<{ optionId: string, name: string, price: number }> = []
+
+      if (item.modifiers?.length) {
+        const allOptions = menuItem.modifierGroups.flatMap(g => g.options)
+        for (const optId of item.modifiers) {
+          const opt = allOptions.find(o => o.id === optId)
+          if (!opt) throw Object.assign(new Error('invalid modifier'), { code: 'INVALID_MODIFIER' })
+          unitPrice += moneyNumber(opt.price)
+          selectedOptions.push({ optionId: opt.id, name: opt.name, price: moneyNumber(opt.price) })
+        }
+      }
+      return { ...item, unitPrice, selectedOptions, menuTaxRate: menuItem.taxRate }
+    })
+  } catch (e) {
+    const code = (e as { code?: string }).code
+    if (code === 'MENU_ITEM_NOT_FOUND') {
+      await releaseBatchLock()
+      res.status(400).json({ error: 'Piatto non trovato nel menu' })
+      return
+    }
+    if (code === 'MENU_ITEM_UNAVAILABLE') {
+      await releaseBatchLock()
+      res.status(400).json({ error: 'Piatto non disponibile', code })
+      return
+    }
+    if (code === 'MENU_ITEM_SOLD_OUT') {
+      await releaseBatchLock()
+      res.status(400).json({ error: 'Piatto esaurito — ingredienti insufficienti', code })
+      return
+    }
+    if (code === 'INVALID_MODIFIER') {
+      await releaseBatchLock()
+      res.status(400).json({ error: 'Modificatore non valido' })
+      return
+    }
+    throw e
+  }
+
+  const existingLines = await prisma.orderItem.findMany({
+    where: { orderId: req.params.id, status: { not: 'CANCELLED' } },
+    select: {
+      quantity: true,
+      unitPrice: true,
+      menuItem: { select: { taxRate: true } },
+    },
+  })
+
+  const totals = await computeTaxFromGrossLines(
+    tenantId(req),
+    [
+      ...existingLines.map(line => ({
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        taxRate: line.menuItem.taxRate,
+      })),
+      ...itemsWithPrice.map(item => ({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.menuTaxRate,
+      })),
+    ],
+  )
+
+  let createdItems
+  try {
+    const txResult = await runOrderTransaction(async tx => {
+      await assertOrderStockInTransaction(
+        tx,
+        tenantId(req),
+        itemsWithPrice.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+      )
+
+      const newItems = []
+      for (const item of itemsWithPrice) {
+        const newItem = await tx.orderItem.create({
+          data: {
+            orderId: req.params.id,
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            course: item.course,
+            unitPrice: toMoney(item.unitPrice),
+            notes: item.notes,
+            modifiers: {
+              create: item.selectedOptions.map(opt => ({
+                optionId: opt.optionId,
+                name: opt.name,
+                price: toMoney(opt.price),
+              })),
+            },
+          },
+          select: {
+            id: true,
+            orderId: true,
+            menuItemId: true,
+            quantity: true,
+            course: true,
+            status: true,
+            unitPrice: true,
+            notes: true,
+          },
+        })
+        newItems.push(newItem)
+      }
+
+      await tx.order.updateMany({
+        where: scopedWhere(req, req.params.id),
+        data: {
+          subtotal: toMoney(totals.subtotal),
+          tax: toMoney(totals.tax),
+          total: toMoney(totals.total),
+          taxRateApplied: totals.taxRateApplied,
+          revenueAmount: toMoney(totals.total),
+        },
+      })
+
+      await deductInventoryForOrder(tx, req.params.id, tenantId(req))
+
+      return { createdItems: newItems }
+    })
+    createdItems = txResult.createdItems
+  } catch (e) {
+    if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
+      await releaseBatchLock()
+      res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
+      return
+    }
+    if (isRetriableTransactionError(e)) {
+      await releaseBatchLock()
+      res.status(503).json({
+        error: 'Servizio temporaneamente occupato. Riprova tra qualche secondo.',
+        code: 'TRANSACTION_TIMEOUT',
+      })
+      return
+    }
+    await releaseBatchLock()
+    throw e
+  }
+
+  const responseBody = { orderId: req.params.id, items: createdItems }
+
+  if (idempotencyKey && req.restaurantId) {
+    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items/batch', 201, responseBody)
+    idempotencyLocked = false
+  }
+
+  res.status(201).json(responseBody)
+
+  scheduleOrderCommitEffects({
+    kind: 'updated',
+    restaurantId: tenantId(req),
+    orderId: req.params.id,
+    applyDiscount: Boolean(order.customerId || moneyNumber(order.discount) > 0),
+    newItems: createdItems,
+  })
 })
 
 ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: AuthRequest, res: Response): Promise<void> => {

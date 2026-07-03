@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -44,6 +45,28 @@ function lineGross(item: OrderItem): number {
   return lineGrossMoney(item.quantity, item.unitPrice)
 }
 
+type PayingTarget = 'main' | number
+
+type CheckoutPagePosStatus = {
+  mode: string
+  usesExternalFiscalDevice?: boolean
+  isCardChargeSimulated?: boolean
+}
+
+function usesCardSettlement(method: PaymentMethod, splitSettlement: 'CARD' | 'CASH'): boolean {
+  return method === 'CARD' || (method === 'SPLIT' && splitSettlement === 'CARD')
+}
+
+function requiresBlockingExternalValidation(
+  method: PaymentMethod,
+  splitSettlement: 'CARD' | 'CASH',
+  posStatus: CheckoutPagePosStatus | undefined,
+): boolean {
+  if (!usesCardSettlement(method, splitSettlement) || !posStatus) return false
+  // Solo flussi che richiedono un terminale reale — simulazione/PENDING_SETUP sono istantanei lato UI
+  return posStatus.mode === 'EXTERNAL' || posStatus.mode === 'STRIPE_TERMINAL'
+}
+
 interface CheckoutOrder {
   id: string
   status: string
@@ -86,6 +109,11 @@ export default function CheckoutPage() {
   const [receiptEmail, setReceiptEmail] = useState('')
   const [discountCode, setDiscountCode] = useState('')
   const [finalizeResult, setFinalizeResult] = useState<CheckoutFinalizeResult | null>(null)
+  /** Feedback UI istantaneo (0ms) — prima che React Query aggiorni isPending */
+  const [payingTarget, setPayingTarget] = useState<PayingTarget | null>(null)
+  const optimisticReceiptRef = useRef<CheckoutFinalizeResult | null>(null)
+
+  const isPaymentBusy = payingTarget !== null
 
   const finalizeIdempotencyKey = useMemo(
     () => (orderId ? `checkout-finalize:${orderId}` : ''),
@@ -237,6 +265,72 @@ export default function CheckoutPage() {
     return payload
   }
 
+  const buildOptimisticFinalizeResult = useCallback((): CheckoutFinalizeResult => {
+    if (!order) {
+      return { fiscal: { row: null } }
+    }
+    const settledMethod =
+      paymentMethod === 'CASH'
+        ? 'CASH'
+        : paymentMethod === 'CARD'
+          ? 'CARD'
+          : splitSettlement
+
+    return {
+      transactionId: '',
+      order: {
+        id: order.id,
+        subtotal: moneyNumber(order.subtotal),
+        tax: moneyNumber(order.tax),
+        total: grandTotal,
+        revenueAmount: orderTotal,
+        tipAmount: parsedTip,
+        paymentMethod: settledMethod,
+        table: order.table ?? undefined,
+        type: order.type,
+        createdAt: order.createdAt,
+        items: activeItems.map(it => ({
+          menuItem: { name: it.menuItem.name },
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+        })),
+      },
+      fiscal: {
+        row: {
+          baseImponible: moneyNumber(order.subtotal),
+          tax: moneyNumber(order.tax),
+          revenueAmount: orderTotal,
+          tipAmount: parsedTip,
+          total: grandTotal,
+          paymentMethod: settledMethod,
+        },
+      },
+      receipt: { emailSent: false, emailTo: receiptEmail.trim() || null },
+      splitBreakdown: paymentMethod === 'SPLIT' && splitPreview
+        ? { guests: splitPreview.map(g => ({ label: g.label, share: g.total })) }
+        : undefined,
+    }
+  }, [
+    order,
+    paymentMethod,
+    splitSettlement,
+    grandTotal,
+    orderTotal,
+    parsedTip,
+    receiptEmail,
+    activeItems,
+    splitPreview,
+  ])
+
+  const canOptimisticallyComplete = useCallback(
+    (splitGuestIndex?: number) => {
+      if (splitUsesIncrementalCash && splitGuestIndex != null) return false
+      if (requiresBlockingExternalValidation(paymentMethod, splitSettlement, posStatus)) return false
+      return true
+    },
+    [paymentMethod, splitSettlement, posStatus, splitUsesIncrementalCash],
+  )
+
   const finalize = useMutation({
     mutationFn: async (splitGuestIndex?: number) => {
       if (!navigator.onLine) {
@@ -248,7 +342,7 @@ export default function CheckoutPage() {
       const headers = finalizeIdempotencyKey
         ? { 'X-Idempotency-Key': `${finalizeIdempotencyKey}${idempotencySuffix}` }
         : undefined
-      const maxAttempts = 3
+      const maxAttempts = 2
       let lastErr: unknown
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
@@ -257,7 +351,7 @@ export default function CheckoutPage() {
           lastErr = err
           const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
           if (isPaymentInProgress(data) && attempt < maxAttempts - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            await new Promise(resolve => setTimeout(resolve, 400))
             continue
           }
           throw err
@@ -265,7 +359,16 @@ export default function CheckoutPage() {
       }
       throw lastErr
     },
-    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number }) => {
+    onMutate: (splitGuestIndex) => {
+      if (!canOptimisticallyComplete(splitGuestIndex)) {
+        return { optimistic: false as const }
+      }
+      return {
+        optimistic: true as const,
+        previousReceipt: optimisticReceiptRef.current ?? finalizeResult,
+      }
+    },
+    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number }, _splitGuestIndex, context) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reports', 'fiscal') })
@@ -273,19 +376,29 @@ export default function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
 
       if (result.partial) {
+        if (context?.optimistic) {
+          setFinalizeResult(context.previousReceipt ?? null)
+          optimisticReceiptRef.current = null
+        }
         void refetch()
         toast.success(t('checkout.splitPartialSuccess', { remaining: formatCurrency(result.remaining ?? 0) }))
         return
       }
 
       setFinalizeResult(result)
+      optimisticReceiptRef.current = null
       toast.success(
         (result as CheckoutFinalizeResult & { alreadyPaid?: boolean }).alreadyPaid
           ? t('checkout.alreadyPaid', { defaultValue: 'Pagamento già registrato' })
           : t('checkout.paymentSuccess'),
       )
     },
-    onError: async (err: { response?: { data?: { error?: string; code?: string } }; message?: string }) => {
+    onError: async (err: { response?: { data?: { error?: string; code?: string } }; message?: string }, _splitGuestIndex, context) => {
+      if (context?.optimistic) {
+        setFinalizeResult(context.previousReceipt ?? null)
+        optimisticReceiptRef.current = null
+      }
+
       const payload = err.response?.data
       if (isPaymentAlreadyPaid(payload)) {
         try {
@@ -317,7 +430,45 @@ export default function CheckoutPage() {
       console.error('FINALIZE ERROR:', err.response?.data || err.message)
       toast.error(resolvePaymentErrorMessage(t, payload))
     },
+    onSettled: () => {
+      setPayingTarget(null)
+    },
   })
+
+  const handleFinalizePayment = useCallback(
+    (splitGuestIndex?: number) => {
+      if (isPaymentBusy || needsCashSession || !orderId) return
+      if (!navigator.onLine) {
+        toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
+        return
+      }
+
+      const optimistic = canOptimisticallyComplete(splitGuestIndex)
+
+      flushSync(() => {
+        setPayingTarget(splitGuestIndex ?? 'main')
+        if (optimistic) {
+          const nextReceipt = buildOptimisticFinalizeResult()
+          optimisticReceiptRef.current = nextReceipt
+          setFinalizeResult(nextReceipt)
+        }
+      })
+
+      void queryClient.cancelQueries({ queryKey: tq(tk, 'checkout', orderId) })
+      finalize.mutate(splitGuestIndex)
+    },
+    [
+      buildOptimisticFinalizeResult,
+      canOptimisticallyComplete,
+      finalize,
+      isPaymentBusy,
+      needsCashSession,
+      orderId,
+      queryClient,
+      t,
+      tk,
+    ],
+  )
 
   const assignItem = (itemId: string, guestIndex: number) => {
     setItemAssignments(prev => ({ ...prev, [itemId]: guestIndex }))
@@ -702,11 +853,15 @@ export default function CheckoutPage() {
                           {splitUsesIncrementalCash && canPay && !paid && !needsCashSession && (
                             <button
                               type="button"
-                              onClick={() => finalize.mutate(g.index)}
-                              disabled={finalize.isPending}
-                              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+                              onClick={() => handleFinalizePayment(g.index)}
+                              disabled={isPaymentBusy || needsCashSession}
+                              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:pointer-events-none"
                             >
-                              {finalize.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : t('checkout.splitPayGuest')}
+                              {payingTarget === g.index ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                t('checkout.splitPayGuest')
+                              )}
                             </button>
                           )}
                         </div>
@@ -761,11 +916,11 @@ export default function CheckoutPage() {
           {showMainFinalize && (
             <button
               type="button"
-              onClick={() => finalize.mutate(undefined)}
-              disabled={finalize.isPending || needsCashSession}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60"
+              onClick={() => handleFinalizePayment()}
+              disabled={isPaymentBusy || needsCashSession}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60 disabled:pointer-events-none"
             >
-              {finalize.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+              {payingTarget === 'main' ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
               {paymentMethod === 'SPLIT' ? t('checkout.splitFinalizeAll') : t('checkout.finalize')}
             </button>
           )}

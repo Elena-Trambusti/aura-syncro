@@ -24,7 +24,7 @@ export default function LandingGallery() {
              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15),transparent_60%)] pointer-events-none" />
              
              <img 
-               src="/brand/tavoli-floor-plan-25d.png" 
+               src="/brand/tavoli-floor-plan-25d.png?v=2" 
                alt="Pianta tavoli 2.5D Aura Syncro" 
                className="w-full h-full object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
              />

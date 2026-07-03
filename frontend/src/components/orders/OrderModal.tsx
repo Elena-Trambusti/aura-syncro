@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
@@ -140,6 +141,7 @@ export default function OrderModal({
       ...(i.modifiers?.length ? { modifiers: i.modifiers } : {}),
     }))
     const tableLabel = `T${table.number}`
+    const addingToExisting = Boolean(activeOrder)
 
     setIsSubmitting(true)
     const sendPromise = (async () => {
@@ -158,25 +160,29 @@ export default function OrderModal({
       return result
     })()
 
-    // We will reset UI after successful submission to avoid losing cart on error
-    // (no immediate UI reset here)
-
-    sendPromise.then((result) => {
-      invalidateOrderQueries()
-      if (result === 'queued') {
-        toast.success(t('offline.orderQueued', { defaultValue: 'Comanda salvata — invio appena torna la connessione' }))
-      } else if (activeOrder) {
-        toast.success(t('orderModal.dishAdded'))
-      } else {
-        toast.success(t('orderModal.orderSent'))
-      }
+    flushSync(() => {
       setCart([])
       setIsSubmitting(false)
       onClose()
-    }).catch(err => {
-      handleOrderSubmitError(err)
-      setIsSubmitting(false)
     })
+
+    if (addingToExisting) {
+      toast.success(t('orderModal.dishAdded'))
+    } else {
+      toast.success(t('orderModal.orderSent'))
+    }
+
+    void sendPromise
+      .then((result) => {
+        invalidateOrderQueries()
+        if (result === 'queued') {
+          toast.success(t('offline.orderQueued', { defaultValue: 'Comanda salvata — invio appena torna la connessione' }))
+        }
+      })
+      .catch(err => {
+        invalidateOrderQueries()
+        handleOrderSubmitError(err)
+      })
   }
 
   const getModifiersPrice = (item: MenuItem, modifiers: string[]) => {
