@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, Maximize } from 'lucide-react'
-import { cn } from '../../lib/utils'
+
 import AuraIcon from '../ui/AuraIcon'
 import {
   LandingSectionHeader,

@@ -37,7 +37,7 @@ export default function BrandLogo({
     <img
       src={ICON_SRC}
       alt=""
-      className={cn(s.img, 'shrink-0 object-contain object-center')}
+      className={cn(s.img, 'shrink-0 object-contain object-center rounded-[20%] shadow-[0_0_15px_rgba(212,175,55,0.15)] ring-1 ring-white/10')}
       width={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       height={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       loading={priority ? 'eager' : 'lazy'}
@@ -54,8 +54,8 @@ export default function BrandLogo({
   return (
     <div className={cn('flex items-center justify-center', compact ? 'gap-2' : 'gap-3', className)}>
       {iconBox}
-      <div className="min-w-0 text-left">
-        <p className={cn('font-display font-semibold tracking-tight text-pietra leading-tight whitespace-nowrap', s.text)}>
+      <div className="min-w-0 text-left flex flex-col justify-center">
+        <p className={cn('font-display font-bold tracking-tight text-white leading-tight whitespace-nowrap antialiased', s.text)}>
           {BRAND.name}
         </p>
         <p
