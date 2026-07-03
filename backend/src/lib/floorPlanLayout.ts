@@ -39,6 +39,7 @@ export const floorPlanLayoutSchema = z.object({
   walls: z.array(floorPlanWallSchema),
   zoneLabels: z.array(floorPlanZoneLabelSchema),
   zonePaths: z.array(floorPlanZonePathSchema).optional(),
+  areas: z.array(z.string().min(1).max(80)).optional(),
 })
 
 export type FloorPlanLayoutV1 = z.infer<typeof floorPlanLayoutSchema>

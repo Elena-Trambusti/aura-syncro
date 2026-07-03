@@ -124,9 +124,15 @@ export default function ReportsPage() {
                 />
                 <button
                   onClick={() => {
-                    if (window.confirm(t('reports.zetaConfirm'))) {
-                      generateZeta()
-                    }
+                    void (async () => {
+                      const confirmed = await toast.confirm({
+                        title: t('reports.zetaConfirmTitle', { defaultValue: 'Chiusura Zeta' }),
+                        description: t('reports.zetaConfirm'),
+                        confirmLabel: t('common.confirm'),
+                        cancelLabel: t('common.cancel'),
+                      })
+                      if (confirmed) generateZeta()
+                    })()
                   }}
                   disabled={isGeneratingZeta}
                   className="flex items-center gap-1.5 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-3 py-2 text-sm font-semibold text-aura-gold-light shadow-sm transition-colors hover:border-aura-gold/40 hover:bg-aura-gold/15 disabled:opacity-50"

@@ -100,6 +100,15 @@ export default function OrderModal({
 
   const activeOrder = activeOrderDetail ?? activeOrderSummary
 
+  useEffect(() => {
+    if (!activeOrder?.id || !canPayOrder || !navigator.onLine) return
+    void queryClient.prefetchQuery({
+      queryKey: tq(tk, 'checkout', activeOrder.id),
+      queryFn: () => api.get(`/payments/checkout/${activeOrder.id}`).then(r => r.data),
+      staleTime: 60_000,
+    })
+  }, [activeOrder?.id, canPayOrder, queryClient, tk])
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: tq(tk, 'menu', 'categories'),
     queryFn: () => api.get('/menu/categories').then(r => r.data),

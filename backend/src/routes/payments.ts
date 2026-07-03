@@ -74,16 +74,19 @@ async function loadOrderForCheckout(orderId: string, restaurantId: string) {
 
 // ── Anteprima checkout (riepilogo pre-pagamento) ─────────────────────────────
 paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, requirePermission('orders.pay'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const order = await loadOrderForCheckout(req.params.orderId, req.restaurantId!)
+  const [order, restaurant, posConfig] = await Promise.all([
+    loadOrderForCheckout(req.params.orderId, req.restaurantId!),
+    prisma.restaurant.findUnique({
+      where: { id: req.restaurantId! },
+      include: { settings: true },
+    }),
+    loadRestaurantPosConfig(req.restaurantId!),
+  ])
+
   if (!order) {
     res.status(404).json({ error: 'Ordine non trovato' })
     return
   }
-
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: req.restaurantId! },
-    include: { settings: true },
-  })
 
   const fiscal = buildFiscalConfig(restaurant?.settings)
   const strategy = getFiscalStrategyFromConfig(fiscal)
@@ -93,7 +96,6 @@ paymentsRouter.get('/checkout/:orderId', authenticate, requireDashboardAccess, r
     ? await resolveLoyaltyDiscount(req.restaurantId!, order.customerId)
     : { source: 'NONE' as const, discountPct: 0, discountAmount: 0 }
 
-  const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
   const posStatus = serializePosStatusForCheckout(posConfig)
 
   res.json({
@@ -176,7 +178,9 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     throw err
   }
 
-  const refreshedOrder = await loadOrderForCheckout(orderId, req.restaurantId!)
+  const refreshedOrder = discountOptions
+    ? await loadOrderForCheckout(orderId, req.restaurantId!)
+    : order
   if (!refreshedOrder) {
     res.status(404).json({ error: 'Ordine non trovato', code: 'ORDER_NOT_FOUND' })
     return
@@ -317,7 +321,8 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       },
     }
     if (idempotencyKey && req.restaurantId) {
-      await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, responseBody)
+      void saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, responseBody)
+        .catch(err => console.error('[payments] idempotency save failed', err))
     }
     res.json(responseBody)
   } catch (err) {

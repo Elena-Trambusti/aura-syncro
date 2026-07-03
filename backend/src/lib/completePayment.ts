@@ -133,13 +133,13 @@ export async function completeOrderPayment(input: {
           stripePaymentIntentId: posResult?.stripePaymentIntentId ?? input.stripePaymentIntentId,
         })
 
-        await saveIdempotentResponse(
+        void saveIdempotentResponse(
           input.finalize.restaurantId,
           lockKey,
           'PAYMENT_FINALIZE',
           200,
           { orderId: input.finalize.orderId, completed: true },
-        )
+        ).catch(err => console.error('[payment] idempotency save failed', err))
 
         return {
           result,
@@ -189,13 +189,13 @@ export async function completeOrderPayment(input: {
 
     const emailSent = Boolean(input.receiptEmail)
 
-    await saveIdempotentResponse(
+    void saveIdempotentResponse(
       input.finalize.restaurantId,
       lockKey,
       'PAYMENT_FINALIZE',
       200,
       { orderId: input.finalize.orderId, completed: true },
-    )
+    ).catch(err => console.error('[payment] idempotency save failed', err))
 
     return { result, updatedOrder, posResult, emailSent }
   } catch (err) {

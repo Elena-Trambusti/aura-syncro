@@ -157,9 +157,16 @@ export default function CrmPage() {
     },
   })
 
-  const handleDeleteCustomer = (customer: CustomerListItem) => {
+  const handleDeleteCustomer = async (customer: CustomerListItem) => {
     const name = customerDisplayName(customer)
-    if (!window.confirm(t('crm.confirmDelete', { name, defaultValue: `Eliminare ${name}?` }))) return
+    const confirmed = await toast.confirm({
+      title: t('crm.deleteCustomerTitle', { defaultValue: 'Elimina cliente' }),
+      description: t('crm.confirmDelete', { name, defaultValue: `Eliminare ${name}? L'operazione non è reversibile.` }),
+      confirmLabel: t('common.delete', { defaultValue: 'Elimina' }),
+      cancelLabel: t('common.cancel'),
+      variant: 'danger',
+    })
+    if (!confirmed) return
     deleteCustomer.mutate(customer.id)
   }
 
@@ -351,7 +358,17 @@ export default function CrmPage() {
         onDelete={canManageCustomers && selectedId ? async () => {
           const c = customers.find(x => x.id === selectedId)
           if (!c) return
-          if (!window.confirm(t('crm.confirmDelete', { name: customerDisplayName(c), defaultValue: `Eliminare ${customerDisplayName(c)}?` }))) return
+          const confirmed = await toast.confirm({
+            title: t('crm.deleteCustomerTitle', { defaultValue: 'Elimina cliente' }),
+            description: t('crm.confirmDelete', {
+              name: customerDisplayName(c),
+              defaultValue: `Eliminare ${customerDisplayName(c)}? L'operazione non è reversibile.`,
+            }),
+            confirmLabel: t('common.delete', { defaultValue: 'Elimina' }),
+            cancelLabel: t('common.cancel'),
+            variant: 'danger',
+          })
+          if (!confirmed) return
           await deleteCustomer.mutateAsync(selectedId)
         } : undefined}
         isDeleting={deleteCustomer.isPending}

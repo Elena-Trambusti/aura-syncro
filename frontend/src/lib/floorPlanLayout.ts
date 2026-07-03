@@ -32,6 +32,8 @@ export type FloorPlanLayoutV1 = {
   walls: FloorPlanWall[]
   zoneLabels: FloorPlanZoneLabel[]
   zonePaths?: FloorPlanZonePath[]
+  /** Zone senza tavoli ancora (es. Terrazza da arredare) */
+  areas?: string[]
 }
 
 export const EMPTY_FLOOR_PLAN_LAYOUT: FloorPlanLayoutV1 = {

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Rnd } from 'react-rnd'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Save, UtensilsCrossed, RotateCw, MousePointer2, BrickWall, Tag, Trash2, Eye, Pencil, ZoomIn, ZoomOut,
+  Save, UtensilsCrossed, RotateCw, MousePointer2, BrickWall, Tag, Trash2, Eye, Pencil, ZoomIn, ZoomOut, Plus, Map, Edit2,
 } from 'lucide-react'
 import type { FloorTable } from './TableFloorPlan'
 import TableFloorPlan, { tableSize } from './TableFloorPlan'
@@ -41,10 +41,31 @@ function newId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 }
 
+function resolveEditorAreas(layout: FloorPlanLayoutV1, tables: FloorTable[], defaultArea: string): string[] {
+  const fromTables = tables.map(tbl => tbl.area || defaultArea).filter(Boolean)
+  const fromLayout = layout.areas ?? []
+  return Array.from(new Set([defaultArea, ...fromTables, ...fromLayout])).sort((a, b) =>
+    a.localeCompare(b, 'it'),
+  )
+}
+
+function fitCanvasSize(shellWidth: number, shellHeight: number) {
+  if (shellWidth <= 0 || shellHeight <= 0) return { width: 0, height: 0 }
+  const aspect = FLOOR_CANVAS_W / FLOOR_CANVAS_H
+  let width = Math.min(shellWidth, 1000)
+  let height = width / aspect
+  if (height > shellHeight) {
+    height = shellHeight
+    width = height * aspect
+  }
+  return { width: Math.round(width), height: Math.round(height) }
+}
+
 export default function FloorPlanEditor({ tables, initialLayout, onClose }: FloorPlanEditorProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
+  const defaultArea = t('common.area', { defaultValue: 'Sala' })
 
   const [tab, setTab] = useState<EditorTab>('edit')
   const [tool, setTool] = useState<EditorTool>('select')
@@ -53,6 +74,9 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
   const [selected, setSelected] = useState<Selectable>(null)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [activeArea, setActiveArea] = useState(defaultArea)
+
+  const editorAreas = resolveEditorAreas(floorLayout, tables, defaultArea)
 
   const [tableLayout, setTableLayout] = useState<FloorTable[]>(() => {
     let unplaced = 0
@@ -70,17 +94,29 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
   })
 
   const canvasRef = useRef<HTMLDivElement>(null)
+  const shellRef = useRef<HTMLDivElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
 
-  useEffect(() => {
-    if (!canvasRef.current) return
-    const observer = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect
-      setCanvasSize({ width, height })
-    })
-    observer.observe(canvasRef.current)
+  useLayoutEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+
+    const update = () => {
+      const { width, height } = shell.getBoundingClientRect()
+      setCanvasSize(fitCanvasSize(width, height))
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(shell)
     return () => observer.disconnect()
-  }, [])
+  }, [tab])
+
+  useEffect(() => {
+    if (!editorAreas.includes(activeArea)) {
+      setActiveArea(editorAreas[0] ?? defaultArea)
+    }
+  }, [activeArea, defaultArea, editorAreas])
 
   const saveAll = useMutation({
     mutationFn: async () => {
@@ -108,8 +144,8 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     },
   })
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!canvasRef.current || canvasSize.width === 0) return
+  const handleCanvasClick = async (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current || canvasW === 0) return
     const rect = canvasRef.current.getBoundingClientRect()
     const pt = pctFromEvent(e, rect)
 
@@ -134,7 +170,14 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     }
 
     if (tool === 'label') {
-      const text = window.prompt(t('tables.editor.labelPrompt', { defaultValue: 'Testo etichetta zona' }), 'ZONE')
+      const text = await toast.prompt({
+        title: t('tables.editor.labelTitle', { defaultValue: 'Etichetta zona' }),
+        description: t('tables.editor.labelPrompt', { defaultValue: 'Inserisci il testo da mostrare sulla mappa' }),
+        defaultValue: 'ZONE',
+        placeholder: 'ZONE',
+        confirmLabel: t('common.confirm'),
+        cancelLabel: t('common.cancel'),
+      })
       if (!text?.trim()) return
       const label: FloorPlanZoneLabel = {
         id: newId('zl'),
@@ -162,9 +205,9 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
   }
 
   const handleDragStop = (id: string, d: { x: number; y: number }) => {
-    if (canvasSize.width === 0) return
-    let posX = (d.x / canvasSize.width) * 100
-    let posY = (d.y / canvasSize.height) * 100
+    if (canvasW === 0) return
+    let posX = (d.x / canvasW) * 100
+    let posY = (d.y / canvasH) * 100
     posX = Math.max(0, Math.min(100, posX))
     posY = Math.max(0, Math.min(100, posY))
     setTableLayout(prev => prev.map(tbl => tbl.id === id ? { ...tbl, posX, posY } : tbl))
@@ -175,17 +218,93 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     setTableLayout(prev => prev.map(tbl => tbl.id === id ? { ...tbl, rotation: (currentRotation + 45) % 360 } : tbl))
   }
 
-  const loadTemplate = () => {
-    if (!window.confirm(t('tables.editor.loadTemplateConfirm', { defaultValue: 'Caricare il template Obsidian Room? Sovrascrive muri e etichette.' }))) return
+  const loadTemplate = async () => {
+    const confirmed = await toast.confirm({
+      title: t('tables.editor.loadTemplateTitle', { defaultValue: 'Carica template' }),
+      description: t('tables.editor.loadTemplateConfirm', { defaultValue: 'Caricare il template Obsidian Room? Sovrascrive muri e etichette.' }),
+      confirmLabel: t('common.confirm'),
+      cancelLabel: t('common.cancel'),
+    })
+    if (!confirmed) return
     setFloorLayout(OBSIDIAN_ROOM_TEMPLATE)
     setWallDraft(null)
     setSelected(null)
   }
 
+  const handleAddArea = async () => {
+    const name = await toast.prompt({
+      title: t('tables.editor.addArea', { defaultValue: 'Nuova zona' }),
+      description: t('tables.editor.newAreaPrompt', { defaultValue: 'Nome zona (es. Terrazza, Piano 2, Dehors)' }),
+      defaultValue: '',
+      placeholder: t('tables.editor.newAreaPlaceholder', { defaultValue: 'Es. Terrazza, Piano 2…' }),
+      confirmLabel: t('common.confirm'),
+      cancelLabel: t('common.cancel'),
+    })
+    if (!name?.trim()) return
+    const trimmed = name.trim()
+    if (editorAreas.some(a => a.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(t('tables.editor.areaExists', { defaultValue: 'Questa zona esiste già' }))
+      setActiveArea(editorAreas.find(a => a.toLowerCase() === trimmed.toLowerCase()) ?? trimmed)
+      return
+    }
+    setFloorLayout(prev => ({
+      ...prev,
+      areas: Array.from(new Set([...(prev.areas ?? []), trimmed])),
+    }))
+    setActiveArea(trimmed)
+    toast.success(t('tables.editor.areaAdded', { defaultValue: 'Zona aggiunta — assegna i tavoli da Gestione tavoli' }))
+  }
+
+  const handleRenameArea = async (area: string, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    const newName = await toast.prompt({
+      title: t('tables.editor.renameArea', { defaultValue: 'Rinomina zona' }),
+      description: t('tables.editor.renameAreaHint', {
+        defaultValue: 'Il nuovo nome verrà applicato a tutti i tavoli di questa zona.',
+      }),
+      defaultValue: area,
+      confirmLabel: t('common.save'),
+      cancelLabel: t('common.cancel'),
+    })
+    if (!newName?.trim() || newName.trim() === area) return
+    const trimmed = newName.trim()
+    if (editorAreas.some(a => a !== area && a.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(t('tables.editor.areaExists', { defaultValue: 'Questa zona esiste già' }))
+      return
+    }
+
+    const inArea = tableLayout.filter(tbl => (tbl.area || defaultArea) === area)
+    try {
+      if (inArea.length > 0) {
+        const oldNames = new Set<string | null>()
+        for (const tbl of inArea) {
+          oldNames.add(tbl.area ?? null)
+        }
+        for (const oldName of oldNames) {
+          await api.patch('/tables/area', { oldName, newName: trimmed })
+        }
+        setTableLayout(prev => prev.map(tbl =>
+          (tbl.area || defaultArea) === area ? { ...tbl, area: trimmed } : tbl,
+        ))
+      }
+      setFloorLayout(prev => ({
+        ...prev,
+        areas: Array.from(new Set((prev.areas ?? []).map(a => (a === area ? trimmed : a)))),
+      }))
+      if (activeArea === area) setActiveArea(trimmed)
+      toast.success(t('tables.editor.areaRenamed', { defaultValue: 'Zona rinominata' }))
+    } catch (err) {
+      toast.error(resolveToastApiError(t, err, 'common.error'))
+    }
+  }
+
   const statusLabel = useCallback((s: FloorTable['status']) => t(`tables.${s.toLowerCase()}`, { defaultValue: s }), [t])
   const seatsLabel = useCallback((n: number) => t('common.seatsCount', { count: n, defaultValue: `${n} posti` }), [t])
 
-  const scaleX = canvasSize.width / FLOOR_CANVAS_W
+  const visibleTables = tableLayout.filter(tbl => (tbl.area || defaultArea) === activeArea)
+  const canvasW = canvasSize.width > 0 ? canvasSize.width : 800
+  const canvasH = canvasSize.height > 0 ? canvasSize.height : 640
+  const scaleX = canvasW / FLOOR_CANVAS_W
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#020202]/98 backdrop-blur-xl">
@@ -200,20 +319,8 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={loadTemplate} className="rounded-lg border border-[#D4AF37]/25 px-3 py-1.5 text-xs font-medium text-[#E8C872] hover:bg-[#D4AF37]/10">
+          <button type="button" onClick={() => { void loadTemplate() }} className="rounded-lg border border-[#D4AF37]/25 px-3 py-1.5 text-xs font-medium text-[#E8C872] hover:bg-[#D4AF37]/10">
             {t('tables.editor.loadTemplate', { defaultValue: 'Template demo' })}
-          </button>
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:bg-white/5">
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={() => saveAll.mutate()}
-            disabled={saveAll.isPending}
-            className="flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 text-sm font-bold text-black shadow-[0_0_15px_rgba(212,175,55,0.3)] disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" />
-            {t('tables.saveLayout', { defaultValue: 'Salva Layout' })}
           </button>
         </div>
       </div>
@@ -230,14 +337,51 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
       </div>
 
       {tab === 'preview' ? (
-        <div className="flex flex-1 items-center justify-center overflow-auto p-4">
-          <TableFloorPlan
-            tables={tableLayout}
-            floorLayout={floorLayout}
-            statusLabel={statusLabel}
-            seatsLabel={seatsLabel}
-            interactive={false}
-          />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2">
+            <Map className="h-4 w-4 text-[#D4AF37]" />
+            {editorAreas.map(area => (
+              <div key={area} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveArea(area)}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                    activeArea === area
+                      ? 'bg-[#D4AF37] text-black'
+                      : 'border border-white/10 text-slate-400 hover:bg-white/5',
+                  )}
+                >
+                  {area}
+                </button>
+                <button
+                  type="button"
+                  onClick={e => { void handleRenameArea(area, e) }}
+                  className="rounded-full border border-white/10 p-1 text-slate-500 hover:border-[#D4AF37]/35 hover:text-[#E8C872]"
+                  aria-label={t('tables.editor.renameArea', { defaultValue: 'Rinomina zona' })}
+                >
+                  <Edit2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => { void handleAddArea() }}
+              className="flex items-center gap-1 rounded-full border border-dashed border-[#D4AF37]/40 px-3 py-1 text-xs font-medium text-[#E8C872] hover:bg-[#D4AF37]/10"
+            >
+              <Plus className="h-3 w-3" />
+              {t('tables.editor.addArea', { defaultValue: 'Nuova zona' })}
+            </button>
+          </div>
+          <div className="flex flex-1 items-center justify-center overflow-auto p-4">
+            <TableFloorPlan
+              tables={visibleTables}
+              floorLayout={floorLayout}
+              statusLabel={statusLabel}
+              seatsLabel={seatsLabel}
+              interactive={false}
+            />
+          </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4 lg:flex-row">
@@ -275,12 +419,61 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
             {wallDraft && (
               <p className="text-xs text-[#E8C872]">{t('tables.editor.wallHint', { defaultValue: 'Clicca il secondo punto del muro' })}</p>
             )}
+            <div className="mt-2 w-full border-t border-white/10 pt-3">
+              <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <Map className="h-3 w-3" />
+                {t('tables.editor.areasTitle', { defaultValue: 'Zone / piani' })}
+              </p>
+              <div className="flex flex-col gap-1">
+                {editorAreas.map(area => (
+                  <div key={area} className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveArea(area)}
+                      className={cn(
+                        'min-w-0 flex-1 rounded-lg px-2 py-1.5 text-left text-xs font-medium transition-colors',
+                        activeArea === area
+                          ? 'bg-[#D4AF37]/20 text-[#F0E6D2] ring-1 ring-[#D4AF37]/40'
+                          : 'text-slate-400 hover:bg-white/5',
+                      )}
+                    >
+                      <span className="block truncate">{area}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => { void handleRenameArea(area, e) }}
+                      className="shrink-0 rounded-lg border border-white/10 p-1.5 text-slate-400 transition-colors hover:border-[#D4AF37]/35 hover:bg-[#D4AF37]/10 hover:text-[#E8C872]"
+                      aria-label={t('tables.editor.renameArea', { defaultValue: 'Rinomina zona' })}
+                      title={t('tables.editor.renameArea', { defaultValue: 'Rinomina zona' })}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => { void handleAddArea() }}
+                  className="flex items-center gap-1 rounded-lg border border-dashed border-[#D4AF37]/35 px-2 py-1.5 text-xs font-medium text-[#E8C872] hover:bg-[#D4AF37]/10"
+                >
+                  <Plus className="h-3 w-3" />
+                  {t('tables.editor.addArea', { defaultValue: 'Nuova zona' })}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2">
+          <div
+            ref={shellRef}
+            className="flex min-h-[280px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2"
+          >
             <div
-              className="relative max-h-full max-w-full"
-              style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center' }}
+              className="relative shrink-0"
+              style={{
+                width: canvasW,
+                height: canvasH,
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: 'center center',
+              }}
               onMouseDown={e => {
                 if (e.button === 1 || (e.button === 0 && e.altKey)) {
                   const start = { x: e.clientX - pan.x, y: e.clientY - pan.y }
@@ -294,8 +487,8 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
               <div
                 ref={canvasRef}
                 className="relative cursor-crosshair overflow-hidden rounded-xl border border-[#D4AF37]/20 bg-[#0a0a0e]"
-                style={{ width: 'min(100%, 1000px)', aspectRatio: `${FLOOR_CANVAS_W}/${FLOOR_CANVAS_H}` }}
-                onClick={handleCanvasClick}
+                style={{ width: canvasW, height: canvasH }}
+                onClick={e => { void handleCanvasClick(e) }}
               >
                 <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
@@ -347,20 +540,30 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
                   </button>
                 ))}
 
-                {tableLayout.map(table => {
+                {visibleTables.length === 0 && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center">
+                    <p className="max-w-xs text-sm text-slate-500">
+                      {t('tables.editor.noTablesInArea', {
+                        defaultValue: 'Nessun tavolo in questa zona. Aggiungine uno da Gestione tavoli impostando l’area «{{area}}».',
+                        area: activeArea,
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {visibleTables.map(table => {
                   const rot = table.rotation || 0
                   const size = tableSize(table.seats, table.shape || 'SQUARE')
-                  const editorW = (size.w / FLOOR_CANVAS_W) * canvasSize.width
-                  const editorH = (size.h / FLOOR_CANVAS_H) * canvasSize.height
-                  if (canvasSize.width === 0) return null
+                  const editorW = (size.w / FLOOR_CANVAS_W) * canvasW
+                  const editorH = (size.h / FLOOR_CANVAS_H) * canvasH
 
                   return (
                     <Rnd
                       key={table.id}
                       bounds="parent"
                       position={{
-                        x: (table.posX / 100) * canvasSize.width,
-                        y: (table.posY / 100) * canvasSize.height,
+                        x: (table.posX / 100) * canvasW,
+                        y: (table.posY / 100) * canvasH,
                       }}
                       size={{ width: editorW, height: editorH }}
                       enableResizing={false}
@@ -394,6 +597,30 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
           </div>
         </div>
       )}
+
+      <div className="shrink-0 border-t border-[#D4AF37]/25 bg-[#080808]/98 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_32px_rgba(0,0,0,0.45)]">
+        <div className="mx-auto flex max-w-lg gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saveAll.isPending}
+            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200 disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => saveAll.mutate()}
+            disabled={saveAll.isPending}
+            className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-3 text-sm font-bold text-black shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-all hover:bg-[#E8C872] disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {saveAll.isPending
+              ? t('common.saving', { defaultValue: 'Salvataggio…' })
+              : t('tables.saveLayout', { defaultValue: 'Salva layout' })}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

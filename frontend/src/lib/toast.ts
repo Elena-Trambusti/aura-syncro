@@ -4,12 +4,16 @@
  */
 import { toast as sonnerToast, type ExternalToast } from 'sonner'
 import { showAuraConfirm, type ConfirmToastOptions } from './confirmToast'
+import { showAuraPrompt, type PromptToastOptions } from './promptToast'
 
 export type ToastOptions = ExternalToast
 
 export const toast = Object.assign(sonnerToast, {
   /** Dialogo di conferma luxury centrato (portal dedicato). */
   confirm: (options: ConfirmToastOptions) => showAuraConfirm(options),
+
+  /** Input testuale luxury — sostituto di window.prompt(). */
+  prompt: (options: PromptToastOptions) => showAuraPrompt(options),
 
   kitchen: (message: string, options?: ToastOptions) =>
     sonnerToast(message, {

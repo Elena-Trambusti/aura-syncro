@@ -17,6 +17,7 @@ import KpiStatCard from '../components/ui/KpiStatCard'
 import ModuleFrame from '../components/ui/ModuleFrame'
 import { LuxuryAreaChart } from '../components/charts/lazy'
 import ChartSuspense from '../components/charts/ChartSuspense'
+import { toast } from '@/lib/toast'
 
 interface PaymentOrder {
   id: string
@@ -72,7 +73,7 @@ export default function PaymentsPage() {
       window.location.href = res.data.url
     } catch (err) {
       console.error(err)
-      alert(t('payments.stripeOnboardingError') || 'Errore durante la connessione a Stripe')
+      toast.error(t('payments.stripeOnboardingError') || 'Errore durante la connessione a Stripe')
     }
   }
 

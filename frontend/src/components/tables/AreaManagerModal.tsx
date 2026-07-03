@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Save, Edit2, Map } from 'lucide-react'
+import { X, Save, Edit2, Map, Plus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { toast } from '@/lib/toast'
@@ -10,18 +10,22 @@ import { tq } from '../../lib/queryKeys'
 import { ui } from '../../lib/ui'
 import GlassModal from '../ui/GlassModal'
 import AuraIcon from '../ui/AuraIcon'
+import type { FloorPlanLayoutV1 } from '../../lib/floorPlanLayout'
+import { EMPTY_FLOOR_PLAN_LAYOUT } from '../../lib/floorPlanLayout'
 
 interface AreaManagerModalProps {
   areas: string[]
+  floorLayout?: FloorPlanLayoutV1
   onClose: () => void
 }
 
-export default function AreaManagerModal({ areas, onClose }: AreaManagerModalProps) {
+export default function AreaManagerModal({ areas, floorLayout = EMPTY_FLOOR_PLAN_LAYOUT, onClose }: AreaManagerModalProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   const [editingArea, setEditingArea] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
+  const [newAreaName, setNewAreaName] = useState('')
 
   const renameArea = useMutation({
     mutationFn: ({ oldName, newName }: { oldName: string | null; newName: string }) =>
@@ -36,9 +40,35 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
     },
   })
 
+  const addArea = useMutation({
+    mutationFn: async (name: string) => {
+      const trimmed = name.trim()
+      const nextAreas = Array.from(new Set([...(floorLayout.areas ?? []), trimmed]))
+      return api.patch('/tables/floor-layout', { ...floorLayout, areas: nextAreas })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'floor-layout') })
+      toast.success(t('tables.editor.areaAdded', { defaultValue: 'Zona aggiunta' }))
+      setNewAreaName('')
+    },
+    onError: (err: unknown) => {
+      toast.error(resolveToastApiError(t, err, 'common.error'))
+    },
+  })
+
   const handleSave = (oldName: string | null) => {
     if (!newName.trim()) return
     renameArea.mutate({ oldName, newName: newName.trim() })
+  }
+
+  const handleAddArea = () => {
+    const trimmed = newAreaName.trim()
+    if (!trimmed) return
+    if (areas.some(a => a.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(t('tables.editor.areaExists', { defaultValue: 'Questa zona esiste già' }))
+      return
+    }
+    addArea.mutate(trimmed)
   }
 
   return (
@@ -60,11 +90,34 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
       <p className="mb-6 text-sm leading-relaxed text-fumo">
         {t('tables.areaManagerHint', {
           defaultValue:
-            'Le zone vengono generate automaticamente in base ai tavoli presenti. Rinomina una zona per spostare tutti i tavoli associati.',
+            'Crea zone come Terrazza o Piano 2, poi assegna i tavoli dall’editor o da Nuovo tavolo. Rinomina una zona per spostare tutti i tavoli associati.',
         })}
       </p>
 
+      <div className="mb-4 flex gap-2">
+        <input
+          type="text"
+          value={newAreaName}
+          onChange={e => setNewAreaName(e.target.value)}
+          placeholder={t('tables.editor.newAreaPlaceholder', { defaultValue: 'Es. Terrazza, Piano 2…' })}
+          className={ui.input + ' flex-1'}
+          onKeyDown={e => { if (e.key === 'Enter') handleAddArea() }}
+        />
+        <button
+          type="button"
+          onClick={handleAddArea}
+          disabled={!newAreaName.trim() || addArea.isPending}
+          className="flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2 text-sm font-semibold text-navy disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+          {t('tables.editor.addArea', { defaultValue: 'Nuova zona' })}
+        </button>
+      </div>
+
       <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-2">
+        {areas.length === 0 ? (
+          <p className="text-sm text-fumo">{t('tables.editor.noAreasYet', { defaultValue: 'Nessuna zona ancora — aggiungine una sopra.' })}</p>
+        ) : null}
         {areas.map(area => (
           <div
             key={area || 'default'}
@@ -82,9 +135,11 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
                 <button
                   type="button"
                   onClick={() => handleSave(area || null)}
-                  className="rounded-lg bg-aura-gold/20 p-2 text-aura-gold hover:bg-aura-gold/30"
+                  disabled={!newName.trim() || renameArea.isPending}
+                  className="flex items-center gap-1.5 rounded-lg bg-aura-gold px-3 py-2 text-xs font-semibold text-navy hover:bg-aura-gold-light disabled:opacity-50"
                 >
-                  <AuraIcon icon={Save} size="md" />
+                  <AuraIcon icon={Save} size="sm" />
+                  {t('common.save')}
                 </button>
               </div>
             ) : (
@@ -96,9 +151,10 @@ export default function AreaManagerModal({ areas, onClose }: AreaManagerModalPro
                     setEditingArea(area)
                     setNewName(area || '')
                   }}
-                  className="rounded-lg p-2 text-fumo opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-aura-gold"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:border-aura-gold/30 hover:bg-white/10 hover:text-aura-gold"
                 >
-                  <AuraIcon icon={Edit2} size="md" />
+                  <AuraIcon icon={Edit2} size="sm" />
+                  {t('common.edit', { defaultValue: 'Modifica' })}
                 </button>
               </>
             )}

@@ -143,6 +143,7 @@ export default function CheckoutPage() {
     queryKey: tq(tk, 'checkout', orderId),
     queryFn: () => api.get(`/payments/checkout/${orderId}`).then(r => r.data),
     enabled: !!orderId,
+    staleTime: 60_000,
   })
 
   const { data: staff } = useQuery<{ id: string; name: string; role: string }[]>({
@@ -541,8 +542,17 @@ export default function CheckoutPage() {
           <button
             type="button"
             onClick={() => {
-              if (!window.confirm(t(refundConfirmKey))) return
-              refundOrder.mutate()
+              void (async () => {
+                const confirmed = await toast.confirm({
+                  title: t('checkout.refundTitle', { defaultValue: 'Conferma rimborso' }),
+                  description: t(refundConfirmKey),
+                  confirmLabel: refundLabel,
+                  cancelLabel: t('common.cancel'),
+                  variant: 'danger',
+                })
+                if (!confirmed) return
+                refundOrder.mutate()
+              })()
             }}
             disabled={refundOrder.isPending}
             className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"

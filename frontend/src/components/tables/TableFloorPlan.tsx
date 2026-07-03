@@ -121,6 +121,13 @@ export default function TableFloorPlan({
   const [scale, setScale] = useState(1)
   const [labelPositions, setLabelPositions] = useState<Record<string, LabelPosition>>({})
   const [zoneLabelPositions, setZoneLabelPositions] = useState<Record<string, LabelPosition>>({})
+  const [hoveredTableId, setHoveredTableId] = useState<string | null>(null)
+  const [activeTableId, setActiveTableId] = useState<string | null>(null)
+  const activeFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (activeFlashTimeoutRef.current) clearTimeout(activeFlashTimeoutRef.current)
+  }, [])
 
   useEffect(() => {
     if (embedded || !containerRef.current) return
@@ -192,14 +199,44 @@ export default function TableFloorPlan({
     }
   }, [measureLabels])
 
+  const handleTableHoverEnd = () => {
+    setHoveredTableId(null)
+    window.setTimeout(measureLabels, 620)
+  }
+
+  const flashTableActive = useCallback((tableId: string) => {
+    if (activeFlashTimeoutRef.current) clearTimeout(activeFlashTimeoutRef.current)
+    setActiveTableId(tableId)
+    setHoveredTableId(tableId)
+    activeFlashTimeoutRef.current = setTimeout(() => {
+      setActiveTableId(null)
+      activeFlashTimeoutRef.current = null
+    }, 650)
+  }, [])
+
   const handleTileClick = (table: FloorTable) => {
     if (!interactive || !onTableClick) return
-    if (inTransferMode && transferSourceId) {
-      const role = getTableTransferRole(table, transferSourceId)
-      if (role === 'target') onTransferTargetClick?.(table)
-      return
+    flashTableActive(table.id)
+
+    const runAction = () => {
+      if (inTransferMode && transferSourceId) {
+        const role = getTableTransferRole(table, transferSourceId)
+        if (role === 'target') onTransferTargetClick?.(table)
+        return
+      }
+      onTableClick(table)
     }
-    onTableClick(table)
+
+    // Breve pausa così il lampo sul piano tavolo è visibile prima del modal
+    window.setTimeout(runAction, 140)
+  }
+
+  /** Hit target invisibili in coordinate schermo — attivano glow 3D senza rettangoli piatti. */
+  const useScreenHits = interactive && tables.some(t => labelPositions[t.id])
+
+  const handleTableHoverStart = (tableId: string) => {
+    setHoveredTableId(tableId)
+    measureLabels()
   }
 
   const sceneContent = (
@@ -256,9 +293,12 @@ export default function TableFloorPlan({
               key={table.id}
               table={table}
               isDisabledInTransfer={transferRole === 'disabled'}
+              isHovered={hoveredTableId === table.id}
+              isActive={activeTableId === table.id}
               onMeasureLabels={measureLabels}
+              onActivate={() => flashTableActive(table.id)}
               onClick={() => handleTileClick(table)}
-              interactive={interactive}
+              interactive={interactive && !useScreenHits}
               className="absolute"
               style={{
                 left: `${table.posX}%`,
@@ -270,6 +310,47 @@ export default function TableFloorPlan({
           )
         })}
       </div>
+
+      {useScreenHits && (
+        <div className="absolute inset-0 z-[34]">
+          {tables.map(table => {
+            const pos = labelPositions[table.id]
+            if (!pos) return null
+            const transferRole = getTableTransferRole(table, transferSourceId)
+            if (inTransferMode && transferRole === 'disabled') return null
+            const { w, h } = tableSize(table.seats, table.shape || 'SQUARE')
+            const hitW = Math.max(104, w + 36)
+            const hitH = Math.max(112, h + 64)
+            return (
+              <button
+                key={`hit-${table.id}`}
+                type="button"
+                className={cn(
+                  'absolute cursor-pointer touch-manipulation border-0 bg-transparent p-0',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]/50 focus-visible:outline-offset-2',
+                )}
+                style={{
+                  left: pos.x,
+                  top: pos.y,
+                  width: hitW,
+                  height: hitH,
+                  transform: 'translate(-50%, -42%)',
+                }}
+                onMouseEnter={() => handleTableHoverStart(table.id)}
+                onMouseLeave={handleTableHoverEnd}
+                onMouseDown={() => flashTableActive(table.id)}
+                onTouchStart={() => {
+                  handleTableHoverStart(table.id)
+                  flashTableActive(table.id)
+                }}
+                onTouchEnd={handleTableHoverEnd}
+                onClick={() => handleTileClick(table)}
+                aria-label={`Tavolo ${table.number}`}
+              />
+            )
+          })}
+        </div>
+      )}
 
       <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
         {floorLayout.zoneLabels.map(zl => {
@@ -325,6 +406,8 @@ export default function TableFloorPlan({
                       : undefined
                 }
                 isCompactTable={isCompactTable}
+                isHovered={hoveredTableId === table.id}
+                isActive={activeTableId === table.id}
               />
             </div>
           )
@@ -356,7 +439,7 @@ export default function TableFloorPlan({
 }
 
 function TableLabelPill({
-  table, statusLabel, seatsWord, orderTotal, reservationHint, transferRole, transferHint, isCompactTable,
+  table, statusLabel, seatsWord, orderTotal, reservationHint, transferRole, transferHint, isCompactTable, isHovered, isActive,
 }: {
   table: FloorTable
   statusLabel: (status: TableStatus) => string
@@ -366,13 +449,20 @@ function TableLabelPill({
   transferRole?: TableTransferRole | null
   transferHint?: string
   isCompactTable: boolean
+  isHovered?: boolean
+  isActive?: boolean
 }) {
   const isOccupied = table.status === 'OCCUPIED'
   const isCleaning = table.status === 'CLEANING'
   const prefix = table.shape === 'BAR_STOOL' ? 'B' : table.shape === 'BOOTH' ? 'G' : 'T'
 
   return (
-    <div className={cn('table-label-pill', isCompactTable && 'table-label-pill--compact')}>
+    <div className={cn(
+      'table-label-pill',
+      isCompactTable && 'table-label-pill--compact',
+      isActive && 'table-label-pill--active',
+      !isActive && isHovered && 'table-label-pill--hover',
+    )}>
       <span className="table-label-pill__number">{prefix}{table.number}</span>
       <span className="table-label-pill__seats">{table.seats} {seatsWord}</span>
       {(table.status !== 'FREE' || orderTotal || reservationHint || transferHint) && (
@@ -403,11 +493,14 @@ function TableLabelPill({
 }
 
 function TableTile({
-  table, isDisabledInTransfer, onMeasureLabels, onClick, interactive, style, className,
+  table, isDisabledInTransfer, isHovered, isActive, onMeasureLabels, onActivate, onClick, interactive, style, className,
 }: {
   table: FloorTable
   isDisabledInTransfer: boolean
+  isHovered?: boolean
+  isActive?: boolean
   onMeasureLabels: () => void
+  onActivate?: () => void
   onClick: () => void
   interactive?: boolean
   style?: React.CSSProperties
@@ -554,12 +647,15 @@ function TableTile({
         className,
         interactive && !isDisabledInTransfer && 'cursor-pointer',
         isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed',
+        isHovered && 'table-3d-group--hover',
+        isActive && 'table-3d-group--active',
       )}
       style={{ ...style, width: w, height: h, transformStyle: 'preserve-3d' }}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={interactive && !isDisabledInTransfer ? onClick : undefined}
       onKeyDown={(e) => { if (interactive && !isDisabledInTransfer && e.key === 'Enter') onClick() }}
+      onMouseDown={interactive && !isDisabledInTransfer ? onActivate : undefined}
       onMouseEnter={onMeasureLabels}
       onMouseLeave={handleHoverEnd}
     >
@@ -595,6 +691,13 @@ function TableTile({
               <img src={marbleSrc} alt="" aria-hidden draggable={false} className="table-luxury-surface__marble table-luxury-surface__marble--light" />
               <div className="table-luxury-surface__veil table-luxury-surface__veil--light" />
               <div className="table-luxury-surface__specular" />
+              <div
+                className={cn(
+                  'table-luxury-surface__highlight',
+                  (isHovered || isActive) && 'table-luxury-surface__highlight--visible',
+                  isActive && 'table-luxury-surface__highlight--active',
+                )}
+              />
             </div>
           </div>
         </div>

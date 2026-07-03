@@ -13,6 +13,7 @@ import {
 } from '../lib/platformAdmin'
 import { BRAND } from '../lib/brand'
 import { Trash2 } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 type FilterMode = 'today' | 'all'
 type ViewMode = 'registrations' | 'pending'
@@ -137,11 +138,18 @@ export default function PlatformAdminPage() {
   }
 
   const handleDelete = async (restaurantId: string, restaurantName: string) => {
-    const confirmation = window.prompt(
-      `ATTENZIONE! Stai per ELIMINARE DEFINITIVAMENTE il ristorante "${restaurantName}" e tutti i suoi dati (ordini, clienti, ecc.).\n\nScrivi "ELIMINA" per confermare:`,
-    )
+    const confirmation = await toast.prompt({
+      title: 'Eliminazione definitiva',
+      description: `Stai per eliminare "${restaurantName}" e tutti i suoi dati. Scrivi ELIMINA per confermare.`,
+      defaultValue: '',
+      placeholder: 'ELIMINA',
+      confirmLabel: 'Elimina ristorante',
+      cancelLabel: 'Annulla',
+      validate: value =>
+        value === 'ELIMINA' ? null : 'Scrivi esattamente ELIMINA per confermare',
+    })
     if (confirmation !== 'ELIMINA') {
-      alert('Eliminazione annullata.')
+      toast.message('Eliminazione annullata')
       return
     }
 

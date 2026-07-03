@@ -270,7 +270,10 @@ export default function TablesPage() {
     },
   })
 
-  const allAreasRaw = Array.from(new Set(tables.map(tbl => tbl.area || defaultArea).filter(Boolean)))
+  const allAreasRaw = Array.from(new Set([
+    ...tables.map(tbl => tbl.area || defaultArea).filter(Boolean),
+    ...(floorLayout.areas ?? []),
+  ]))
   const areas = [allAreasKey, ...allAreasRaw]
   const filtered = filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)
 
@@ -664,6 +667,7 @@ export default function TablesPage() {
       {showAreaManager && (
         <AreaManagerModal
           areas={allAreasRaw}
+          floorLayout={floorLayout}
           onClose={() => setShowAreaManager(false)}
         />
       )}
