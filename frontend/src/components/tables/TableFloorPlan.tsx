@@ -72,7 +72,7 @@ export default function TableFloorPlan({
   transferTargetLabel,
 }: TableFloorPlanProps) {
   const inTransferMode = Boolean(transferSourceId)
-  
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
@@ -100,25 +100,25 @@ export default function TableFloorPlan({
       <div className="flex justify-center p-4 sm:p-6" style={{ minHeight: (900 * scale) + 48 }}>
         <div
           className="origin-top transition-transform duration-300 flex justify-center"
-          style={{ 
+          style={{
             transform: `scale(${scale}) translateY(5%)`,
-            perspective: '3000px' 
+            // Rimuoviamo perspective per avere una vera proiezione Ortografica (Isometrica) perfetta!
           }}
         >
-          <div 
+          <div
             className="table-floor-premium relative h-[800px] w-[1000px] transition-all duration-1000"
-            style={{ 
+            style={{
               transform: 'rotateX(60deg) rotateZ(-45deg)',
               transformStyle: 'preserve-3d'
             }}
           >
             {/* Floor Base */}
             <div className="table-floor-premium__texture absolute inset-0 bg-[#080604] border border-[#D4AF37]/30 shadow-[0_0_100px_rgba(212,175,55,0.15)] rounded-2xl overflow-hidden [transform:translateZ(-1px)]">
-               {/* Grid */}
-               <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-               {/* Ambient Glows */}
-               <div className="absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.2),transparent_50%)]" />
-               <div className="absolute bottom-0 right-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_bottom_right,rgba(212,175,55,0.15),transparent_50%)]" />
+              {/* Grid */}
+              <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+              {/* Ambient Glows */}
+              <div className="absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.2),transparent_50%)]" />
+              <div className="absolute bottom-0 right-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_bottom_right,rgba(212,175,55,0.15),transparent_50%)]" />
             </div>
 
             {tables.map(table => {
@@ -140,9 +140,9 @@ export default function TableFloorPlan({
                   }
                   onClick={() => handleTileClick(table)}
                   className="absolute"
-                  style={{ 
-                    left: `${table.posX}%`, 
-                    top: `${table.posY}%`, 
+                  style={{
+                    left: `${table.posX}%`,
+                    top: `${table.posY}%`,
                     transform: `rotateZ(${table.rotation || 0}deg) translateZ(1px)`,
                     transformStyle: 'preserve-3d'
                   }}
@@ -183,17 +183,28 @@ function TableTile({
   const { w, h } = tableSize(table.seats, shape)
 
   const isDisabledInTransfer = transferRole === 'disabled'
-
-  const isFree = table.status === 'FREE'
   const isOccupied = table.status === 'OCCUPIED'
+  const isReserved = table.status === 'RESERVED'
   const isCleaning = table.status === 'CLEANING'
+
+  const shapeClasses = shape === 'ROUND' ? 'rounded-full' : 'rounded-[16px]'
+
+  const tableZ = 40 // Altezza del tavolo dal pavimento
+  const legWidth = 4
+  const chairZ = 20 // Altezza della seduta
+  const chairSize = 24
+
+  const isHighlighted = isOccupied || isReserved
+  const glowShadow = isHighlighted 
+    ? 'drop-shadow-[0_0_30px_rgba(212,175,55,0.7)] shadow-[0_0_40px_rgba(212,175,55,0.5)]' 
+    : 'shadow-[0_15px_30px_rgba(0,0,0,0.8)]'
+
+  const borderColor = isOccupied ? 'border-[#D4AF37]' : isCleaning ? 'border-[#3b82f6]' : 'border-[#8A6D23]'
 
   const renderChairs = () => {
     const chairs = []
-    const padding = isFree ? 2 : 12
-    const chairOpacity = isFree ? 'opacity-40' : 'opacity-100'
-    const chairSize = 24
-    
+    const padding = 12
+
     if (shape === 'ROUND') {
       const radius = (w / 2) + padding
       const angleStep = (2 * Math.PI) / table.seats
@@ -204,24 +215,30 @@ function TableTile({
         chairs.push(
           <div
             key={`chair-${i}`}
-            className={cn("table-chair absolute transition-all duration-500", chairOpacity)}
+            className="absolute transition-all duration-500"
             style={{ 
-              width: chairSize, 
-              height: chairSize, 
+              width: chairSize, height: chairSize, 
               left: `calc(50% + ${x}px - ${chairSize / 2}px)`, 
-              top: `calc(50% + ${y}px - ${chairSize / 2}px)`,
-              transform: `rotateZ(${angle + Math.PI/2}rad)`,
-              transformStyle: 'preserve-3d'
+              top: `calc(50% + ${y}px - ${chairSize / 2}px)`, 
+              transform: `rotateZ(${angle + Math.PI / 2}rad)`, 
+              transformStyle: 'preserve-3d' 
             }}
           >
-             <div className="absolute inset-0 rounded-[8px] bg-[#5c4917]" style={{ transform: 'translateZ(-2px)' }} />
-             <div className="absolute inset-0 rounded-[8px] bg-[#5c4917]" style={{ transform: 'translateZ(-4px)' }} />
-             <div className="absolute inset-0 rounded-[8px] bg-[#5c4917]" style={{ transform: 'translateZ(-6px)' }} />
-             <div className="absolute inset-0 rounded-[8px] bg-gradient-to-br from-[#C5A059] to-[#9A7B28] shadow-[0_5px_15px_rgba(0,0,0,0.5)]" />
+            {/* Gambe della sedia */}
+            <div className="absolute left-[10%] top-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+            <div className="absolute right-[10%] top-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+            <div className="absolute left-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+            <div className="absolute right-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+            
+            {/* Seduta (Rettangolo Minimalista) */}
+            <div 
+              className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-lg")} 
+              style={{ transform: `translateZ(${chairZ}px)` }} 
+            />
           </div>
         )
       }
-    } else if (shape === 'RECTANGLE' || shape === 'SQUARE') {
+    } else {
       let topCount = 0, bottomCount = 0, leftCount = 0, rightCount = 0;
       if (table.seats === 2) { leftCount = 1; rightCount = 1; }
       else if (table.seats === 4) { topCount = 2; bottomCount = 2; }
@@ -241,23 +258,17 @@ function TableTile({
           chairs.push(
             <div
               key={`chair-${side}-${i}`}
-              className={cn(
-                'table-chair absolute transition-all duration-500',
-                chairOpacity,
-              )}
-              style={{ 
-                left, 
-                top, 
-                width: 24,
-                height: 24,
-                transform: `translate(-50%, -50%) rotateZ(${rotation}deg)`,
-                transformStyle: 'preserve-3d'
-              }}
+              className="absolute transition-all duration-500"
+              style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%) rotateZ(${rotation}deg)`, transformStyle: 'preserve-3d' }}
             >
-               <div className="absolute inset-0 rounded-[6px] bg-[#5c4917]" style={{ transform: 'translateZ(-2px)' }} />
-               <div className="absolute inset-0 rounded-[6px] bg-[#5c4917]" style={{ transform: 'translateZ(-4px)' }} />
-               <div className="absolute inset-0 rounded-[6px] bg-[#5c4917]" style={{ transform: 'translateZ(-6px)' }} />
-               <div className="absolute inset-0 rounded-[6px] bg-gradient-to-br from-[#C5A059] to-[#9A7B28] shadow-[0_5px_15px_rgba(0,0,0,0.5)]" />
+              {/* Gambe della sedia */}
+              <div className="absolute left-[10%] top-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+              <div className="absolute right-[10%] top-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+              <div className="absolute left-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+              <div className="absolute right-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+              
+              {/* Seduta Minimalista */}
+              <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px)` }} />
             </div>
           )
         }
@@ -271,100 +282,138 @@ function TableTile({
     return chairs;
   }
 
-  const shapeClasses = 
-    shape === 'ROUND' ? 'rounded-full' :
-    'rounded-[20px]'
-
-  const isThick = !isFree
-  const baseColor = isOccupied ? 'bg-[#8A6D23]' : isCleaning ? 'bg-[#1e3a8a]' : 'bg-[#5c4917]'
-  const topSurfaceColor = isOccupied 
-    ? 'bg-gradient-to-br from-[#E8C872] to-[#D4AF37] border-t border-l border-[#FFF9ED]/50'
-    : isCleaning
-    ? 'bg-gradient-to-br from-[#3b82f6] to-[#1e40af] border-t border-l border-white/50'
-    : 'bg-gradient-to-br from-[#1a1408] to-[#0f0c08] border border-[#D4AF37]/30'
+  // Posizioni delle 4 gambe del tavolo (se rotondo le mettiamo comunque a raggiera o quadrato inscritto)
+  const legOffset = shape === 'ROUND' ? '20%' : '10%'
 
   return (
-    <div className={cn('absolute transition-all duration-500', className)} style={{ ...style, transformStyle: 'preserve-3d' }}>
-      {/* Floor Ambient Glow */}
+    <div 
+      className={cn(
+        'absolute transition-all duration-500 outline-none group', 
+        className,
+        !isDisabledInTransfer && 'cursor-pointer hover:scale-[1.05] hover:translate-z-[10px]',
+        isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed'
+      )} 
+      style={{ 
+        ...style, 
+        width: w, 
+        height: h, 
+        transformStyle: 'preserve-3d'
+      }}
+      role="button"
+      tabIndex={0}
+      onClick={!isDisabledInTransfer ? onClick : undefined}
+      onKeyDown={(e) => { if (!isDisabledInTransfer && e.key === 'Enter') onClick() }}
+    >
+      
+      {/* Dynamic Floor Glow */}
       <div
         className={cn(
-          'pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 blur-[30px] transition-all duration-1000 rounded-full',
-          isOccupied ? 'bg-[#D4AF37]/40 w-[180%] h-[180%] animate-[pulse_4s_ease-in-out_infinite]' :
-          isCleaning ? 'bg-[#3b82f6]/40 w-[180%] h-[180%] animate-[pulse_4s_ease-in-out_infinite]' :
-          'bg-[#D4AF37]/10 w-[140%] h-[140%]'
+          'pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 blur-[40px] transition-all duration-1000 rounded-full',
+          isOccupied ? 'bg-[#D4AF37]/50 w-[200%] h-[200%] animate-[pulse_3s_ease-in-out_infinite]' :
+          isCleaning ? 'bg-[#3b82f6]/40 w-[200%] h-[200%] animate-[pulse_3s_ease-in-out_infinite]' :
+          'bg-transparent'
         )}
+        style={{ transform: 'translateZ(-1px)' }}
       />
 
-      {/* Chairs Layer */}
-      <div className="pointer-events-none absolute left-0 top-0 transition-all duration-500 [transform-style:preserve-3d]" style={{ width: w, height: h }}>
+      {/* Chairs */}
+      <div className="pointer-events-none absolute inset-0 transition-all duration-500" style={{ transformStyle: 'preserve-3d' }}>
         {renderChairs()}
       </div>
 
-      {/* Table 3D Assembly */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onClick}
-        onKeyDown={(e) => e.key === 'Enter' && onClick()}
-        style={{ 
-          width: w, 
-          height: h,
-          transform: `translateZ(${isThick ? '20px' : '10px'})`,
-          transformStyle: 'preserve-3d',
-        }}
-        className={cn(
-          'relative flex flex-col items-center justify-center transition-all duration-300 outline-none',
-          !isDisabledInTransfer && 'hover:translate-z-[30px] cursor-pointer',
-          orderTotal && 'ring-2 ring-white/60 ring-offset-4 ring-offset-transparent',
-          transferRole === 'source' && 'ring-4 ring-blue-400 ring-offset-4 ring-offset-transparent',
-          transferRole === 'target' && 'ring-4 ring-emerald-400 cursor-pointer ring-offset-4 ring-offset-transparent',
-          transferRole === 'disabled' && 'opacity-40 grayscale cursor-not-allowed',
-        )}
-        aria-label={`Tavolo ${table.number}, ${seatsLabel(table.seats)}, ${statusLabel(table.status)}`}
-      >
-        {/* Table Thickness (Voxels) */}
-        <div className={cn('pointer-events-none absolute inset-0', shapeClasses, baseColor)} style={{ transform: 'translateZ(-4px)' }} />
-        <div className={cn('pointer-events-none absolute inset-0', shapeClasses, baseColor)} style={{ transform: 'translateZ(-8px)' }} />
-        <div className={cn('pointer-events-none absolute inset-0', shapeClasses, baseColor)} style={{ transform: 'translateZ(-12px)' }} />
-        <div className={cn('pointer-events-none absolute inset-0', shapeClasses, baseColor)} style={{ transform: 'translateZ(-16px)' }} />
-        <div className={cn('pointer-events-none absolute inset-0 shadow-[0_15px_40px_rgba(0,0,0,0.8)]', shapeClasses, baseColor)} style={{ transform: 'translateZ(-20px)' }} />
+      {/* LE GAMBE DEL TAVOLO (Verticali in 3D) */}
+      <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
+        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ left: legOffset, top: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
+        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ right: legOffset, top: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
+        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ left: legOffset, bottom: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
+        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ right: legOffset, bottom: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
+      </div>
 
-        {/* Top Surface */}
-        <div className={cn('pointer-events-none absolute inset-0', shapeClasses, topSurfaceColor)} />
-        
-        {/* Text Container - Floating & Counter Rotated */}
-        <div 
-          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
-          style={{ 
-             transform: `translateZ(5px) rotateZ(${- (table.rotation || 0)}deg) rotateZ(45deg) rotateX(-60deg)`,
-             transformOrigin: 'center center'
-          }}
-        >
-          <span className="text-3xl font-black tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,1)]">T{table.number}</span>
-          <span className="text-xs font-bold text-white bg-black/80 px-2 py-0.5 rounded-full mt-1 border border-white/20 backdrop-blur-md shadow-lg">{table.seats} PAX</span>
+      {/* IL PIANO DEL TAVOLO (Marmo nero con bordo dorato) */}
+      <div 
+        className={cn(
+          'pointer-events-none absolute inset-0 bg-[#121212] border-2 transition-all duration-500', 
+          shapeClasses,
+          borderColor,
+          glowShadow
+        )} 
+        style={{ 
+          transform: `translateZ(${tableZ}px)`,
+          // Texture marmo scuro leggera
+          backgroundImage: 'radial-gradient(circle at 50% 50%, #1a1a1a 0%, #121212 100%)',
+        }} 
+      />
+
+      {/* Floating Counter-Rotated Text UI */}
+      {/* 5. Floating, Counter-Rotated Text UI (Direct Sibling) */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 flex flex-col items-center justify-center"
+        style={{
+          // Posizionato esattamente al centro, ruota sul proprio centro per evitare disallineamenti
+          transform: `translate(-50%, -50%) translateZ(${tableZ + 60}px) rotateZ(${- (table.rotation || 0)}deg) rotateZ(45deg) rotateX(-60deg)`,
+          transformOrigin: 'center center',
+          transformStyle: 'preserve-3d',
+          backfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased'
+        }}
+      >
+        <div className="flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-110">
           
-          {table.status !== 'FREE' && (
+          {/* Luxury Typography Layout */}
+          <div className="flex flex-col items-center justify-center">
+            
+            {/* Table Number */}
             <span className={cn(
-              'mt-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm shadow-xl',
-              'border-[#D4AF37]/60 bg-[#1a1408]/90 text-[#E8C872]',
-              table.status === 'CLEANING' && 'border-[#3b82f6]/60 bg-[#0f172a]/90 text-[#93c5fd]',
-            )}>
-              {statusLabel(table.status as TableStatus)}
+              "text-4xl font-black tracking-tighter leading-none mb-1",
+              isOccupied 
+                ? "text-white drop-shadow-[0_2px_10px_rgba(255,255,255,1)]" 
+                : "text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(212,175,55,1)]"
+            )}
+            style={{ fontFamily: 'var(--font-display), serif' }}
+            >
+              T{table.number}
             </span>
-          )}
-          {orderTotal && transferRole !== 'target' && (
-             <span className="mt-1 text-sm font-black text-emerald-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] bg-black/80 px-2 py-0.5 rounded-full border border-emerald-500/30">{orderTotal}</span>
-          )}
-          {reservationHint && !orderTotal && transferRole !== 'target' && (
-             <span className="mt-1 max-w-[90%] truncate px-2 text-center text-[10px] font-bold text-[#E8C872] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] bg-black/80 rounded-full border border-[#D4AF37]/30">
-               {reservationHint}
-             </span>
-          )}
-          {transferHint && (
-             <span className="mt-1 rounded-full border border-blue-500/50 bg-blue-900/80 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-100 shadow-xl">
-               {transferHint}
-             </span>
-          )}
+            
+            {/* PAX Indicator */}
+            <span className="text-[10px] font-bold text-white/90 bg-black/80 px-2 py-0.5 rounded border border-white/20 uppercase tracking-[0.25em] mb-2 shadow-lg">
+              {seatsLabel(table.seats)}
+            </span>
+
+            {/* Status & Information Stack */}
+            <div className="flex flex-col gap-2 items-center w-full">
+              
+              {/* Status Pill (Solid, no blur to prevent 3D pixelation) */}
+              {table.status !== 'FREE' && (
+                <div className={cn(
+                  'rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_8px_16px_rgba(0,0,0,0.9)] border',
+                  isOccupied ? 'border-[#D4AF37] bg-black/95 text-[#D4AF37]' : 'border-[#3b82f6] bg-[#0f172a]/95 text-[#93c5fd]',
+                )}>
+                  {statusLabel(table.status as TableStatus)}
+                </div>
+              )}
+              
+              {/* Price / Order Total */}
+              {orderTotal && transferRole !== 'target' && (
+                <div className="text-[13px] font-bold tracking-wide text-emerald-400 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] bg-black/95 px-3 py-0.5 rounded-full border border-emerald-500/50 shadow-xl">
+                  {orderTotal}
+                </div>
+              )}
+              
+              {/* Reservation Hint */}
+              {reservationHint && !orderTotal && transferRole !== 'target' && (
+                <div className="text-[10px] font-medium tracking-wide text-[#E8C872] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] bg-black/95 px-3 py-0.5 rounded-full border border-[#D4AF37]/50 shadow-xl max-w-[140px] truncate text-center">
+                  {reservationHint}
+                </div>
+              )}
+              
+              {/* Transfer Hint */}
+              {transferHint && (
+                <div className="rounded-full border border-blue-500/50 bg-blue-900/95 px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-blue-100 shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+                  {transferHint}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

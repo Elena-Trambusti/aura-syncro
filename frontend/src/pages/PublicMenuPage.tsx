@@ -218,7 +218,13 @@ export default function PublicMenuPage() {
 
   const categories = useMemo(() => {
     if (!data?.categories) return []
-    return data.categories.filter(cat => cat.items.length > 0)
+    return data.categories
+      .map(cat => ({
+        ...cat,
+        // Nascondiamo completamente i piatti esauriti o non disponibili
+        items: cat.items.filter(item => item.available !== false && item.soldOut !== true)
+      }))
+      .filter(cat => cat.items.length > 0)
   }, [data?.categories])
 
   const allItems = useMemo(() => categories.flatMap(c => c.items), [categories])

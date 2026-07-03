@@ -1151,7 +1151,7 @@
   }
 
   .table-floor-premium {
-    @apply relative overflow-hidden rounded-3xl;
+    @apply relative rounded-3xl;
     border: 1px solid rgba(212, 175, 55, 0.28);
     background:
       radial-gradient(ellipse 85% 65% at 50% 42%, rgba(212, 175, 55, 0.16) 0%, transparent 62%),
