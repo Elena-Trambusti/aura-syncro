@@ -1,20 +1,29 @@
 import i18n from './bootstrap'
-import type { SupportedLocale } from './bootstrap'
+import {
+  CANARIAS_HOME_PATH,
+  CANARIAS_LOCALE,
+  localeFromPath as localeFromPathBootstrap,
+  normalizeLocaleCode,
+  type SupportedLocale,
+} from './bootstrap'
+
+export { CANARIAS_HOME_PATH, CANARIAS_LOCALE, normalizeLocaleCode }
+export type { SupportedLocale }
 
 export const LOCALE_MAP: Record<string, string> = {
   it: 'it-IT',
   en: 'en-GB',
   es: 'es-ES',
-  'es-cn': 'es-ES',
+  [CANARIAS_LOCALE]: 'es-ES',
   fr: 'fr-FR',
   de: 'de-DE',
 }
 
 /** Rotte landing con prefisso lingua SEO. */
-export const LOCALE_HOME_PATHS = ['/', '/it', '/es', '/es-cn'] as const
+export const LOCALE_HOME_PATHS = ['/', '/it', '/es', CANARIAS_HOME_PATH] as const
 
 export function getIntlLocale(): string {
-  const code = i18n.language || 'it'
+  const code = (normalizeLocaleCode(i18n.language) ?? i18n.language) || 'it'
   return LOCALE_MAP[code] || LOCALE_MAP[code.split('-')[0]] || 'it-IT'
 }
 
@@ -26,8 +35,8 @@ export function getFiscalIntlLocale(defaultLocale?: string | null): string {
 
 /** Rimuove prefisso /it, /es, /es-cn dal path (es-cn prima di es). */
 export function stripLocalePrefix(pathname: string): string {
-  if (pathname === '/es-cn' || pathname.startsWith('/es-cn/')) {
-    return pathname.slice('/es-cn'.length) || '/'
+  if (pathname === CANARIAS_HOME_PATH || pathname.startsWith(`${CANARIAS_HOME_PATH}/`)) {
+    return pathname.slice(CANARIAS_HOME_PATH.length) || '/'
   }
   if (pathname === '/es' || pathname.startsWith('/es/')) {
     return pathname.slice('/es'.length) || '/'
@@ -39,10 +48,7 @@ export function stripLocalePrefix(pathname: string): string {
 }
 
 export function localeFromPath(pathname: string): SupportedLocale | null {
-  if (pathname === '/es-cn' || pathname.startsWith('/es-cn/')) return 'es-cn'
-  if (pathname === '/es' || pathname.startsWith('/es/')) return 'es'
-  if (pathname === '/it' || pathname.startsWith('/it/')) return 'it'
-  return null
+  return localeFromPathBootstrap(pathname)
 }
 
 export function isLocaleHomePath(pathname: string): boolean {
@@ -61,9 +67,14 @@ export function localePathForSwitch(locale: SupportedLocale, pathname: string): 
       return `/it${tail}`
     case 'es':
       return `/es${tail}`
-    case 'es-cn':
-      return `/es-cn${tail}`
+    case CANARIAS_LOCALE:
+      return `${CANARIAS_HOME_PATH}${tail}`
     default:
       return null
   }
+}
+
+/** Lingua effettiva: priorità al prefisso URL sulla landing. */
+export function resolveActiveLocale(pathname: string, i18nLanguage?: string | null): SupportedLocale | string {
+  return localeFromPath(pathname) ?? normalizeLocaleCode(i18nLanguage) ?? i18nLanguage ?? 'it'
 }

@@ -15,7 +15,7 @@ const DEMO_ACCOUNTS = {
     password: 'admin123',
     slug: 'demo-es',
   },
-  'es-cn': {
+  'es-can': {
     email: 'admin@demo-es-cn.com',
     password: 'admin123',
     slug: 'demo-es-cn',
@@ -27,11 +27,11 @@ export type DemoMarket = keyof typeof DEMO_ACCOUNTS
 /** Mercato demo da rotta landing (/it, /es, /es-cn) o lingua UI. */
 export function resolveDemoMarket(pathname: string, uiLang?: string | null): DemoAccount {
   const path = pathname.toLowerCase()
-  if (path === '/es-cn' || path.startsWith('/es-cn/')) return DEMO_ACCOUNTS['es-cn']
+  if (path === '/es-cn' || path.startsWith('/es-cn/')) return DEMO_ACCOUNTS['es-can']
   if (path === '/es' || path.startsWith('/es/')) return DEMO_ACCOUNTS.es
 
   const lang = (uiLang || 'it').toLowerCase()
-  if (lang === 'es-cn' || lang.startsWith('es-cn')) return DEMO_ACCOUNTS['es-cn']
+  if (lang === 'es-can' || lang === 'es-cn' || lang.startsWith('es-can')) return DEMO_ACCOUNTS['es-can']
   if (lang.split('-')[0] === 'es') return DEMO_ACCOUNTS.es
   return DEMO_ACCOUNTS.it
 }

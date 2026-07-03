@@ -4,16 +4,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Globe, ChevronDown, Check } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { localePathForSwitch } from '../../i18n/localeUtils'
-import type { SupportedLocale } from '../../i18n/bootstrap'
+import { localePathForSwitch, resolveActiveLocale } from '../../i18n/localeUtils'
+import { applyLocale, CANARIAS_LOCALE, normalizeLocaleCode, type SupportedLocale } from '../../i18n/bootstrap'
 
 const LANGUAGES = [
   { code: 'it', name: 'Italiano' },
   { code: 'es', name: 'Español' },
-  { code: 'es-cn', name: 'Español (Canarias)' },
+  { code: CANARIAS_LOCALE, name: 'Español (Canarias)' },
 ] as const
 
-const STORAGE_KEY = 'aura-lang'
 const MENU_MIN_WIDTH = 168
 const OVERLAY_Z = 99998
 const MENU_Z = 99999
@@ -33,9 +32,10 @@ export default function LanguageSwitcher({ prominent = false, compact = false }:
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLUListElement>(null)
 
+  const activeCode = resolveActiveLocale(location.pathname, i18n.language)
   const current =
-    LANGUAGES.find(lang => lang.code === i18n.language) ??
-    LANGUAGES.find(lang => lang.code === i18n.language?.split('-')[0]) ?? 
+    LANGUAGES.find(lang => lang.code === activeCode) ??
+    LANGUAGES.find(lang => lang.code === normalizeLocaleCode(i18n.language)) ??
     LANGUAGES[0]
 
   const updateMenuPosition = useCallback(() => {
@@ -52,15 +52,14 @@ export default function LanguageSwitcher({ prominent = false, compact = false }:
   const close = useCallback(() => setOpen(false), [])
 
   const changeLanguage = (code: string) => {
-    i18n.changeLanguage(code)
-    localStorage.setItem(STORAGE_KEY, code)
-
-    const nextPath = localePathForSwitch(code as SupportedLocale, location.pathname)
-    if (nextPath && nextPath !== location.pathname) {
-      navigate(nextPath, { replace: true })
-    }
-
-    close()
+    const locale = normalizeLocaleCode(code) ?? code
+    void applyLocale(locale).then(() => {
+      const nextPath = localePathForSwitch(locale as SupportedLocale, location.pathname)
+      if (nextPath && nextPath !== location.pathname) {
+        navigate(nextPath, { replace: true })
+      }
+      close()
+    })
   }
 
   useEffect(() => {

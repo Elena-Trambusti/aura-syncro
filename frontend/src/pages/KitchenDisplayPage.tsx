@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { CANARIAS_LOCALE } from '../i18n/bootstrap'
 import { ChefHat, Clock, CheckCircle2, Flame, ExternalLink, Plus, Loader2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { ensureSocketConnected } from '../lib/socket'
@@ -31,7 +32,7 @@ function useElapsedMinutes(createdAt: string) {
 
 const KitchenLiveClock = memo(function KitchenLiveClock() {
   const { i18n } = useTranslation()
-  const locale = i18n.language.startsWith('es-cn') ? 'es' : i18n.language
+  const locale = i18n.language === CANARIAS_LOCALE || i18n.language === 'es-cn' ? 'es' : i18n.language
   const [time, setTime] = useState(() => new Date())
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)

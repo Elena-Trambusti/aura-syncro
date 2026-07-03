@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 
+import { applyLocale, CANARIAS_LOCALE, normalizeLocaleCode } from '../../i18n/bootstrap'
+
 const PUBLIC_LANGUAGES = [
   { code: 'it', label: 'IT', name: 'Italiano' },
   { code: 'en', label: 'EN', name: 'English' },
   { code: 'es', label: 'ES', name: 'Español' },
-  { code: 'es-cn', label: 'ES-CN', name: 'Español (Canarias)' },
+  { code: CANARIAS_LOCALE, label: 'ES-CN', name: 'Español (Canarias)' },
   { code: 'fr', label: 'FR', name: 'Français' },
   { code: 'de', label: 'DE', name: 'Deutsch' },
 ] as const
-
-const STORAGE_KEY = 'aura-lang'
 
 interface PublicLanguageSwitcherProps {
   className?: string
@@ -19,14 +19,13 @@ interface PublicLanguageSwitcherProps {
 /** Switcher lingua evidente per turisti — solo IT / ES / EN */
 export default function PublicLanguageSwitcher({ className }: PublicLanguageSwitcherProps) {
   const { i18n, t } = useTranslation()
-  const currentLang = i18n.language || 'it'
-  const current = PUBLIC_LANGUAGES.find(l => l.code === currentLang) 
-    ? currentLang 
+  const currentLang = (normalizeLocaleCode(i18n.language) ?? i18n.language) || 'it'
+  const current = PUBLIC_LANGUAGES.find(l => l.code === currentLang)
+    ? currentLang
     : (currentLang.split('-')[0] ?? 'it')
 
   const changeLanguage = (code: string) => {
-    i18n.changeLanguage(code)
-    localStorage.setItem(STORAGE_KEY, code)
+    void applyLocale(code)
   }
 
   return (

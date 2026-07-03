@@ -30,7 +30,7 @@ const OG_LOCALE_MAP: Record<string, string> = {
   it: 'it_IT',
   en: 'en_US',
   es: 'es_ES',
-  'es-cn': 'es_ES',
+  'es-can': 'es_ES',
   fr: 'fr_FR',
   de: 'de_DE',
 }
