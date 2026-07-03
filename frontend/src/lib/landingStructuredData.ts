@@ -28,7 +28,7 @@ export function injectLandingStructuredData(
         '@id': `${SITE_ORIGIN}/#organization`,
         name: 'Aura Syncro',
         url: `${SITE_ORIGIN}/`,
-        logo: `${SITE_ORIGIN}/brand/aura-syncro-logo-new.png`,
+        logo: `${SITE_ORIGIN}/brand/aura-syncro-logo-transparent.png`,
         email: LEGAL_ENTITY.email,
         ...(sameAs.length > 0 ? { sameAs } : {}),
         contactPoint: {

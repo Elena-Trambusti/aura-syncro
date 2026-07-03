@@ -201,6 +201,13 @@ function TableTile({
 
   const borderColor = isOccupied ? 'border-[#D4AF37]' : isCleaning ? 'border-[#3b82f6]' : 'border-[#8A6D23]'
 
+  const renderLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }, counterRotation: number) => (
+    <div 
+      className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom shadow-md" 
+      style={{ ...props, width: 2, height: chairZ, transform: `rotateX(-90deg) rotateY(${counterRotation}deg)` }} 
+    />
+  )
+
   const renderChairs = () => {
     const chairs = []
     const padding = 12
@@ -225,10 +232,10 @@ function TableTile({
             }}
           >
             {/* Gambe della sedia */}
-            <div className="absolute left-[10%] top-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-            <div className="absolute right-[10%] top-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-            <div className="absolute left-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-            <div className="absolute right-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+            {renderLeg({ left: '10%', top: '10%' }, -(angle * 180 / Math.PI + 90))}
+            {renderLeg({ right: '10%', top: '10%' }, -(angle * 180 / Math.PI + 90))}
+            {renderLeg({ left: '10%', bottom: '10%' }, -(angle * 180 / Math.PI + 90))}
+            {renderLeg({ right: '10%', bottom: '10%' }, -(angle * 180 / Math.PI + 90))}
             
             {/* Seduta (Rettangolo Minimalista) */}
             <div 
@@ -262,10 +269,10 @@ function TableTile({
               style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%) rotateZ(${rotation}deg)`, transformStyle: 'preserve-3d' }}
             >
               {/* Gambe della sedia */}
-              <div className="absolute left-[10%] top-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-              <div className="absolute right-[10%] top-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-              <div className="absolute left-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
-              <div className="absolute right-[10%] bottom-[10%] bg-[#D4AF37] origin-bottom shadow-md" style={{ width: 2, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} />
+              {renderLeg({ left: '10%', top: '10%' }, -rotation)}
+              {renderLeg({ right: '10%', top: '10%' }, -rotation)}
+              {renderLeg({ left: '10%', bottom: '10%' }, -rotation)}
+              {renderLeg({ right: '10%', bottom: '10%' }, -rotation)}
               
               {/* Seduta Minimalista */}
               <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px)` }} />

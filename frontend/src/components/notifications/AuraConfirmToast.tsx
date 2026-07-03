@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-const BRAND_ICON_SRC = '/brand/aura-syncro-logo-new.png'
+const BRAND_ICON_SRC = '/brand/aura-syncro-logo-transparent.png'
 
 export type AuraConfirmVariant = 'default' | 'cleaning' | 'danger'
 

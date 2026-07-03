@@ -1,7 +1,7 @@
 /** URL canonico del sito marketing — sempre con www. */
 export const SITE_ORIGIN = 'https://www.aurasyncro.com'
 
-export const OG_IMAGE_URL = `${SITE_ORIGIN}/brand/aura-syncro-logo-new.png?v=3`
+export const OG_IMAGE_URL = `${SITE_ORIGIN}/brand/aura-syncro-logo-transparent.png?v=3`
 
 /** Profili social pubblici — compilare quando disponibili (migliora SEO social). */
 export const SITE_SOCIAL = {
