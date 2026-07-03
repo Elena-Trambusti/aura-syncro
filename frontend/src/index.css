@@ -1002,11 +1002,31 @@
     box-shadow: 0 0 24px rgba(212, 175, 55, 0.3);
   }
 
+  .aura-marble-bg {
+    background-color: #0d0d11;
+    background-image:
+      linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
+      url('/assets/marble-bg.png');
+    background-size: auto, cover;
+    background-position: top left, center;
+    background-blend-mode: normal, lighten;
+  }
+
+  .aura-marble-bg--table {
+    background-color: #0d0d11;
+    background-image:
+      linear-gradient(165deg, rgba(13, 13, 17, 0.42) 0%, rgba(13, 13, 17, 0.68) 100%),
+      url('/assets/marble-bg.png');
+    background-size: cover, cover;
+    background-position: center, center;
+    background-blend-mode: normal, lighten;
+  }
+
   .premium-sidebar {
     @apply relative flex shrink-0 flex-col border-r border-[#D4AF37]/20 backdrop-blur-2xl;
-    background-color: #0D0D11;
-    background-image: 
-      linear-gradient(180deg, rgba(13,13,17,0.8) 0%, rgba(13,13,17,0.9) 100%),
+    background-color: #0d0d11;
+    background-image:
+      linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
       url('/assets/marble-bg.png');
     background-size: auto, cover;
     background-position: top left, center;
@@ -1152,25 +1172,427 @@
 
   .table-floor-premium {
     @apply relative rounded-3xl;
+    background-color: #0d0d11;
+    background-image:
+      linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
+      url('/assets/marble-bg.png');
+    background-size: auto, cover;
+    background-position: top left, center;
+    background-blend-mode: normal, lighten;
     border: 1px solid rgba(212, 175, 55, 0.28);
-    background:
-      radial-gradient(ellipse 85% 65% at 50% 42%, rgba(212, 175, 55, 0.16) 0%, transparent 62%),
-      radial-gradient(ellipse 50% 40% at 20% 80%, rgba(197, 160, 89, 0.08) 0%, transparent 55%),
-      linear-gradient(180deg, #16120b 0%, #0e0c08 52%, #080604 100%);
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.12),
       inset 0 0 100px rgba(212, 175, 55, 0.04),
-      0 28px 56px -12px rgba(0, 0, 0, 0.7);
+      0 28px 56px -12px rgba(20, 15, 10, 0.72);
   }
 
   .table-floor-premium__texture {
     background-image:
-      radial-gradient(circle at 30% 25%, rgba(212, 175, 55, 0.08) 0%, transparent 42%),
-      radial-gradient(circle at 72% 68%, rgba(197, 160, 89, 0.06) 0%, transparent 40%);
+      radial-gradient(circle at 30% 25%, rgba(212, 175, 55, 0.1) 0%, transparent 42%),
+      radial-gradient(circle at 72% 68%, rgba(197, 160, 89, 0.08) 0%, transparent 40%);
   }
 
   .table-floor-premium__vignette {
     background: radial-gradient(ellipse 92% 85% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.5) 100%);
+  }
+
+  /* ── Luxury 3D table surface (floor plan) ── */
+  .font-table-luxury {
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+  }
+
+  .table-luxury-top-face {
+    overflow: hidden;
+    transform-style: flat;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: paint;
+    isolation: isolate;
+  }
+
+  .table-luxury-surface {
+    position: relative;
+    overflow: hidden;
+    transform-style: flat;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: paint;
+    isolation: isolate;
+    transition: box-shadow 0.6s ease-in-out, filter 0.6s ease-in-out;
+  }
+
+  .table-luxury-surface--square {
+    clip-path: inset(0 round 13px);
+  }
+
+  .table-luxury-surface--round {
+    clip-path: circle(50% at 50% 50%);
+  }
+
+  .table-luxury-border {
+    overflow: hidden;
+    transform-style: flat;
+    box-sizing: border-box;
+    contain: paint;
+  }
+
+  .table-luxury-surface__marble {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+    display: block;
+  }
+
+  .table-luxury-surface__veil {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      165deg,
+      rgba(0, 0, 0, 0.08) 0%,
+      rgba(0, 0, 0, 0.18) 100%
+    );
+    pointer-events: none;
+  }
+
+  .table-label-billboard-slot {
+    transform-style: flat;
+    z-index: 20;
+  }
+
+  .table-label-billboard-inner {
+    transform-style: flat;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .table-luxury-border {
+    background: linear-gradient(
+      145deg,
+      rgba(245, 230, 163, 0.92) 0%,
+      rgba(212, 175, 55, 0.82) 20%,
+      rgba(110, 80, 6, 0.78) 48%,
+      rgba(212, 175, 55, 0.82) 72%,
+      rgba(245, 230, 163, 0.92) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.3),
+      0 18px 32px rgba(20, 15, 10, 0.82);
+    transition: box-shadow 0.6s ease-in-out, background 0.6s ease-in-out;
+  }
+
+  .table-luxury-border--free {
+    background: linear-gradient(
+      145deg,
+      rgba(212, 175, 55, 0.55) 0%,
+      rgba(138, 109, 35, 0.45) 45%,
+      rgba(212, 175, 55, 0.5) 100%
+    );
+    box-shadow:
+      0 0 16px rgba(212, 175, 55, 0.22),
+      0 16px 28px rgba(15, 12, 8, 0.78);
+  }
+
+  .table-luxury-border--occupied,
+  .table-luxury-border--reserved {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 244, 200, 0.98) 0%,
+      rgba(232, 200, 114, 0.92) 18%,
+      rgba(139, 101, 8, 0.88) 50%,
+      rgba(232, 200, 114, 0.92) 82%,
+      rgba(255, 244, 200, 0.98) 100%
+    );
+    box-shadow:
+      0 0 24px rgba(212, 175, 55, 0.42),
+      0 0 36px rgba(212, 175, 55, 0.18),
+      0 20px 34px rgba(20, 15, 10, 0.85);
+  }
+
+  .table-luxury-border--cleaning {
+    background: linear-gradient(
+      145deg,
+      rgba(147, 197, 253, 0.7) 0%,
+      rgba(59, 130, 246, 0.65) 45%,
+      rgba(30, 58, 138, 0.7) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.35),
+      0 18px 30px rgba(10, 15, 30, 0.82);
+  }
+
+  .table-3d-group:hover .table-luxury-border {
+    box-shadow:
+      0 0 32px rgba(212, 175, 55, 0.48),
+      0 0 48px rgba(212, 175, 55, 0.22),
+      0 24px 40px rgba(20, 15, 10, 0.88);
+  }
+
+  .table-3d-group:hover .table-luxury-border--cleaning {
+    box-shadow:
+      0 0 28px rgba(59, 130, 246, 0.45),
+      0 22px 36px rgba(10, 15, 30, 0.88);
+  }
+
+  .table-luxury-ambient-glow {
+    transition: opacity 0.6s ease-in-out, background-color 0.6s ease-in-out, width 0.6s ease-in-out, height 0.6s ease-in-out;
+  }
+
+  .table-luxury-ambient-glow--free {
+    background: rgba(212, 175, 55, 0.12);
+    width: 160%;
+    height: 160%;
+  }
+
+  .table-luxury-ambient-glow--occupied,
+  .table-luxury-ambient-glow--reserved {
+    background: rgba(212, 175, 55, 0.38);
+    width: 200%;
+    height: 200%;
+    animation: table-luxury-pulse 3s ease-in-out infinite;
+  }
+
+  .table-luxury-ambient-glow--cleaning {
+    background: rgba(59, 130, 246, 0.28);
+    width: 180%;
+    height: 180%;
+    animation: table-luxury-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes table-luxury-pulse {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+  }
+
+  /* 3D table body — hover solleva lungo Z (non schiaccia in isometrica) */
+  .table-3d-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.6s ease-in-out;
+  }
+
+  .table-3d-group:hover .table-3d-body {
+    transform: translateZ(26px);
+  }
+
+  .table-3d-group:hover .table-luxury-ambient-glow {
+    opacity: 1;
+    filter: blur(44px);
+  }
+
+  .table-3d-contact-shadow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 88%;
+    height: 72%;
+    margin-left: -44%;
+    margin-top: -36%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(20, 15, 10, 0.72) 0%, transparent 68%);
+    transform: rotateX(-90deg) translateZ(2px);
+    pointer-events: none;
+    transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+  }
+
+  .table-3d-group:hover .table-3d-contact-shadow {
+    opacity: 0.45;
+    transform: rotateX(-90deg) translateZ(2px) scale(1.12);
+  }
+
+  .table-3d-edge {
+    background-color: #121218;
+    background-image: url('/assets/marble-bg.png');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.72) contrast(1.05);
+    box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.14);
+  }
+
+  .table-label-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(212, 175, 55, 0.58);
+    background: rgba(3, 3, 6, 0.97);
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.92),
+      0 0 0 1px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: border-color 0.6s ease-in-out, box-shadow 0.6s ease-in-out, transform 0.6s ease-in-out;
+  }
+
+  .table-3d-group:hover .table-label-pill {
+    border-color: rgba(245, 230, 163, 0.78);
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.94),
+      0 0 20px rgba(212, 175, 55, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: scale(1.04);
+  }
+
+  .table-label-pill--compact {
+    min-width: 58px;
+    padding: 5px 8px;
+  }
+
+  .table-label-pill--compact .table-label-pill__number {
+    font-size: 16px;
+  }
+
+  .table-label-pill--compact .table-label-pill__seats {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  .table-label-pill__number {
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    color: #f5e6a3;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 1),
+      0 0 14px rgba(212, 175, 55, 0.35);
+  }
+
+  .table-label-pill__seats {
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+    text-transform: uppercase;
+  }
+
+  .table-label-pill__meta {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .table-label-pill__badge {
+    border-radius: 9999px;
+    border: 1px solid;
+    padding: 2px 10px;
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+
+  .table-label-pill__total {
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #6ee7b7;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  }
+
+  .table-luxury-ambient-glow--base {
+    background: rgba(212, 175, 55, 0.22);
+    width: 170%;
+    height: 170%;
+    opacity: 0.9;
+  }
+
+  .table-luxury-surface--light .table-luxury-surface__marble--light {
+    filter: brightness(1.65) contrast(0.9) saturate(0.8);
+  }
+
+  .table-luxury-surface__veil--light {
+    background: linear-gradient(
+      165deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(0, 0, 0, 0.06) 100%
+    );
+  }
+
+  /* ── Floor plan walls & zone labels ── */
+  .floor-plan-wall {
+    z-index: 2;
+  }
+
+  .floor-plan-wall__body {
+    background: linear-gradient(180deg, #1a1a22 0%, #0a0a0e 100%);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.2);
+    transform-style: flat;
+  }
+
+  .floor-plan-wall__glow {
+    background: transparent;
+    box-shadow:
+      0 0 18px rgba(212, 175, 55, 0.65),
+      0 0 36px rgba(212, 175, 55, 0.35),
+      inset 0 -2px 8px rgba(212, 175, 55, 0.45);
+    transform-style: flat;
+  }
+
+  .floor-plan-wall__cap {
+    background: linear-gradient(145deg, rgba(212, 175, 55, 0.45), rgba(80, 60, 10, 0.8));
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    transform-style: flat;
+  }
+
+  .floor-plan-zone-path {
+    filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
+  }
+
+  .floor-plan-zone-label {
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(232, 200, 114, 0.85);
+    text-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+    white-space: nowrap;
+  }
+
+  .floor-plan-zone-label--staff {
+    font-size: 10px;
+    color: rgba(212, 175, 55, 0.7);
+  }
+
+  .floor-plan-zone-label--area {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: rgba(245, 230, 163, 0.9);
+  }
+
+  .table-luxury-surface__specular {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 24%,
+      transparent 48%
+    );
   }
 
   .table-chair {
@@ -1192,18 +1614,22 @@
   .table-tile-glow--order { background: rgba(232, 200, 114, 0.32); opacity: 1; }
 
   .table-tile {
-    @apply relative flex flex-col items-center justify-center gap-0.5 rounded-xl cursor-pointer transition-all duration-300;
+    @apply relative flex flex-col items-center justify-center gap-0.5 rounded-xl cursor-pointer;
     transform: none;
     border: 1px solid rgba(212, 175, 55, 0.45);
     color: #e8c872;
+    font-family: "Montserrat", "Inter", system-ui, sans-serif;
     background:
       linear-gradient(145deg, rgba(232, 200, 114, 0.14) 0%, rgba(212, 175, 55, 0.04) 38%, transparent 58%),
-      linear-gradient(180deg, #221c12 0%, #16120b 46%, #0e0c08 100%);
+      linear-gradient(180deg, #221c12 0%, #16120b 46%, #0e0c08 100%),
+      url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E");
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.22),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 -4px 12px rgba(20, 15, 10, 0.45),
       0 2px 0 rgba(212, 175, 55, 0.18),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 20px rgba(212, 175, 55, 0.2),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
+    transition: all 0.6s ease-in-out;
   }
 
   .table-tile::before {
@@ -1227,28 +1653,29 @@
   .table-tile.rounded-full {
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.22),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      inset 0 -4px 12px rgba(20, 15, 10, 0.45),
+      0 0 20px rgba(212, 175, 55, 0.2),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
 
   .table-tile:hover {
-    transform: scale(1.04);
+    transform: translateY(-5px) scale(1.02);
     border-color: rgba(232, 200, 114, 0.65);
     @apply z-20;
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.3),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 -4px 12px rgba(20, 15, 10, 0.45),
       0 2px 0 rgba(212, 175, 55, 0.28),
-      0 0 36px -4px rgba(212, 175, 55, 0.35),
-      0 20px 36px -12px rgba(0, 0, 0, 0.85);
+      0 0 36px rgba(212, 175, 55, 0.38),
+      0 22px 38px -10px rgba(20, 15, 10, 0.82);
   }
 
   .table-tile.rounded-full:hover {
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.3),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.4),
-      0 0 36px -4px rgba(212, 175, 55, 0.35),
-      0 20px 36px -12px rgba(0, 0, 0, 0.85);
+      inset 0 -4px 12px rgba(20, 15, 10, 0.45),
+      0 0 36px rgba(212, 175, 55, 0.38),
+      0 22px 38px -10px rgba(20, 15, 10, 0.82);
   }
 
   .table-tile--static {
@@ -1257,7 +1684,7 @@
   }
 
   .table-tile--static:hover {
-    transform: scale(1.04);
+    transform: translateY(-5px) scale(1.02);
   }
 
   .table-tile--free {
@@ -1267,46 +1694,46 @@
     border-color: rgba(232, 200, 114, 0.55);
     box-shadow:
       inset 0 1px 0 rgba(232, 200, 114, 0.25),
-      0 0 32px -6px rgba(212, 175, 55, 0.28),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 32px rgba(212, 175, 55, 0.28),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
 
   .table-tile--occupied {
     border-color: rgba(232, 200, 114, 0.52);
     box-shadow:
       inset 0 0 16px rgba(212, 175, 55, 0.1),
-      0 0 28px -6px rgba(212, 175, 55, 0.22),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 28px rgba(212, 175, 55, 0.28),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
   .table-tile--occupied:hover {
     border-color: rgba(232, 200, 114, 0.72);
     box-shadow:
       inset 0 0 20px rgba(212, 175, 55, 0.14),
-      0 0 40px -4px rgba(212, 175, 55, 0.38),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 40px rgba(212, 175, 55, 0.38),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
 
   .table-tile--has-order {
     border-color: rgba(232, 200, 114, 0.78);
     box-shadow:
       inset 0 0 22px rgba(212, 175, 55, 0.16),
-      0 0 44px -2px rgba(232, 200, 114, 0.42),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 44px rgba(232, 200, 114, 0.38),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
 
   .table-tile--reserved {
     border-color: rgba(229, 193, 88, 0.55);
     box-shadow:
       inset 0 0 14px rgba(212, 175, 55, 0.1),
-      0 0 30px -6px rgba(229, 193, 88, 0.26),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 30px rgba(229, 193, 88, 0.28),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
   .table-tile--reserved:hover {
     border-color: rgba(232, 200, 114, 0.68);
     box-shadow:
       inset 0 0 18px rgba(212, 175, 55, 0.14),
-      0 0 38px -4px rgba(229, 193, 88, 0.34),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 38px rgba(229, 193, 88, 0.34),
+      0 16px 32px -12px rgba(20, 15, 10, 0.78);
   }
 
   @keyframes breathe-gold {
@@ -1314,15 +1741,15 @@
       border-color: rgba(197, 160, 89, 0.35);
       box-shadow:
         inset 0 0 12px rgba(212, 175, 55, 0.08),
-        0 0 24px -6px rgba(197, 160, 89, 0.18),
-        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+        0 0 24px rgba(197, 160, 89, 0.22),
+        0 16px 32px -12px rgba(20, 15, 10, 0.78);
     }
     50% {
       border-color: rgba(232, 200, 114, 0.55);
       box-shadow:
         inset 0 0 20px rgba(212, 175, 55, 0.14),
-        0 0 36px -4px rgba(212, 175, 55, 0.3),
-        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+        0 0 36px rgba(212, 175, 55, 0.32),
+        0 16px 32px -12px rgba(20, 15, 10, 0.78);
     }
   }
 
@@ -1331,15 +1758,15 @@
       border-color: rgba(107, 140, 174, 0.42);
       box-shadow:
         inset 0 0 14px rgba(44, 62, 80, 0.28),
-        0 0 26px -6px rgba(44, 62, 80, 0.38),
-        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+        0 0 26px rgba(44, 62, 80, 0.32),
+        0 16px 32px -12px rgba(10, 15, 30, 0.78);
     }
     50% {
       border-color: rgba(139, 164, 196, 0.52);
       box-shadow:
         inset 0 0 20px rgba(44, 62, 80, 0.36),
-        0 0 34px -4px rgba(107, 140, 174, 0.26),
-        0 16px 32px -12px rgba(0, 0, 0, 0.8);
+        0 0 34px rgba(107, 140, 174, 0.28),
+        0 16px 32px -12px rgba(10, 15, 30, 0.78);
     }
   }
 
@@ -1357,8 +1784,8 @@
     color: #9BB4D0;
     box-shadow:
       inset 0 0 20px rgba(44, 62, 80, 0.4),
-      0 0 38px -4px rgba(107, 140, 174, 0.3),
-      0 16px 32px -12px rgba(0, 0, 0, 0.8);
+      0 0 38px rgba(107, 140, 174, 0.32),
+      0 16px 32px -12px rgba(10, 15, 30, 0.78);
   }
 
   .table-tile--transfer-source {

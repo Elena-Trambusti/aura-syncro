@@ -271,7 +271,30 @@
     "transferTapHere": "Toca",
     "reservedTitle": "Mesa {{number}} — Reservada",
     "seatAndOpenOrder": "Sentar y abrir pedido",
-    "reservationSeated": "Comensales en mesa — puedes tomar el pedido"
+    "reservationSeated": "Comensales en mesa — puedes tomar el pedido",
+    "saveLayout": "Guardar layout",
+    "layoutSaved": "¡Layout guardado!",
+    "zones": {
+      "kitchen": "COCINA",
+      "reception": "RECEPCIÓN",
+      "group": "GRUPO",
+      "bar": "BAR",
+      "staffOnly": "SOLO PERSONAL"
+    },
+    "editor": {
+      "title": "Editor Layout 2.5D",
+      "subtitle": "Muros, zonas y mesas",
+      "tabEdit": "Editar",
+      "tabPreview": "Vista 3D",
+      "toolSelect": "Seleccionar",
+      "toolWall": "Muro",
+      "toolLabel": "Etiqueta",
+      "toolDelete": "Eliminar",
+      "wallHint": "Clic en el segundo punto del muro",
+      "labelPrompt": "Texto de la etiqueta",
+      "loadTemplate": "Plantilla demo",
+      "loadTemplateConfirm": "¿Cargar plantilla Obsidian Room?"
+    }
   },
   "orders": {
     "title": "Pedidos",

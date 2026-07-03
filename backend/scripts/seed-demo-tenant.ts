@@ -4,6 +4,7 @@
  */
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { OBSIDIAN_ROOM_TEMPLATE, DEFAULT_TABLE_POSITIONS_PERCENT } from '../src/lib/floorPlanTemplates'
 
 const prisma = new PrismaClient()
 
@@ -73,22 +74,31 @@ async function main() {
 
   const tableCount = await prisma.table.count({ where: { restaurantId } })
   if (tableCount < 6) {
-    for (let n = 1; n <= 8; n++) {
+    for (const t of DEFAULT_TABLE_POSITIONS_PERCENT) {
       await prisma.table.upsert({
-        where: { restaurantId_number: { restaurantId, number: n } },
-        update: {},
+        where: { restaurantId_number: { restaurantId, number: t.number } },
+        update: { posX: t.posX, posY: t.posY, shape: t.shape, area: t.area, seats: t.seats },
         create: {
           restaurantId,
-          number: n,
-          seats: n <= 4 ? 4 : 6,
-          status: n === 1 ? 'OCCUPIED' : 'FREE',
-          posX: (n % 4) * 120,
-          posY: Math.floor((n - 1) / 4) * 100,
+          number: t.number,
+          seats: t.seats,
+          shape: t.shape,
+          area: t.area,
+          status: t.number === 1 ? 'OCCUPIED' : 'FREE',
+          posX: t.posX,
+          posY: t.posY,
         },
       })
     }
-    console.log('✓ Tavoli 1-8')
+    console.log('✓ Tavoli 1-8 (coordinate %)')
   }
+
+  await prisma.restaurantSettings.upsert({
+    where: { restaurantId },
+    create: { restaurantId, floorPlanLayout: OBSIDIAN_ROOM_TEMPLATE },
+    update: { floorPlanLayout: OBSIDIAN_ROOM_TEMPLATE },
+  })
+  console.log('✓ Layout pavimento 2.5D')
 
   let category = await prisma.menuCategory.findFirst({
     where: { restaurantId, name: 'Piatti demo' },

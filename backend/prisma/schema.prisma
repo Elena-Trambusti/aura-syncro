@@ -275,6 +275,10 @@ model RestaurantSettings {
    * Telegram Chat ID associato al tenant per ricezione alert AI
    */
   telegramChatId          String?
+  /**
+   * Layout 2.5D sala: muri, etichette zona, percorsi (JSON versionato v1)
+   */
+  floorPlanLayout         Json?
 }
 
 // ===== UTENTI =====
@@ -364,6 +368,8 @@ enum TableShape {
   SQUARE
   ROUND
   RECTANGLE
+  BAR_STOOL
+  BOOTH
 }
 
 // ===== MENU =====

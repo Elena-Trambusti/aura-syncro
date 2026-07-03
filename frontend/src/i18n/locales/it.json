@@ -314,7 +314,30 @@
     "transferTapHere": "Tocca",
     "reservedTitle": "Tavolo {{number}} — Prenotato",
     "seatAndOpenOrder": "Segna al tavolo e apri ordine",
-    "reservationSeated": "Ospiti al tavolo — puoi prendere la comanda"
+    "reservationSeated": "Ospiti al tavolo — puoi prendere la comanda",
+    "saveLayout": "Salva layout",
+    "layoutSaved": "Layout salvato con successo!",
+    "zones": {
+      "kitchen": "KITCHEN",
+      "reception": "RECEPTION DESK",
+      "group": "GROUP",
+      "bar": "BAR",
+      "staffOnly": "STAFF ONLY"
+    },
+    "editor": {
+      "title": "Editor Layout 2.5D",
+      "subtitle": "Muri, zone e tavoli — salvataggio per il tuo ristorante",
+      "tabEdit": "Modifica",
+      "tabPreview": "Anteprima 3D",
+      "toolSelect": "Seleziona",
+      "toolWall": "Muro",
+      "toolLabel": "Etichetta",
+      "toolDelete": "Elimina",
+      "wallHint": "Clicca il secondo punto del muro",
+      "labelPrompt": "Testo etichetta zona",
+      "loadTemplate": "Template demo",
+      "loadTemplateConfirm": "Caricare il template Obsidian Room? Sovrascrive muri e etichette."
+    }
   },
   "orders": {
     "title": "Ordini",

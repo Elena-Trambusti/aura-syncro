@@ -9,7 +9,7 @@ import { getPermissionsForRole } from '../lib/permissions'
 import { settingsForRegistration } from '../lib/taxEngine'
 import { sendEmail } from '../lib/email'
 import { resolvePrimaryFrontendUrl } from '../lib/frontendUrl'
-import { ensureDefaultTables } from '../lib/defaultTables'
+import { ensureDefaultTables, ensureDefaultFloorPlan } from '../lib/defaultTables'
 import { bootstrapLoyaltyProgram } from '../lib/loyaltyHelpers'
 import { signAuthToken, verifyAuthToken } from '../lib/jwtAuth'
 import { setSessionCookie, clearSessionCookie, extractBearerToken } from '../lib/sessionCookie'
@@ -135,6 +135,7 @@ authRouter.post('/register', authRegisterLimiter, asyncHandler(async (req: Reque
 
   const user = restaurant.users[0]
   await ensureDefaultTables(restaurant.id)
+  await ensureDefaultFloorPlan(restaurant.id)
   await bootstrapLoyaltyProgram(restaurant.id)
 
   sendAuthResponse(res, {

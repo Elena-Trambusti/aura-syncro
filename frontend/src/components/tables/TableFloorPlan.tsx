@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
+import type { FloorPlanLayoutV1, FloorPlanZoneLabel as ZoneLabelType } from '../../lib/floorPlanLayout'
+import { EMPTY_FLOOR_PLAN_LAYOUT, FLOOR_CANVAS_H, FLOOR_CANVAS_W } from '../../lib/floorPlanLayout'
+import FloorPlanWall from './FloorPlanWall'
+import FloorPlanZonePathLayer from './FloorPlanZonePathLayer'
 
 export type TableStatus = 'FREE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING'
-export type TableShape = 'SQUARE' | 'ROUND' | 'RECTANGLE'
+export type TableShape = 'SQUARE' | 'ROUND' | 'RECTANGLE' | 'BAR_STOOL' | 'BOOTH'
 
 export interface TableReservationPreview {
   id: string
@@ -26,7 +31,9 @@ export interface FloorTable {
   upcomingReservation?: TableReservationPreview | null
 }
 
-function tableSize(seats: number, shape: string) {
+export function tableSize(seats: number, shape: string) {
+  if (shape === 'BAR_STOOL') return { w: 40, h: 40 }
+  if (shape === 'BOOTH') return { w: 130, h: 72 }
   if (shape === 'RECTANGLE') {
     return seats >= 6 ? { w: 180, h: 110 } : { w: 160, h: 100 }
   }
@@ -46,21 +53,53 @@ export function getTableTransferRole(
   return 'disabled'
 }
 
-interface TableFloorPlanProps {
+export interface TableFloorPlanProps {
   tables: FloorTable[]
+  floorLayout?: FloorPlanLayoutV1
   statusLabel: (status: TableStatus) => string
   seatsLabel: (n: number) => string
-  onTableClick: (table: FloorTable) => void
+  onTableClick?: (table: FloorTable) => void
   activeOrderTotal?: (tableId: string) => string | null
   reservationLabel?: (table: FloorTable) => string | null
   transferSourceId?: string | null
   onTransferTargetClick?: (table: FloorTable) => void
   transferSourceLabel?: string
   transferTargetLabel?: string
+  interactive?: boolean
+  className?: string
+  embedded?: boolean
+}
+
+const MARBLE_BG = '/assets/marble-bg.png'
+export const TABLE_TOP_Z = 48
+export const FLOOR_ROT_X_DEG = 58
+export const FLOOR_ROT_Z_DEG = -45
+export const FLOOR_W = FLOOR_CANVAS_W
+export const FLOOR_H = FLOOR_CANVAS_H
+
+type LabelPosition = { x: number; y: number }
+
+function positionsEqual(a: Record<string, LabelPosition>, b: Record<string, LabelPosition>) {
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  return keys.every(k => a[k]?.x === b[k]?.x && a[k]?.y === b[k]?.y)
+}
+
+function resolveZoneLabelText(label: ZoneLabelType, t: (key: string, opts?: { defaultValue?: string }) => string) {
+  if (label.textKey) {
+    const translated = t(label.textKey, { defaultValue: label.text })
+    const base = translated !== label.textKey ? translated : label.text
+    if (label.variant === 'staff') {
+      return `${base} | ${t('tables.zones.staffOnly', { defaultValue: 'STAFF ONLY' })}`
+    }
+    return base
+  }
+  return label.text
 }
 
 export default function TableFloorPlan({
   tables,
+  floorLayout = EMPTY_FLOOR_PLAN_LAYOUT,
   statusLabel,
   seatsLabel,
   onTableClick,
@@ -70,14 +109,21 @@ export default function TableFloorPlan({
   onTransferTargetClick,
   transferSourceLabel,
   transferTargetLabel,
+  interactive = true,
+  className,
+  embedded = false,
 }: TableFloorPlanProps) {
+  const { t } = useTranslation()
   const inTransferMode = Boolean(transferSourceId)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const sceneRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [labelPositions, setLabelPositions] = useState<Record<string, LabelPosition>>({})
+  const [zoneLabelPositions, setZoneLabelPositions] = useState<Record<string, LabelPosition>>({})
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (embedded || !containerRef.current) return
     const observer = new ResizeObserver(entries => {
       const width = entries[0].contentRect.width
       const availableWidth = width - 32
@@ -85,9 +131,69 @@ export default function TableFloorPlan({
     })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
+  }, [embedded])
+
+  const measureLabels = useCallback(() => {
+    const scene = sceneRef.current
+    if (!scene) return
+
+    const sceneRect = scene.getBoundingClientRect()
+    const nextTables: Record<string, LabelPosition> = {}
+    const nextZones: Record<string, LabelPosition> = {}
+
+    scene.querySelectorAll<HTMLElement>('[data-table-top]').forEach(el => {
+      const id = el.dataset.tableId
+      if (!id) return
+      const rect = el.getBoundingClientRect()
+      const scaleX = sceneRect.width / FLOOR_W
+      const scaleY = sceneRect.height / FLOOR_H
+      if (scaleX <= 0 || scaleY <= 0) return
+      nextTables[id] = {
+        x: (rect.left + rect.width / 2 - sceneRect.left) / scaleX,
+        y: (rect.top - sceneRect.top) / scaleY,
+      }
+    })
+
+    scene.querySelectorAll<HTMLElement>('[data-zone-label]').forEach(el => {
+      const id = el.dataset.zoneLabelId
+      if (!id) return
+      const rect = el.getBoundingClientRect()
+      const scaleX = sceneRect.width / FLOOR_W
+      const scaleY = sceneRect.height / FLOOR_H
+      if (scaleX <= 0 || scaleY <= 0) return
+      nextZones[id] = {
+        x: (rect.left + rect.width / 2 - sceneRect.left) / scaleX,
+        y: (rect.top + rect.height / 2 - sceneRect.top) / scaleY,
+      }
+    })
+
+    setLabelPositions(prev => (positionsEqual(prev, nextTables) ? prev : nextTables))
+    setZoneLabelPositions(prev => (positionsEqual(prev, nextZones) ? prev : nextZones))
   }, [])
 
+  useLayoutEffect(() => {
+    measureLabels()
+    const raf = requestAnimationFrame(measureLabels)
+    return () => cancelAnimationFrame(raf)
+  }, [tables, floorLayout, scale, measureLabels])
+
+  useEffect(() => {
+    const scene = sceneRef.current
+    const container = containerRef.current
+    if (!scene) return
+
+    const observer = new ResizeObserver(() => measureLabels())
+    observer.observe(scene)
+    if (container) observer.observe(container)
+    window.addEventListener('resize', measureLabels)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measureLabels)
+    }
+  }, [measureLabels])
+
   const handleTileClick = (table: FloorTable) => {
+    if (!interactive || !onTableClick) return
     if (inTransferMode && transferSourceId) {
       const role = getTableTransferRole(table, transferSourceId)
       if (role === 'target') onTransferTargetClick?.(table)
@@ -95,122 +201,288 @@ export default function TableFloorPlan({
     }
     onTableClick(table)
   }
+
+  const sceneContent = (
+    <div
+      ref={sceneRef}
+      className={cn('relative', className)}
+      style={{ width: FLOOR_W, height: FLOOR_H }}
+    >
+      <div
+        className="table-floor-premium absolute inset-0"
+        style={{
+          transform: `rotateX(${FLOOR_ROT_X_DEG}deg) rotateZ(${FLOOR_ROT_Z_DEG}deg)`,
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div className="table-floor-premium__texture absolute inset-0 overflow-hidden rounded-2xl border border-[#D4AF37]/30 shadow-[0_0_100px_rgba(212,175,55,0.15)] [transform:translateZ(-1px)]">
+          <img src={MARBLE_BG} alt="" aria-hidden draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/30" />
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+          <div className="absolute top-0 left-0 h-[150%] w-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.2),transparent_50%)]" />
+          <div className="absolute bottom-0 right-0 h-[150%] w-[150%] bg-[radial-gradient(ellipse_at_bottom_right,rgba(212,175,55,0.15),transparent_50%)]" />
+        </div>
+
+        {floorLayout.walls.map(wall => (
+          <FloorPlanWall key={wall.id} wall={wall} />
+        ))}
+
+        <FloorPlanZonePathLayer paths={floorLayout.zonePaths ?? []} />
+
+        {floorLayout.zoneLabels.map(zl => (
+          <div
+            key={zl.id}
+            data-zone-label
+            data-zone-label-id={zl.id}
+            className="pointer-events-none absolute h-px w-px"
+            style={{
+              left: `${zl.x}%`,
+              top: `${zl.y}%`,
+              transform: 'translate(-50%, -50%) translateZ(4px)',
+            }}
+          />
+        ))}
+
+        {tables.map(table => {
+          const transferRole = getTableTransferRole(table, transferSourceId)
+          return (
+            <TableTile
+              key={table.id}
+              table={table}
+              isDisabledInTransfer={transferRole === 'disabled'}
+              onMeasureLabels={measureLabels}
+              onClick={() => handleTileClick(table)}
+              interactive={interactive}
+              className="absolute"
+              style={{
+                left: `${table.posX}%`,
+                top: `${table.posY}%`,
+                transform: `rotateZ(${table.rotation || 0}deg) translateZ(1px)`,
+                transformStyle: 'preserve-3d',
+              }}
+            />
+          )
+        })}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
+        {floorLayout.zoneLabels.map(zl => {
+          const pos = zoneLabelPositions[zl.id]
+          if (!pos) return null
+          return (
+            <div
+              key={`zone-${zl.id}`}
+              className="absolute"
+              style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
+            >
+              <span
+                className={cn(
+                  'floor-plan-zone-label',
+                  zl.variant === 'staff' && 'floor-plan-zone-label--staff',
+                  zl.variant === 'area' && 'floor-plan-zone-label--area',
+                )}
+              >
+                {resolveZoneLabelText(zl, t)}
+              </span>
+            </div>
+          )
+        })}
+
+        {tables.map(table => {
+          const pos = labelPositions[table.id]
+          if (!pos) return null
+          const { w } = tableSize(table.seats, table.shape || 'SQUARE')
+          const isCompactTable = w <= 125
+          const transferRole = getTableTransferRole(table, transferSourceId)
+          const seatsWord = seatsLabel(table.seats).replace(/^\d+\s*/, '').toUpperCase()
+
+          return (
+            <div
+              key={`label-${table.id}`}
+              className="absolute"
+              style={{
+                left: pos.x,
+                top: pos.y,
+                transform: 'translate(-50%, calc(-100% - 10px))',
+              }}
+            >
+              <TableLabelPill
+                table={table}
+                statusLabel={statusLabel}
+                seatsWord={seatsWord}
+                orderTotal={activeOrderTotal?.(table.id) ?? null}
+                reservationHint={reservationLabel?.(table) ?? null}
+                transferRole={transferRole}
+                transferHint={
+                  transferRole === 'source' ? transferSourceLabel
+                    : transferRole === 'target' ? transferTargetLabel
+                      : undefined
+                }
+                isCompactTable={isCompactTable}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  if (embedded) {
+    return sceneContent
+  }
+
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden bg-[#020202]">
       <div className="flex justify-center p-4 sm:p-6" style={{ minHeight: (900 * scale) + 48 }}>
         <div
-          className="origin-top transition-transform duration-300 flex justify-center"
+          className="origin-top flex justify-center"
           style={{
             transform: `scale(${scale}) translateY(5%)`,
-            // Rimuoviamo perspective per avere una vera proiezione Ortografica (Isometrica) perfetta!
+            perspective: '1400px',
+            perspectiveOrigin: '50% 38%',
           }}
         >
-          <div
-            className="table-floor-premium relative h-[800px] w-[1000px] transition-all duration-1000"
-            style={{
-              transform: 'rotateX(60deg) rotateZ(-45deg)',
-              transformStyle: 'preserve-3d'
-            }}
-          >
-            {/* Floor Base */}
-            <div className="table-floor-premium__texture absolute inset-0 bg-[#080604] border border-[#D4AF37]/30 shadow-[0_0_100px_rgba(212,175,55,0.15)] rounded-2xl overflow-hidden [transform:translateZ(-1px)]">
-              {/* Grid */}
-              <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-              {/* Ambient Glows */}
-              <div className="absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.2),transparent_50%)]" />
-              <div className="absolute bottom-0 right-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_bottom_right,rgba(212,175,55,0.15),transparent_50%)]" />
-            </div>
-
-            {tables.map(table => {
-              return (
-                <TableTile
-                  key={table.id}
-                  table={table}
-                  statusLabel={statusLabel}
-                  seatsLabel={seatsLabel}
-                  orderTotal={activeOrderTotal?.(table.id) ?? null}
-                  reservationHint={reservationLabel?.(table) ?? null}
-                  transferRole={getTableTransferRole(table, transferSourceId)}
-                  transferHint={
-                    getTableTransferRole(table, transferSourceId) === 'source'
-                      ? transferSourceLabel
-                      : getTableTransferRole(table, transferSourceId) === 'target'
-                        ? transferTargetLabel
-                        : undefined
-                  }
-                  onClick={() => handleTileClick(table)}
-                  className="absolute"
-                  style={{
-                    left: `${table.posX}%`,
-                    top: `${table.posY}%`,
-                    transform: `rotateZ(${table.rotation || 0}deg) translateZ(1px)`,
-                    transformStyle: 'preserve-3d'
-                  }}
-                />
-              )
-            })}
-          </div>
+          {sceneContent}
         </div>
       </div>
     </div>
   )
 }
 
-function TableTile({
-  table,
-  statusLabel,
-  seatsLabel,
-  orderTotal,
-  reservationHint,
-  transferRole,
-  transferHint,
-  onClick,
-  style,
-  className,
+function TableLabelPill({
+  table, statusLabel, seatsWord, orderTotal, reservationHint, transferRole, transferHint, isCompactTable,
 }: {
   table: FloorTable
   statusLabel: (status: TableStatus) => string
-  seatsLabel: (n: number) => string
+  seatsWord: string
   orderTotal: string | null
   reservationHint?: string | null
   transferRole?: TableTransferRole | null
   transferHint?: string
+  isCompactTable: boolean
+}) {
+  const isOccupied = table.status === 'OCCUPIED'
+  const isCleaning = table.status === 'CLEANING'
+  const prefix = table.shape === 'BAR_STOOL' ? 'B' : table.shape === 'BOOTH' ? 'G' : 'T'
+
+  return (
+    <div className={cn('table-label-pill', isCompactTable && 'table-label-pill--compact')}>
+      <span className="table-label-pill__number">{prefix}{table.number}</span>
+      <span className="table-label-pill__seats">{table.seats} {seatsWord}</span>
+      {(table.status !== 'FREE' || orderTotal || reservationHint || transferHint) && (
+        <div className="table-label-pill__meta">
+          {table.status !== 'FREE' && (
+            <span className={cn(
+              'table-label-pill__badge',
+              isOccupied ? 'border-[#D4AF37]/70 text-[#F5E6A3] bg-black/80' :
+              isCleaning ? 'border-[#3b82f6]/70 text-[#93c5fd] bg-[#0f172a]/90' :
+              'border-[#C9A96E]/70 text-[#E8C872] bg-black/80',
+            )}>
+              {statusLabel(table.status)}
+            </span>
+          )}
+          {orderTotal && transferRole !== 'target' && (
+            <span className="table-label-pill__total">{orderTotal}</span>
+          )}
+          {reservationHint && !orderTotal && transferRole !== 'target' && (
+            <span className="max-w-[130px] truncate text-[10px] font-medium text-[#F5E6A3]">{reservationHint}</span>
+          )}
+          {transferHint && (
+            <span className="table-label-pill__badge border-blue-400/60 text-blue-100 bg-blue-950/90">{transferHint}</span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TableTile({
+  table, isDisabledInTransfer, onMeasureLabels, onClick, interactive, style, className,
+}: {
+  table: FloorTable
+  isDisabledInTransfer: boolean
+  onMeasureLabels: () => void
   onClick: () => void
+  interactive?: boolean
   style?: React.CSSProperties
   className?: string
 }) {
   const shape = (table.shape || 'SQUARE') as TableShape
   const { w, h } = tableSize(table.seats, shape)
-
-  const isDisabledInTransfer = transferRole === 'disabled'
   const isOccupied = table.status === 'OCCUPIED'
   const isReserved = table.status === 'RESERVED'
   const isCleaning = table.status === 'CLEANING'
+  const isBarStool = shape === 'BAR_STOOL'
+  const isBooth = shape === 'BOOTH'
 
-  const shapeClasses = shape === 'ROUND' ? 'rounded-full' : 'rounded-[16px]'
+  const borderShapeClasses =
+    shape === 'ROUND' || isBarStool ? 'rounded-full' : isBooth ? 'rounded-[12px]' : 'rounded-[16px]'
+  const surfaceShapeClasses =
+    shape === 'ROUND' || isBarStool ? 'rounded-full' : isBooth ? 'rounded-[10px]' : 'rounded-[13px]'
+  const surfaceClipClass =
+    shape === 'ROUND' || isBarStool ? 'table-luxury-surface--round' : 'table-luxury-surface--square'
 
-  const tableZ = 40 // Altezza del tavolo dal pavimento
-  const legWidth = 4
-  const chairZ = 20 // Altezza della seduta
-  const chairSize = 24
+  const tableZ = isBarStool ? 36 : TABLE_TOP_Z
+  const tableThickness = isBarStool ? 8 : 10
+  const legWidth = isBarStool ? 4 : 6
+  const chairZ = 22
+  const chairSize = isBarStool ? 0 : 26
 
-  const isHighlighted = isOccupied || isReserved
-  // Design Feedback: Effetto Glow Dinamico, Ombre a contatto marrone scuro
-  const glowShadow = isHighlighted 
-    ? 'drop-shadow-[0_0_20px_rgba(212,175,55,0.4)] shadow-[0_20px_30px_rgba(20,15,10,0.9)]' 
-    : 'shadow-[0_20px_40px_rgba(10,5,0,0.9)]'
+  const borderLuxuryClass =
+    isOccupied || isReserved ? 'table-luxury-border--occupied' :
+    isCleaning ? 'table-luxury-border--cleaning' : 'table-luxury-border--free'
 
-  const borderColor = isOccupied ? 'border-[#D4AF37]/80' : isCleaning ? 'border-[#3b82f6]/80' : 'border-[#8A6D23]/50'
+  const statusGlowClass =
+    isOccupied || isReserved ? 'table-luxury-ambient-glow--occupied' :
+    isCleaning ? 'table-luxury-ambient-glow--cleaning' : 'table-luxury-ambient-glow--free'
 
-  const renderLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }) => (
-    <div 
-      className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom shadow-md" 
-      style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) translateZ(0)` }} 
+  const legOffset = shape === 'ROUND' || isBarStool ? '22%' : '10%'
+  const legShadow = '0 6px 16px rgba(20, 15, 10, 0.8)'
+  const marbleSrc = MARBLE_BG
+
+  const handleHoverEnd = () => window.setTimeout(onMeasureLabels, 620)
+
+  const renderTableLeg = (pos: { left?: string; right?: string; top?: string; bottom?: string }) => (
+    <div
+      className="absolute origin-bottom bg-gradient-to-t from-[#5a4205] via-[#a67c0a] to-[#e8c872] transition-all duration-[600ms] ease-in-out"
+      style={{
+        ...pos, width: legWidth, height: tableZ - tableThickness,
+        transform: 'rotateX(-90deg) translateZ(0)', boxShadow: legShadow, borderRadius: 1,
+      }}
     />
   )
 
+  const renderChairLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }) => (
+    <div
+      className="absolute origin-bottom bg-gradient-to-t from-[#5a4205] to-[#c9a227]"
+      style={{ ...props, width: 2, height: chairZ, transform: 'rotateX(-90deg) translateZ(0)', boxShadow: legShadow }}
+    />
+  )
+
+  const renderTableEdges = () => {
+    if (shape === 'ROUND' || isBarStool) return null
+    const edgeStyle = (origin: string, rotate: string, pos: CSSProperties): CSSProperties => ({
+      ...pos, transformOrigin: origin, transform: rotate,
+    })
+    return (
+      <div className="pointer-events-none absolute inset-0" style={{ transform: `translateZ(${tableZ - tableThickness}px)`, transformStyle: 'preserve-3d' }}>
+        <div className="table-3d-edge absolute bottom-0 left-[7%] right-[7%]" style={edgeStyle('bottom', 'rotateX(-90deg)', { height: tableThickness })} />
+        <div className="table-3d-edge absolute top-0 left-[7%] right-[7%]" style={edgeStyle('top', 'rotateX(90deg)', { height: tableThickness })} />
+        <div className="table-3d-edge absolute left-0 top-[7%] bottom-[7%]" style={edgeStyle('left', 'rotateY(-90deg)', { width: tableThickness })} />
+        <div className="table-3d-edge absolute right-0 top-[7%] bottom-[7%]" style={edgeStyle('right', 'rotateY(90deg)', { width: tableThickness })} />
+      </div>
+    )
+  }
+
   const renderChairs = () => {
-    const chairs = []
+    if (isBarStool || chairSize === 0) return null
+    const chairs: React.ReactNode[] = []
     const padding = 12
 
     if (shape === 'ROUND') {
@@ -221,207 +493,108 @@ function TableTile({
         const x = Math.cos(angle) * radius
         const y = Math.sin(angle) * radius
         chairs.push(
-          <div
-            key={`chair-${i}`}
-            className="absolute transition-all duration-500"
-            style={{ 
-              width: chairSize, height: chairSize, 
-              left: `calc(50% + ${x}px - ${chairSize / 2}px)`, 
-              top: `calc(50% + ${y}px - ${chairSize / 2}px)`, 
-              transform: `translate(0, 0)`, 
-              transformStyle: 'preserve-3d' 
-            }}
-          >
-            {/* Gambe della sedia (Sempre dritte) */}
-            {renderLeg({ left: '10%', top: '10%' })}
-            {renderLeg({ right: '10%', top: '10%' })}
-            {renderLeg({ left: '10%', bottom: '10%' })}
-            {renderLeg({ right: '10%', bottom: '10%' })}
-            
-            {/* Seduta (Rettangolo Minimalista ruotato) */}
-            <div 
-              className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-lg")} 
-              style={{ transform: `translateZ(${chairZ}px) rotateZ(${angle + Math.PI / 2}rad)` }} 
-            />
+          <div key={`chair-${i}`} className="absolute transition-all duration-500" style={{
+            width: chairSize, height: chairSize,
+            left: `calc(50% + ${x}px - ${chairSize / 2}px)`,
+            top: `calc(50% + ${y}px - ${chairSize / 2}px)`,
+            transformStyle: 'preserve-3d',
+          }}>
+            {renderChairLeg({ left: '12%', top: '12%' })}
+            {renderChairLeg({ right: '12%', top: '12%' })}
+            {renderChairLeg({ left: '12%', bottom: '12%' })}
+            {renderChairLeg({ right: '12%', bottom: '12%' })}
+            <div className={cn('absolute inset-0 rounded-[6px] border border-[#D4AF37]/55 bg-gradient-to-b from-[#1e1a14] to-[#0a0a0a] shadow-[0_4px_12px_rgba(20,15,10,0.75)]')}
+              style={{ transform: `translateZ(${chairZ}px) rotateZ(${angle + Math.PI / 2}rad)` }} />
           </div>
         )
       }
     } else {
-      let topCount = 0, bottomCount = 0, leftCount = 0, rightCount = 0;
-      if (table.seats === 2) { leftCount = 1; rightCount = 1; }
-      else if (table.seats === 4) { topCount = 2; bottomCount = 2; }
-      else if (table.seats === 6) { topCount = 2; bottomCount = 2; leftCount = 1; rightCount = 1; }
-      else if (table.seats >= 8) { topCount = Math.floor((table.seats - 2) / 2); bottomCount = Math.ceil((table.seats - 2) / 2); leftCount = 1; rightCount = 1; }
-      else { topCount = Math.ceil(table.seats / 2); bottomCount = Math.floor(table.seats / 2); }
+      let topCount = 0, bottomCount = 0, leftCount = 0, rightCount = 0
+      if (isBooth) {
+        bottomCount = Math.min(table.seats, 4)
+      } else if (table.seats === 2) { leftCount = 1; rightCount = 1 }
+      else if (table.seats === 4) { topCount = 2; bottomCount = 2 }
+      else if (table.seats === 6) { topCount = 2; bottomCount = 2; leftCount = 1; rightCount = 1 }
+      else if (table.seats >= 8) { topCount = Math.floor((table.seats - 2) / 2); bottomCount = Math.ceil((table.seats - 2) / 2); leftCount = 1; rightCount = 1 }
+      else { topCount = Math.ceil(table.seats / 2); bottomCount = Math.floor(table.seats / 2) }
 
       const addChairRow = (count: number, side: 'top' | 'bottom' | 'left' | 'right') => {
         for (let i = 0; i < count; i++) {
-          const percent = ((i + 1) / (count + 1)) * 100;
-          let left, top, rotation;
-          if (side === 'top') { left = `${percent}%`; top = `-${padding}px`; rotation = 0; }
-          else if (side === 'bottom') { left = `${percent}%`; top = `calc(100% + ${padding}px)`; rotation = 180; }
-          else if (side === 'left') { left = `-${padding}px`; top = `${percent}%`; rotation = -90; }
-          else { left = `calc(100% + ${padding}px)`; top = `${percent}%`; rotation = 90; }
-
+          const percent = ((i + 1) / (count + 1)) * 100
+          let left: string, top: string, rotation: number
+          if (side === 'top') { left = `${percent}%`; top = `-${padding}px`; rotation = 0 }
+          else if (side === 'bottom') { left = `${percent}%`; top = `calc(100% + ${padding}px)`; rotation = 180 }
+          else if (side === 'left') { left = `-${padding}px`; top = `${percent}%`; rotation = -90 }
+          else { left = `calc(100% + ${padding}px)`; top = `${percent}%`; rotation = 90 }
           chairs.push(
-            <div
-              key={`chair-${side}-${i}`}
-              className="absolute transition-all duration-500"
-              style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%)`, transformStyle: 'preserve-3d' }}
-            >
-              {/* Gambe della sedia (Sempre dritte come il tavolo) */}
-              {renderLeg({ left: '10%', top: '10%' })}
-              {renderLeg({ right: '10%', top: '10%' })}
-              {renderLeg({ left: '10%', bottom: '10%' })}
-              {renderLeg({ right: '10%', bottom: '10%' })}
-              
-              {/* Seduta Minimalista (ruotata individualmente) */}
-              <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px) rotateZ(${rotation}deg)` }} />
+            <div key={`chair-${side}-${i}`} className="absolute transition-all duration-500"
+              style={{ left, top, width: chairSize, height: chairSize, transform: 'translate(-50%, -50%)', transformStyle: 'preserve-3d' }}>
+              {renderChairLeg({ left: '12%', top: '12%' })}
+              {renderChairLeg({ right: '12%', top: '12%' })}
+              {renderChairLeg({ left: '12%', bottom: '12%' })}
+              {renderChairLeg({ right: '12%', bottom: '12%' })}
+              <div className={cn('absolute inset-0 rounded-[6px] border border-[#D4AF37]/55 bg-gradient-to-b from-[#1e1a14] to-[#0a0a0a] shadow-[0_4px_12px_rgba(20,15,10,0.75)]')}
+                style={{ transform: `translateZ(${chairZ}px) rotateZ(${rotation}deg)` }} />
             </div>
           )
         }
       }
-
       addChairRow(topCount, 'top')
       addChairRow(bottomCount, 'bottom')
       addChairRow(leftCount, 'left')
       addChairRow(rightCount, 'right')
     }
-    return chairs;
+    return chairs
   }
 
-  // Posizioni delle 4 gambe del tavolo (se rotondo le mettiamo comunque a raggiera o quadrato inscritto)
-  const legOffset = shape === 'ROUND' ? '20%' : '10%'
-
   return (
-    <div 
+    <div
       className={cn(
-        'absolute transition-all duration-[600ms] ease-in-out outline-none group', 
+        'table-3d-group absolute outline-none',
         className,
-        !isDisabledInTransfer && 'cursor-pointer hover:-translate-y-2 hover:drop-shadow-[0_10px_20px_rgba(212,175,55,0.4)]',
-        isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed'
-      )} 
-      style={{ 
-        ...style, 
-        width: w, 
-        height: h, 
-        transformStyle: 'preserve-3d'
-      }}
-      role="button"
-      tabIndex={0}
-      onClick={!isDisabledInTransfer ? onClick : undefined}
-      onKeyDown={(e) => { if (!isDisabledInTransfer && e.key === 'Enter') onClick() }}
+        interactive && !isDisabledInTransfer && 'cursor-pointer',
+        isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed',
+      )}
+      style={{ ...style, width: w, height: h, transformStyle: 'preserve-3d' }}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive && !isDisabledInTransfer ? onClick : undefined}
+      onKeyDown={(e) => { if (interactive && !isDisabledInTransfer && e.key === 'Enter') onClick() }}
+      onMouseEnter={onMeasureLabels}
+      onMouseLeave={handleHoverEnd}
     >
-      
-      {/* Dynamic Floor Glow */}
-      <div
-        className={cn(
-          'pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 blur-[40px] transition-all duration-1000 rounded-full',
-          isOccupied ? 'bg-[#D4AF37]/50 w-[200%] h-[200%] animate-[pulse_3s_ease-in-out_infinite]' :
-          isCleaning ? 'bg-[#3b82f6]/40 w-[200%] h-[200%] animate-[pulse_3s_ease-in-out_infinite]' :
-          'bg-transparent'
+      <div className="table-3d-body">
+        <div className="table-3d-contact-shadow" />
+        <div className="table-luxury-ambient-glow table-luxury-ambient-glow--base pointer-events-none absolute left-1/2 top-1/2 blur-[32px] rounded-full"
+          style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
+        <div className={cn('table-luxury-ambient-glow pointer-events-none absolute left-1/2 top-1/2 blur-[36px] rounded-full opacity-80', statusGlowClass)}
+          style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
+        <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>{renderChairs()}</div>
+        {!isBarStool && (
+          <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
+            {renderTableLeg({ left: legOffset, top: legOffset })}
+            {renderTableLeg({ right: legOffset, top: legOffset })}
+            {renderTableLeg({ left: legOffset, bottom: legOffset })}
+            {renderTableLeg({ right: legOffset, bottom: legOffset })}
+          </div>
         )}
-        style={{ transform: 'translateZ(-1px)' }}
-      />
-
-      {/* Chairs */}
-      <div className="pointer-events-none absolute inset-0 transition-all duration-500" style={{ transformStyle: 'preserve-3d' }}>
-        {renderChairs()}
-      </div>
-
-      {/* LE GAMBE DEL TAVOLO (Verticali in 3D) */}
-      <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
-        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ left: legOffset, top: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
-        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ right: legOffset, top: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
-        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ left: legOffset, bottom: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
-        <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ right: legOffset, bottom: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
-      </div>
-
-      {/* IL PIANO DEL TAVOLO (Marmo nero con bordo riflettente) */}
-      <div 
-        className={cn(
-          'pointer-events-none absolute inset-0 bg-[#0a0a0a] border-[3px] transition-all duration-[600ms] ease-in-out', 
-          shapeClasses,
-          borderColor,
-          glowShadow
-        )} 
-        style={{ 
-          transform: `translateZ(${tableZ}px)`,
-          backgroundImage: 'radial-gradient(circle at 30% 30%, #151515 0%, #0a0a0a 100%), url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E")',
-        }} 
-      />
-
-      {/* Floating Counter-Rotated Text UI */}
-      {/* 5. Floating, Counter-Rotated Text UI (Direct Sibling) */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 flex flex-col items-center justify-center"
-        style={{
-          // Posizionato esattamente al centro, ruota sul proprio centro per evitare disallineamenti
-          transform: `translate(-50%, -50%) translateZ(${tableZ + 60}px) rotateZ(${- (table.rotation || 0)}deg) rotateZ(45deg) rotateX(-60deg)`,
-          transformOrigin: 'center center',
-          transformStyle: 'preserve-3d',
-          backfaceVisibility: 'hidden',
-          WebkitFontSmoothing: 'antialiased'
-        }}
-      >
-        <div className="flex flex-col items-center justify-center transition-transform duration-[600ms] ease-in-out group-hover:scale-110">
-          
-          {/* Luxury Typography Layout */}
-          <div className="flex flex-col items-center justify-center">
-            
-            {/* Table Number */}
-            <span className={cn(
-              "text-3xl font-light tracking-widest leading-none mb-1.5",
-              isOccupied 
-                ? "text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]" 
-                : "text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(212,175,55,0.6)]"
-            )}
-            style={{ fontFamily: '"Inter", "Montserrat", sans-serif' }}
+        {isBarStool && (
+          <div className="pointer-events-none absolute left-1/2 top-1/2" style={{ transform: 'translate(-50%, -50%)', transformStyle: 'preserve-3d' }}>
+            {renderTableLeg({ left: '50%' })}
+          </div>
+        )}
+        {renderTableEdges()}
+        <div className={cn('table-luxury-top-face pointer-events-none absolute inset-0', borderShapeClasses)}
+          style={{ transform: `translateZ(${tableZ}px)` }}>
+          <div className={cn('table-luxury-border h-full w-full p-[3px] transition-all duration-[600ms] ease-in-out', borderShapeClasses, borderLuxuryClass)}>
+            <div
+              data-table-top
+              data-table-id={table.id}
+              className={cn('table-luxury-surface table-luxury-surface--light h-full w-full', surfaceShapeClasses, surfaceClipClass)}
             >
-              T{table.number}
-            </span>
-            
-            {/* PAX Indicator */}
-            <span 
-              className="text-[7px] font-light text-white/60 uppercase tracking-[0.3em] mb-2"
-              style={{ fontFamily: '"Inter", "Montserrat", sans-serif' }}
-            >
-              {seatsLabel(table.seats)}
-            </span>
-
-            {/* Status & Information Stack */}
-            <div className="flex flex-col gap-2 items-center w-full">
-              
-              {/* Status Pill (Solid, no blur to prevent 3D pixelation) */}
-              {table.status !== 'FREE' && (
-                <div className={cn(
-                  'rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_8px_16px_rgba(0,0,0,0.9)] border',
-                  isOccupied ? 'border-[#D4AF37] bg-black/95 text-[#D4AF37]' : 'border-[#3b82f6] bg-[#0f172a]/95 text-[#93c5fd]',
-                )}>
-                  {statusLabel(table.status as TableStatus)}
-                </div>
-              )}
-              
-              {/* Price / Order Total */}
-              {orderTotal && transferRole !== 'target' && (
-                <div className="text-[13px] font-bold tracking-wide text-emerald-400 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] bg-black/95 px-3 py-0.5 rounded-full border border-emerald-500/50 shadow-xl">
-                  {orderTotal}
-                </div>
-              )}
-              
-              {/* Reservation Hint */}
-              {reservationHint && !orderTotal && transferRole !== 'target' && (
-                <div className="text-[10px] font-medium tracking-wide text-[#E8C872] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] bg-black/95 px-3 py-0.5 rounded-full border border-[#D4AF37]/50 shadow-xl max-w-[140px] truncate text-center">
-                  {reservationHint}
-                </div>
-              )}
-              
-              {/* Transfer Hint */}
-              {transferHint && (
-                <div className="rounded-full border border-blue-500/50 bg-blue-900/95 px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-blue-100 shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-                  {transferHint}
-                </div>
-              )}
+              <img src={marbleSrc} alt="" aria-hidden draggable={false} className="table-luxury-surface__marble table-luxury-surface__marble--light" />
+              <div className="table-luxury-surface__veil table-luxury-surface__veil--light" />
+              <div className="table-luxury-surface__specular" />
             </div>
           </div>
         </div>

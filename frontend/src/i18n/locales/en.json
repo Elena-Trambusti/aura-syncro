@@ -292,7 +292,30 @@
     "transferTapHere": "Tap",
     "reservedTitle": "Table {{number}} — Reserved",
     "seatAndOpenOrder": "Seat guests and open order",
-    "reservationSeated": "Guests seated — you can take the order"
+    "reservationSeated": "Guests seated — you can take the order",
+    "saveLayout": "Save layout",
+    "layoutSaved": "Layout saved successfully!",
+    "zones": {
+      "kitchen": "KITCHEN",
+      "reception": "RECEPTION DESK",
+      "group": "GROUP",
+      "bar": "BAR",
+      "staffOnly": "STAFF ONLY"
+    },
+    "editor": {
+      "title": "2.5D Layout Editor",
+      "subtitle": "Walls, zones and tables — saved per restaurant",
+      "tabEdit": "Edit",
+      "tabPreview": "3D Preview",
+      "toolSelect": "Select",
+      "toolWall": "Wall",
+      "toolLabel": "Label",
+      "toolDelete": "Delete",
+      "wallHint": "Click the second wall point",
+      "labelPrompt": "Zone label text",
+      "loadTemplate": "Demo template",
+      "loadTemplateConfirm": "Load Obsidian Room template? Overwrites walls and labels."
+    }
   },
   "orders": {
     "title": "Orders",

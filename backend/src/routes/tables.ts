@@ -12,6 +12,8 @@ import { isManualTableTransitionAllowed, TABLE_TRANSITION_ERROR } from '../lib/t
 import { signTableToken } from '../lib/tableToken'
 import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
 
+import { floorPlanLayoutSchema, parseFloorPlanLayout, EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
+
 export const tablesRouter = Router()
 
 tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -113,6 +115,41 @@ tablesRouter.patch('/positions', requirePermission('tables.manage'), async (req:
   res.json({ success: true, count: result.data.length })
 })
 
+tablesRouter.get('/floor-layout', requirePermission('tables.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId: tenantId(req) },
+    select: { floorPlanLayout: true },
+  })
+  if (!settings) {
+    res.json(EMPTY_FLOOR_PLAN_LAYOUT)
+    return
+  }
+  res.json(parseFloorPlanLayout(settings.floorPlanLayout))
+})
+
+tablesRouter.patch('/floor-layout', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const result = floorPlanLayoutSchema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: 'Layout non valido', details: result.error.flatten() })
+    return
+  }
+
+  const updated = await prisma.restaurantSettings.upsert({
+    where: { restaurantId: tenantId(req) },
+    create: {
+      restaurantId: tenantId(req),
+      floorPlanLayout: result.data,
+    },
+    update: {
+      floorPlanLayout: result.data,
+    },
+    select: { floorPlanLayout: true },
+  })
+
+  io.to(tenantId(req)).emit('floor-layout:updated', result.data)
+  res.json(parseFloorPlanLayout(updated.floorPlanLayout))
+})
+
 tablesRouter.patch('/area', requirePermission('tables.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     oldName: z.string().nullable(),
@@ -150,7 +187,7 @@ tablesRouter.post('/', requirePermission('tables.manage'), async (req: AuthReque
     seats: z.number().int().positive().default(4),
     posX: z.number().default(0),
     posY: z.number().default(0),
-    shape: z.enum(['SQUARE', 'ROUND', 'RECTANGLE']).default('SQUARE'),
+    shape: z.enum(['SQUARE', 'ROUND', 'RECTANGLE', 'BAR_STOOL', 'BOOTH']).default('SQUARE'),
     area: z.string().optional(),
   })
   const result = schema.safeParse(req.body)
@@ -199,7 +236,7 @@ tablesRouter.put('/:id', requirePermission('tables.manage'), async (req: AuthReq
     seats: z.number().int().positive().optional(),
     posX: z.number().optional(),
     posY: z.number().optional(),
-    shape: z.enum(['SQUARE', 'ROUND', 'RECTANGLE']).optional(),
+    shape: z.enum(['SQUARE', 'ROUND', 'RECTANGLE', 'BAR_STOOL', 'BOOTH']).optional(),
     area: z.string().optional(),
   })
   const result = schema.safeParse(req.body)

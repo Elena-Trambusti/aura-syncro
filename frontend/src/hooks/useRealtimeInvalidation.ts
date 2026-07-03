@@ -27,6 +27,7 @@ export function useRealtimeTables(): void {
 
     const refresh = () => {
       queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'tables') })
+      queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'floor-layout') })
     }
 
     void ensureSocketConnected()

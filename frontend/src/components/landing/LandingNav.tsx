@@ -5,13 +5,11 @@ import { BRAND } from '../../lib/brand'
 import LanguageSwitcher from '../layout/LanguageSwitcher'
 import { useAuth } from '../../contexts/AuthContext'
 import { isDemoUserEmail } from '../../lib/demoAccounts'
-import DemoBookingModal from './DemoBookingModal'
-import { useState } from 'react'
+import RegisterLink from './RegisterLink'
 
 export default function LandingNav() {
   const { t } = useTranslation()
   const { user, isLoading } = useAuth()
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[#D4AF37]/10 bg-[#020202]/95 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_30px_rgba(0,0,0,0.55)] backdrop-blur-md">
@@ -42,17 +40,21 @@ export default function LandingNav() {
             </Link>
           ) : (
             <>
-              <button
-                onClick={() => setIsDemoModalOpen(true)}
-                className="hidden rounded-full bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] sm:inline-block"
+              <Link
+                to="/login"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
               >
-                Riserva una Demo Privata
-              </button>
+                {t('landing.nav.login')}
+              </Link>
+              <RegisterLink
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
+              >
+                {t('landing.nav.register')}
+              </RegisterLink>
             </>
           )}
         </div>
       </div>
-      <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </header>
   )
 }

@@ -10,6 +10,8 @@ import { formatApiError, apiErrorPayload } from '../lib/formatApiError'
 import OrderModal from '../components/orders/OrderModal'
 import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
+import type { FloorPlanLayoutV1 } from '../lib/floorPlanLayout'
+import { EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
 import AreaManagerModal from '../components/tables/AreaManagerModal'
 import { cn } from '../lib/utils'
@@ -160,6 +162,13 @@ export default function TablesPage() {
     queryFn: () => api.get<Table[]>('/tables').then(r => r.data),
     refetchInterval: socketConnected ? false : 15_000,
   })
+
+  const { data: floorLayoutData } = useQuery<FloorPlanLayoutV1>({
+    queryKey: tq(tk, 'floor-layout'),
+    queryFn: () => api.get<FloorPlanLayoutV1>('/tables/floor-layout').then(r => r.data),
+    staleTime: 60_000,
+  })
+  const floorLayout = floorLayoutData ?? EMPTY_FLOOR_PLAN_LAYOUT
   const showTablesSkeleton = useShowQuerySkeleton(isLoading, tablesData !== undefined)
   const tables = tablesData ?? []
 
@@ -542,6 +551,7 @@ export default function TablesPage() {
         <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
         <TableFloorPlan
           tables={floorPlanTables}
+          floorLayout={floorLayout}
           statusLabel={status => TABLE_STATUS_LABELS[status]}
           seatsLabel={n => `${n} ${t('common.seats')}`}
           onTableClick={handleTableClick}
@@ -645,6 +655,7 @@ export default function TablesPage() {
       {isEditorOpen && (
         <FloorPlanEditor
           tables={tables}
+          initialLayout={floorLayout}
           onClose={() => setIsEditorOpen(false)}
         />
       )}
