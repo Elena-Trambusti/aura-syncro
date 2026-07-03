@@ -195,17 +195,24 @@ function TableTile({
   const chairSize = 24
 
   const isHighlighted = isOccupied || isReserved
+  // Design Feedback: Effetto Glow Dinamico, Ombre a contatto marrone scuro
   const glowShadow = isHighlighted 
-    ? 'drop-shadow-[0_0_30px_rgba(212,175,55,0.7)] shadow-[0_0_40px_rgba(212,175,55,0.5)]' 
-    : 'shadow-[0_15px_30px_rgba(0,0,0,0.8)]'
+    ? 'drop-shadow-[0_0_20px_rgba(212,175,55,0.4)] shadow-[0_20px_30px_rgba(20,15,10,0.9)]' 
+    : 'shadow-[0_20px_40px_rgba(10,5,0,0.9)]'
 
-  const borderColor = isOccupied ? 'border-[#D4AF37]' : isCleaning ? 'border-[#3b82f6]' : 'border-[#8A6D23]'
+  const borderColor = isOccupied ? 'border-[#D4AF37]/80' : isCleaning ? 'border-[#3b82f6]/80' : 'border-[#8A6D23]/50'
 
-  const renderLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }, counterRotation: number) => (
-    <div 
-      className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom shadow-md" 
-      style={{ ...props, width: 2, height: chairZ, transform: `rotateX(-90deg) rotateY(${counterRotation}deg)` }} 
-    />
+  const renderLeg = (props: { left?: string; right?: string; top?: string; bottom?: string }) => (
+    <>
+      <div 
+        className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom" 
+        style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) rotateY(45deg)` }} 
+      />
+      <div 
+        className="absolute bg-gradient-to-t from-[#6e5006] to-[#D4AF37] origin-bottom" 
+        style={{ ...props, width: 3, height: chairZ, transform: `rotateX(-90deg) rotateY(-45deg)` }} 
+      />
+    </>
   )
 
   const renderChairs = () => {
@@ -232,10 +239,10 @@ function TableTile({
             }}
           >
             {/* Gambe della sedia */}
-            {renderLeg({ left: '10%', top: '10%' }, -(angle * 180 / Math.PI + 90))}
-            {renderLeg({ right: '10%', top: '10%' }, -(angle * 180 / Math.PI + 90))}
-            {renderLeg({ left: '10%', bottom: '10%' }, -(angle * 180 / Math.PI + 90))}
-            {renderLeg({ right: '10%', bottom: '10%' }, -(angle * 180 / Math.PI + 90))}
+            {renderLeg({ left: '10%', top: '10%' })}
+            {renderLeg({ right: '10%', top: '10%' })}
+            {renderLeg({ left: '10%', bottom: '10%' })}
+            {renderLeg({ right: '10%', bottom: '10%' })}
             
             {/* Seduta (Rettangolo Minimalista) */}
             <div 
@@ -269,10 +276,10 @@ function TableTile({
               style={{ left, top, width: chairSize, height: chairSize, transform: `translate(-50%, -50%) rotateZ(${rotation}deg)`, transformStyle: 'preserve-3d' }}
             >
               {/* Gambe della sedia */}
-              {renderLeg({ left: '10%', top: '10%' }, -rotation)}
-              {renderLeg({ right: '10%', top: '10%' }, -rotation)}
-              {renderLeg({ left: '10%', bottom: '10%' }, -rotation)}
-              {renderLeg({ right: '10%', bottom: '10%' }, -rotation)}
+              {renderLeg({ left: '10%', top: '10%' })}
+              {renderLeg({ right: '10%', top: '10%' })}
+              {renderLeg({ left: '10%', bottom: '10%' })}
+              {renderLeg({ right: '10%', bottom: '10%' })}
               
               {/* Seduta Minimalista */}
               <div className={cn("absolute inset-0 rounded-[6px] bg-[#121212] border border-[#D4AF37] shadow-xl")} style={{ transform: `translateZ(${chairZ}px)` }} />
@@ -295,9 +302,9 @@ function TableTile({
   return (
     <div 
       className={cn(
-        'absolute transition-all duration-500 outline-none group', 
+        'absolute transition-all duration-[600ms] ease-in-out outline-none group', 
         className,
-        !isDisabledInTransfer && 'cursor-pointer hover:scale-[1.05] hover:translate-z-[10px]',
+        !isDisabledInTransfer && 'cursor-pointer hover:-translate-y-2 hover:drop-shadow-[0_10px_20px_rgba(212,175,55,0.4)]',
         isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed'
       )} 
       style={{ 
@@ -336,18 +343,17 @@ function TableTile({
         <div className="absolute bg-gradient-to-t from-[#8B6508] to-[#D4AF37] origin-bottom" style={{ right: legOffset, bottom: legOffset, width: legWidth, height: tableZ, transform: `rotateX(-90deg) translateZ(0)`, boxShadow: '0 5px 15px rgba(0,0,0,0.8)' }} />
       </div>
 
-      {/* IL PIANO DEL TAVOLO (Marmo nero con bordo dorato) */}
+      {/* IL PIANO DEL TAVOLO (Marmo nero con bordo riflettente) */}
       <div 
         className={cn(
-          'pointer-events-none absolute inset-0 bg-[#121212] border-2 transition-all duration-500', 
+          'pointer-events-none absolute inset-0 bg-[#0a0a0a] border-[3px] transition-all duration-[600ms] ease-in-out', 
           shapeClasses,
           borderColor,
           glowShadow
         )} 
         style={{ 
           transform: `translateZ(${tableZ}px)`,
-          // Texture marmo scuro leggera
-          backgroundImage: 'radial-gradient(circle at 50% 50%, #1a1a1a 0%, #121212 100%)',
+          backgroundImage: 'radial-gradient(circle at 30% 30%, #151515 0%, #0a0a0a 100%), url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E")',
         }} 
       />
 
@@ -364,25 +370,28 @@ function TableTile({
           WebkitFontSmoothing: 'antialiased'
         }}
       >
-        <div className="flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-110">
+        <div className="flex flex-col items-center justify-center transition-transform duration-[600ms] ease-in-out group-hover:scale-110">
           
           {/* Luxury Typography Layout */}
           <div className="flex flex-col items-center justify-center">
             
             {/* Table Number */}
             <span className={cn(
-              "text-4xl font-black tracking-tighter leading-none mb-1",
+              "text-3xl font-light tracking-widest leading-none mb-1.5",
               isOccupied 
-                ? "text-white drop-shadow-[0_2px_10px_rgba(255,255,255,1)]" 
-                : "text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(212,175,55,1)]"
+                ? "text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]" 
+                : "text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(212,175,55,0.6)]"
             )}
-            style={{ fontFamily: 'var(--font-display), serif' }}
+            style={{ fontFamily: '"Inter", "Montserrat", sans-serif' }}
             >
-              T{table.number}
+              {table.name}
             </span>
             
             {/* PAX Indicator */}
-            <span className="text-[10px] font-bold text-white/90 bg-black/80 px-2 py-0.5 rounded border border-white/20 uppercase tracking-[0.25em] mb-2 shadow-lg">
+            <span 
+              className="text-[7px] font-light text-white/60 uppercase tracking-[0.3em] mb-2"
+              style={{ fontFamily: '"Inter", "Montserrat", sans-serif' }}
+            >
               {seatsLabel(table.seats)}
             </span>
 
