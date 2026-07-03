@@ -72,6 +72,7 @@ export default function StaffPage() {
   )
 
   const openAddMemberForm = () => {
+    setNewStaff({ name: '', email: '', password: '', role: 'WAITER', phone: '' })
     setActiveTab('team')
     setShowForm(true)
   }
@@ -263,14 +264,23 @@ export default function StaffPage() {
               <X className="h-5 w-5" />
             </button>
           </div>
-            <div className="space-y-4">
+            <form
+              autoComplete="off"
+              onSubmit={e => {
+                e.preventDefault()
+                if (canSubmitMember && !createStaff.isPending) createStaff.mutate(newStaff)
+              }}
+              className="space-y-4"
+            >
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formName')}
                 <input
                   type="text"
+                  name="staff-member-name"
                   value={newStaff.name}
                   onChange={e => setNewStaff(s => ({ ...s, name: e.target.value }))}
                   className="saas-input mt-1 w-full py-2.5 text-sm"
+                  autoComplete="off"
                   autoFocus
                 />
               </label>
@@ -278,19 +288,26 @@ export default function StaffPage() {
                 {t('staff.formEmail')}
                 <input
                   type="email"
+                  name="staff-member-email"
                   value={newStaff.email}
                   onChange={e => setNewStaff(s => ({ ...s, email: e.target.value }))}
                   className="saas-input mt-1 w-full py-2.5 text-sm"
+                  autoComplete="off"
+                  inputMode="email"
+                  placeholder="nome@ristorante.it"
                 />
               </label>
               <label className="block text-sm font-medium text-pietra">
                 {t('staff.formPassword')}
                 <input
                   type="password"
+                  name="staff-member-password"
                   value={newStaff.password}
                   onChange={e => setNewStaff(s => ({ ...s, password: e.target.value }))}
                   className="saas-input mt-1 w-full py-2.5 text-sm"
+                  autoComplete="new-password"
                   minLength={MIN_PASSWORD_LENGTH}
+                  placeholder="••••••••"
                 />
                 <span className="mt-1 block text-xs text-fumo">{t('staff.formPasswordHint', { min: MIN_PASSWORD_LENGTH })}</span>
               </label>
@@ -308,12 +325,13 @@ export default function StaffPage() {
                 {t('staff.formPhone')}
                 <input
                   type="tel"
+                  name="staff-member-phone"
                   value={newStaff.phone}
                   onChange={e => setNewStaff(s => ({ ...s, phone: e.target.value }))}
                   className="saas-input mt-1 w-full py-2.5 text-sm"
+                  autoComplete="off"
                 />
               </label>
-            </div>
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
@@ -323,8 +341,7 @@ export default function StaffPage() {
                 {t('common.cancel')}
               </button>
               <button
-                type="button"
-                onClick={() => createStaff.mutate(newStaff)}
+                type="submit"
                 disabled={createStaff.isPending || !canSubmitMember}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -332,6 +349,7 @@ export default function StaffPage() {
                 {t('staff.addMember')}
               </button>
             </div>
+            </form>
         </GlassModal>
       )}
       {editingMember && (

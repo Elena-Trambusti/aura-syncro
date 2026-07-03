@@ -66,6 +66,12 @@ function toDateInput(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+/** Chiave calendario YYYY-MM-DD nel fuso del ristorante (non nel browser). */
+function toDateKeyInTimezone(isoOrDate: string | Date, timeZone: string): string {
+  const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
+  return d.toLocaleDateString('en-CA', { timeZone })
+}
+
 interface StaffShiftsTabProps {
   staff: StaffMember[]
   onAddMember?: () => void
@@ -120,13 +126,18 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
       map.set(toDateInput(day), [])
     }
     for (const shift of shifts) {
-      const key = toDateInput(new Date(shift.date))
+      const key = toDateKeyInTimezone(shift.date, tenantTz)
       const existing = map.get(key) ?? []
       existing.push(shift)
       map.set(key, existing)
     }
     return map
-  }, [shifts, weekDays])
+  }, [shifts, weekDays, tenantTz])
+
+  const todayKey = useMemo(
+    () => toDateKeyInTimezone(new Date(), tenantTz),
+    [tenantTz],
+  )
 
   const openFormForDate = (dateStr: string) => {
     const defaultUserId = assignableStaff.length === 1 ? assignableStaff[0].id : ''
@@ -139,13 +150,18 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
   }
 
   const createShift = useMutation({
-    mutationFn: () => api.post('/staff/shifts', {
-      userId: form.userId,
-      date: new Date(`${form.date}T12:00:00`).toISOString(),
-      startTime: form.startTime,
-      endTime: form.endTime,
-      notes: form.notes || undefined,
-    }),
+    mutationFn: () => {
+      if (form.startTime >= form.endTime) {
+        return Promise.reject({ response: { data: { code: 'SHIFT_INVALID_TIME' } } })
+      }
+      return api.post('/staff/shifts', {
+        userId: form.userId,
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        notes: form.notes || undefined,
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'staff-shifts') })
       setShowForm(false)
@@ -256,7 +272,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
           {weekDays.map(day => {
             const key = toDateInput(day)
             const dayShifts = shiftsByDay.get(key) ?? []
-            const isToday = key === toDateInput(new Date())
+            const isToday = key === todayKey
             const isEmpty = dayShifts.length === 0
 
             return (
@@ -430,7 +446,7 @@ export default function StaffShiftsTab({ staff, onAddMember }: StaffShiftsTabPro
               <button
                 type="button"
                 onClick={() => createShift.mutate()}
-                disabled={createShift.isPending || !form.userId}
+                disabled={createShift.isPending || !form.userId || form.startTime >= form.endTime}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {createShift.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

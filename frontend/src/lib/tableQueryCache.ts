@@ -31,6 +31,7 @@ export type TableSocketPatch = {
 }
 
 function tablesKey(tenantKey: string | undefined) {
+  if (!tenantKey) return null
   return tq(tenantKey, 'tables')
 }
 
@@ -38,7 +39,9 @@ export function snapshotTablesCache(
   queryClient: QueryClient,
   tenantKey: string | undefined,
 ): CachedTableRow[] | undefined {
-  return queryClient.getQueryData<CachedTableRow[]>(tablesKey(tenantKey))
+  const key = tablesKey(tenantKey)
+  if (!key) return undefined
+  return queryClient.getQueryData<CachedTableRow[]>(key)
 }
 
 export function restoreTablesCache(
@@ -46,8 +49,9 @@ export function restoreTablesCache(
   tenantKey: string | undefined,
   snapshot: CachedTableRow[] | undefined,
 ) {
-  if (snapshot) {
-    queryClient.setQueryData(tablesKey(tenantKey), snapshot)
+  const key = tablesKey(tenantKey)
+  if (snapshot && key) {
+    queryClient.setQueryData(key, snapshot)
   }
 }
 
@@ -56,7 +60,9 @@ function writeTables(
   tenantKey: string | undefined,
   next: CachedTableRow[],
 ) {
-  queryClient.setQueryData(tablesKey(tenantKey), next)
+  const key = tablesKey(tenantKey)
+  if (!key) return
+  queryClient.setQueryData(key, next)
 }
 
 /** Segna il tavolo come "da pulire" subito dopo l'incasso. */
