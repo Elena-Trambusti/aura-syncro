@@ -42,7 +42,8 @@ export const pwaManifest = {
 }
 
 export const pwaIncludeAssets = [
-  'favicon.svg',
+  'favicon.png',
+  'favicon.ico',
   ...STANDARD_SIZES.map(s => `pwa/icon-${s}.png`),
   ...MASKABLE_SIZES.map(s => `pwa/maskable-${s}.png`),
   'pwa/apple-touch-icon.png',

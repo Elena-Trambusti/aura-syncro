@@ -8,9 +8,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const brandDir = join(__dirname, '..', 'public', 'brand')
-const input = process.argv[2] ?? join(brandDir, 'aura-syncro-logo-tally.png')
-const output = process.argv[3] ?? join(brandDir, 'aura-syncro-logo-tally.png')
+const publicDir = join(__dirname, '..', 'public')
+const input = process.argv[2] ?? join(publicDir, 'favicon.png')
+const output = process.argv[3] ?? join(publicDir, 'favicon.png')
 
 const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
 const { width, height, channels } = info
@@ -55,7 +55,7 @@ while (queue.length > 0) {
   queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1])
 }
 
-const tmp = join(brandDir, '_tally-transparent.png')
+const tmp = join(publicDir, '_favicon-transparent.png')
 await sharp(data, { raw: { width, height, channels } }).png().toFile(tmp)
 
 try {

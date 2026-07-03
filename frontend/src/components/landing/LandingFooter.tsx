@@ -6,7 +6,6 @@ import BrandLogo from '../brand/BrandLogo'
 import { formatIssuerFooterLine } from '../../config/fiscal'
 import { LEGAL_URLS } from '../../config/legal'
 import { SITE_SOCIAL } from '../../lib/siteUrl'
-import { LandingSectionDecor } from './landingLuxury'
 
 export default function LandingFooter() {
   const { t } = useTranslation()
@@ -14,13 +13,13 @@ export default function LandingFooter() {
 
   return (
     <footer
-      className="relative overflow-hidden border-t border-[#D4AF37]/10 px-6 py-14 sm:px-8"
+      className="relative overflow-hidden border-t border-[#D4AF37]/5 bg-[#020201]/96 px-6 py-14 sm:px-8"
       itemScope
       itemType="https://schema.org/Organization"
     >
       <meta itemProp="name" content={BRAND.name} />
       <link itemProp="url" href="https://www.aurasyncro.com/" />
-      <LandingSectionDecor />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/12 to-transparent" />
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">

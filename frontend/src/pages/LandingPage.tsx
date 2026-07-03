@@ -35,28 +35,33 @@ export default function LandingPage() {
     document.getElementById('static-landing-fcp')?.remove()
   }, [])
 
+  useEffect(() => {
+    const root = document.getElementById('root')
+    document.documentElement.classList.add('is-landing')
+    root?.classList.add('is-landing')
+    return () => {
+      document.documentElement.classList.remove('is-landing')
+      root?.classList.remove('is-landing')
+    }
+  }, [])
+
   return (
-    <div lang={i18n.language} className="min-h-[100dvh] flex flex-col relative lux-text selection:bg-aura-gold/30 bg-[#020202] overflow-x-hidden">
-      <div className="fixed inset-0 z-[-4] bg-black" />
+    <div lang={i18n.language} className="landing-page relative flex min-h-[100dvh] flex-col overflow-x-hidden lux-text selection:bg-aura-gold/30">
+      <div className="aura-marble-bg--landing" aria-hidden>
+        <img
+          src="/assets/marble-bg.png"
+          alt=""
+          className="landing-page__marble"
+          draggable={false}
+          fetchPriority="high"
+        />
+        <div className="landing-page__overlay" />
+        <div className="landing-page__grain" />
+      </div>
 
-      <div className="pointer-events-none fixed top-[-10%] left-[-10%] hidden h-[50vw] w-[50vw] rounded-full bg-aura-gold/20 blur-[120px] md:block motion-safe:md:animate-[float_15s_ease-in-out_infinite]" />
-      <div className="pointer-events-none fixed right-[-10%] bottom-[-10%] hidden h-[40vw] w-[40vw] rounded-full bg-amber-600/15 blur-[120px] md:block motion-safe:md:animate-[float_20s_ease-in-out_infinite_reverse]" />
-
-      <div className="fixed inset-0 z-[-3] pointer-events-none bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(212,175,55,0.15),rgba(0,0,0,0))]" />
-
-      <div
-        className="fixed inset-0 z-[-2] pointer-events-none opacity-[0.12]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-          backgroundSize: '80px 80px',
-          maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 80%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, black 20%, transparent 80%)',
-        }}
-      />
       <LandingNav />
       <LuxuryGoldGradientDefs />
-      <main className="flex-1">
+      <main className="relative z-10 flex-1">
         <LandingHero />
         <Suspense fallback={null}>
           <LandingBelowFold />

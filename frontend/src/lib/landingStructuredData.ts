@@ -1,4 +1,4 @@
-import { BRAND_LOGO_PATH } from './brand'
+import { BRAND_LOGO_PATH, BRAND_LOGO_VERSION } from './brand'
 import { LEGAL_ENTITY } from '../config/legal'
 import { SITE_ORIGIN, SITE_SOCIAL } from './siteUrl'
 
@@ -29,7 +29,7 @@ export function injectLandingStructuredData(
         '@id': `${SITE_ORIGIN}/#organization`,
         name: 'Aura Syncro',
         url: `${SITE_ORIGIN}/`,
-        logo: `${SITE_ORIGIN}${BRAND_LOGO_PATH}`,
+        logo: `${SITE_ORIGIN}${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`,
         email: LEGAL_ENTITY.email,
         ...(sameAs.length > 0 ? { sameAs } : {}),
         contactPoint: {

@@ -1,9 +1,9 @@
 /** URL canonico del sito marketing — sempre con www. */
-import { BRAND_LOGO_PATH, BRAND_LOGO_VERSION } from './brand'
+import { BRAND_LOGO_VERSION, BRAND_OG_IMAGE_PATH } from './brand'
 
 export const SITE_ORIGIN = 'https://www.aurasyncro.com'
 
-export const OG_IMAGE_URL = `${SITE_ORIGIN}${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
+export const OG_IMAGE_URL = `${SITE_ORIGIN}${BRAND_OG_IMAGE_PATH}?v=${BRAND_LOGO_VERSION}`
 
 /** Profili social pubblici — compilare quando disponibili (migliora SEO social). */
 export const SITE_SOCIAL = {

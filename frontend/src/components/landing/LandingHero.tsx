@@ -11,7 +11,7 @@ export default function LandingHero() {
 
   return (
     <section
-      className="relative overflow-hidden bg-transparent px-4 pb-20 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-28 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))]"
+      className="relative overflow-hidden bg-transparent px-4 pb-24 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-32 sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px))]"
       itemScope
       itemType="https://schema.org/SoftwareApplication"
     >
@@ -19,48 +19,34 @@ export default function LandingHero() {
       <link itemProp="url" href="https://www.aurasyncro.com/" />
       <meta itemProp="applicationCategory" content="BusinessApplication" />
       <meta itemProp="operatingSystem" content="Web" />
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
-        <div className="absolute -top-32 -left-20 hidden h-[600px] w-[600px] rounded-full bg-amber-500/20 blur-[120px] md:block" />
-        <div className="absolute top-1/4 -right-32 hidden h-[700px] w-[700px] rounded-full bg-orange-500/15 blur-[140px] lg:block" />
-      </div>
 
-      <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
-        <div>
-          <div
-            className="lux-hero-badge motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
-          >
-            <span className="lux-hero-badge__icon" aria-hidden>
-              <img src={BRAND_LOGO_SRC} alt="" className="h-3.5 w-3.5 object-contain" />
-            </span>
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="lux-hero-copy text-center lg:text-left">
+          <div className="lux-hero-badge motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_both]">
+            <img
+              src={BRAND_LOGO_SRC}
+              alt=""
+              className="lux-hero-badge__logo"
+              aria-hidden
+            />
             <span className="lux-hero-badge__text">{t('landing.hero.badge')}</span>
           </div>
-          <h1 
-            className="lux-heading text-[#C5A059] text-4xl font-display font-medium tracking-tight sm:text-5xl lg:text-7xl lg:leading-[1.1] drop-shadow-2xl"
-          >
+
+          <h1 className="lux-heading lux-hero-title mt-8 text-4xl sm:text-5xl lg:text-[4.25rem] xl:text-7xl">
             {t('landing.hero.headline')}
           </h1>
+
+          <div className="lux-hero-rule mx-auto lg:mx-0" aria-hidden />
+
           <p
             itemProp="description"
-            className="mt-6 max-w-xl text-base font-light leading-relaxed text-[#F0E6D2] sm:text-lg"
+            className="lux-hero-sub mx-auto mt-7 max-w-lg text-base sm:text-lg lg:mx-0 lg:max-w-xl"
           >
             {t('landing.hero.subheadline')}
           </p>
-          <div 
-            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both]"
-          >
-            <button
-              onClick={() => setIsDemoModalOpen(true)}
-              className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-neutral-950/90 backdrop-blur-md border border-[#C5A059]/40 px-8 py-4 text-[#C5A059] font-medium tracking-widest uppercase text-sm transition-all duration-300 hover:border-[#C5A059] hover:shadow-[0_0_15px_rgba(197,160,89,0.2)] w-full sm:w-auto"
-            >
-              {t('landing.hero.ctaDemoPrivate')}
-              <AuraIcon icon={ArrowRight} size="md" className="group-hover:translate-x-1 transition-all duration-300" />
-            </button>
-          </div>
         </div>
 
-        <div
-          className="lux-hero-preview group relative hidden pt-10 lg:block lg:pt-0 motion-reduce:animate-none motion-safe:animate-[reveal-slide_0.9s_cubic-bezier(0.16,1,0.3,1)_200ms_both]"
-        >
+        <div className="lux-hero-preview group relative hidden pt-10 lg:block lg:pt-0 motion-reduce:animate-none motion-safe:animate-[reveal-slide_0.9s_cubic-bezier(0.16,1,0.3,1)_200ms_both]">
           <div className="lux-hero-preview__halo" aria-hidden />
           <div className="lux-hero-preview__shell">
             <div className="lux-hero-preview__ring" aria-hidden />
@@ -105,6 +91,18 @@ export default function LandingHero() {
           </div>
         </div>
       </div>
+
+      <div className="mx-auto mt-11 flex max-w-6xl justify-center px-4 motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both] sm:px-6">
+        <button
+          type="button"
+          onClick={() => setIsDemoModalOpen(true)}
+          className="lux-hero-cta group"
+        >
+          {t('landing.hero.ctaDemoPrivate')}
+          <AuraIcon icon={ArrowRight} size="md" className="transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
+      </div>
+
       <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </section>
   )

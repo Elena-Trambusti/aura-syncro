@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const publicDir = join(root, 'public')
-const logoPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.png')
+const logoPath = join(publicDir, 'favicon.png')
 const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
 
@@ -26,11 +26,11 @@ const BRAND_NAVY = '#030712'
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
 
-const svg = await readFile(logoPath)
+const logoBuffer = await readFile(logoPath)
 
 /** Icona standard — logo a pieno canvas (purpose: any) */
 async function writeStandardIcon(size) {
-  await sharp(svg).resize(size, size).png().toFile(join(outDir, `icon-${size}.png`))
+  await sharp(logoBuffer).resize(size, size).png().toFile(join(outDir, `icon-${size}.png`))
   console.log(`  icon-${size}.png`)
 }
 
@@ -39,13 +39,13 @@ async function writeStandardIcon(size) {
  * @see https://w3c.github.io/manifest/#icon-masks
  */
 async function writeMaskableIcon(size) {
-  await sharp(svg).resize(size, size).png().toFile(join(outDir, `maskable-${size}.png`))
+  await sharp(logoBuffer).resize(size, size).png().toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
 /** Adaptive Android: foreground (logo su trasparente) + background (tinta piena) */
 async function writeAdaptivePair(size, densityName) {
-  const logo = await sharp(svg).resize(size, size).png().toBuffer()
+  const logo = await sharp(logoBuffer).resize(size, size).png().toBuffer()
 
   await sharp(logo)
     .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
@@ -73,7 +73,7 @@ for (const size of MASKABLE_SIZES) {
 /** iOS home screen — 180×180 con zona sicura */
 {
   const size = 180
-  const logo = await sharp(svg).resize(size, size).png().toBuffer()
+  const logo = await sharp(logoBuffer).resize(size, size).png().toBuffer()
   await sharp(logo).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
 }
@@ -111,43 +111,40 @@ function createIcoFromPngBuffers(images) {
   return Buffer.concat([header, ...entries, ...bodies])
 }
 
-console.log('Generating favicon.ico + favicon.png…')
+console.log('Generating favicon.ico…')
 const faviconSizes = [16, 32, 48]
 const faviconPngs = []
 for (const size of faviconSizes) {
-  const png = await sharp(svg).resize(size, size).png().toBuffer()
+  const png = await sharp(logoBuffer).resize(size, size).png().toBuffer()
   faviconPngs.push({ width: size, height: size, png })
 }
 await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
-console.log('  favicon.ico')
-
-await sharp(svg).resize(192, 192).png().toFile(join(publicDir, 'favicon.png'))
-console.log('  favicon.png')
+console.log('  favicon.ico (source: favicon.png — non sovrascritto)')
 
 console.log('Generating og-image.jpg…')
 const ogWidth = 1200
 const ogHeight = 630
-const ogBg = '#FAFAF9'
+const ogBg = '#020201'
 
-const tallyMeta = await sharp(logoPath).metadata()
-const tallyAspect = (tallyMeta.width ?? 1200) / (tallyMeta.height ?? 320)
-const maxLogoWidth = Math.round(ogWidth * 0.7)
-const maxLogoHeight = Math.round(ogHeight * 0.55)
+const logoMeta = await sharp(logoPath).metadata()
+const logoAspect = (logoMeta.width ?? 1) / (logoMeta.height ?? 1)
+const maxLogoWidth = Math.round(ogWidth * 0.42)
+const maxLogoHeight = Math.round(ogHeight * 0.72)
 let logoWidth = maxLogoWidth
-let logoHeight = Math.round(logoWidth / tallyAspect)
+let logoHeight = Math.round(logoWidth / logoAspect)
 if (logoHeight > maxLogoHeight) {
   logoHeight = maxLogoHeight
-  logoWidth = Math.round(logoHeight * tallyAspect)
+  logoWidth = Math.round(logoHeight * logoAspect)
 }
 
-const logoBuffer = await sharp(logoPath).resize(logoWidth, logoHeight).png().toBuffer()
+const ogLogoBuffer = await sharp(logoPath).resize(logoWidth, logoHeight).png().toBuffer()
 
 await sharp({
   create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },
 })
   .composite([
     {
-      input: logoBuffer,
+      input: ogLogoBuffer,
       top: Math.round((ogHeight - logoHeight) / 2),
       left: Math.round((ogWidth - logoWidth) / 2),
     },

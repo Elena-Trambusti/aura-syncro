@@ -80,10 +80,11 @@
 
   /* Landing — tipografia luxury (no bianco puro) */
   .lux-heading {
-    background: linear-gradient(180deg, #F7E7CE 0%, #E8C872 45%, #C5A059 100%);
+    background: linear-gradient(165deg, #FFF9ED 0%, #F7E7CE 28%, #E8C872 58%, #C5A059 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    text-shadow: none;
   }
 
   .lux-text {
@@ -122,40 +123,30 @@
   }
 
   .lux-hero-badge {
-    @apply mb-6 inline-flex items-center gap-3 rounded-full px-4 py-2 sm:px-5 sm:py-2.5;
-    border: 1px solid rgba(212, 175, 55, 0.38);
-    background:
-      linear-gradient(135deg, rgba(26, 20, 8, 0.95) 0%, rgba(8, 6, 4, 0.98) 100%);
+    @apply mb-0 inline-flex items-center gap-3 rounded-full px-4 py-2 sm:px-5 sm:py-2.5;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    background: linear-gradient(135deg, rgba(12, 10, 8, 0.88) 0%, rgba(4, 4, 4, 0.92) 100%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 0 28px rgba(212, 175, 55, 0.12),
-      0 8px 24px rgba(0, 0, 0, 0.45);
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 20px rgba(0, 0, 0, 0.35);
   }
 
-  .lux-hero-badge__icon {
-    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full;
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    background:
-      radial-gradient(circle at 32% 28%, rgba(232, 200, 114, 0.28) 0%, transparent 55%),
-      linear-gradient(160deg, rgba(15, 12, 8, 0.98) 0%, rgba(5, 5, 5, 1) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 0 16px rgba(212, 175, 55, 0.15);
+  .lux-hero-badge__logo {
+    @apply h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11;
   }
 
   .lux-hero-badge__text {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: #E8C872;
-    text-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+    color: rgba(232, 200, 114, 0.88);
   }
 
   @media (min-width: 640px) {
     .lux-hero-badge__text {
-      font-size: 0.8125rem;
-      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      letter-spacing: 0.24em;
     }
   }
 
@@ -191,9 +182,8 @@
     position: absolute;
     inset: -18px;
     border-radius: 2.75rem;
-    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.22) 0%, transparent 68%);
-    opacity: 0.7;
-    animation: lux-frame-pulse 3.8s ease-in-out infinite;
+    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.12) 0%, transparent 68%);
+    opacity: 0.5;
     pointer-events: none;
   }
 
@@ -225,10 +215,12 @@
     position: relative;
     z-index: 1;
     border-radius: 2.5rem;
-    border: 1px solid rgba(212, 175, 55, 0.38);
-    background: linear-gradient(165deg, rgba(26, 20, 8, 0.92) 0%, rgba(8, 6, 4, 0.98) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    background: linear-gradient(165deg, rgba(18, 14, 10, 0.94) 0%, rgba(6, 5, 4, 0.98) 100%);
     padding: 1.5rem;
-    animation: lux-frame-pulse 3.8s ease-in-out infinite;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 24px 64px rgba(0, 0, 0, 0.55);
     transition:
       transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
       box-shadow 0.75s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1028,6 +1020,136 @@
     background-size: cover, cover;
     background-position: center, center;
     background-blend-mode: normal, lighten;
+  }
+
+  .aura-marble-bg--landing {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .landing-page__marble {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    transform: scale(1.06);
+    filter: brightness(0.48) contrast(1.08) saturate(0.72);
+  }
+
+  .landing-page__overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 18%, rgba(212, 175, 55, 0.07) 0%, transparent 62%),
+      radial-gradient(ellipse 130% 90% at 50% 50%, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.78) 100%),
+      linear-gradient(180deg, rgba(2, 2, 2, 0.72) 0%, rgba(2, 2, 2, 0.28) 38%, rgba(2, 2, 2, 0.82) 100%);
+    pointer-events: none;
+  }
+
+  .landing-page__grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 180px 180px;
+  }
+
+  .landing-nav {
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    background: linear-gradient(180deg, rgba(2, 2, 2, 0.88) 0%, rgba(2, 2, 2, 0.62) 100%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 32px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .landing-nav__line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.35) 50%, transparent 100%);
+  }
+
+  .lux-hero-copy {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .lux-hero-copy::before {
+    content: '';
+    position: absolute;
+    inset: -2.5rem -1.5rem;
+    z-index: -1;
+    border-radius: 1.75rem;
+    background:
+      radial-gradient(ellipse 95% 85% at 18% 42%, rgba(0, 0, 0, 0.82) 0%, transparent 72%),
+      linear-gradient(165deg, rgba(8, 6, 4, 0.55) 0%, rgba(2, 2, 2, 0.2) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.06);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .lux-hero-copy::before {
+      inset: -3rem -2.5rem -3rem -2rem;
+      border-radius: 2rem;
+    }
+  }
+
+  .lux-hero-title {
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+
+  .lux-hero-sub {
+    color: rgba(240, 230, 210, 0.82);
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.75;
+  }
+
+  .lux-hero-rule {
+    width: 3.5rem;
+    height: 1px;
+    margin-top: 1.75rem;
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.75) 0%, rgba(212, 175, 55, 0.15) 100%);
+  }
+
+  .lux-hero-cta {
+    @apply inline-flex items-center justify-center gap-3 overflow-hidden rounded-full px-9 py-4 text-xs font-medium uppercase;
+    letter-spacing: 0.16em;
+    color: #E8C872;
+    background: rgba(6, 5, 4, 0.82);
+    border: 1px solid rgba(212, 175, 55, 0.38);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease, border-color 0.45s ease, color 0.45s ease;
+  }
+
+  .lux-hero-cta:hover {
+    transform: translateY(-2px);
+    color: #F7E7CE;
+    border-color: rgba(232, 200, 114, 0.62);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 0 24px rgba(212, 175, 55, 0.14),
+      0 12px 40px rgba(0, 0, 0, 0.48);
+  }
+
+  html.is-landing,
+  html.is-landing body,
+  #root.is-landing {
+    background: transparent !important;
+    background-image: none !important;
   }
 
   .premium-sidebar {
