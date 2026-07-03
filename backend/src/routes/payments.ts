@@ -311,6 +311,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     const responseBody = {
       transactionId: result.transactionId,
       order: updatedOrder,
+      table: result.updatedTable,
       fiscal: {
         row: result.fiscalRow,
       },

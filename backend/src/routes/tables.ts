@@ -325,17 +325,15 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
     }
   }
 
-  const updated = await prisma.table.updateMany({
-    where: scopedWhere(req, req.params.id),
+  const updated = await prisma.table.update({
+    where: { id: req.params.id, restaurantId: tenantId(req) },
     data: { status },
   })
-  if (updated.count === 0) {
-    tenantNotFound(res, 'Tavolo non trovato')
-    return
-  }
-  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
-  io.to(tenantId(req)).emit('table:updated', table)
-  res.json(table)
+
+  res.json(updated)
+  setImmediate(() => {
+    io.to(tenantId(req)).emit('table:updated', updated)
+  })
 })
 
 tablesRouter.get('/:number/qr-token', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -376,11 +374,13 @@ tablesRouter.post(
         result.data.targetTableId,
       )
 
-      io.to(tenantId(req)).emit('table:updated', moved.sourceTable)
-      io.to(tenantId(req)).emit('table:updated', moved.targetTable)
-      io.to(tenantId(req)).emit('order:updated', moved.order)
-
       res.json(moved)
+      setImmediate(() => {
+        const rid = tenantId(req)
+        io.to(rid).emit('table:updated', moved.sourceTable)
+        io.to(rid).emit('table:updated', moved.targetTable)
+        io.to(rid).emit('order:updated', moved.order)
+      })
       return
     } catch (err) {
       const code = (err as { code?: string }).code

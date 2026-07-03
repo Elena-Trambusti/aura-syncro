@@ -25,6 +25,20 @@ function paymentFailureKey(orderId: string): string {
   return `payment:failure:${orderId}`
 }
 
+/** Socket post-incasso — non blocca la risposta HTTP. */
+function schedulePaymentRealtimeEmit(
+  restaurantId: string,
+  updatedTable: { id: string; number: number; status: string } | null | undefined,
+  updatedOrder: unknown,
+): void {
+  setImmediate(() => {
+    if (updatedTable) {
+      io.to(restaurantId).emit('table:updated', updatedTable)
+    }
+    io.to(restaurantId).emit('order:updated', updatedOrder)
+  })
+}
+
 export async function completeOrderPayment(input: {
   finalize: FinalizePaymentInput
   splitBreakdown?: SplitBreakdown
@@ -116,10 +130,7 @@ export async function completeOrderPayment(input: {
           input.stripePaymentIntentId,
         )
 
-        if (result.updatedTable) {
-          io.to(input.finalize.restaurantId).emit('table:updated', result.updatedTable)
-        }
-        io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+        schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
         schedulePaymentSideEffects({
           orderId: input.finalize.orderId,
@@ -170,10 +181,7 @@ export async function completeOrderPayment(input: {
 
     const { updatedOrder } = result
 
-    if (result.updatedTable) {
-      io.to(input.finalize.restaurantId).emit('table:updated', result.updatedTable)
-    }
-    io.to(input.finalize.restaurantId).emit('order:updated', updatedOrder)
+    schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
     schedulePaymentSideEffects({
       orderId: input.finalize.orderId,

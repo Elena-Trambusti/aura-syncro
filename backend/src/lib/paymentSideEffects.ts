@@ -2,7 +2,7 @@ import { io } from '../index'
 import { prisma } from './prisma'
 import { occupyTableForSessionOrder, releaseTableIfSessionComplete } from './orderSession'
 import { applyPostPaymentEffects } from './postPayment'
-import { issueInvoiceForOrder } from './fiscalInvoice'
+import { snapshotOrderBillingFromCustomer, issueInvoiceForOrder } from './fiscalInvoice'
 import { scheduleArubaInvoiceSubmission } from './arubaSaleAsync'
 import { deductInventoryForOrderBatched } from './inventoryDeduction'
 import { runOrderTransaction } from './prismaTransactions'
@@ -51,6 +51,13 @@ export async function runPaymentSideEffects(input: PaymentSideEffectsInput): Pro
 
   let invoiceId: string | null = null
   await runOrderTransaction(async tx => {
+    const orderRow = await tx.order.findUnique({
+      where: { id: orderId },
+      select: { customerId: true },
+    })
+    if (orderRow?.customerId) {
+      await snapshotOrderBillingFromCustomer(tx, orderId, orderRow.customerId)
+    }
     const invoice = await issueInvoiceForOrder(tx, orderId, restaurantId, paidAt)
     invoiceId = invoice.id
     await deductInventoryForOrderBatched(tx, orderId, restaurantId)

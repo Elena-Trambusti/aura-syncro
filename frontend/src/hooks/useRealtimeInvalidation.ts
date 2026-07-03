@@ -1,21 +1,23 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSocket, ensureSocketConnected } from '../lib/socket'
+import { ensureSocketConnected } from '../lib/socket'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
+import {
+  patchTableFromOrderEvent,
+  patchTableInQueryCache,
+  type TableSocketPatch,
+} from '../lib/tableQueryCache'
 
-const TABLE_EVENTS = [
-  'table:updated',
+const TABLE_ONLY_EVENTS = [
   'tables:updated',
   'table:created',
   'table:deleted',
   'table:position_changed',
-  'order:created',
-  'order:updated',
 ] as const
 
 /**
- * Keeps the tables query in sync via Socket.IO (replaces polling).
+ * Mantiene la query tavoli allineata via Socket.IO (sostituisce il polling).
  */
 export function useRealtimeTables(): void {
   const queryClient = useQueryClient()
@@ -23,27 +25,49 @@ export function useRealtimeTables(): void {
 
   useEffect(() => {
     let cancelled = false
-    let socket: Awaited<ReturnType<typeof getSocket>> | null = null
+    let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
 
     const refresh = () => {
-      queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'tables') })
-      queryClient.invalidateQueries({ queryKey: tq(tenantKey, 'floor-layout') })
+      void queryClient.invalidateQueries({
+        queryKey: tq(tenantKey, 'tables'),
+        refetchType: 'active',
+      })
+      void queryClient.invalidateQueries({
+        queryKey: tq(tenantKey, 'floor-layout'),
+        refetchType: 'active',
+      })
+    }
+
+    const onTableUpdated = (payload: TableSocketPatch) => {
+      const patched = patchTableInQueryCache(queryClient, tenantKey, payload)
+      if (!patched) refresh()
+    }
+
+    const onOrderEvent = (order: Parameters<typeof patchTableFromOrderEvent>[2]) => {
+      const patched = patchTableFromOrderEvent(queryClient, tenantKey, order)
+      if (!patched) refresh()
     }
 
     void ensureSocketConnected()
       .then((s) => {
         if (cancelled) return
         socket = s
-        for (const event of TABLE_EVENTS) {
+        s.on('table:updated', onTableUpdated)
+        s.on('order:created', onOrderEvent)
+        s.on('order:updated', onOrderEvent)
+        for (const event of TABLE_ONLY_EVENTS) {
           s.on(event, refresh)
         }
       })
-      .catch(() => { /* polling fallback via React Query */ })
+      .catch(() => { /* fallback polling React Query */ })
 
     return () => {
       cancelled = true
       if (!socket) return
-      for (const event of TABLE_EVENTS) {
+      socket.off('table:updated', onTableUpdated)
+      socket.off('order:created', onOrderEvent)
+      socket.off('order:updated', onOrderEvent)
+      for (const event of TABLE_ONLY_EVENTS) {
         socket.off(event, refresh)
       }
     }
@@ -75,11 +99,11 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
 
   useEffect(() => {
     let cancelled = false
-    let socket: Awaited<ReturnType<typeof getSocket>> | null = null
+    let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
     const eventList = eventsKey.split('|').filter(Boolean)
 
     const refresh = () => {
-      queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
+      void queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
     }
 
     void ensureSocketConnected()
@@ -90,7 +114,7 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
           s.on(event, refresh)
         }
       })
-      .catch(() => { /* polling fallback via React Query */ })
+      .catch(() => { /* fallback polling React Query */ })
 
     return () => {
       cancelled = true

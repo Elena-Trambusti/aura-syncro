@@ -24,6 +24,12 @@ import {
 } from '../lib/paymentErrors'
 import { resolveToastApiError } from '../lib/formatApiError'
 import {
+  markTableCleaningAfterPayment,
+  patchTableInQueryCache,
+  type CachedTableRow,
+  type TableStatus,
+} from '../lib/tableQueryCache'
+import {
   isSplitGuestPaid,
   nextUnpaidSplitGuest,
   splitProgressLabel,
@@ -51,6 +57,13 @@ type CheckoutPagePosStatus = {
   mode: string
   usesExternalFiscalDevice?: boolean
   isCardChargeSimulated?: boolean
+}
+
+function shouldReleaseTableOnFinalize(
+  splitUsesIncrementalCash: boolean,
+  splitGuestIndex?: number,
+): boolean {
+  return !(splitUsesIncrementalCash && splitGuestIndex != null)
 }
 
 function usesCardSettlement(method: PaymentMethod, splitSettlement: 'CARD' | 'CASH'): boolean {
@@ -361,17 +374,37 @@ export default function CheckoutPage() {
       throw lastErr
     },
     onMutate: (splitGuestIndex) => {
+      let previousTables: CachedTableRow[] | undefined
+      if (orderId && shouldReleaseTableOnFinalize(splitUsesIncrementalCash, splitGuestIndex)) {
+        previousTables = markTableCleaningAfterPayment(queryClient, tk, orderId)
+      }
+
       if (!canOptimisticallyComplete(splitGuestIndex)) {
-        return { optimistic: false as const }
+        return { optimistic: false as const, previousTables }
       }
       return {
         optimistic: true as const,
         previousReceipt: optimisticReceiptRef.current ?? finalizeResult,
+        previousTables,
       }
     },
-    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number }, _splitGuestIndex, context) => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
+    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number; table?: { id: string; number: number; status: string } | null }, _splitGuestIndex, context) => {
+      if (!result.partial && orderId) {
+        if (result.table?.id && result.table.status) {
+          patchTableInQueryCache(queryClient, tk, {
+            id: result.table.id,
+            status: result.table.status as TableStatus,
+            number: result.table.number,
+            orders: [],
+          })
+        } else if (shouldReleaseTableOnFinalize(splitUsesIncrementalCash, _splitGuestIndex)) {
+          markTableCleaningAfterPayment(queryClient, tk, orderId)
+        }
+      } else if (result.partial) {
+        void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'active' })
+      }
+
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reports', 'fiscal') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
@@ -395,6 +428,9 @@ export default function CheckoutPage() {
       )
     },
     onError: async (err: { response?: { data?: { error?: string; code?: string } }; message?: string }, _splitGuestIndex, context) => {
+      if (context?.previousTables) {
+        queryClient.setQueryData(tq(tk, 'tables'), context.previousTables)
+      }
       if (context?.optimistic) {
         setFinalizeResult(context.previousReceipt ?? null)
         optimisticReceiptRef.current = null

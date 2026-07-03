@@ -17,7 +17,7 @@ export default function LandingNav() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="relative z-10 flex min-w-0 max-w-[calc(100%-3.5rem)] items-center gap-2 sm:max-w-none sm:gap-2.5"
+          className="relative z-10 flex min-w-0 max-w-[38%] items-center gap-2 sm:max-w-none sm:gap-2.5"
         >
           <BrandLogo size="sm" className="mx-0 shrink-0 shadow-sm" priority />
           <span className="truncate font-display text-sm font-medium tracking-tight text-[#F0E6D2] sm:text-base">
@@ -27,27 +27,27 @@ export default function LandingNav() {
         <nav className="hidden items-center gap-6 text-sm font-medium text-[#F0E6D2] md:flex">
           {/* Nav links rimossi per focalizzare sulla CTA */}
         </nav>
-        <div className="relative z-10 flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="relative z-10 flex shrink-0 items-center gap-1.5 sm:gap-3">
           <LanguageSwitcher compact />
           {isLoading ? (
-            <div className="hidden h-9 w-32 animate-pulse rounded-lg bg-white/5 sm:block" />
+            <div className="h-8 w-20 animate-pulse rounded-lg bg-white/5 sm:h-9 sm:w-32" />
           ) : user && !isDemoUserEmail(user.email) ? (
             <Link
               to="/dashboard"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
+              className="rounded-lg px-2 py-1.5 text-xs font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:px-3 sm:py-2 sm:text-sm"
             >
-              {t('landing.nav.dashboard', { defaultValue: 'Vai alla Dashboard' })}
+              {t('landing.nav.dashboard', { defaultValue: 'Dashboard' })}
             </Link>
           ) : (
             <>
               <Link
                 to="/login"
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
+                className="rounded-lg px-2 py-1.5 text-xs font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:px-3 sm:py-2 sm:text-sm"
               >
                 {t('landing.nav.login')}
               </Link>
               <RegisterLink
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:inline-block"
+                className="rounded-lg px-2 py-1.5 text-xs font-medium text-[#E8C872] transition-colors hover:bg-[#D4AF37]/5 hover:text-[#F0E6D2] sm:px-3 sm:py-2 sm:text-sm"
               >
                 {t('landing.nav.register')}
               </RegisterLink>

@@ -3,7 +3,6 @@ import { prisma } from './prisma'
 import { buildFiscalTransactionRow, computePaymentSplit, type FiscalTransactionRow } from './tipFiscal'
 import { loadRestaurantFiscalConfig, type FiscalConfig } from './taxEngine'
 import { appendFiscalChainLink } from './fiscal/fiscalIntegrityChain'
-import { snapshotOrderBillingFromCustomer } from './fiscalInvoice'
 import { releaseTableAfterPaymentTx } from './orderSession'
 import { toMoney, moneyNumber } from './money'
 import { runOrderTransaction } from './prismaTransactions'
@@ -198,8 +197,6 @@ export async function finalizeOrderPayment(
       },
       include: paymentOrderInclude,
     })
-
-    await snapshotOrderBillingFromCustomer(tx, order.id, order.customerId)
 
     if (input.paymentMethod === 'CASH') {
       const due = cashRegisterDueAtFinalize(moneyNumber(split.total), moneyNumber(order.collectedAmount))

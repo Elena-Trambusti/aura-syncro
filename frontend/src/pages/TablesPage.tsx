@@ -29,6 +29,12 @@ import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 import KpiStatCard from '../components/ui/KpiStatCard'
 import FilterPills from '../components/ui/FilterPills'
 import { findActiveTableOrder } from '../lib/orderSession'
+import {
+  applyTableTransferOptimistic,
+  markTableFreeInCache,
+  markTableSeatedFromReservation,
+  restoreTablesCache,
+} from '../lib/tableQueryCache'
 import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -161,6 +167,7 @@ export default function TablesPage() {
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get<Table[]>('/tables').then(r => r.data),
     refetchInterval: socketConnected ? false : 15_000,
+    staleTime: 60_000,
   })
 
   const { data: floorLayoutData } = useQuery<FloorPlanLayoutV1>({
@@ -216,31 +223,36 @@ export default function TablesPage() {
         `/reservations/${reservationId}/confirm`,
         { tableId },
       ).then(r => r.data),
-    onSuccess: (reservation, { reservationId }) => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
-      const table = reservedTable ?? tables.find(tbl => tbl.reservations?.some(r => r.id === reservationId))
+    onMutate: ({ tableId }) => {
+      const previousTables = markTableSeatedFromReservation(queryClient, tk, tableId)
+      const table = reservedTable ?? tables.find(tbl => tbl.id === tableId)
       setReservedTable(null)
-      setSeatedCustomerId(reservation?.customer?.id ?? reservation?.customerId ?? null)
       if (table && canCreateOrder) {
         setSelectedTableId(table.id)
         setShowOrderModal(true)
       }
+      return { previousTables }
+    },
+    onSuccess: (reservation) => {
+      setSeatedCustomerId(reservation?.customer?.id ?? reservation?.customerId ?? null)
       toast.success(t('tables.reservationSeated'))
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, _vars, context) => {
+      restoreTablesCache(queryClient, tk, context?.previousTables)
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
 
   const markTableFree = useMutation({
     mutationFn: (id: string) => api.patch(`/tables/${id}/status`, { status: 'FREE' }),
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+    onMutate: (id) => {
+      const previousTables = markTableFreeInCache(queryClient, tk, id)
       const table = tables.find(tbl => tbl.id === id)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
+      return { previousTables, id }
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, _id, context) => {
+      restoreTablesCache(queryClient, tk, context?.previousTables)
       const code = apiErrorPayload(err)?.code
       if (code === 'TABLE_HAS_ACTIVE_ORDER') {
         toast.error(t('tables.cannotFreeActiveOrder', { defaultValue: 'Impossibile liberare: ordine o conto ancora aperti' }))
@@ -253,14 +265,15 @@ export default function TablesPage() {
   const transferOrder = useMutation({
     mutationFn: ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
       api.post(`/tables/${sourceId}/transfer`, { targetTableId: targetId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
+    onMutate: ({ sourceId, targetId }) => {
+      const previousTables = applyTableTransferOptimistic(queryClient, tk, sourceId, targetId)
       setTransferSourceId(null)
       toast.success(t('orderModal.transferSuccess'))
+      return { previousTables }
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, _vars, context) => {
+      restoreTablesCache(queryClient, tk, context?.previousTables)
+      setTransferSourceId(_vars.sourceId)
       const code = apiErrorPayload(err)?.code
       if (code === 'TABLE_TRANSFER_TARGET_UNAVAILABLE' || code === 'TABLE_TRANSFER_TARGET_OCCUPIED') {
         toast.error(t('orderModal.transferTargetUnavailable'))

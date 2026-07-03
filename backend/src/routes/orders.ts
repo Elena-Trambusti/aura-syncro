@@ -365,7 +365,8 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
   }
 
   if (idempotencyKey && req.restaurantId) {
-    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders', 201, responseBody)
+    void saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders', 201, responseBody)
+      .catch(err => console.error('[orders] idempotency save failed', err))
     idempotencyLocked = false
   }
 
@@ -916,7 +917,8 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
   const responseBody = { orderId: req.params.id, items: createdItems }
 
   if (idempotencyKey && req.restaurantId) {
-    await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items/batch', 201, responseBody)
+    void saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /orders/:id/items/batch', 201, responseBody)
+      .catch(err => console.error('[orders] idempotency save failed', err))
     idempotencyLocked = false
   }
 

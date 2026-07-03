@@ -17,6 +17,12 @@ import { tq } from '../../lib/queryKeys'
 import { AuraDialog } from '@/components/ui/AuraDialog'
 import CustomerPicker, { type CustomerOption } from '../checkout/CustomerPicker'
 import { findActiveTableOrder } from '../../lib/orderSession'
+import {
+  bumpTableOrderTotals,
+  markTableOccupiedWithOrder,
+  restoreTablesCache,
+  snapshotTablesCache,
+} from '../../lib/tableQueryCache'
 
 interface MenuModifierOption { id: string; name: string; price: number }
 interface MenuModifierGroup { id: string; name: string; isRequired: boolean; multiSelect: boolean; minOptions: number; maxOptions: number | null; options: MenuModifierOption[] }
@@ -85,7 +91,7 @@ export default function OrderModal({
   const { data: tables = [] } = useQuery<Table[]>({
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
-    refetchInterval: 5_000,
+    staleTime: 60_000,
   })
 
   const table = tables.find(tbl => tbl.id === tableId)
@@ -94,8 +100,8 @@ export default function OrderModal({
   const { data: activeOrderDetail, isFetching: isLoadingOrderDetail } = useQuery<Table['orders'][0]>({
     queryKey: tq(tk, 'orders', activeOrderSummary?.id),
     queryFn: () => api.get(`/orders/${activeOrderSummary!.id}`).then(r => r.data),
-    enabled: Boolean(activeOrderSummary?.id),
-    staleTime: 3_000,
+    enabled: Boolean(activeOrderSummary?.id) && !(activeOrderSummary?.items?.length),
+    staleTime: 30_000,
   })
 
   const activeOrder = activeOrderDetail ?? activeOrderSummary
@@ -115,10 +121,10 @@ export default function OrderModal({
   })
 
   const invalidateOrderQueries = () => {
-    queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-    queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
-    queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
-    queryClient.invalidateQueries({ queryKey: tq(tk, 'menu', 'categories') })
+    void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'none' })
+    void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
+    void queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders'), refetchType: 'active' })
+    void queryClient.invalidateQueries({ queryKey: tq(tk, 'menu', 'categories'), refetchType: 'none' })
   }
 
   const handleOrderSubmitError = (err: unknown) => {
@@ -151,6 +157,23 @@ export default function OrderModal({
     }))
     const tableLabel = `T${table.number}`
     const addingToExisting = Boolean(activeOrder)
+    const cartGross = cart.reduce((sum, line) => addMoney(sum, lineGrossMoney(line.quantity, line.price)), 0)
+    let tablesSnapshot = snapshotTablesCache(queryClient, tk)
+
+    if (addingToExisting && activeOrder) {
+      tablesSnapshot = bumpTableOrderTotals(queryClient, tk, table.id, activeOrder.id, cartGross) ?? tablesSnapshot
+    } else {
+      const optimisticId = `opt-${Date.now()}`
+      tablesSnapshot = markTableOccupiedWithOrder(queryClient, tk, table.id, {
+        id: optimisticId,
+        status: 'PENDING',
+        total: cartGross,
+        subtotal: cartGross,
+        tax: 0,
+        items: [],
+        createdAt: new Date().toISOString(),
+      }) ?? tablesSnapshot
+    }
 
     setIsSubmitting(true)
     const sendPromise = (async () => {
@@ -189,6 +212,7 @@ export default function OrderModal({
         }
       })
       .catch(err => {
+        restoreTablesCache(queryClient, tk, tablesSnapshot)
         invalidateOrderQueries()
         handleOrderSubmitError(err)
       })

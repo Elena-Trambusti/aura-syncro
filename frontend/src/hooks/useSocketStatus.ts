@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ensureSocketConnected } from '../lib/socket'
+import { ensureSocketConnected, isSocketConnected } from '../lib/socket'
 
 export function useSocketStatus() {
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(() => isSocketConnected())
 
   useEffect(() => {
     let cancelled = false
