@@ -1373,6 +1373,7 @@
       "features": "Funciones",
       "pricing": "Precios",
       "login": "Acceder",
+      "register": "Registrarse",
       "tryNow": "Probar ahora"
     },
     "hero": {
@@ -1381,7 +1382,13 @@
       "subtitle": "{{brand}} es el software cloud para la restauración en Italia, España y Canarias: mesas, comandas e ingresos en tiempo real con IGIC nativo al 7% y cumplimiento fiscal sin fricciones.",
       "ctaPrimary": "Probar ahora",
       "ctaSecondary": "Acceder",
+      "previewKpi1": "Ingresos vs mes pasado",
+      "previewKpi2": "Cubiertos hoy",
+      "previewChart": "Tendencia del servicio (demo)",
       "ctaDemo": "Entrar a la Demo",
+      "headline": "Tu restaurante canario necesita un solo ritmo.",
+      "subheadline": "Centraliza sala, cocina y administración con IGIC 7% nativo. Optimiza márgenes y cumple el REF sin fricciones.",
+      "ctaDemoPrivate": "Reservar una demo privada",
       "demoError": "Error en la demo: no se pudo conectar."
     },
     "trust": {
@@ -1454,6 +1461,42 @@
         ],
         "missingFeatures": []
       }
+    },
+    "gallery": {
+      "eyebrow": "El problema",
+      "title": "Los problemas reales de cada servicio",
+      "subtitle": "Cuando sala, cocina y administración no dialogan, pierdes margen cada noche — antes incluso de cerrar caja.",
+      "p1": {
+        "title": "Demasiadas herramientas, cero sincronía",
+        "desc": "TPV, reservas, delivery e inventario viven en mundos separados. Dobles entradas, errores en sala y datos que no cuadran."
+      },
+      "p2": {
+        "title": "Las plataformas erosionan el margen",
+        "desc": "Hasta un 30% en cada pedido delivery. Los clientes son tuyos, el beneficio se va a otro lado."
+      },
+      "p3": {
+        "title": "El cumplimiento fiscal te frena",
+        "desc": "Tickets, IGIC y facturación exigen precisión absoluta. Cada error puede significar sanciones y estrés con la asesoría."
+      }
+    },
+    "floorPlan": {
+      "title": "Precisión milimétrica en el servicio",
+      "subtitle": "El mapa 2.5D sincroniza cada movimiento de tu equipo en las Islas Canarias.",
+      "badge": "Floor Plan 2.5D",
+      "caption": "Control espacial en tiempo real de cada mesa y comanda.",
+      "imageAlt": "Plano de mesas 2.5D Aura Syncro"
+    },
+    "concierge": {
+      "title": "Un inicio sin fricciones",
+      "subtitle": "Configuramos tu local y menú digital antes del go-live. IGIC y REF listos desde el primer día.",
+      "heading": "Servicio Concierge exclusivo",
+      "body": "Mapeamos tu restaurante en 2.5D, digitalizamos el menú y configuramos la fiscalidad canaria (IGIC 7%). Sistema llave en mano, listo para vender."
+    },
+    "demoModal": {
+      "title": "Reservar una demo privada",
+      "subtitle": "Elige día y hora. Un especialista analizará tu restaurante en Canarias.",
+      "a11yTitle": "Reservar demo",
+      "a11yDescription": "Calendario de reserva demo Aura Syncro"
     },
     "footer": {
       "tagline": "Software cloud para restauración en Italia, España e Islas Canarias.",

@@ -1,11 +1,17 @@
 import { Response } from 'express'
 import { AuthRequest } from '../middleware/auth'
 import { buildFiscalConfig, fiscalConfigPayload } from './taxEngine'
+import { getTenantPrisma, type TenantPrismaClient } from './tenantPrisma'
 
 /** Extract tenant ID from authenticated request — throws if missing. */
 export function tenantId(req: AuthRequest): string {
   if (!req.restaurantId) throw new Error('Tenant ID mancante nel contesto della richiesta')
   return req.restaurantId
+}
+
+/** Client Prisma con isolamento tenant automatico (preferire nelle route autenticate). */
+export function tenantPrisma(req: AuthRequest): TenantPrismaClient {
+  return req.db ?? getTenantPrisma(tenantId(req))
 }
 
 /** Prisma `where` clause scoped to the current tenant. */

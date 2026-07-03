@@ -37,6 +37,7 @@ import { sentryTunnelRouter } from './routes/sentryTunnel'
 import invoicesRouter from './routes/invoices'
 import { cashRouter } from './routes/cash'
 import { AuthRequest, authenticate } from './middleware/auth'
+import { requireTenantContext } from './middleware/tenantContext'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
 import { buildDashboardSummary } from './lib/analyticsSummary'
@@ -139,7 +140,10 @@ app.use('/api/auth', authRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/admin', adminRouter)
 
-app.get('/api/analytics/summary', authenticate, requireDashboardAccess, requirePermission('analytics.read'), async (req, res) => {
+// Middleware comune: auth → tenant context → dashboard access
+const apiGuard = [authenticate, requireTenantContext, requireDashboardAccess]
+
+app.get('/api/analytics/summary', ...apiGuard, requirePermission('analytics.read'), async (req, res) => {
   try {
     const restaurantId = (req as AuthRequest).restaurantId
     if (!restaurantId) {
@@ -154,27 +158,27 @@ app.get('/api/analytics/summary', authenticate, requireDashboardAccess, requireP
 })
 
 // Routes protette — sbarramento centralizzato su tier operativo
-app.use('/api/restaurant', authenticate, restaurantRouter)
-app.use('/api/push', authenticate, requireDashboardAccess, pushRouter)
-app.use('/api/tables', authenticate, requireDashboardAccess, tablesRouter)
-app.use('/api/menu', authenticate, requireDashboardAccess, menuRouter)
-app.use('/api/orders', authenticate, requireDashboardAccess, ordersRouter)
-app.use('/api/invoices', authenticate, requireDashboardAccess, requireProPlan, invoicesRouter)
-app.use('/api/reservations', authenticate, requireDashboardAccess, reservationsRouter)
-app.use('/api/cash', authenticate, requireDashboardAccess, cashRouter)
-app.use('/api/customers', authenticate, requireDashboardAccess, requireProPlan, customersRouter)
-app.use('/api/staff', authenticate, requireDashboardAccess, staffRouter)
-app.use('/api/inventory', authenticate, requireDashboardAccess, inventoryRouter)
-app.use('/api/analytics', authenticate, requireDashboardAccess, requireProPlan, analyticsRouter)
-app.use('/api/loyalty', authenticate, requireDashboardAccess, requireProPlan, loyaltyRouter)
-app.use('/api/marketing', authenticate, requireDashboardAccess, requireProPlan, marketingRouter)
-app.use('/api/reports', authenticate, requireDashboardAccess, reportsRouter)
-app.use('/api/waitlist', authenticate, requireDashboardAccess, waitlistRouter)
+app.use('/api/restaurant', authenticate, requireTenantContext, restaurantRouter)
+app.use('/api/push', ...apiGuard, pushRouter)
+app.use('/api/tables', ...apiGuard, tablesRouter)
+app.use('/api/menu', ...apiGuard, menuRouter)
+app.use('/api/orders', ...apiGuard, ordersRouter)
+app.use('/api/invoices', ...apiGuard, requireProPlan, invoicesRouter)
+app.use('/api/reservations', ...apiGuard, reservationsRouter)
+app.use('/api/cash', ...apiGuard, cashRouter)
+app.use('/api/customers', ...apiGuard, requireProPlan, customersRouter)
+app.use('/api/staff', ...apiGuard, staffRouter)
+app.use('/api/inventory', ...apiGuard, inventoryRouter)
+app.use('/api/analytics', ...apiGuard, requireProPlan, analyticsRouter)
+app.use('/api/loyalty', ...apiGuard, requireProPlan, loyaltyRouter)
+app.use('/api/marketing', ...apiGuard, requireProPlan, marketingRouter)
+app.use('/api/reports', ...apiGuard, reportsRouter)
+app.use('/api/waitlist', ...apiGuard, waitlistRouter)
 // Pagamenti: checkout e webhook sono pubblici, /overview è protetta
 app.use('/api/payments', paymentsRouter)
 app.use('/api/webhooks/stripe', stripeWebhookRouter)
-app.use('/api/checkout', authenticate, checkoutRouter)
-app.use('/api/ai', authenticate, requireDashboardAccess, requireProPlan, aiRouter)
+app.use('/api/checkout', authenticate, requireTenantContext, checkoutRouter)
+app.use('/api/ai', ...apiGuard, requireProPlan, aiRouter)
 
 app.get('/api/health', (_req, res) => {
   res.json({

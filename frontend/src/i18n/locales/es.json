@@ -1410,6 +1410,9 @@
       "previewKpi2": "Cubiertos hoy",
       "previewChart": "Tendencia del servicio (demo)",
       "ctaDemo": "Entrar a la Demo",
+      "headline": "Tu restaurante necesita un solo ritmo.",
+      "subheadline": "Centraliza sala, cocina y administración. Optimiza márgenes, elimina el caos y recupera el control.",
+      "ctaDemoPrivate": "Reservar una demo privada",
       "demoError": "Error en la demo: no se pudo conectar."
     },
     "trust": {
@@ -1499,6 +1502,25 @@
         ],
         "missingFeatures": []
       }
+    },
+    "floorPlan": {
+      "title": "Precisión milimétrica en el servicio",
+      "subtitle": "El mapa 2.5D no es solo estética: es el centro de mando que sincroniza cada movimiento de tu equipo.",
+      "badge": "Floor Plan 2.5D",
+      "caption": "Control espacial en tiempo real de cada mesa y comanda.",
+      "imageAlt": "Plano de mesas 2.5D Aura Syncro"
+    },
+    "concierge": {
+      "title": "Un inicio sin fricciones",
+      "subtitle": "Nuestro equipo configura la planimetría real de tu local y el menú digital antes del go-live. Nunca estarás solo con configuraciones complejas.",
+      "heading": "Servicio Concierge exclusivo",
+      "body": "El setup no es un coste oculto, sino tu pasaporte a la operativa inmediata. Mapeamos tu restaurante en 2.5D, digitalizamos el menú, variantes e impresoras fiscales. Te entregamos un sistema llave en mano, listo para vender desde el primer minuto."
+    },
+    "demoModal": {
+      "title": "Reservar una demo privada",
+      "subtitle": "Elige día y hora. Un especialista analizará tu restaurante contigo.",
+      "a11yTitle": "Reservar demo",
+      "a11yDescription": "Calendario de reserva demo Aura Syncro"
     },
     "footer": {
       "tagline": "Software cloud para restauración en Italia, España e Islas Canarias.",

@@ -230,7 +230,7 @@
     "EMAIL_ALREADY_EXISTS": "Email già registrata nel sistema.",
     "SHIFT_INVALID_TIME": "L'orario di fine deve essere successivo all'inizio.",
     "STAFF_INACTIVE": "Membro disattivato — riattivalo prima di assegnare turni.",
-    "SHIFT_OWNER_NOT_ALLOWED": "Il titolare non può essere assegnato ai turni.",
+    "SHIFT_OWNER_NOT_ALLOWED": "Il titolare non può essere assegnato ai turni."
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
@@ -1898,6 +1898,9 @@
       "previewKpi2": "Coperti oggi",
       "previewChart": "Andamento servizio (demo)",
       "ctaDemo": "Entra nella Demo Live",
+      "headline": "Il tuo ristorante ha bisogno di un unico ritmo.",
+      "subheadline": "Centralizza sala, cucina e amministrazione. Ottimizza i margini, elimina il caos, riprendi il controllo.",
+      "ctaDemoPrivate": "Riserva una Demo Privata",
       "demoError": "Errore avvio demo: impossibile collegarsi."
     },
     "trust": {
@@ -1987,6 +1990,25 @@
         ],
         "missingFeatures": []
       }
+    },
+    "floorPlan": {
+      "title": "Precisione Millimetrica nel Servizio",
+      "subtitle": "La mappa 2.5D non è una semplice funzionalità estetica, ma il centro di comando che sincronizza ogni movimento del tuo staff.",
+      "badge": "Floor Plan 2.5D",
+      "caption": "Controllo spaziale in tempo reale di ogni tavolo e comanda.",
+      "imageAlt": "Pianta tavoli 2.5D Aura Syncro"
+    },
+    "concierge": {
+      "title": "Un inizio senza attriti",
+      "subtitle": "Il nostro team tecnico configura la planimetria reale del tuo locale e il menu digitale prima del go-live. Non sarai mai lasciato solo a gestire configurazioni complesse.",
+      "heading": "Servizio Concierge Esclusivo",
+      "body": "Il setup non è un costo nascosto, ma il tuo passaporto per un'operatività immediata. I nostri esperti mapperanno in 2.5D il tuo ristorante, digitalizzeranno l'intero menu, le varianti e le stampanti fiscali. Ti consegniamo un sistema chiavi in mano, pronto a vendere dal primo minuto."
+    },
+    "demoModal": {
+      "title": "Riserva una Demo Privata",
+      "subtitle": "Scegli il giorno e l'ora. Un nostro specialista ti contatterà per analizzare il tuo ristorante.",
+      "a11yTitle": "Prenota una demo",
+      "a11yDescription": "Calendario prenotazione demo Aura Syncro"
     },
     "footer": {
       "tagline": "Software cloud per la ristorazione in Italia, Spagna e Isole Canarie.",

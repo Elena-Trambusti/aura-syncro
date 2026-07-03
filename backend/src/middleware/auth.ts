@@ -4,11 +4,14 @@ import { verifySessionToken } from '../lib/jwtAuth'
 import { extractBearerToken } from '../lib/sessionCookie'
 import { tenantForbidden } from '../lib/tenant'
 import { isDemoUserEmail, isDemoWritePathAllowed } from '../lib/demoSandbox'
+import type { TenantPrismaClient } from '../lib/tenantPrisma'
 
 export interface AuthRequest extends Request {
   userId?: string
   restaurantId?: string
   userRole?: string
+  /** Client Prisma con scope tenant — popolato da requireTenantContext */
+  db?: TenantPrismaClient
   /** true quando l'API è servita in anteprima free (senza abbonamento Premium) */
   freeTierPreview?: boolean
   params: Record<string, string>

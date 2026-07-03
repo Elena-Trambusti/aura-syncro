@@ -25,8 +25,8 @@ function isSupportedLocale(code: string): code is SupportedLocale {
 }
 
 function localeFromPath(pathname: string): SupportedLocale | null {
-  if (pathname === '/es' || pathname.startsWith('/es/')) return 'es'
   if (pathname === '/es-cn' || pathname.startsWith('/es-cn/')) return 'es-cn'
+  if (pathname === '/es' || pathname.startsWith('/es/')) return 'es'
   if (pathname === '/it' || pathname.startsWith('/it/')) return 'it'
   return null
 }
@@ -41,9 +41,11 @@ function getBrowserLang(): SupportedLocale {
 
 export function resolveInitialLocale(): SupportedLocale {
   if (typeof window === 'undefined') return 'it'
+  const fromPath = localeFromPath(window.location.pathname)
+  if (fromPath) return fromPath
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved && isSupportedLocale(saved)) return saved
-  return localeFromPath(window.location.pathname) ?? getBrowserLang()
+  return getBrowserLang()
 }
 
 async function loadLocaleBundle(lng: SupportedLocale) {

@@ -84,18 +84,24 @@ const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<Permission>> = {
 export const WAITER_ORDER_STATUSES = new Set(['CONFIRMED', 'PREPARING', 'READY', 'SERVED'])
 export const CHEF_ORDER_STATUSES = new Set(['PREPARING', 'READY', 'SERVED'])
 
+const KNOWN_ROLES = new Set<string>(['OWNER', 'MANAGER', 'WAITER', 'CHEF', 'BARTENDER', 'HOST'])
+
+export function isKnownRole(role: string | undefined | null): role is AppRole {
+  if (!role) return false
+  const r = role === 'KITCHEN' ? 'CHEF' : role === 'CASHIER' ? 'WAITER' : role
+  return KNOWN_ROLES.has(r)
+}
+
 export function normalizeRole(role: string | undefined | null): AppRole {
   if (role === 'KITCHEN') return 'CHEF'
   if (role === 'CASHIER') return 'WAITER'
-  if (role === 'OWNER' || role === 'MANAGER' || role === 'WAITER' || role === 'CHEF' || role === 'BARTENDER' || role === 'HOST') {
-    return role
-  }
+  if (isKnownRole(role)) return role
   return 'WAITER'
 }
 
 export function hasPermission(role: string | undefined | null, permission: Permission): boolean {
-  const normalized = normalizeRole(role)
-  return ROLE_PERMISSIONS[normalized]?.has(permission) ?? false
+  if (!isKnownRole(role)) return false
+  return ROLE_PERMISSIONS[role]?.has(permission) ?? false
 }
 
 export function hasAnyPermission(
@@ -106,8 +112,8 @@ export function hasAnyPermission(
 }
 
 export function getPermissionsForRole(role: string | undefined | null): Permission[] {
-  const normalized = normalizeRole(role)
-  return [...(ROLE_PERMISSIONS[normalized] ?? [])]
+  if (!isKnownRole(role)) return []
+  return [...(ROLE_PERMISSIONS[role] ?? [])]
 }
 
 export function canSetOrderStatus(role: string | undefined | null, status: string): boolean {

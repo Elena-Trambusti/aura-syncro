@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
-import { defaultTaxRateForRegion } from '../lib/fiscalRegime'
+import { defaultTaxRateForRegion, normalizeTaxRateForRegion } from '../lib/fiscalRegime'
 import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
@@ -77,6 +77,11 @@ type SettingsForm = {
 
 function buildSavePayload(data: SettingsForm) {
   const emptyToNull = (v: string) => v.trim() || null
+  const rawRate = data.taxRate === '' ? undefined : data.taxRate
+  const taxRate = rawRate != null
+    ? normalizeTaxRateForRegion(data.taxRegion, rawRate)
+    : undefined
+
   return {
     name: data.name.trim(),
     address: emptyToNull(data.address),
@@ -86,7 +91,7 @@ function buildSavePayload(data: SettingsForm) {
     settings: {
       countryCode: data.countryCode,
       taxRegion: data.taxRegion,
-      taxRate: data.taxRate === '' ? undefined : data.taxRate,
+      taxRate,
       taxId: emptyToNull(data.taxId),
       legalName: emptyToNull(data.legalName),
       legalAddress: emptyToNull(data.legalAddress),

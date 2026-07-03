@@ -151,7 +151,7 @@ function AppRoutes() {
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
         <Route path="dashboard/onboarding" element={<RequireRole roles={ADMIN_NAV_ROLES}><OnboardingPage /></RequireRole>} />
-        <Route path="dashboard/billing" element={<BillingPage />} />
+        <Route path="dashboard/billing" element={<RequirePermission permissions={['settings.manage']}><BillingPage /></RequirePermission>} />
         <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<RequirePermission permissions={['inventory.read']}><InventoryPage /></RequirePermission>} />
         <Route path="analytics" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AnalyticsPage /></RequirePermission></RequireProPlan>} />
@@ -166,7 +166,7 @@ function AppRoutes() {
         <Route path="dashboard/ai-predictive" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AIPredictivePage /></RequirePermission></RequireProPlan>} />
         <Route path="dashboard/qr-builder" element={<RequirePermission permissions={['menu.manage']}><QRBuilderPage /></RequirePermission>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
-        <Route path="impostazioni" element={<RequireRole roles={ADMIN_NAV_ROLES}><SettingsPage /></RequireRole>} />
+        <Route path="impostazioni" element={<RequirePermission permissions={['settings.manage']}><SettingsPage /></RequirePermission>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

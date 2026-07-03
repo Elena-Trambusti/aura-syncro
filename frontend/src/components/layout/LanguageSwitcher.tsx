@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Globe, ChevronDown, Check } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { localePathForSwitch } from '../../i18n/localeUtils'
+import type { SupportedLocale } from '../../i18n/bootstrap'
 
 const LANGUAGES = [
   { code: 'it', name: 'Italiano' },
@@ -23,6 +26,8 @@ interface LanguageSwitcherProps {
 
 export default function LanguageSwitcher({ prominent = false, compact = false }: LanguageSwitcherProps) {
   const { i18n, t } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number; minWidth: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -49,6 +54,12 @@ export default function LanguageSwitcher({ prominent = false, compact = false }:
   const changeLanguage = (code: string) => {
     i18n.changeLanguage(code)
     localStorage.setItem(STORAGE_KEY, code)
+
+    const nextPath = localePathForSwitch(code as SupportedLocale, location.pathname)
+    if (nextPath && nextPath !== location.pathname) {
+      navigate(nextPath, { replace: true })
+    }
+
     close()
   }
 

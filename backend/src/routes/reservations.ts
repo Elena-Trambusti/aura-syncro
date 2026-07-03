@@ -116,7 +116,7 @@ reservationsRouter.post('/:id/confirm', requirePermission('reservations.manage')
       req.params.id,
       result.data.tableId,
     )
-    const table = await prisma.table.findUnique({ where: { id: result.data.tableId } })
+    const table = await prisma.table.findFirst({ where: scopedWhere(req, result.data.tableId) })
     io.to(tenantId(req)).emit('reservation:updated', reservation)
     if (table) {
       io.to(tenantId(req)).emit('table:updated', { ...table, status: 'OCCUPIED' })
@@ -322,7 +322,7 @@ reservationsRouter.patch('/:id/status', requirePermission('reservations.manage')
     include: { table: true },
   })
   if (reservation?.tableId) {
-    const table = await prisma.table.findUnique({ where: { id: reservation.tableId } })
+    const table = await prisma.table.findFirst({ where: scopedWhere(req, reservation.tableId) })
     if (table) io.to(tenantId(req)).emit('table:updated', table)
   }
   io.to(tenantId(req)).emit('reservation:updated', reservation)
@@ -371,7 +371,7 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
 
   const releaseNoShowLock = async () => {
     await prisma.reservation.updateMany({
-      where: { id: reservation.id, depositAmountPaid: 0 },
+      where: { id: reservation.id, restaurantId: tenantId(req), depositAmountPaid: 0 },
       data: { depositAmountPaid: null },
     })
   }
@@ -416,12 +416,18 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
 
     if (paymentIntent.status === 'succeeded') {
       try {
-        const updated = await prisma.reservation.update({
-          where: { id: reservation.id },
+        const updated = await prisma.reservation.updateMany({
+          where: { id: reservation.id, restaurantId: tenantId(req) },
           data: { depositAmountPaid: toMoney(penaltyAmount) },
         })
-        io.to(tenantId(req)).emit('reservation:updated', updated)
-        res.json(updated)
+        if (updated.count === 0) {
+          throw new Error('Reservation update failed after payment')
+        }
+        const reservationRow = await prisma.reservation.findFirst({
+          where: scopedWhere(req, reservation.id),
+        })
+        io.to(tenantId(req)).emit('reservation:updated', reservationRow)
+        res.json(reservationRow)
       } catch (dbErr) {
         console.error('[stripe] No-show PI succeeded but DB update failed', {
           reservationId: reservation.id,
@@ -452,11 +458,11 @@ reservationsRouter.delete('/:id', requirePermission('reservations.manage'), asyn
     return
   }
 
-  await prisma.reservation.delete({ where: { id: reservation.id } })
+  await prisma.reservation.deleteMany({ where: scopedWhere(req, reservation.id) })
   
   if (reservation.tableId) {
     await releaseTableFromReservation(tenantId(req), reservation.tableId)
-    const table = await prisma.table.findUnique({ where: { id: reservation.tableId } })
+    const table = await prisma.table.findFirst({ where: scopedWhere(req, reservation.tableId) })
     if (table) io.to(tenantId(req)).emit('table:updated', table)
   }
 
