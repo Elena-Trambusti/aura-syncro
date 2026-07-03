@@ -11,11 +11,41 @@ import { resolveApiErrorMessage } from './apiError'
 
 const RESTAURANT_ID_KEY = 'restaurantId'
 
+/** Evita toast ripetuti quando più query/poll falliscono insieme. */
+let lastNetworkErrorToastAt = 0
+const NETWORK_ERROR_TOAST_COOLDOWN_MS = 30_000
+
+function showNetworkErrorToast(): void {
+  const now = Date.now()
+  if (now - lastNetworkErrorToastAt < NETWORK_ERROR_TOAST_COOLDOWN_MS) return
+  lastNetworkErrorToastAt = now
+  toast.error(
+    i18n.t('errors.networkError', {
+      defaultValue: 'Impossibile contattare il server. Verifica la connessione.',
+    }),
+  )
+}
+
+function isAxiosCanceled(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; name?: string; message?: string }
+  return (
+    e.code === 'ERR_CANCELED'
+    || e.name === 'CanceledError'
+    || e.message === 'DEMO_READ_ONLY'
+  )
+}
+
 function getApiBaseUrl(): string {
   return resolveApiBaseUrl()
 }
 
 export { getApiBaseUrl }
+
+export type AuraApiRequestConfig = AxiosRequestConfig & {
+  /** Non mostrare toast di rete per richieste secondarie (es. layout pianta). */
+  silentNetworkError?: boolean
+}
 
 let apiInstance: AxiosInstance | null = null
 let initPromise: Promise<AxiosInstance> | null = null
@@ -71,10 +101,13 @@ async function initApi(): Promise<AxiosInstance> {
           className: 'aura-sonner-toast--demo',
           duration: 4500,
         })
-      } else if (!err.response) {
-        toast.error(i18n.t('errors.networkError', { defaultValue: 'Impossibile contattare il server. Verifica la connessione.' }))
+      } else if (isAxiosCanceled(err)) {
+        // Richiesta annullata (navigazione, demo read-only, React Query abort) — nessun toast
       } else if (err.code === 'ECONNABORTED') {
-        toast.error(i18n.t('errors.timeout', { defaultValue: 'Richiesta scaduta. Riprova.' }))
+        showNetworkErrorToast()
+      } else if (!err.response) {
+        const silent = (err.config as AuraApiRequestConfig | undefined)?.silentNetworkError
+        if (!silent) showNetworkErrorToast()
       } else if (err.response.status >= 400 && err.response.status < 500) {
         const payload = err.response.data as { code?: string; error?: string } | undefined
         if (payload?.code) {
@@ -100,19 +133,19 @@ function getApiInstance(): Promise<AxiosInstance> {
 
 /** Client HTTP — axios caricato solo alla prima richiesta API (landing senza sessione: zero download). */
 export const api = {
-  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  get<T = any>(url: string, config?: AuraApiRequestConfig): Promise<AxiosResponse<T>> {
     return getApiInstance().then(i => i.get<T>(url, config))
   },
-  post<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  post<T = any>(url: string, data?: unknown, config?: AuraApiRequestConfig): Promise<AxiosResponse<T>> {
     return getApiInstance().then(i => i.post<T>(url, data, config))
   },
-  put<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  put<T = any>(url: string, data?: unknown, config?: AuraApiRequestConfig): Promise<AxiosResponse<T>> {
     return getApiInstance().then(i => i.put<T>(url, data, config))
   },
-  patch<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  patch<T = any>(url: string, data?: unknown, config?: AuraApiRequestConfig): Promise<AxiosResponse<T>> {
     return getApiInstance().then(i => i.patch<T>(url, data, config))
   },
-  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  delete<T = any>(url: string, config?: AuraApiRequestConfig): Promise<AxiosResponse<T>> {
     return getApiInstance().then(i => i.delete<T>(url, config))
   },
 }

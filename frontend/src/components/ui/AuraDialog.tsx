@@ -27,6 +27,11 @@ export interface AuraDialogProps {
   variant?: AuraDialogVariant
   /** Nasconde il pulsante X automatico nell'header */
   hideClose?: boolean
+  /** Titolo per screen reader (sr-only) se i figli non usano AuraDialogTitle */
+  a11yTitle?: string
+  a11yDescription?: string
+  /** Imposta true se i figli includono già Dialog.Title / Dialog.Description */
+  skipBuiltInA11y?: boolean
 }
 
 export function AuraDialog({
@@ -39,6 +44,9 @@ export function AuraDialog({
   maxWidth = 'md',
   variant = 'default',
   hideClose = false,
+  a11yTitle = 'Dialog',
+  a11yDescription,
+  skipBuiltInA11y = false,
 }: AuraDialogProps) {
   const handleOpenChange = (next: boolean) => {
     onOpenChange?.(next)
@@ -96,6 +104,14 @@ export function AuraDialog({
                 <X className="h-4 w-4" />
               </button>
             </Dialog.Close>
+          )}
+          {!skipBuiltInA11y && (
+            <>
+              <Dialog.Title className="sr-only">{a11yTitle}</Dialog.Title>
+              <Dialog.Description className="sr-only">
+                {a11yDescription ?? a11yTitle}
+              </Dialog.Description>
+            </>
           )}
           {children}
         </Dialog.Content>

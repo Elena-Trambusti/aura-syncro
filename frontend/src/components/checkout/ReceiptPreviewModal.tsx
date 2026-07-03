@@ -64,7 +64,7 @@ export default function ReceiptPreviewModal({
   if (!row) return null
 
   return (
-    <AuraDialog onClose={onClose} maxWidth="md" hideClose className="flex max-h-[90vh] flex-col overflow-hidden p-0">
+    <AuraDialog onClose={onClose} maxWidth="md" hideClose a11yTitle={t('checkout.receiptTitle')} className="flex max-h-[90vh] flex-col overflow-hidden p-0">
       <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-500" />

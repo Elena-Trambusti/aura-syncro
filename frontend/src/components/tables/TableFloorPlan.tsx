@@ -150,7 +150,7 @@ export default function TableFloorPlan({
       if (scaleX <= 0 || scaleY <= 0) return
       nextTables[id] = {
         x: (rect.left + rect.width / 2 - sceneRect.left) / scaleX,
-        y: (rect.top - sceneRect.top) / scaleY,
+        y: (rect.top + rect.height / 2 - sceneRect.top) / scaleY,
       }
     })
 
@@ -309,7 +309,7 @@ export default function TableFloorPlan({
               style={{
                 left: pos.x,
                 top: pos.y,
-                transform: 'translate(-50%, calc(-100% - 10px))',
+                transform: 'translate(-50%, calc(-100% - 14px))',
               }}
             >
               <TableLabelPill

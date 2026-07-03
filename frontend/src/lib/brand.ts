@@ -26,6 +26,15 @@ export const BRAND = {
   chartAxis: '#71717A',
 } as const
 
+/** Logo ufficiale Aura Syncro — unica sorgente ovunque (UI, favicon, PWA, SEO) */
+export const BRAND_LOGO_PATH = '/brand/aura-syncro-logo-tally.png'
+export const BRAND_LOGO_VERSION = '7'
+export const BRAND_LOGO_SRC = `${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
+
+/** Alias legacy — stesso file tally */
+export const BRAND_APP_ICON_PATH = BRAND_LOGO_PATH
+export const BRAND_APP_ICON_SRC = BRAND_LOGO_SRC
+
 export const BRAND_LOGO_GRADIENT = `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})`
 
 /** Colori PWA — barra di stato allineata al navy premium */

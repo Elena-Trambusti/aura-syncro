@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, BarChart3 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
-import { BRAND } from '../../lib/brand'
+import { BRAND, BRAND_LOGO_SRC } from '../../lib/brand'
 import DemoBookingModal from './DemoBookingModal'
 
 export default function LandingHero() {
@@ -31,7 +31,7 @@ export default function LandingHero() {
             className="lux-hero-badge motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
           >
             <span className="lux-hero-badge__icon" aria-hidden>
-              <img src="/brand/aura-syncro-logo-transparent.png" alt="" className="h-3.5 w-3.5 object-contain" />
+              <img src={BRAND_LOGO_SRC} alt="" className="h-3.5 w-3.5 object-contain" />
             </span>
             <span className="lux-hero-badge__text">{t('landing.hero.badge')}</span>
           </div>
@@ -68,7 +68,7 @@ export default function LandingHero() {
             <div className="rounded-[2rem] border border-[#D4AF37]/12 bg-[#050505]/95 p-5 lux-text-soft shadow-inner transition-colors duration-700 group-hover:border-[#D4AF37]/22">
               <div className="flex items-center justify-between rounded-2xl bg-[#0a0a0a] px-5 py-4 ring-1 ring-[#D4AF37]/10">
                 <div className="flex items-center gap-3 text-sm font-bold tracking-wide lux-text-bright">
-                  <img src="/brand/aura-syncro-logo-transparent.png" alt="" className="h-5 w-5 object-contain" />
+                  <img src={BRAND_LOGO_SRC} alt="" className="h-5 w-5 object-contain" />
                   {BRAND.name}
                 </div>
                 <span className="rounded-full border border-aura-gold/20 bg-aura-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-aura-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]">

@@ -10,7 +10,7 @@ import { ALLOWED_TAX_RATES } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
-import { AuraDialog, AuraDialogTitle } from '@/components/ui/AuraDialog'
+import { AuraDialog, AuraDialogTitle, AuraDialogDescription } from '@/components/ui/AuraDialog'
 import AuraSelect from '@/components/ui/AuraSelect'
 
 interface Invoice {
@@ -161,8 +161,9 @@ function InvoiceModal({
   }
 
   return (
-    <AuraDialog onClose={onClose} maxWidth="2xl" hideClose className="max-h-[90vh] overflow-y-auto">
+    <AuraDialog onClose={onClose} maxWidth="2xl" hideClose skipBuiltInA11y className="max-h-[90vh] overflow-y-auto">
       <AuraDialogTitle className="mb-4">{t('invoices.modalTitle')}</AuraDialogTitle>
+      <AuraDialogDescription className="sr-only">{t('invoices.modalTitle')}</AuraDialogDescription>
       <form onSubmit={submit} className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

@@ -52,8 +52,12 @@ function WaitlistForm({ date, onSave, onCancel }: WaitlistFormProps) {
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <AuraDialog onClose={onCancel} maxWidth="md" hideClose>
-      <AuraDialogHeader onClose={onCancel} title={t('waitlist.addGuest')} />
+    <AuraDialog onClose={onCancel} maxWidth="md" hideClose skipBuiltInA11y>
+      <AuraDialogHeader
+        onClose={onCancel}
+        title={t('waitlist.addGuest')}
+        description={t('waitlist.addGuestHint', { defaultValue: 'Aggiungi un ospite alla lista d\'attesa' })}
+      />
       <AuraDialogBody>
         <label className="block text-sm font-medium text-pietra">
           {t('waitlist.guestName')}

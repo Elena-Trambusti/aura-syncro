@@ -92,6 +92,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       onClose={onClose}
       hideClose
       maxWidth="lg"
+      a11yTitle={t('commandPalette.title', { defaultValue: 'Navigazione rapida' })}
+      a11yDescription={t('commandPalette.placeholder', { defaultValue: 'Cerca sezioni, tavoli, ordini' })}
       className="aura-command-palette !top-[12vh] bottom-auto max-h-[min(70dvh,480px)] !translate-x-[-50%] !translate-y-0 overflow-hidden p-0"
     >
       <div

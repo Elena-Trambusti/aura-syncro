@@ -7,13 +7,11 @@ import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency, cn } from '../lib/utils'
 import { formatApiError } from '../lib/errors'
-import { BRAND } from '../lib/brand'
+import { BRAND, BRAND_LOGO_SRC } from '../lib/brand'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
-
-const BRAND_LOGO_SRC = '/brand/aura-syncro-logo-transparent.png'
 
 const PLAN_IDS = ['STARTER', 'PREMIUM'] as const
 type PlanId = typeof PLAN_IDS[number]

@@ -251,7 +251,7 @@ export default function OrderModal({
 
   if (!table) {
     return (
-      <AuraDialog onClose={onClose} variant="fullscreen" hideClose overlayClassName="flex items-center justify-center p-4">
+      <AuraDialog onClose={onClose} variant="fullscreen" hideClose overlayClassName="flex items-center justify-center p-4" a11yTitle="Caricamento ordine">
         <div className="w-10 h-10 border-4 border-aura-gold/40 border-t-aura-gold rounded-full animate-spin" />
       </AuraDialog>
     )
@@ -640,7 +640,7 @@ export default function OrderModal({
   )
 
   return (
-    <AuraDialog onClose={onClose} variant="fullscreen" hideClose>
+    <AuraDialog onClose={onClose} variant="fullscreen" hideClose a11yTitle={`Ordine tavolo ${table.number}`} a11yDescription="Gestione comanda e menu">
       <div
         className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-navy-elevated sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
         onClick={e => e.stopPropagation()}

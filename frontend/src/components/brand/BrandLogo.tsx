@@ -1,6 +1,6 @@
 import { cn } from '../../lib/utils'
 import { useTranslation } from 'react-i18next'
-import { BRAND } from '../../lib/brand'
+import { BRAND, BRAND_LOGO_SRC } from '../../lib/brand'
 
 const SIZES = {
   sm: { img: 'h-8 w-8', text: 'text-sm' },
@@ -8,7 +8,7 @@ const SIZES = {
   lg: { img: 'h-14 w-14', text: 'text-lg' },
 } as const
 
-const ICON_SRC = '/brand/aura-syncro-logo-transparent.png'
+const ICON_SRC = BRAND_LOGO_SRC
 
 type BrandLogoSize = keyof typeof SIZES
 
@@ -37,7 +37,7 @@ export default function BrandLogo({
     <img
       src={ICON_SRC}
       alt=""
-      className={cn(s.img, 'shrink-0 object-contain object-center rounded-[20%] shadow-[0_0_15px_rgba(212,175,55,0.15)] ring-1 ring-white/10')}
+      className={cn(s.img, 'shrink-0 object-contain object-center')}
       width={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       height={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       loading={priority ? 'eager' : 'lazy'}

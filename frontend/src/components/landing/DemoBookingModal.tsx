@@ -27,7 +27,7 @@ export default function DemoBookingModal({
   const CALENDLY_URL = "https://calendly.com/aurasyncro/30min?hide_landing_page_details=1&hide_gdpr_banner=1&background_color=0A0A0A&text_color=F0E6D2&primary_color=C5A059"
 
   return (
-    <AuraDialog onClose={onClose} hideClose className="max-w-4xl w-full p-0 overflow-hidden bg-neutral-950 border border-[#C5A059]/30 h-[80vh] max-h-[700px] flex flex-col">
+    <AuraDialog onClose={onClose} hideClose a11yTitle="Prenota una demo" a11yDescription="Calendario prenotazione demo Aura Syncro" className="max-w-4xl w-full p-0 overflow-hidden bg-neutral-950 border border-[#C5A059]/30 h-[80vh] max-h-[700px] flex flex-col">
       <div className="relative flex-1 flex flex-col">
         {/* Pulsante di chiusura */}
         <button

@@ -6,8 +6,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const publicDir = join(root, 'public')
-const svgPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.png')
-const logoTallyPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.png')
+const logoPath = join(publicDir, 'brand', 'aura-syncro-logo-tally.png')
 const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
 
@@ -27,7 +26,7 @@ const BRAND_NAVY = '#030712'
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
 
-const svg = await readFile(svgPath)
+const svg = await readFile(logoPath)
 
 /** Icona standard — logo a pieno canvas (purpose: any) */
 async function writeStandardIcon(size) {
@@ -130,7 +129,7 @@ const ogWidth = 1200
 const ogHeight = 630
 const ogBg = '#FAFAF9'
 
-const tallyMeta = await sharp(logoTallyPath).metadata()
+const tallyMeta = await sharp(logoPath).metadata()
 const tallyAspect = (tallyMeta.width ?? 1200) / (tallyMeta.height ?? 320)
 const maxLogoWidth = Math.round(ogWidth * 0.7)
 const maxLogoHeight = Math.round(ogHeight * 0.55)
@@ -141,7 +140,7 @@ if (logoHeight > maxLogoHeight) {
   logoWidth = Math.round(logoHeight * tallyAspect)
 }
 
-const logoBuffer = await sharp(logoTallyPath).resize(logoWidth, logoHeight).png().toBuffer()
+const logoBuffer = await sharp(logoPath).resize(logoWidth, logoHeight).png().toBuffer()
 
 await sharp({
   create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },

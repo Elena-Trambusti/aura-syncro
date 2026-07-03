@@ -61,7 +61,7 @@ export default function AssignTableModal({ reservation, onSuccess, onCancel }: A
   const suitableTables = tables.filter(tbl => tbl.suitable)
 
   return (
-    <AuraDialog onClose={onCancel} maxWidth="lg" hideClose>
+    <AuraDialog onClose={onCancel} maxWidth="lg" hideClose skipBuiltInA11y>
       <AuraDialogHeader
         onClose={onCancel}
         title={t('reservations.assignTableTitle')}

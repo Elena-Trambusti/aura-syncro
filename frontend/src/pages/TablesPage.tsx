@@ -88,7 +88,7 @@ function TableFormModal({
     numericToNumber(form.number, 0) >= 1 && numericToNumber(form.seats, 0) >= 1
 
   return (
-    <GlassModal onClose={onCancel} maxWidth="md">
+    <GlassModal onClose={onCancel} maxWidth="md" a11yTitle={table ? t('tables.editTable') : t('tables.newTable')}>
       <h3 className={ui.modalTitle}>{table ? t('tables.editTable') : t('tables.newTable')}</h3>
         <div className="space-y-4">
           <div>
@@ -165,7 +165,8 @@ export default function TablesPage() {
 
   const { data: floorLayoutData } = useQuery<FloorPlanLayoutV1>({
     queryKey: tq(tk, 'floor-layout'),
-    queryFn: () => api.get<FloorPlanLayoutV1>('/tables/floor-layout').then(r => r.data),
+    queryFn: () =>
+      api.get<FloorPlanLayoutV1>('/tables/floor-layout', { silentNetworkError: true }).then(r => r.data),
     staleTime: 60_000,
   })
   const floorLayout = floorLayoutData ?? EMPTY_FLOOR_PLAN_LAYOUT
@@ -598,7 +599,7 @@ export default function TablesPage() {
       )}
 
       {reservedTable?.reservations?.[0] && (
-        <GlassModal onClose={() => setReservedTable(null)} maxWidth="md">
+        <GlassModal onClose={() => setReservedTable(null)} maxWidth="md" a11yTitle={t('tables.reservedTitle', { number: reservedTable.number })}>
           <h3 className={ui.modalTitle}>{t('tables.reservedTitle', { number: reservedTable.number })}</h3>
             <div className="space-y-3 text-sm text-fumo">
               <p className="text-base font-semibold text-pietra">{reservedTable.reservations[0].guestName}</p>
