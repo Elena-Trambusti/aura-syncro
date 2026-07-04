@@ -10,7 +10,6 @@ const logoPath = join(publicDir, 'favicon.png')
 const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
 
-/** Densità Android + PWA (px lato icona quadrata) */
 const STANDARD_SIZES = [48, 72, 96, 128, 144, 192, 384, 512]
 const MASKABLE_SIZES = [192, 512]
 const ADAPTIVE_DENSITIES = [
@@ -21,35 +20,57 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-/** Oro brand — gradiente verticale */
 const GOLD_TOP = '#F7E7CE'
 const GOLD_BOTTOM = '#B8921F'
 const GOLD_TOP_RGB = { r: 247, g: 231, b: 206 }
 
-/**
- * Il favicon sorgente è uno squircle con angoli trasparenti.
- * Ritagliamo la zona centrale (solo logo A + oro piatto) per evitare
- * il doppio bordo visibile sulle adaptive icon Android/Samsung.
- */
-const MARK_CROP_INSET_RATIO = 0.14
-const STANDARD_MARK_RATIO = 0.62
-const MASKABLE_MARK_RATIO = 0.46
+/** Logo A+anello nella zona sicura maskable Android */
+const MASKABLE_MARK_RATIO = 0.42
+/** Icona standard — logo leggermente più grande */
+const STANDARD_MARK_RATIO = 0.48
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
 
 const logoBuffer = await readFile(logoPath)
-const logoMeta = await sharp(logoBuffer).metadata()
-const sourceSize = logoMeta.width ?? 192
-const markInset = Math.round(sourceSize * MARK_CROP_INSET_RATIO)
-const markCropSize = sourceSize - markInset * 2
 
-/** Logo centrale senza il contorno arrotondato dello squircle */
-const logoMarkBuffer = await sharp(logoBuffer)
-  .flatten({ background: GOLD_TOP_RGB })
-  .extract({ left: markInset, top: markInset, width: markCropSize, height: markCropSize })
-  .png()
-  .toBuffer()
+/**
+ * Estrae solo i pixel scuri del logo (A + anello), scartando lo squircle oro
+ * e qualsiasi frangia bianca anti-alias del PNG sorgente.
+ */
+async function buildDarkMarkBuffer() {
+  const { data, info } = await sharp(logoBuffer)
+    .flatten({ background: GOLD_TOP_RGB })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  const ch = info.channels
+  const pixels = info.width * info.height
+  const out = Buffer.alloc(pixels * 4)
+
+  for (let px = 0; px < pixels; px++) {
+    const src = px * ch
+    const dst = px * 4
+    const r = data[src]
+    const g = data[src + 1]
+    const b = data[src + 2]
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    if (lum < 90) {
+      out[dst] = r
+      out[dst + 1] = g
+      out[dst + 2] = b
+      out[dst + 3] = 255
+    }
+  }
+
+  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .png()
+    .toBuffer()
+}
+
+const darkMarkBuffer = await buildDarkMarkBuffer()
 
 function goldGradientSvg(size) {
   return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -69,13 +90,13 @@ async function goldBackground(size) {
 
 async function markLayer(size, ratio) {
   const markSize = Math.max(1, Math.round(size * ratio))
-  return sharp(logoMarkBuffer)
+  return sharp(darkMarkBuffer)
     .resize(markSize, markSize, { fit: 'contain' })
     .png()
     .toBuffer()
 }
 
-/** Icona full-bleed: sfondo oro fino ai bordi, zero trasparenza */
+/** Sfondo oro edge-to-edge + solo logo scuro, output RGB senza alpha */
 async function composeFullBleedIcon(size, markRatio) {
   const bg = await goldBackground(size)
   const mark = await markLayer(size, markRatio)
@@ -179,8 +200,8 @@ const ogWidth = 1200
 const ogHeight = 630
 const ogBg = '#020201'
 
-const ogLogoMeta = await sharp(logoPath).metadata()
-const logoAspect = (ogLogoMeta.width ?? 1) / (ogLogoMeta.height ?? 1)
+const logoMeta = await sharp(logoPath).metadata()
+const logoAspect = (logoMeta.width ?? 1) / (logoMeta.height ?? 1)
 const maxLogoWidth = Math.round(ogWidth * 0.42)
 const maxLogoHeight = Math.round(ogHeight * 0.72)
 let logoWidth = maxLogoWidth

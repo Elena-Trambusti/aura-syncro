@@ -32,12 +32,20 @@ const manifest = {
       type: 'image/png',
       purpose: 'any',
     })),
-    ...MASKABLE_SIZES.map((size) => ({
-      src: `/pwa/maskable-${size}.png`,
-      sizes: `${size}x${size}`,
-      type: 'image/png',
-      purpose: 'maskable',
-    })),
+    ...MASKABLE_SIZES.flatMap((size) => [
+      {
+        src: `/pwa/maskable-${size}.png`,
+        sizes: `${size}x${size}`,
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: `/pwa/maskable-${size}.png`,
+        sizes: `${size}x${size}`,
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+    ]),
   ],
 }
 

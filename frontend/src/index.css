@@ -304,6 +304,17 @@
     width: 100%;
     position: relative;
     margin: 0;
+    touch-action: manipulation;
+  }
+
+  button,
+  a,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  label {
+    touch-action: manipulation;
   }
 
   #root {

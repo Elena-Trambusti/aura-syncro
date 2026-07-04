@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { FloorPlanLayoutV1, FloorPlanZoneLabel as ZoneLabelType } from '../../lib/floorPlanLayout'
@@ -124,6 +124,23 @@ export default function TableFloorPlan({
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null)
   const [activeTableId, setActiveTableId] = useState<string | null>(null)
   const activeFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTapRef = useRef<{ tableId: string; at: number } | null>(null)
+
+  const fallbackLabelPositions = useMemo(() => {
+    const next: Record<string, LabelPosition> = {}
+    for (const table of tables) {
+      next[table.id] = {
+        x: (table.posX / 100) * FLOOR_W,
+        y: (table.posY / 100) * FLOOR_H,
+      }
+    }
+    return next
+  }, [tables])
+
+  const effectiveLabelPositions = useMemo(
+    () => ({ ...fallbackLabelPositions, ...labelPositions }),
+    [fallbackLabelPositions, labelPositions],
+  )
 
   useEffect(() => () => {
     if (activeFlashTimeoutRef.current) clearTimeout(activeFlashTimeoutRef.current)
@@ -214,25 +231,26 @@ export default function TableFloorPlan({
     }, 650)
   }, [])
 
-  const handleTileClick = (table: FloorTable) => {
+  const handleTableClick = (table: FloorTable) => {
     if (!interactive || !onTableClick) return
+
+    const now = Date.now()
+    const last = lastTapRef.current
+    if (last?.tableId === table.id && now - last.at < 350) return
+    lastTapRef.current = { tableId: table.id, at: now }
+
     flashTableActive(table.id)
 
-    const runAction = () => {
-      if (inTransferMode && transferSourceId) {
-        const role = getTableTransferRole(table, transferSourceId)
-        if (role === 'target') onTransferTargetClick?.(table)
-        return
-      }
-      onTableClick(table)
+    if (inTransferMode && transferSourceId) {
+      const role = getTableTransferRole(table, transferSourceId)
+      if (role === 'target') onTransferTargetClick?.(table)
+      return
     }
-
-    // Breve pausa così il lampo sul piano tavolo è visibile prima del modal
-    window.setTimeout(runAction, 140)
+    onTableClick(table)
   }
 
-  /** Hit target invisibili in coordinate schermo — attivano glow 3D senza rettangoli piatti. */
-  const useScreenHits = interactive && tables.some(t => labelPositions[t.id])
+  /** Hit target invisibili — sempre attivi su mobile/desktop per tap affidabile al primo tocco */
+  const useScreenHits = interactive && tables.length > 0
 
   const handleTableHoverStart = (tableId: string) => {
     setHoveredTableId(tableId)
@@ -297,7 +315,7 @@ export default function TableFloorPlan({
               isActive={activeTableId === table.id}
               onMeasureLabels={measureLabels}
               onActivate={() => flashTableActive(table.id)}
-              onClick={() => handleTileClick(table)}
+              onClick={() => handleTableClick(table)}
               interactive={interactive && !useScreenHits}
               className="absolute"
               style={{
@@ -314,7 +332,7 @@ export default function TableFloorPlan({
       {useScreenHits && (
         <div className="absolute inset-0 z-[34]">
           {tables.map(table => {
-            const pos = labelPositions[table.id]
+            const pos = effectiveLabelPositions[table.id]
             if (!pos) return null
             const transferRole = getTableTransferRole(table, transferSourceId)
             if (inTransferMode && transferRole === 'disabled') return null
@@ -336,15 +354,12 @@ export default function TableFloorPlan({
                   height: hitH,
                   transform: 'translate(-50%, -42%)',
                 }}
-                onMouseEnter={() => handleTableHoverStart(table.id)}
-                onMouseLeave={handleTableHoverEnd}
-                onMouseDown={() => flashTableActive(table.id)}
-                onTouchStart={() => {
-                  handleTableHoverStart(table.id)
-                  flashTableActive(table.id)
+                onPointerEnter={() => handleTableHoverStart(table.id)}
+                onPointerLeave={handleTableHoverEnd}
+                onPointerUp={e => {
+                  if (e.pointerType === 'mouse' && e.button !== 0) return
+                  handleTableClick(table)
                 }}
-                onTouchEnd={handleTableHoverEnd}
-                onClick={() => handleTileClick(table)}
                 aria-label={`Tavolo ${table.number}`}
               />
             )
@@ -376,7 +391,7 @@ export default function TableFloorPlan({
         })}
 
         {tables.map(table => {
-          const pos = labelPositions[table.id]
+          const pos = effectiveLabelPositions[table.id]
           if (!pos) return null
           const { w } = tableSize(table.seats, table.shape || 'SQUARE')
           const isCompactTable = w <= 125
@@ -645,7 +660,7 @@ function TableTile({
       className={cn(
         'table-3d-group absolute outline-none',
         className,
-        interactive && !isDisabledInTransfer && 'cursor-pointer',
+        interactive && !isDisabledInTransfer && 'cursor-pointer touch-manipulation',
         isDisabledInTransfer && 'opacity-40 grayscale cursor-not-allowed',
         isHovered && 'table-3d-group--hover',
         isActive && 'table-3d-group--active',

@@ -96,15 +96,24 @@ export default function OrderModal({
 
   const table = tables.find(tbl => tbl.id === tableId)
   const activeOrderSummary = table ? findActiveTableOrder(table.orders) : undefined
+  const isOptimisticOrder = Boolean(activeOrderSummary?.id?.startsWith('opt-'))
 
   const { data: activeOrderDetail, isFetching: isLoadingOrderDetail } = useQuery<Table['orders'][0]>({
     queryKey: tq(tk, 'orders', activeOrderSummary?.id),
     queryFn: () => api.get(`/orders/${activeOrderSummary!.id}`).then(r => r.data),
-    enabled: Boolean(activeOrderSummary?.id) && !(activeOrderSummary?.items?.length),
+    enabled: Boolean(activeOrderSummary?.id) && !isOptimisticOrder,
     staleTime: 30_000,
   })
 
   const activeOrder = activeOrderDetail ?? activeOrderSummary
+
+  useEffect(() => {
+    if (!isDesktop && activeOrderSummary) {
+      setTab('order')
+    } else {
+      setTab('menu')
+    }
+  }, [tableId, isDesktop, activeOrderSummary?.id])
 
   useEffect(() => {
     if (!activeOrder?.id || !canPayOrder || !navigator.onLine) return
@@ -121,7 +130,7 @@ export default function OrderModal({
   })
 
   const invalidateOrderQueries = () => {
-    void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'none' })
+    void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'active' })
     void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
     void queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders'), refetchType: 'active' })
     void queryClient.invalidateQueries({ queryKey: tq(tk, 'menu', 'categories'), refetchType: 'none' })
@@ -195,7 +204,11 @@ export default function OrderModal({
     flushSync(() => {
       setCart([])
       setIsSubmitting(false)
-      onClose()
+      if (!isDesktop) {
+        setTab('order')
+      } else {
+        onClose()
+      }
     })
 
     if (addingToExisting) {
@@ -474,7 +487,7 @@ export default function OrderModal({
                   onClick={() => !isSoldOut && handleItemClick(item)}
                   onKeyDown={e => { if (!isSoldOut && (e.key === 'Enter' || e.key === ' ')) handleItemClick(item) }}
                   className={cn(
-                    'rounded-xl border-2 p-3 transition-all',
+                    'rounded-xl border-2 p-3 transition-all touch-manipulation',
                     isSoldOut
                       ? 'cursor-not-allowed border-white/[0.08] bg-navy-surface/50 opacity-75'
                       : inCart
@@ -510,9 +523,8 @@ export default function OrderModal({
           </div>
         </div>
       </div>
-    </div>
 
-    {!isDesktop && cartCount > 0 && tab === 'menu' && (
+      {!isDesktop && cartCount > 0 && tab === 'menu' && (
         <button
           type="button"
           onClick={() => setTab('order')}
@@ -606,6 +618,10 @@ export default function OrderModal({
               <div className="flex justify-center py-8">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-aura-gold/30 border-t-aura-gold" />
               </div>
+            ) : activeOrderItems.length === 0 ? (
+              <p className="py-6 text-center text-sm text-fumo">
+                {t('orderModal.orderLoading', { defaultValue: 'Comanda inviata — aggiornamento in corso…' })}
+              </p>
             ) : (
               activeOrderItems.map(item => (
               <div key={item.id} className="flex items-center justify-between gap-3">
