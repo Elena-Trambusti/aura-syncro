@@ -29,7 +29,7 @@ export const BRAND = {
 /** Logo ufficiale Aura Syncro — unica sorgente ovunque (UI, favicon, PWA, SEO) */
 export const BRAND_LOGO_PATH = '/favicon.png'
 export const BRAND_OG_IMAGE_PATH = '/og-image.jpg'
-export const BRAND_LOGO_VERSION = '8'
+export const BRAND_LOGO_VERSION = '9'
 export const BRAND_LOGO_SRC = `${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
 
 /** Alias legacy — stesso file favicon.png */

@@ -21,43 +21,80 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-const BRAND_NAVY = '#030712'
+/** Oro brand — gradiente verticale come il logo ufficiale */
+const GOLD_TOP = '#F7E7CE'
+const GOLD_BOTTOM = '#B8921F'
+
+/** Zona sicura maskable Android (~80% cerchio centrale) */
+const MASKABLE_LOGO_RATIO = 0.54
+/** Icona standard — logo quasi a tutto campo, senza trasparenza ai bordi */
+const STANDARD_LOGO_RATIO = 0.92
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
 
 const logoBuffer = await readFile(logoPath)
 
-/** Icona standard — logo a pieno canvas (purpose: any) */
+function goldGradientSvg(size) {
+  return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${GOLD_TOP}"/>
+      <stop offset="100%" stop-color="${GOLD_BOTTOM}"/>
+    </linearGradient>
+  </defs>
+  <rect width="${size}" height="${size}" fill="url(#gold)"/>
+</svg>`)
+}
+
+async function goldBackground(size) {
+  return sharp(goldGradientSvg(size)).png().toBuffer()
+}
+
+async function logoLayer(size, ratio) {
+  const logoSize = Math.max(1, Math.round(size * ratio))
+  return sharp(logoBuffer).resize(logoSize, logoSize, { fit: 'contain' }).png().toBuffer()
+}
+
+/** Composita logo su sfondo oro pieno — nessun pixel trasparente ai bordi */
+async function composeIcon(size, ratio) {
+  const bg = await goldBackground(size)
+  const logo = await logoLayer(size, ratio)
+  return sharp(bg).composite([{ input: logo, gravity: 'center' }]).png().toBuffer()
+}
+
+/** Icona standard — purpose: any */
 async function writeStandardIcon(size) {
-  await sharp(logoBuffer).resize(size, size).png().toFile(join(outDir, `icon-${size}.png`))
+  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
+  await sharp(png).toFile(join(outDir, `icon-${size}.png`))
   console.log(`  icon-${size}.png`)
 }
 
 /**
- * Icona maskable — logo al 58% centrato su sfondo gold (zona sicura ~80% per adaptive icon)
+ * Icona maskable — logo nella zona sicura centrale su sfondo oro pieno.
  * @see https://w3c.github.io/manifest/#icon-masks
  */
 async function writeMaskableIcon(size) {
-  await sharp(logoBuffer).resize(size, size).png().toFile(join(outDir, `maskable-${size}.png`))
+  const png = await composeIcon(size, MASKABLE_LOGO_RATIO)
+  await sharp(png).toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
-/** Adaptive Android: foreground (logo su trasparente) + background (tinta piena) */
+/** Adaptive Android: foreground (logo) + background (oro pieno) */
 async function writeAdaptivePair(size, densityName) {
-  const logo = await sharp(logoBuffer).resize(size, size).png().toBuffer()
+  const bg = await goldBackground(size)
+  const logo = await logoLayer(size, MASKABLE_LOGO_RATIO)
 
-  await sharp(logo)
-    .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
+  await sharp(bg).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
 
   await sharp({
     create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
+    .composite([{ input: logo, gravity: 'center' }])
     .png()
-    .toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
+    .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
 
-  await sharp(logo)
-    .toFile(join(androidDir, `ic_launcher_${densityName}.png`))
+  await sharp(bg).composite([{ input: logo, gravity: 'center' }]).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
 
   console.log(`  android/ic_launcher_${densityName}.png (+ foreground/background)`)
 }
@@ -70,11 +107,11 @@ for (const size of MASKABLE_SIZES) {
   await writeMaskableIcon(size)
 }
 
-/** iOS home screen — 180×180 con zona sicura */
+/** iOS home screen — 180×180 full-bleed, nessuna trasparenza */
 {
   const size = 180
-  const logo = await sharp(logoBuffer).resize(size, size).png().toBuffer()
-  await sharp(logo).toFile(join(outDir, 'apple-touch-icon.png'))
+  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
+  await sharp(png).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
 }
 
@@ -115,11 +152,11 @@ console.log('Generating favicon.ico…')
 const faviconSizes = [16, 32, 48]
 const faviconPngs = []
 for (const size of faviconSizes) {
-  const png = await sharp(logoBuffer).resize(size, size).png().toBuffer()
+  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
   faviconPngs.push({ width: size, height: size, png })
 }
 await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
-console.log('  favicon.ico (source: favicon.png — non sovrascritto)')
+console.log('  favicon.ico')
 
 console.log('Generating og-image.jpg…')
 const ogWidth = 1200

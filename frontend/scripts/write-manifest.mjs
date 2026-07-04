@@ -36,7 +36,7 @@ const manifest = {
       src: `/pwa/maskable-${size}.png`,
       sizes: `${size}x${size}`,
       type: 'image/png',
-      purpose: 'any maskable',
+      purpose: 'maskable',
     })),
   ],
 }

@@ -3,7 +3,7 @@ import { Rnd } from 'react-rnd'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Save, UtensilsCrossed, RotateCw, MousePointer2, BrickWall, Tag, Trash2, Eye, Pencil, ZoomIn, ZoomOut, Plus, Map, Edit2,
+  Save, UtensilsCrossed, RotateCw, MousePointer2, BrickWall, Tag, Trash2, Eye, Pencil, ZoomIn, ZoomOut, Plus, Map, Edit2, Table2,
 } from 'lucide-react'
 import type { FloorTable } from './TableFloorPlan'
 import TableFloorPlan, { tableSize } from './TableFloorPlan'
@@ -17,7 +17,7 @@ import type { FloorPlanLayoutV1, FloorPlanWall, FloorPlanZoneLabel } from '../..
 import { EMPTY_FLOOR_PLAN_LAYOUT, FLOOR_CANVAS_H, FLOOR_CANVAS_W, wallSegmentMetrics } from '../../lib/floorPlanLayout'
 import { OBSIDIAN_ROOM_TEMPLATE } from '../../lib/floorPlanTemplates'
 
-type EditorTool = 'select' | 'wall' | 'label' | 'delete'
+type EditorTool = 'select' | 'table' | 'wall' | 'label' | 'delete'
 type EditorTab = 'edit' | 'preview'
 type Selectable =
   | { kind: 'wall'; id: string }
@@ -118,6 +118,33 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     }
   }, [activeArea, defaultArea, editorAreas])
 
+  const nextTableNumber = useCallback(
+    () => (tableLayout.length > 0 ? Math.max(...tableLayout.map(tbl => tbl.number)) : 0) + 1,
+    [tableLayout],
+  )
+
+  const createTable = useMutation({
+    mutationFn: (data: { number: number; seats: number; area: string; posX: number; posY: number }) =>
+      api.post<FloorTable>('/tables', data).then(r => r.data),
+    onSuccess: (newTable) => {
+      setTableLayout(prev => [
+        ...prev,
+        {
+          ...newTable,
+          posX: Number(newTable.posX) || 0,
+          posY: Number(newTable.posY) || 0,
+          rotation: newTable.rotation || 0,
+        },
+      ])
+      setSelected({ kind: 'table', id: newTable.id })
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      toast.success(t('tables.editor.tableAdded', { defaultValue: 'Tavolo aggiunto' }))
+    },
+    onError: (err: unknown) => {
+      toast.error(resolveToastApiError(t, err, 'common.error'))
+    },
+  })
+
   const saveAll = useMutation({
     mutationFn: async () => {
       const positions = tableLayout.map(tbl => ({
@@ -148,6 +175,31 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     if (!canvasRef.current || canvasW === 0) return
     const rect = canvasRef.current.getBoundingClientRect()
     const pt = pctFromEvent(e, rect)
+
+    if (tool === 'table') {
+      const seatsRaw = await toast.prompt({
+        title: t('tables.editor.tableSeatsTitle', { defaultValue: 'Nuovo tavolo' }),
+        description: t('tables.editor.tableSeatsPrompt', { defaultValue: 'Quanti posti? (es. 2, 4, 6)' }),
+        defaultValue: '4',
+        placeholder: '4',
+        confirmLabel: t('common.confirm'),
+        cancelLabel: t('common.cancel'),
+      })
+      if (!seatsRaw?.trim()) return
+      const seats = Number.parseInt(seatsRaw.trim(), 10)
+      if (!Number.isFinite(seats) || seats < 1 || seats > 20) {
+        toast.error(t('tables.editor.tableSeatsInvalid', { defaultValue: 'Inserisci un numero di posti tra 1 e 20' }))
+        return
+      }
+      createTable.mutate({
+        number: nextTableNumber(),
+        seats,
+        area: activeArea,
+        posX: pt.x,
+        posY: pt.y,
+      })
+      return
+    }
 
     if (tool === 'wall') {
       if (!wallDraft) {
@@ -388,6 +440,7 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
           <div className="flex shrink-0 flex-row flex-wrap gap-2 lg:w-48 lg:flex-col">
             {([
               ['select', MousePointer2, t('tables.editor.toolSelect', { defaultValue: 'Seleziona' })],
+              ['table', Table2, t('tables.editor.toolTable', { defaultValue: 'Tavolo' })],
               ['wall', BrickWall, t('tables.editor.toolWall', { defaultValue: 'Muro' })],
               ['label', Tag, t('tables.editor.toolLabel', { defaultValue: 'Etichetta' })],
               ['delete', Trash2, t('tables.editor.toolDelete', { defaultValue: 'Elimina' })],
@@ -416,6 +469,9 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
                 {Math.round(zoom * 100)}%
               </button>
             </div>
+            {tool === 'table' && (
+              <p className="text-xs text-[#E8C872]">{t('tables.editor.tableHint', { defaultValue: 'Clicca sulla mappa per posizionare un tavolo' })}</p>
+            )}
             {wallDraft && (
               <p className="text-xs text-[#E8C872]">{t('tables.editor.wallHint', { defaultValue: 'Clicca il secondo punto del muro' })}</p>
             )}
@@ -544,7 +600,7 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center">
                     <p className="max-w-xs text-sm text-slate-500">
                       {t('tables.editor.noTablesInArea', {
-                        defaultValue: 'Nessun tavolo in questa zona. Aggiungine uno da Gestione tavoli impostando l’area «{{area}}».',
+                        defaultValue: 'Nessun tavolo in questa zona. Seleziona lo strumento Tavolo e clicca sulla mappa.',
                         area: activeArea,
                       })}
                     </p>

@@ -35,8 +35,8 @@ export const pwaManifest = {
       src: `/pwa/maskable-${size}.png`,
       sizes: `${size}x${size}`,
       type: 'image/png',
-      /** Zona sicura Android — stessa icona per launcher e splash, senza tagli */
-      purpose: 'any maskable',
+      /** Zona sicura Android adaptive — sfondo pieno, logo centrato */
+      purpose: 'maskable',
     })),
   ],
 }
