@@ -94,7 +94,6 @@ export default function LandingHero() {
       </div>
 
       <div className="mx-auto mt-11 flex max-w-6xl flex-col items-center justify-center gap-4 px-4 motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both] sm:flex-row sm:px-6">
-        <LiveDemoButton />
         <button
           type="button"
           onClick={() => setIsDemoModalOpen(true)}
@@ -103,6 +102,7 @@ export default function LandingHero() {
           {t('landing.hero.ctaDemoPrivate')}
           <AuraIcon icon={ArrowRight} size="md" className="transition-transform duration-300 group-hover:translate-x-1" />
         </button>
+        <LiveDemoButton />
       </div>
 
       <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />

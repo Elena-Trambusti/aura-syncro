@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Zap } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { resolveDemoMarket } from '../../lib/demoAccounts'
@@ -41,11 +41,7 @@ export default function LiveDemoButton({ className = 'lux-hero-cta lux-hero-cta-
       disabled={isLoading}
       className={className}
     >
-      {isLoading ? (
-        <AuraIcon icon={Loader2} size="md" className="animate-spin" />
-      ) : (
-        <AuraIcon icon={Zap} size="md" />
-      )}
+      {isLoading && <AuraIcon icon={Loader2} size="md" className="animate-spin" />}
       {t('landing.hero.ctaDemo')}
     </button>
   )
