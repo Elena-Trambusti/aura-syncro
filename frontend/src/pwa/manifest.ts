@@ -2,12 +2,14 @@
  * Web App Manifest — icone allineate ad Android (densità + maskable/adaptive).
  * Genera asset con: npm run generate-pwa-icons
  */
-import { PWA } from '../lib/brand'
+import { BRAND_LOGO_VERSION, PWA } from '../lib/brand'
 import { PWA_ROUTES } from '../lib/pwaRoutes'
 
 const STANDARD_SIZES = [48, 72, 96, 128, 144, 192, 384, 512] as const
 const MASKABLE_SIZES = [192, 512] as const
 const MASKABLE_SET = new Set<number>(MASKABLE_SIZES)
+
+const iconSrc = (path: string) => `${path}?v=${BRAND_LOGO_VERSION}`
 
 export const pwaManifest = {
   id: '/',
@@ -26,20 +28,20 @@ export const pwaManifest = {
   categories: ['business', 'food'],
   icons: [
     ...STANDARD_SIZES.filter(size => !MASKABLE_SET.has(size)).map(size => ({
-      src: `/pwa/icon-${size}.png`,
+      src: iconSrc(`/pwa/icon-${size}.png`),
       sizes: `${size}x${size}`,
       type: 'image/png',
       purpose: 'any',
     })),
     ...MASKABLE_SIZES.flatMap(size => [
       {
-        src: `/pwa/maskable-${size}.png`,
+        src: iconSrc(`/pwa/maskable-${size}.png`),
         sizes: `${size}x${size}`,
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: `/pwa/maskable-${size}.png`,
+        src: iconSrc(`/pwa/maskable-${size}.png`),
         sizes: `${size}x${size}`,
         type: 'image/png',
         purpose: 'maskable',

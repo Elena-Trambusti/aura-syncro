@@ -7,10 +7,13 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const ICON_V = '?v=14'
 
 const STANDARD_SIZES = [48, 72, 96, 128, 144, 192, 384, 512]
 const MASKABLE_SIZES = [192, 512]
 const MASKABLE_SET = new Set(MASKABLE_SIZES)
+
+const iconSrc = (path) => `${path}${ICON_V}`
 
 const manifest = {
   id: '/',
@@ -21,26 +24,26 @@ const manifest = {
   scope: '/',
   display: 'standalone',
   orientation: 'any',
-  theme_color: '#0B0E14',
-  background_color: '#0B0E14',
+  theme_color: '#E5A93C',
+  background_color: '#B8921F',
   lang: 'it',
   categories: ['business', 'food'],
   icons: [
     ...STANDARD_SIZES.filter((size) => !MASKABLE_SET.has(size)).map((size) => ({
-      src: `/pwa/icon-${size}.png`,
+      src: iconSrc(`/pwa/icon-${size}.png`),
       sizes: `${size}x${size}`,
       type: 'image/png',
       purpose: 'any',
     })),
     ...MASKABLE_SIZES.flatMap((size) => [
       {
-        src: `/pwa/maskable-${size}.png`,
+        src: iconSrc(`/pwa/maskable-${size}.png`),
         sizes: `${size}x${size}`,
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: `/pwa/maskable-${size}.png`,
+        src: iconSrc(`/pwa/maskable-${size}.png`),
         sizes: `${size}x${size}`,
         type: 'image/png',
         purpose: 'maskable',
