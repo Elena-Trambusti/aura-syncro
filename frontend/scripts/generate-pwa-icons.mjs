@@ -22,10 +22,10 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-/** Oro luxury — allineato al logo master (bordi squircle) */
-const GOLD_TOP = '#E8D4A8'
-const GOLD_MID = '#C9A86A'
-const GOLD_BOTTOM = '#9A7B3A'
+/** Logo squircle oro — massimo riempimento, sfondo trasparente */
+const STANDARD_FILL = 1
+/** Zona sicura maskable Android (~80% cerchio) */
+const MASKABLE_FILL = 0.82
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
@@ -41,69 +41,71 @@ try {
 
 const logoBuffer = await readFile(sourcePath)
 
-function goldGradientSvg(size) {
-  return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0.15" y2="1">
-      <stop offset="0%" stop-color="${GOLD_TOP}"/>
-      <stop offset="55%" stop-color="${GOLD_MID}"/>
-      <stop offset="100%" stop-color="${GOLD_BOTTOM}"/>
-    </linearGradient>
-  </defs>
-  <rect width="${size}" height="${size}" fill="url(#gold)"/>
-</svg>`)
-}
-
-async function goldBackground(size) {
-  return sharp(goldGradientSvg(size)).png().toBuffer()
-}
-
 /**
- * Logo premium full-bleed: squircle oro su sfondo oro opaco.
- * - niente trasparenza ai bordi (no aloni bianchi su Android/Chrome)
- * - lanczos3 per resize nitido
+ * Solo logo oro ufficiale, sfondo trasparente — nessun flatten, nessun box oro aggiunto.
  */
-async function goldLogoPng(size) {
-  const bg = await goldBackground(size)
+async function transparentLogoPng(size, fillRatio = STANDARD_FILL) {
+  const markSize = Math.max(1, Math.round(size * fillRatio))
   const mark = await sharp(logoBuffer)
-    .resize(size, size, {
-      fit: 'cover',
-      position: 'centre',
+    .ensureAlpha()
+    .resize(markSize, markSize, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
       kernel: 'lanczos3',
     })
-    .flatten({ background: GOLD_MID })
     .png()
     .toBuffer()
 
-  return sharp(bg)
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
     .composite([{ input: mark, gravity: 'center' }])
-    .flatten({ background: GOLD_MID })
+    .png()
+    .toBuffer()
+}
+
+async function transparentCanvas(size) {
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
     .png()
     .toBuffer()
 }
 
 async function writeStandardIcon(size) {
-  const png = await goldLogoPng(size)
+  const png = await transparentLogoPng(size, STANDARD_FILL)
   await sharp(png).toFile(join(outDir, `icon-${size}.png`))
   console.log(`  icon-${size}.png`)
 }
 
 async function writeMaskableIcon(size) {
-  const png = await goldLogoPng(size)
+  const png = await transparentLogoPng(size, MASKABLE_FILL)
   await sharp(png).toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
-/** Adaptive Android: stesso asset oro opaco su fg e bg (no cerchio bianco) */
+/** Adaptive Android: foreground logo trasparente, background trasparente */
 async function writeAdaptivePair(size, densityName) {
-  const logo = await goldLogoPng(size)
-  await sharp(logo).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
-  await sharp(logo).toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
-  await sharp(logo).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
+  const foreground = await transparentLogoPng(size, MASKABLE_FILL)
+  const background = await transparentCanvas(size)
+
+  await sharp(background).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
+  await sharp(foreground).toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
+  await sharp(foreground).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
   console.log(`  android/ic_launcher_${densityName}.png`)
 }
 
-console.log(`Generating PWA icons from ${sourcePath}…`)
+console.log(`Generating PWA icons (transparent) from ${sourcePath}…`)
 for (const size of STANDARD_SIZES) {
   await writeStandardIcon(size)
 }
@@ -113,14 +115,14 @@ for (const size of MASKABLE_SIZES) {
 
 {
   const size = 180
-  const png = await goldLogoPng(size)
+  const png = await transparentLogoPng(size, STANDARD_FILL)
   await sharp(png).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
 }
 
-console.log('Updating favicon.png (master 512, full-bleed oro)…')
+console.log('Updating favicon.png (logo oro, sfondo trasparente)…')
 {
-  const master512 = await goldLogoPng(512)
+  const master512 = await transparentLogoPng(512, STANDARD_FILL)
   await sharp(master512).toFile(logoPath)
   console.log('  favicon.png')
 }
@@ -161,7 +163,7 @@ console.log('Generating favicon.ico…')
 const faviconSizes = [16, 32, 48]
 const faviconPngs = []
 for (const size of faviconSizes) {
-  const png = await goldLogoPng(size)
+  const png = await transparentLogoPng(size, STANDARD_FILL)
   faviconPngs.push({ width: size, height: size, png })
 }
 await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
@@ -170,9 +172,9 @@ console.log('  favicon.ico')
 console.log('Generating og-image.jpg…')
 const ogWidth = 1200
 const ogHeight = 630
-const ogBg = '#020201'
+const ogBg = '#0B0E14'
 const ogLogoSize = Math.round(Math.min(ogWidth, ogHeight) * 0.52)
-const ogLogoBuffer = await goldLogoPng(ogLogoSize)
+const ogLogoBuffer = await transparentLogoPng(ogLogoSize, STANDARD_FILL)
 
 await sharp({
   create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },

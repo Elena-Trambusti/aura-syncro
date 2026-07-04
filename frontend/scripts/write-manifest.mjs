@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ICON_V = '?v=15'
+const ICON_V = '?v=16'
 
 const STANDARD_SIZES = [48, 72, 96, 128, 144, 192, 384, 512]
 const MASKABLE_SIZES = [192, 512]
@@ -24,8 +24,8 @@ const manifest = {
   scope: '/',
   display: 'standalone',
   orientation: 'any',
-  theme_color: '#E5A93C',
-  background_color: '#B8921F',
+  theme_color: '#0B0E14',
+  background_color: '#0B0E14',
   lang: 'it',
   categories: ['business', 'food'],
   icons: [
