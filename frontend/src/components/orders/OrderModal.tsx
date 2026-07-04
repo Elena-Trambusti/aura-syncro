@@ -432,9 +432,31 @@ export default function OrderModal({
 
   /** Menu: categorie + griglia piatti */
   const menuPanel = modifyingItem ? modifierSelectionPanel : (
-    <div className="flex h-full min-h-0 w-full flex-col bg-navy-elevated">
-      <div className="flex min-h-0 flex-1">
-        <div className="w-28 shrink-0 border-r border-white/[0.08] overflow-y-auto bg-navy-surface/50 py-2 sm:w-36">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-navy-elevated">
+      {/* Mobile — categorie orizzontali (tutto lo schermo per i piatti) */}
+      <div className="shrink-0 border-b border-white/[0.08] bg-navy-surface/80 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto px-3 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setSelectedCategory(cat.id)}
+              className={cn(
+                'shrink-0 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                (selectedCategory || categories[0]?.id) === cat.id
+                  ? 'bg-aura-gold text-navy font-semibold shadow-sm'
+                  : 'bg-navy-surface text-fumo hover:bg-white/[0.05]',
+              )}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
+        {/* Desktop — sidebar categorie */}
+        <div className="hidden w-36 shrink-0 overflow-y-auto border-r border-white/[0.08] bg-navy-surface/50 py-2 lg:block">
           {categories.map(cat => (
             <button
               key={cat.id}
@@ -452,7 +474,7 @@ export default function OrderModal({
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 flex flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="shrink-0 p-3 pb-0">
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               <span className="text-xs font-bold text-fumo uppercase shrink-0">{t('orderModal.course', { defaultValue: 'Portata' })}:</span>
@@ -473,8 +495,8 @@ export default function OrderModal({
               ))}
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
-            <div className="grid grid-cols-1 gap-3 xs:grid-cols-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(currentCategory?.items || []).filter(i => i.available).map(item => {
                 const cartItems = cart.filter(c => c.menuItemId === item.id)
                 const inCart = cartItems.length > 0
@@ -520,9 +542,9 @@ export default function OrderModal({
                 </div>
               )
             })}
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       {!isDesktop && cartCount > 0 && tab === 'menu' && (
@@ -688,7 +710,7 @@ export default function OrderModal({
 
   /** Pannello ordine / carrello / checkout */
   const orderPanel = (
-    <div className="flex h-full min-h-0 w-full flex-col bg-navy-elevated lg:border-l lg:border-white/[0.08]">
+    <div className="flex h-full min-h-0 min-w-0 w-full flex-col bg-navy-elevated">
       {cartContent}
       {checkoutContent}
       {orderEmptyContent}
@@ -696,13 +718,16 @@ export default function OrderModal({
   )
 
   return (
-    <AuraDialog onClose={onClose} variant="fullscreen" hideClose a11yTitle={`Ordine tavolo ${table.number}`} a11yDescription="Gestione comanda e menu">
-      <div
-        className="saas-modal flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-navy-elevated sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header compatto: titolo + azioni + tab mobile in un solo blocco fisso */}
-        <div className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-navy-mid">
+    <AuraDialog
+      onClose={onClose}
+      variant="fullscreen"
+      hideClose
+      className="saas-modal"
+      a11yTitle={`Ordine tavolo ${table.number}`}
+      a11yDescription="Gestione comanda e menu"
+    >
+      {/* Header compatto: titolo + azioni + tab mobile in un solo blocco fisso */}
+      <div className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-navy-mid">
           <div className="flex items-center justify-between gap-2 px-3 py-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:gap-3 sm:px-4 sm:py-3 sm:pt-[max(1rem,env(safe-area-inset-top))]">
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-base font-bold text-pietra sm:text-lg">
@@ -747,20 +772,27 @@ export default function OrderModal({
           )}
         </div>
 
-        {/* Body: solo questa area scrolla; header/tab restano fissi */}
-        <div className="min-h-0 flex-1 overflow-hidden overscroll-contain">
-          {isDesktop ? (
-            <div className="grid h-full min-h-0 grid-cols-3">
-              <div className="col-span-2 flex min-h-0 flex-col overflow-hidden">{menuPanel}</div>
-              <div className="col-span-1 flex min-h-0 flex-col overflow-hidden">{orderPanel}</div>
+        {/* Body: tab Menu/Ordine su mobile; split su desktop */}
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden overscroll-contain">
+          <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-3">
+            <div
+              className={cn(
+                'col-span-1 flex min-h-0 min-w-0 flex-col overflow-hidden lg:col-span-2',
+                tab === 'order' ? 'hidden lg:flex' : 'flex',
+              )}
+            >
+              {menuPanel}
             </div>
-          ) : tab === 'menu' ? (
-            <div className="flex h-full min-h-0 flex-col overflow-hidden">{menuPanel}</div>
-          ) : (
-            <div className="flex h-full min-h-0 flex-col overflow-hidden">{orderPanel}</div>
-          )}
+            <div
+              className={cn(
+                'col-span-1 flex min-h-0 min-w-0 flex-col overflow-hidden lg:border-l lg:border-white/[0.08]',
+                tab === 'menu' ? 'hidden lg:flex' : 'flex',
+              )}
+            >
+              {orderPanel}
+            </div>
+          </div>
         </div>
-      </div>
     </AuraDialog>
   )
 }

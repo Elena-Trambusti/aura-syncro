@@ -796,14 +796,24 @@
   }
 
   .aura-dialog-content--fullscreen {
-    @apply left-0 top-0 max-h-none translate-x-0 translate-y-0;
+    @apply inset-0 max-h-none h-[100dvh] w-full max-w-none translate-x-0 translate-y-0;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
     animation: aura-dialog-fade-in 220ms ease-out;
   }
 
-  @media (min-width: 640px) {
+  @media (min-width: 1024px) {
     .aura-dialog-content--fullscreen {
+      inset: auto;
       left: 50%;
       top: 50%;
+      right: auto;
+      bottom: auto;
+      width: min(100vw - 2rem, 56rem);
+      height: min(85dvh, calc(100dvh - 2rem));
+      max-height: min(85dvh, calc(100dvh - 2rem));
       transform: translate(-50%, -50%);
     }
   }

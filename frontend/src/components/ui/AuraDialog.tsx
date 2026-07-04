@@ -57,8 +57,8 @@ export function AuraDialog({
     variant === 'fullscreen'
       ? cn(
           'aura-dialog-content aura-dialog-content--fullscreen',
-          'flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-navy-elevated',
-          'sm:h-[85dvh] sm:max-h-[85dvh] sm:max-w-4xl sm:rounded-xl',
+          'flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none bg-navy-elevated p-0',
+          'lg:h-[85dvh] lg:max-h-[85dvh] lg:rounded-xl',
           className,
         )
       : variant === 'sheet'
