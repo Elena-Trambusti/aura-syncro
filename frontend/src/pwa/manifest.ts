@@ -51,6 +51,7 @@ export const pwaManifest = {
 }
 
 export const pwaIncludeAssets = [
+  'brand/aura-syncro-app-icon.png',
   'favicon.png',
   'favicon.ico',
   ...STANDARD_SIZES.map(s => `pwa/icon-${s}.png`),

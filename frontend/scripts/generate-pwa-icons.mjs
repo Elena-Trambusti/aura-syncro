@@ -1,11 +1,13 @@
 ﻿import sharp from 'sharp'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, access } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 const publicDir = join(root, 'public')
+const brandDir = join(publicDir, 'brand')
+const masterLogoPath = join(brandDir, 'aura-syncro-app-icon.png')
 const logoPath = join(publicDir, 'favicon.png')
 const outDir = join(publicDir, 'pwa')
 const androidDir = join(outDir, 'android')
@@ -20,20 +22,31 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-/** Oro brand — sfondo adaptive Android (nessun bianco nel launcher) */
-const GOLD_TOP = '#F7E7CE'
-const GOLD_BOTTOM = '#B8921F'
+/** Oro luxury — allineato al logo master (bordi squircle) */
+const GOLD_TOP = '#E8D4A8'
+const GOLD_MID = '#C9A86A'
+const GOLD_BOTTOM = '#9A7B3A'
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
+await mkdir(brandDir, { recursive: true })
 
-const logoBuffer = await readFile(logoPath)
+let sourcePath = logoPath
+try {
+  await access(masterLogoPath)
+  sourcePath = masterLogoPath
+} catch {
+  /* fallback favicon.png */
+}
+
+const logoBuffer = await readFile(sourcePath)
 
 function goldGradientSvg(size) {
   return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="gold" x1="0" y1="0" x2="0.15" y2="1">
       <stop offset="0%" stop-color="${GOLD_TOP}"/>
+      <stop offset="55%" stop-color="${GOLD_MID}"/>
       <stop offset="100%" stop-color="${GOLD_BOTTOM}"/>
     </linearGradient>
   </defs>
@@ -45,10 +58,26 @@ async function goldBackground(size) {
   return sharp(goldGradientSvg(size)).png().toBuffer()
 }
 
-/** Logo oro ufficiale a pieno canvas — nessun ritaglio, nessuna trasparenza */
+/**
+ * Logo premium full-bleed: squircle oro su sfondo oro opaco.
+ * - niente trasparenza ai bordi (no aloni bianchi su Android/Chrome)
+ * - lanczos3 per resize nitido
+ */
 async function goldLogoPng(size) {
-  return sharp(logoBuffer)
-    .resize(size, size, { fit: 'fill' })
+  const bg = await goldBackground(size)
+  const mark = await sharp(logoBuffer)
+    .resize(size, size, {
+      fit: 'cover',
+      position: 'centre',
+      kernel: 'lanczos3',
+    })
+    .flatten({ background: GOLD_MID })
+    .png()
+    .toBuffer()
+
+  return sharp(bg)
+    .composite([{ input: mark, gravity: 'center' }])
+    .flatten({ background: GOLD_MID })
     .png()
     .toBuffer()
 }
@@ -65,19 +94,16 @@ async function writeMaskableIcon(size) {
   console.log(`  maskable-${size}.png`)
 }
 
-/** Adaptive Android: foreground e background opachi oro (no cerchio bianco) */
+/** Adaptive Android: stesso asset oro opaco su fg e bg (no cerchio bianco) */
 async function writeAdaptivePair(size, densityName) {
-  const bg = await goldBackground(size)
   const logo = await goldLogoPng(size)
-
-  await sharp(bg).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
+  await sharp(logo).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
   await sharp(logo).toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
   await sharp(logo).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
-
-  console.log(`  android/ic_launcher_${densityName}.png (+ foreground/background)`)
+  console.log(`  android/ic_launcher_${densityName}.png`)
 }
 
-console.log('Generating PWA icons (gold logo full-bleed)…')
+console.log(`Generating PWA icons from ${sourcePath}…`)
 for (const size of STANDARD_SIZES) {
   await writeStandardIcon(size)
 }
@@ -90,6 +116,13 @@ for (const size of MASKABLE_SIZES) {
   const png = await goldLogoPng(size)
   await sharp(png).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
+}
+
+console.log('Updating favicon.png (master 512, full-bleed oro)…')
+{
+  const master512 = await goldLogoPng(512)
+  await sharp(master512).toFile(logoPath)
+  console.log('  favicon.png')
 }
 
 console.log('Generating Android adaptive icons…')
@@ -138,19 +171,8 @@ console.log('Generating og-image.jpg…')
 const ogWidth = 1200
 const ogHeight = 630
 const ogBg = '#020201'
-
-const logoMeta = await sharp(logoPath).metadata()
-const logoAspect = (logoMeta.width ?? 1) / (logoMeta.height ?? 1)
-const maxLogoWidth = Math.round(ogWidth * 0.42)
-const maxLogoHeight = Math.round(ogHeight * 0.72)
-let logoWidth = maxLogoWidth
-let logoHeight = Math.round(logoWidth / logoAspect)
-if (logoHeight > maxLogoHeight) {
-  logoHeight = maxLogoHeight
-  logoWidth = Math.round(logoHeight * logoAspect)
-}
-
-const ogLogoBuffer = await sharp(logoPath).resize(logoWidth, logoHeight).png().toBuffer()
+const ogLogoSize = Math.round(Math.min(ogWidth, ogHeight) * 0.52)
+const ogLogoBuffer = await goldLogoPng(ogLogoSize)
 
 await sharp({
   create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },
@@ -158,8 +180,8 @@ await sharp({
   .composite([
     {
       input: ogLogoBuffer,
-      top: Math.round((ogHeight - logoHeight) / 2),
-      left: Math.round((ogWidth - logoWidth) / 2),
+      top: Math.round((ogHeight - ogLogoSize) / 2),
+      left: Math.round((ogWidth - ogLogoSize) / 2),
     },
   ])
   .jpeg({ quality: 92, mozjpeg: true })
