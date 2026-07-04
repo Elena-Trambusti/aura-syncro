@@ -962,6 +962,98 @@
     "chartSubtitle": "Geschätzte Gäste basierend auf Historie, wetterbereinigt",
     "chartPredicted": "Prognostizierte Gäste",
     "chartHistorical": "Historischer Durchschnitt",
+    "confidenceLabel": "Zuverlässigkeit",
+    "chart": {
+      "reserved": "Reserviert",
+      "walkIn": "Walk-in gesch.",
+      "weatherImpact": "Wettereinfluss"
+    },
+    "kpi": {
+      "sectionLabel": "Prädiktive Kennzahlen",
+      "totalCovers": "Progn. Gäste (7T)",
+      "totalCoversSub": "Geschätzte Wochensumme",
+      "peakDay": "Spitzentag",
+      "peakDaySub": "{{covers}} geschätzte Gäste",
+      "confidence": "Durchschn. Zuverlässigkeit",
+      "confidenceSub": "Basierend auf historischen Stichproben",
+      "alerts": "Aktive Alerts",
+      "alertsSub": "{{critical}} kritisch · {{opportunity}} Chancen",
+      "alertsClear": "Keine Probleme erkannt"
+    },
+    "emptyState": {
+      "monitor": {
+        "inventory": "Bestands- und Mindestschwellenüberwachung zur Vermeidung von Engpässen",
+        "weather": "Automatische Anpassung nach Wetterprognose (Regen, Andrang, Verderbliches)",
+        "trends": "Verkaufstrend-Analyse zur Optimierung von Produktion und Food Cost"
+      },
+      "snapshot": "Wochenübersicht",
+      "peakSummary": "Spitze erwartet am {{day}} mit {{covers}} Gästen",
+      "factorsActive": "{{count}} prädiktive Faktoren aktiv",
+      "ctaInventory": "Zum Lager",
+      "ctaMenu": "Rezepte konfigurieren"
+    },
+    "tabs": {
+      "overview": "Übersicht",
+      "inventory": "Lager",
+      "trends": "Gerichte-Trends",
+      "insights": "KI-Insights"
+    },
+    "inventory": {
+      "title": "Lagerprognose",
+      "subtitle": "Geschätzter Verbrauch und Nachbestellvorschläge für 7 Tage",
+      "goToInventory": "Lager",
+      "colItem": "Artikel",
+      "colStock": "Bestand",
+      "colDemand": "Bedarf 7T",
+      "colDaysLeft": "Tage übrig",
+      "colReorder": "Nachbest.",
+      "colStatus": "Status",
+      "empty": "Keine Artikel mit verknüpften Rezepten",
+      "noRecipesTitle": "Rezepte verknüpfen für Prognosen",
+      "noRecipesHint": "Verknüpfen Sie Zutaten mit Menügerichten für Verbrauchsprognosen",
+      "status": {
+        "ok": "OK",
+        "low": "Niedrig",
+        "critical": "Kritisch",
+        "overstock": "Überbestand"
+      }
+    },
+    "trends": {
+      "title": "Gerichte-Trends",
+      "subtitle": "Verkaufsvergleich: letzte 2 Wochen vs. Vorperiode",
+      "rising": "Steigend",
+      "falling": "Fallend",
+      "empty": "Unzureichende Verkaufsdaten",
+      "stable": "Keine signifikanten Trends",
+      "hintUp": "Produktion von \"{{dish}}\" erhöhen",
+      "hintDown": "Promotion oder weniger Bestellungen für \"{{dish}}\" prüfen",
+      "hintStable": "Stabile Verkäufe für \"{{dish}}\""
+    },
+    "insights": {
+      "title": "Operative Insights",
+      "subtitle": "Automatische Zusammenfassung der Prädiktions-Engine",
+      "empty": "Derzeit keine Insights verfügbar",
+      "peakDay": {
+        "title": "Spitzenandrang erwartet",
+        "body": "Höchster Andrang am {{day}} mit {{covers}} geschätzten Gästen ({{confidence}}% Zuverlässigkeit)."
+      },
+      "weather": {
+        "title": "Einflussreiches Wetter",
+        "body": "Regen für {{count}} Tag(e) erwartet — Anpassungen bei Verderblichem und Außenbereich."
+      },
+      "inventory": {
+        "title": "Bestandsaufmerksamkeit",
+        "body": "{{count}} Artikel im Risiko. Priorität: {{item}} — Nachbestellung +{{reorderQty}}{{unit}}."
+      },
+      "trend": {
+        "title": "Verkaufschance",
+        "body": "\"{{dish}}\" +{{pct}}%: Verfügbarkeit und Sichtbarkeit im Service erhöhen."
+      },
+      "weekTotal": {
+        "title": "Wochenprojektion",
+        "body": "Insgesamt {{total}} Gäste in den nächsten 7 Tagen erwartet."
+      }
+    },
     "alertsTitle": "Intelligente Alerts",
     "alertsSubtitle": "Operative Vorschläge der Predictive Engine",
     "refresh": "Aktualisieren",

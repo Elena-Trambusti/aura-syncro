@@ -26,6 +26,21 @@ export type {
 
 export { getDayI18nKey } from './predictiveEngine'
 
+import {
+  buildDishTrendsPayload,
+  buildInventoryForecast,
+  buildPredictiveInsights,
+  type DishTrendItem,
+  type InventoryForecastItem,
+  type PredictiveInsight,
+} from './predictivePayload'
+
+export type {
+  InventoryForecastItem,
+  DishTrendItem,
+  PredictiveInsight,
+} from './predictivePayload'
+
 export interface PredictiveAIResult {
   forecast: AffluenceForecastDay[]
   alerts: SmartAlert[]
@@ -33,6 +48,10 @@ export interface PredictiveAIResult {
   engineVersion: string
   generatedAt: string
   weatherSource?: 'open-meteo' | 'simulated'
+  inventoryForecast: InventoryForecastItem[]
+  dishTrends: DishTrendItem[]
+  insights: PredictiveInsight[]
+  hasRecipeLinks: boolean
 }
 
 function weeksAgo(n: number) {
@@ -249,6 +268,8 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     }
   }
 
+  const hasRecipeLinks = inventoryRows.some(row => row.menuLinks.length > 0)
+
   const result = runPredictiveEngine({
     inventory,
     expectedDemand,
@@ -260,6 +281,14 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     weatherSource,
   })
 
+  const inventoryForecast = buildInventoryForecast(inventory, expectedDemand, result.forecast)
+  const dishTrendsPayload = buildDishTrendsPayload(dishTrends)
+  const insights = buildPredictiveInsights({
+    forecast: result.forecast,
+    inventoryForecast,
+    dishTrends: dishTrendsPayload,
+  })
+
   return {
     forecast: result.forecast,
     alerts: result.alerts,
@@ -267,5 +296,9 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     engineVersion: result.engineVersion,
     generatedAt: result.generatedAt,
     weatherSource: result.weatherSource,
+    inventoryForecast,
+    dishTrends: dishTrendsPayload,
+    insights,
+    hasRecipeLinks,
   }
 }

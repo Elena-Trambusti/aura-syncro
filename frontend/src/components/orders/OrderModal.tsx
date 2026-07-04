@@ -523,6 +523,7 @@ export default function OrderModal({
           </div>
         </div>
       </div>
+      </div>
 
       {!isDesktop && cartCount > 0 && tab === 'menu' && (
         <button

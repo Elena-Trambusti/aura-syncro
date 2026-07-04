@@ -1216,6 +1216,98 @@
     "chartSubtitle": "Coperti stimati in base allo storico, con aggiustamento meteo",
     "chartPredicted": "Coperti previsti",
     "chartHistorical": "Media storica",
+    "confidenceLabel": "Affidabilità",
+    "chart": {
+      "reserved": "Prenotati",
+      "walkIn": "Walk-in stimati",
+      "weatherImpact": "Impatto meteo"
+    },
+    "kpi": {
+      "sectionLabel": "Indicatori predittivi",
+      "totalCovers": "Coperti previsti (7gg)",
+      "totalCoversSub": "Somma settimanale stimata",
+      "peakDay": "Giorno di picco",
+      "peakDaySub": "{{covers}} coperti stimati",
+      "confidence": "Affidabilità media",
+      "confidenceSub": "Basata su campioni storici",
+      "alerts": "Alert attivi",
+      "alertsSub": "{{critical}} critici · {{opportunity}} opportunità",
+      "alertsClear": "Nessuna criticità rilevata"
+    },
+    "emptyState": {
+      "monitor": {
+        "inventory": "Monitoraggio scorte e soglie minime per evitare rotture di stock nel weekend",
+        "weather": "Aggiustamento automatico in base al meteo previsto (pioggia, affluenza, deperibili)",
+        "trends": "Analisi trend vendite piatti per ottimizzare produzione e food cost"
+      },
+      "snapshot": "Riepilogo settimana",
+      "peakSummary": "Picco previsto {{day}} con {{covers}} coperti",
+      "factorsActive": "{{count}} fattori predittivi attivi",
+      "ctaInventory": "Vai al Magazzino",
+      "ctaMenu": "Configura ricette menu"
+    },
+    "tabs": {
+      "overview": "Panoramica",
+      "inventory": "Magazzino",
+      "trends": "Trend piatti",
+      "insights": "Insight AI"
+    },
+    "inventory": {
+      "title": "Previsione Magazzino",
+      "subtitle": "Consumo stimato e suggerimenti di riordino per i prossimi 7 giorni",
+      "goToInventory": "Magazzino",
+      "colItem": "Articolo",
+      "colStock": "Scorta",
+      "colDemand": "Consumo 7gg",
+      "colDaysLeft": "Giorni residui",
+      "colReorder": "Riordino sug.",
+      "colStatus": "Stato",
+      "empty": "Nessun articolo con ricetta collegata",
+      "noRecipesTitle": "Collega le ricette per attivare le previsioni",
+      "noRecipesHint": "Associa gli ingredienti ai piatti del menu per calcolare il consumo previsto",
+      "status": {
+        "ok": "OK",
+        "low": "Basso",
+        "critical": "Critico",
+        "overstock": "Eccesso"
+      }
+    },
+    "trends": {
+      "title": "Trend Piatti",
+      "subtitle": "Confronto vendite ultime 2 settimane vs periodo precedente",
+      "rising": "In crescita",
+      "falling": "In calo",
+      "empty": "Dati vendite insufficienti",
+      "stable": "Nessun trend significativo rilevato",
+      "hintUp": "Aumenta la produzione di \"{{dish}}\"",
+      "hintDown": "Valuta promozione o riduzione ordini per \"{{dish}}\"",
+      "hintStable": "Vendite stabili per \"{{dish}}\""
+    },
+    "insights": {
+      "title": "Insight Operativi",
+      "subtitle": "Sintesi automatica dal motore predittivo",
+      "empty": "Nessun insight disponibile al momento",
+      "peakDay": {
+        "title": "Picco di affluenza previsto",
+        "body": "Il giorno di maggiore affluenza è {{day}} con {{covers}} coperti stimati (affidabilità {{confidence}}%)."
+      },
+      "weather": {
+        "title": "Meteo impattante in arrivo",
+        "body": "Prevista pioggia in {{count}} giorno/i — considera aggiustamenti su deperibili e dehors."
+      },
+      "inventory": {
+        "title": "Attenzione scorte",
+        "body": "{{count}} articolo/i a rischio. Priorità: {{item}} — riordino suggerito +{{reorderQty}}{{unit}}."
+      },
+      "trend": {
+        "title": "Opportunità vendita",
+        "body": "\"{{dish}}\" in crescita del {{pct}}%: aumenta disponibilità e visibilità in sala."
+      },
+      "weekTotal": {
+        "title": "Proiezione settimanale",
+        "body": "Totale {{total}} coperti previsti nei prossimi 7 giorni."
+      }
+    },
     "alertsTitle": "Alert Intelligenti",
     "alertsSubtitle": "Suggerimenti operativi generati dal motore predittivo",
     "refresh": "Aggiorna",

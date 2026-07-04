@@ -1128,6 +1128,98 @@
     "chartSubtitle": "Estimated covers based on history, adjusted for weather",
     "chartPredicted": "Predicted covers",
     "chartHistorical": "Historical average",
+    "confidenceLabel": "Confidence",
+    "chart": {
+      "reserved": "Reserved",
+      "walkIn": "Est. walk-in",
+      "weatherImpact": "Weather impact"
+    },
+    "kpi": {
+      "sectionLabel": "Predictive indicators",
+      "totalCovers": "Predicted covers (7d)",
+      "totalCoversSub": "Estimated weekly total",
+      "peakDay": "Peak day",
+      "peakDaySub": "{{covers}} estimated covers",
+      "confidence": "Avg. confidence",
+      "confidenceSub": "Based on historical samples",
+      "alerts": "Active alerts",
+      "alertsSub": "{{critical}} critical · {{opportunity}} opportunities",
+      "alertsClear": "No issues detected"
+    },
+    "emptyState": {
+      "monitor": {
+        "inventory": "Stock and minimum threshold monitoring to prevent weekend stockouts",
+        "weather": "Automatic adjustment based on forecast weather (rain, footfall, perishables)",
+        "trends": "Dish sales trend analysis to optimise production and food cost"
+      },
+      "snapshot": "Weekly snapshot",
+      "peakSummary": "Peak expected on {{day}} with {{covers}} covers",
+      "factorsActive": "{{count}} predictive factors active",
+      "ctaInventory": "Go to Inventory",
+      "ctaMenu": "Configure menu recipes"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "inventory": "Inventory",
+      "trends": "Dish trends",
+      "insights": "AI insights"
+    },
+    "inventory": {
+      "title": "Inventory Forecast",
+      "subtitle": "Estimated consumption and reorder suggestions for the next 7 days",
+      "goToInventory": "Inventory",
+      "colItem": "Item",
+      "colStock": "Stock",
+      "colDemand": "7d demand",
+      "colDaysLeft": "Days left",
+      "colReorder": "Reorder",
+      "colStatus": "Status",
+      "empty": "No items with linked recipes",
+      "noRecipesTitle": "Link recipes to enable forecasts",
+      "noRecipesHint": "Associate ingredients with menu dishes to calculate expected consumption",
+      "status": {
+        "ok": "OK",
+        "low": "Low",
+        "critical": "Critical",
+        "overstock": "Overstock"
+      }
+    },
+    "trends": {
+      "title": "Dish Trends",
+      "subtitle": "Sales comparison: last 2 weeks vs previous period",
+      "rising": "Rising",
+      "falling": "Falling",
+      "empty": "Insufficient sales data",
+      "stable": "No significant trends detected",
+      "hintUp": "Increase production of \"{{dish}}\"",
+      "hintDown": "Consider promotion or reduced orders for \"{{dish}}\"",
+      "hintStable": "Stable sales for \"{{dish}}\""
+    },
+    "insights": {
+      "title": "Operational Insights",
+      "subtitle": "Automatic summary from the predictive engine",
+      "empty": "No insights available at the moment",
+      "peakDay": {
+        "title": "Peak footfall expected",
+        "body": "Highest footfall day is {{day}} with {{covers}} estimated covers ({{confidence}}% confidence)."
+      },
+      "weather": {
+        "title": "Impactful weather ahead",
+        "body": "Rain forecast for {{count}} day(s) — consider adjustments for perishables and outdoor seating."
+      },
+      "inventory": {
+        "title": "Stock attention needed",
+        "body": "{{count}} item(s) at risk. Priority: {{item}} — suggested reorder +{{reorderQty}}{{unit}}."
+      },
+      "trend": {
+        "title": "Sales opportunity",
+        "body": "\"{{dish}}\" up {{pct}}%: increase availability and visibility on the floor."
+      },
+      "weekTotal": {
+        "title": "Weekly projection",
+        "body": "{{total}} total covers expected over the next 7 days."
+      }
+    },
     "alertsTitle": "Smart Alerts",
     "alertsSubtitle": "Operational suggestions from the predictive engine",
     "refresh": "Refresh",

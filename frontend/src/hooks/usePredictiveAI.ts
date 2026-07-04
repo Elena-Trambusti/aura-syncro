@@ -3,10 +3,9 @@ import { api } from '../lib/api'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 
-export type WeatherCondition = 'sunny' | 'cloudy' | 'rain'
+export type WeatherCondition = 'sunny' | 'cloudy' | 'rain' | 'unknown'
 export type AlertSeverity = 'critical' | 'optimization' | 'opportunity'
 
-/** Mappa i campi Prisma `quantity` / `minQuantity` ai nomi del dominio predittivo */
 export interface InventoryItemPredictive {
   id: string
   name: string
@@ -25,12 +24,47 @@ export interface AffluenceForecastDay {
   weatherImpactPct: number
   confidence: number
   historicalSamples: number
+  reservedCovers?: number
+  walkInCovers?: number
 }
 
 export interface PredictiveAlert {
   id: string
   severity: AlertSeverity
   i18nKey: string
+  params: Record<string, string | number>
+}
+
+export type InventoryForecastStatus = 'ok' | 'low' | 'critical' | 'overstock'
+
+export interface InventoryForecastItem {
+  itemId: string
+  itemName: string
+  unit: string
+  currentStock: number
+  minStock: number
+  demandNext7Days: number
+  daysUntilStockout: number | null
+  suggestedReorderQty: number
+  status: InventoryForecastStatus
+}
+
+export type DishTrendDirection = 'up' | 'down' | 'stable'
+
+export interface DishTrendItem {
+  dishId: string
+  dishName: string
+  changePct: number
+  direction: DishTrendDirection
+}
+
+export type InsightType = 'peak_day' | 'weather' | 'inventory' | 'trend'
+
+export interface PredictiveInsight {
+  id: string
+  type: InsightType
+  titleKey: string
+  bodyKey: string
   params: Record<string, string | number>
 }
 
@@ -41,6 +75,10 @@ export interface PredictiveAIData {
   engineVersion?: string
   generatedAt: string
   weatherSource?: 'open-meteo' | 'simulated'
+  inventoryForecast: InventoryForecastItem[]
+  dishTrends: DishTrendItem[]
+  insights: PredictiveInsight[]
+  hasRecipeLinks: boolean
 }
 
 /**
@@ -63,6 +101,10 @@ export function usePredictiveAI() {
     engineVersion: query.data?.engineVersion,
     generatedAt: query.data?.generatedAt,
     weatherSource: query.data?.weatherSource,
+    inventoryForecast: query.data?.inventoryForecast ?? [],
+    dishTrends: query.data?.dishTrends ?? [],
+    insights: query.data?.insights ?? [],
+    hasRecipeLinks: query.data?.hasRecipeLinks ?? false,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

@@ -991,6 +991,98 @@
     "chartSubtitle": "Cubiertos estimados según historial, ajustados por clima",
     "chartPredicted": "Cubiertos previstos",
     "chartHistorical": "Media histórica",
+    "confidenceLabel": "Fiabilidad",
+    "chart": {
+      "reserved": "Reservados",
+      "walkIn": "Walk-in est.",
+      "weatherImpact": "Impacto meteorológico"
+    },
+    "kpi": {
+      "sectionLabel": "Indicadores predictivos",
+      "totalCovers": "Cubiertos previstos (7d)",
+      "totalCoversSub": "Total semanal estimado",
+      "peakDay": "Día pico",
+      "peakDaySub": "{{covers}} cubiertos estimados",
+      "confidence": "Fiabilidad media",
+      "confidenceSub": "Basada en muestras históricas",
+      "alerts": "Alertas activas",
+      "alertsSub": "{{critical}} críticas · {{opportunity}} oportunidades",
+      "alertsClear": "Sin incidencias detectadas"
+    },
+    "emptyState": {
+      "monitor": {
+        "inventory": "Monitorización de stock y umbrales mínimos para evitar roturas de stock",
+        "weather": "Ajuste automático según el tiempo previsto (lluvia, afluencia, perecederos)",
+        "trends": "Análisis de tendencias de ventas para optimizar producción y food cost"
+      },
+      "snapshot": "Resumen semanal",
+      "peakSummary": "Pico previsto el {{day}} con {{covers}} cubiertos",
+      "factorsActive": "{{count}} factores predictivos activos",
+      "ctaInventory": "Ir al Almacén",
+      "ctaMenu": "Configurar recetas del menú"
+    },
+    "tabs": {
+      "overview": "Panorama",
+      "inventory": "Almacén",
+      "trends": "Tendencias",
+      "insights": "Insights IA"
+    },
+    "inventory": {
+      "title": "Previsión de Almacén",
+      "subtitle": "Consumo estimado y sugerencias de pedido para los próximos 7 días",
+      "goToInventory": "Almacén",
+      "colItem": "Artículo",
+      "colStock": "Stock",
+      "colDemand": "Demanda 7d",
+      "colDaysLeft": "Días rest.",
+      "colReorder": "Pedido sug.",
+      "colStatus": "Estado",
+      "empty": "Ningún artículo con receta vinculada",
+      "noRecipesTitle": "Vincula recetas para activar las previsiones",
+      "noRecipesHint": "Asocia ingredientes a los platos del menú para calcular el consumo previsto",
+      "status": {
+        "ok": "OK",
+        "low": "Bajo",
+        "critical": "Crítico",
+        "overstock": "Exceso"
+      }
+    },
+    "trends": {
+      "title": "Tendencias de Platos",
+      "subtitle": "Comparación de ventas: últimas 2 semanas vs periodo anterior",
+      "rising": "En alza",
+      "falling": "En baja",
+      "empty": "Datos de ventas insuficientes",
+      "stable": "Sin tendencias significativas",
+      "hintUp": "Aumenta la producción de \"{{dish}}\"",
+      "hintDown": "Valora promoción o reducción de pedidos para \"{{dish}}\"",
+      "hintStable": "Ventas estables de \"{{dish}}\""
+    },
+    "insights": {
+      "title": "Insights Operativos",
+      "subtitle": "Resumen automático del motor predictivo",
+      "empty": "Sin insights disponibles por el momento",
+      "peakDay": {
+        "title": "Pico de afluencia previsto",
+        "body": "El día de mayor afluencia es {{day}} con {{covers}} cubiertos estimados (fiabilidad {{confidence}}%)."
+      },
+      "weather": {
+        "title": "Meteorología impactante",
+        "body": "Lluvia prevista en {{count}} día(s) — considera ajustes en perecederos y terraza."
+      },
+      "inventory": {
+        "title": "Atención al stock",
+        "body": "{{count}} artículo(s) en riesgo. Prioridad: {{item}} — pedido sugerido +{{reorderQty}}{{unit}}."
+      },
+      "trend": {
+        "title": "Oportunidad de venta",
+        "body": "\"{{dish}}\" sube un {{pct}}%: aumenta disponibilidad y visibilidad en sala."
+      },
+      "weekTotal": {
+        "title": "Proyección semanal",
+        "body": "Total de {{total}} cubiertos previstos en los próximos 7 días."
+      }
+    },
     "alertsTitle": "Alertas Inteligentes",
     "alertsSubtitle": "Sugerencias operativas del motor predictivo",
     "refresh": "Actualizar",
