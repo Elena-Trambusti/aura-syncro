@@ -90,8 +90,8 @@
   },
   "demo": {
     "bannerTitle": "Aura Syncro interactive demo",
-    "bannerSubtitle": "Try the full flow from Tables: open a table, place an order, and watch real-time sync.",
-    "bannerReadOnly": "You are browsing in read-only mode. You can only change data from Tables (orders and checkout).",
+    "bannerSubtitle": "Explore the demo: you can edit table layout, areas, and status.",
+    "bannerReadOnly": "Read-only mode. In the demo you can only modify the Tables section.",
     "apiReadOnly": "In Demo mode you can only interact with the Tables section.",
     "apiForbidden": "Action not allowed in Demo mode."
   },

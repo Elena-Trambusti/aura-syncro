@@ -88,8 +88,8 @@
   },
   "demo": {
     "bannerTitle": "Demo interactiva de Aura Syncro",
-    "bannerSubtitle": "Prueba el flujo completo desde Mesas: abre una mesa, crea un pedido y sigue la sincronización en tiempo real.",
-    "bannerReadOnly": "Estás explorando en solo lectura. Solo puedes modificar datos desde Mesas (pedidos y cobro).",
+    "bannerSubtitle": "Explora la demo: puedes modificar el layout, las zonas y el estado de las mesas.",
+    "bannerReadOnly": "Solo lectura. En la demo solo puedes modificar la sección Mesas.",
     "apiReadOnly": "En modo Demo solo puedes interactuar con la sección Mesas.",
     "apiForbidden": "Acción no permitida en modo Demo."
   },

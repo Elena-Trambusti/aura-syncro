@@ -91,8 +91,8 @@
   },
   "demo": {
     "bannerTitle": "Demo interattiva Aura Syncro",
-    "bannerSubtitle": "Prova il flusso completo dalla sezione Tavoli: apri un tavolo, inserisci una comanda e segui la sincronizzazione in tempo reale.",
-    "bannerReadOnly": "Stai esplorando in sola lettura. Puoi modificare dati solo dalla sezione Tavoli (comande e incasso).",
+    "bannerSubtitle": "Esplora la demo: puoi modificare layout, aree e stato dei tavoli.",
+    "bannerReadOnly": "Sola lettura. In demo puoi modificare solo la sezione Tavoli.",
     "apiReadOnly": "In modalità Demo puoi interagire solo con la sezione Tavoli.",
     "apiForbidden": "Azione non consentita in modalità Demo."
   },

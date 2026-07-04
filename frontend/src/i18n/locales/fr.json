@@ -88,8 +88,8 @@
   },
   "demo": {
     "bannerTitle": "Démo interactive Aura Syncro",
-    "bannerSubtitle": "Testez le flux complet depuis Tables : ouvrir une table, passer commande et suivre la synchro en temps réel.",
-    "bannerReadOnly": "Vous explorez en lecture seule. Les modifications ne sont possibles que depuis Tables (commandes et encaissement).",
+    "bannerSubtitle": "Explorez la démo : modifiez le plan, les zones et l'état des tables.",
+    "bannerReadOnly": "Lecture seule. En démo, seule la section Tables est modifiable.",
     "apiReadOnly": "En mode Démo, vous ne pouvez interagir qu'avec la section Tables.",
     "apiForbidden": "Action non autorisée en mode Démo."
   },

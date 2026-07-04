@@ -88,8 +88,8 @@
   },
   "demo": {
     "bannerTitle": "Aura Syncro interaktive Demo",
-    "bannerSubtitle": "Testen Sie den vollständigen Ablauf über Tische: Tisch öffnen, Bestellung aufgeben und Echtzeit-Sync verfolgen.",
-    "bannerReadOnly": "Sie erkunden im Lesemodus. Änderungen sind nur im Bereich Tische möglich (Bestellungen und Kasse).",
+    "bannerSubtitle": "Demo erkunden: Layout, Bereiche und Tischstatus anpassen.",
+    "bannerReadOnly": "Nur Lesen. In der Demo sind nur Änderungen im Bereich Tische möglich.",
     "apiReadOnly": "Im Demo-Modus können Sie nur den Bereich Tische nutzen.",
     "apiForbidden": "Aktion im Demo-Modus nicht erlaubt."
   },

@@ -4,6 +4,7 @@ import { ArrowRight, BarChart3 } from 'lucide-react'
 import AuraIcon from '../ui/AuraIcon'
 import { BRAND, BRAND_LOGO_SRC } from '../../lib/brand'
 import DemoBookingModal from './DemoBookingModal'
+import LiveDemoButton from './LiveDemoButton'
 
 export default function LandingHero() {
   const { t } = useTranslation()
@@ -92,11 +93,12 @@ export default function LandingHero() {
         </div>
       </div>
 
-      <div className="mx-auto mt-11 flex max-w-6xl justify-center px-4 motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both] sm:px-6">
+      <div className="mx-auto mt-11 flex max-w-6xl flex-col items-center justify-center gap-4 px-4 motion-reduce:animate-none motion-safe:animate-[reveal-blur_0.8s_cubic-bezier(0.16,1,0.3,1)_150ms_both] sm:flex-row sm:px-6">
+        <LiveDemoButton />
         <button
           type="button"
           onClick={() => setIsDemoModalOpen(true)}
-          className="lux-hero-cta group"
+          className="lux-hero-cta group w-full sm:w-auto"
         >
           {t('landing.hero.ctaDemoPrivate')}
           <AuraIcon icon={ArrowRight} size="md" className="transition-transform duration-300 group-hover:translate-x-1" />

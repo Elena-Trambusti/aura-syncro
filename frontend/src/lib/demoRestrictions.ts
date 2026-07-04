@@ -1,11 +1,6 @@
 import { isDemoUserEmail } from './demoAccounts'
 
-const DEMO_WRITE_PREFIXES = [
-  '/api/tables',
-  '/api/orders',
-  '/api/payments',
-  '/api/checkout',
-] as const
+const DEMO_WRITE_PREFIXES = ['/api/tables'] as const
 
 export function normalizeApiPath(path: string): string {
   const clean = path.split('?')[0]
@@ -27,9 +22,9 @@ export function isDemoMutationAllowed(url: string, method: string): boolean {
   return DEMO_WRITE_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 
-/** Rotte dashboard dove la demo può modificare dati (tavoli + checkout collegato). */
+/** Rotte dashboard dove la demo può modificare dati (solo sezione Tavoli). */
 export function isDemoWritableAppRoute(pathname: string): boolean {
-  return pathname.startsWith('/tavoli') || pathname.startsWith('/checkout/')
+  return pathname.startsWith('/tavoli')
 }
 
 export function isDemoReadOnlyRoute(pathname: string, userEmail?: string | null): boolean {
