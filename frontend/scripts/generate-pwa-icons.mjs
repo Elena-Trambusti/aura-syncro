@@ -21,19 +21,35 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-/** Oro brand — gradiente verticale come il logo ufficiale */
+/** Oro brand — gradiente verticale */
 const GOLD_TOP = '#F7E7CE'
 const GOLD_BOTTOM = '#B8921F'
+const GOLD_TOP_RGB = { r: 247, g: 231, b: 206 }
 
-/** Zona sicura maskable Android (~80% cerchio centrale) */
-const MASKABLE_LOGO_RATIO = 0.54
-/** Icona standard — logo quasi a tutto campo, senza trasparenza ai bordi */
-const STANDARD_LOGO_RATIO = 0.92
+/**
+ * Il favicon sorgente è uno squircle con angoli trasparenti.
+ * Ritagliamo la zona centrale (solo logo A + oro piatto) per evitare
+ * il doppio bordo visibile sulle adaptive icon Android/Samsung.
+ */
+const MARK_CROP_INSET_RATIO = 0.14
+const STANDARD_MARK_RATIO = 0.62
+const MASKABLE_MARK_RATIO = 0.46
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
 
 const logoBuffer = await readFile(logoPath)
+const logoMeta = await sharp(logoBuffer).metadata()
+const sourceSize = logoMeta.width ?? 192
+const markInset = Math.round(sourceSize * MARK_CROP_INSET_RATIO)
+const markCropSize = sourceSize - markInset * 2
+
+/** Logo centrale senza il contorno arrotondato dello squircle */
+const logoMarkBuffer = await sharp(logoBuffer)
+  .flatten({ background: GOLD_TOP_RGB })
+  .extract({ left: markInset, top: markInset, width: markCropSize, height: markCropSize })
+  .png()
+  .toBuffer()
 
 function goldGradientSvg(size) {
   return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -51,50 +67,52 @@ async function goldBackground(size) {
   return sharp(goldGradientSvg(size)).png().toBuffer()
 }
 
-async function logoLayer(size, ratio) {
-  const logoSize = Math.max(1, Math.round(size * ratio))
-  return sharp(logoBuffer).resize(logoSize, logoSize, { fit: 'contain' }).png().toBuffer()
+async function markLayer(size, ratio) {
+  const markSize = Math.max(1, Math.round(size * ratio))
+  return sharp(logoMarkBuffer)
+    .resize(markSize, markSize, { fit: 'contain' })
+    .png()
+    .toBuffer()
 }
 
-/** Composita logo su sfondo oro pieno — nessun pixel trasparente ai bordi */
-async function composeIcon(size, ratio) {
+/** Icona full-bleed: sfondo oro fino ai bordi, zero trasparenza */
+async function composeFullBleedIcon(size, markRatio) {
   const bg = await goldBackground(size)
-  const logo = await logoLayer(size, ratio)
-  return sharp(bg).composite([{ input: logo, gravity: 'center' }]).png().toBuffer()
+  const mark = await markLayer(size, markRatio)
+  return sharp(bg)
+    .composite([{ input: mark, gravity: 'center' }])
+    .removeAlpha()
+    .png()
+    .toBuffer()
 }
 
-/** Icona standard — purpose: any */
 async function writeStandardIcon(size) {
-  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
+  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
   await sharp(png).toFile(join(outDir, `icon-${size}.png`))
   console.log(`  icon-${size}.png`)
 }
 
-/**
- * Icona maskable — logo nella zona sicura centrale su sfondo oro pieno.
- * @see https://w3c.github.io/manifest/#icon-masks
- */
 async function writeMaskableIcon(size) {
-  const png = await composeIcon(size, MASKABLE_LOGO_RATIO)
+  const png = await composeFullBleedIcon(size, MASKABLE_MARK_RATIO)
   await sharp(png).toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
-/** Adaptive Android: foreground (logo) + background (oro pieno) */
 async function writeAdaptivePair(size, densityName) {
   const bg = await goldBackground(size)
-  const logo = await logoLayer(size, MASKABLE_LOGO_RATIO)
+  const mark = await markLayer(size, MASKABLE_MARK_RATIO)
 
-  await sharp(bg).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
+  await sharp(bg).removeAlpha().toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
 
   await sharp({
     create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
-    .composite([{ input: logo, gravity: 'center' }])
+    .composite([{ input: mark, gravity: 'center' }])
     .png()
     .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
 
-  await sharp(bg).composite([{ input: logo, gravity: 'center' }]).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
+  const combined = await composeFullBleedIcon(size, MASKABLE_MARK_RATIO)
+  await sharp(combined).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
 
   console.log(`  android/ic_launcher_${densityName}.png (+ foreground/background)`)
 }
@@ -107,10 +125,9 @@ for (const size of MASKABLE_SIZES) {
   await writeMaskableIcon(size)
 }
 
-/** iOS home screen — 180×180 full-bleed, nessuna trasparenza */
 {
   const size = 180
-  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
+  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
   await sharp(png).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
 }
@@ -120,7 +137,6 @@ for (const { name, size } of ADAPTIVE_DENSITIES) {
   await writeAdaptivePair(size, name)
 }
 
-/** ICO multi-risoluzione (PNG embedded, supporto Vista+) */
 function createIcoFromPngBuffers(images) {
   const count = images.length
   const header = Buffer.alloc(6)
@@ -152,7 +168,7 @@ console.log('Generating favicon.ico…')
 const faviconSizes = [16, 32, 48]
 const faviconPngs = []
 for (const size of faviconSizes) {
-  const png = await composeIcon(size, STANDARD_LOGO_RATIO)
+  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
   faviconPngs.push({ width: size, height: size, png })
 }
 await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
@@ -163,8 +179,8 @@ const ogWidth = 1200
 const ogHeight = 630
 const ogBg = '#020201'
 
-const logoMeta = await sharp(logoPath).metadata()
-const logoAspect = (logoMeta.width ?? 1) / (logoMeta.height ?? 1)
+const ogLogoMeta = await sharp(logoPath).metadata()
+const logoAspect = (ogLogoMeta.width ?? 1) / (ogLogoMeta.height ?? 1)
 const maxLogoWidth = Math.round(ogWidth * 0.42)
 const maxLogoHeight = Math.round(ogHeight * 0.72)
 let logoWidth = maxLogoWidth

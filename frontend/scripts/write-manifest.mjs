@@ -22,7 +22,7 @@ const manifest = {
   display: 'standalone',
   orientation: 'any',
   theme_color: '#E5A93C',
-  background_color: '#030712',
+  background_color: '#B8921F',
   lang: 'it',
   categories: ['business', 'food'],
   icons: [
