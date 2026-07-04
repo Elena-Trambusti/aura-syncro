@@ -73,7 +73,8 @@ export async function resolveTipWaiterId(
   if (!tipWaiterId) return undefined
 
   if (executorRole && ['WAITER', 'BARTENDER'].includes(executorRole)) {
-    if (executorUserId && tipWaiterId !== executorUserId && tipWaiterId !== orderWaiterId) {
+    const allowedTipWaiterId = orderWaiterId || executorUserId
+    if (tipWaiterId !== allowedTipWaiterId) {
       throw new Error('UNAUTHORIZED_TIP_ASSIGNMENT')
     }
   }

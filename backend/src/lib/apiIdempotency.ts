@@ -55,20 +55,21 @@ export async function acquireIdempotencyLock(
       existing?.statusCode === 202
       && Date.now() - existing.createdAt.getTime() > STALE_LOCK_MS
     ) {
-      await prisma.apiIdempotencyRecord.delete({
-        where: { restaurantId_key: { restaurantId, key } },
-      })
       try {
-        await prisma.apiIdempotencyRecord.create({
-          data: {
-            restaurantId,
-            key,
-            route,
+        const updated = await prisma.apiIdempotencyRecord.updateMany({
+          where: { 
+            restaurantId, 
+            key, 
             statusCode: 202,
+            createdAt: existing.createdAt
+          },
+          data: {
+            createdAt: new Date(),
+            route,
             responseBody: { message: 'processing' },
           },
         })
-        return true
+        return updated.count > 0
       } catch {
         return false
       }

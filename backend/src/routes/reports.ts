@@ -115,7 +115,8 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
   let estimatedFoodCost = 0
   for (const item of orderItems) {
     for (const link of item.menuItem.inventoryLinks) {
-      estimatedFoodCost += link.quantity * moneyNumber(link.inventoryItem.cost) * item.quantity
+      const lineCost = link.quantity * moneyNumber(link.inventoryItem.cost) * item.quantity
+      estimatedFoodCost = Math.round((estimatedFoodCost + lineCost) * 100) / 100
     }
   }
 
