@@ -775,7 +775,11 @@
   }
 
   .aura-dialog-content {
-    @apply fixed z-[99999] max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto outline-none;
+    @apply fixed z-[99999] outline-none;
+  }
+
+  .aura-dialog-content:not(.aura-dialog-content--fullscreen) {
+    @apply max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto;
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
@@ -796,11 +800,18 @@
   }
 
   .aura-dialog-content--fullscreen {
-    @apply inset-0 max-h-none h-[100dvh] w-full max-w-none translate-x-0 translate-y-0;
+    inset: 0;
     left: 0;
     right: 0;
     top: 0;
     bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    transform: none;
+    overflow: hidden;
     animation: aura-dialog-fade-in 220ms ease-out;
   }
 
@@ -812,6 +823,7 @@
       right: auto;
       bottom: auto;
       width: min(100vw - 2rem, 56rem);
+      max-width: min(100vw - 2rem, 56rem);
       height: min(85dvh, calc(100dvh - 2rem));
       max-height: min(85dvh, calc(100dvh - 2rem));
       transform: translate(-50%, -50%);

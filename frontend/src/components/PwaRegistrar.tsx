@@ -16,19 +16,18 @@ export default function PwaRegistrar() {
         immediate: true,
         onRegistered(registration) {
           console.info('[Aura Syncro PWA] Service Worker registrato:', registration?.scope)
+          // Controlla subito aggiornamenti (bundle JS/CSS nuovi dopo deploy)
+          void registration?.update()
         },
         onRegisterError(error) {
           console.error('[Aura Syncro PWA] Errore registrazione Service Worker:', error)
         },
         onNeedRefresh() {
-          toast.message(i18n.t('pwa.updateAvailable', { defaultValue: 'Nuova versione disponibile' }), {
+          toast.message(i18n.t('pwa.updateAvailable', { defaultValue: 'Nuova versione disponibile — ricarico…' }), {
             id: 'pwa-update',
-            duration: Infinity,
-            action: {
-              label: i18n.t('pwa.reload', { defaultValue: 'Ricarica' }),
-              onClick: () => window.location.reload(),
-            },
+            duration: 3000,
           })
+          window.setTimeout(() => window.location.reload(), 1500)
         },
       })
     }

@@ -722,7 +722,7 @@ export default function OrderModal({
       onClose={onClose}
       variant="fullscreen"
       hideClose
-      className="saas-modal"
+      className="saas-modal flex min-h-0 flex-col"
       a11yTitle={`Ordine tavolo ${table.number}`}
       a11yDescription="Gestione comanda e menu"
     >

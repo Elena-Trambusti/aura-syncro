@@ -62,7 +62,7 @@ export default defineConfig({
     tailwindcss(),
     nonBlockingCss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
