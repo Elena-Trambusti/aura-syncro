@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io-client'
-import { resolveBackendUrl } from './backendUrl'
+import { resolveSocketUrl } from './backendUrl'
 import { getSessionToken } from './sessionToken'
 
 let socket: Socket | null = null
@@ -10,7 +10,7 @@ export function isSocketConnected(): boolean {
 }
 
 function getSocketUrl(): string | undefined {
-  return resolveBackendUrl()
+  return resolveSocketUrl()
 }
 
 function buildSocketAuth(): { token?: string } {

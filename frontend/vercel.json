@@ -20,6 +20,14 @@
       "destination": "https://aura-syncro-s98ae.ondigitalocean.app/api/:path*"
     },
     {
+      "source": "/socket.io",
+      "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io"
+    },
+    {
+      "source": "/socket.io/",
+      "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io/"
+    },
+    {
       "source": "/socket.io/:path*",
       "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io/:path*"
     },
