@@ -9,7 +9,7 @@ import { defaultTaxRateForRegion, normalizeTaxRateForRegion } from '../lib/fisca
 import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -209,7 +209,7 @@ export default function SettingsPage() {
       toast.success(t('settings.saved'))
     },
     onError: (err: unknown) => {
-      toast.error(formatApiError(err))
+      toast.error(formatApiError(t, err))
     },
   })
 

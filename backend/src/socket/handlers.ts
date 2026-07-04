@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io'
 import { prisma } from '../lib/prisma'
+import { logger } from '../lib/logger'
 import { requireSocketRole, verifySocketToken } from '../middleware/auth'
 import { isDemoUserEmail } from '../lib/demoSandbox'
 import { SESSION_COOKIE_NAME } from '../lib/sessionCookie'
@@ -77,7 +78,7 @@ export function setupSocketHandlers(io: Server): void {
   io.on('connection', (socket: Socket) => {
     const { restaurantId, userId } = socket.data
     socket.join(restaurantId)
-    console.log(`👤 Utente ${userId} connesso al ristorante ${restaurantId}`)
+    logger.debug(`Socket connect user=${userId} restaurant=${restaurantId}`)
 
     const sessionCheck = setInterval(async () => {
       if (!(await verifyLiveSocketSession(socket))) {
@@ -87,7 +88,7 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('disconnect', () => {
       clearInterval(sessionCheck)
-      console.log(`👤 Utente ${userId} disconnesso`)
+      logger.debug(`Socket disconnect user=${userId}`)
     })
 
     socket.on('table:update_position', async (data: { id: string; posX: number; posY: number }) => {

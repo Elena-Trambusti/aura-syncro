@@ -6,7 +6,7 @@ import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
 import { Star, Gift, TrendingUp, Users, ChevronRight, Sparkles } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import QueryErrorBanner from '../components/QueryErrorBanner'
@@ -66,7 +66,7 @@ export default function LoyaltyPage() {
       setShowAdjustModal(false); setSelectedCustomer(null); setAdjustPoints(0); setAdjustNote('')
       toast.success(t('loyalty.pointsUpdated'))
     },
-    onError: (err: unknown) => toast.error(formatApiError(err)),
+    onError: (err: unknown) => toast.error(formatApiError(t, err)),
   })
 
   const tiers = [...(overview?.tiers || [])].sort((a, b) => b.minPoints - a.minPoints)

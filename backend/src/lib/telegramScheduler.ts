@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { runPredictiveAnalysis } from './predictiveAI'
 import { sendTelegramMessage } from './telegramBot'
+import { logger } from './logger'
 
 // Variabile per tenere traccia se abbiamo già inviato il report oggi
 let lastSentDay = new Date().getDate()
@@ -12,7 +13,7 @@ export async function runTelegramDailyAlerts() {
   if (now.getHours() === 9 && now.getDate() !== lastSentDay) {
     lastSentDay = now.getDate()
     
-    console.log('[Telegram Scheduler] Avvio invio alert predittivi mattutini...')
+    logger.info('[Telegram Scheduler] Avvio invio alert predittivi mattutini...')
     
     try {
       // Troviamo tutti i ristoranti che hanno collegato Telegram
@@ -54,13 +55,13 @@ export async function runTelegramDailyAlerts() {
             await new Promise(r => setTimeout(r, 1000))
           }
         } catch (err) {
-          console.error(`[Telegram Scheduler] Errore calcolo per ${setting.restaurant.name}:`, err)
+          logger.error(`[Telegram Scheduler] Errore calcolo per ${setting.restaurant.name}:`, err)
         }
       }
       
-      console.log('[Telegram Scheduler] Invio completato.')
+      logger.info('[Telegram Scheduler] Invio completato.')
     } catch (err) {
-      console.error('[Telegram Scheduler] Errore generale:', err)
+      logger.error('[Telegram Scheduler] Errore generale:', err)
     }
   }
 }

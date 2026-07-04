@@ -8,7 +8,7 @@ import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { toast } from '@/lib/toast'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
@@ -33,7 +33,7 @@ export default function RegisterPage() {
       })
       toast.success(t('auth.welcome'))
     } catch (err: unknown) {
-      toast.error(formatApiError(err))
+      toast.error(formatApiError(t, err))
     } finally {
       setLoading(false)
     }

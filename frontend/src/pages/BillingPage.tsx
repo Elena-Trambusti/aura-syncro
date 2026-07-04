@@ -6,7 +6,7 @@ import { Loader2, CheckCircle2, XCircle, X, ExternalLink } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency, cn } from '../lib/utils'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 import { BRAND, BRAND_LOGO_SRC } from '../lib/brand'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -62,7 +62,7 @@ export default function BillingPage() {
       }
       window.location.href = data.checkoutUrl
     } catch (err: unknown) {
-      setError(formatApiError(err))
+      setError(formatApiError(t, err))
       setLoadingPlan(null)
     }
   }
@@ -75,7 +75,7 @@ export default function BillingPage() {
       if (!data.portalUrl) throw new Error(t('billing.portalUrlMissing', { defaultValue: 'URL portale non ricevuto' }))
       window.location.href = data.portalUrl
     } catch (err: unknown) {
-      setError(formatApiError(err))
+      setError(formatApiError(t, err))
       setOpeningPortal(false)
     }
   }

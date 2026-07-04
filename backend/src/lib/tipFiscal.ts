@@ -6,8 +6,6 @@ import type { FiscalTransactionRow } from './fiscal/fiscalReportTypes'
 
 export type { FiscalSummary, FiscalTransactionRow } from './fiscal/fiscalReportTypes'
 export { buildFiscalSummary } from './fiscal/strategies'
-/** @deprecated Usare sumElectronicTips da fiscal/tipTracking */
-export { sumElectronicTips } from './fiscal/tipTracking'
 
 /** * Mance / propinas — regole fiscali per nazione.
  *

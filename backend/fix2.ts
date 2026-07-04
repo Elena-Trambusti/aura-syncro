@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); prisma.restaurant.findUnique({where: {slug: 'ristorante-demo'}, include: {users: true}}).then(console.log).finally(() => prisma.$disconnect());

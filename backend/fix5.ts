@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); prisma.table.findMany({where: {restaurant: {slug: 'ristorante-demo'}}}).then(console.log).finally(() => prisma.$disconnect());

@@ -7,7 +7,7 @@ import { BRAND } from '../lib/brand'
 import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
 
 export default function ResetPasswordPage() {
@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
       setDone(true)
       toast.success(t('auth.resetPasswordSuccess'))
     } catch (err: unknown) {
-      toast.error(formatApiError(err))
+      toast.error(formatApiError(t, err))
     } finally {
       setLoading(false)
     }

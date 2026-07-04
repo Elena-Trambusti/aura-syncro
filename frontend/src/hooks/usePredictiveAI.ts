@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -87,12 +88,19 @@ export interface PredictiveAIData {
  */
 export function usePredictiveAI() {
   const tk = useTenantQueryKey()
+  const queryClient = useQueryClient()
   const query = useQuery<PredictiveAIData>({
     queryKey: tq(tk, 'ai', 'predictive'),
     queryFn: () => api.get<PredictiveAIData>('/ai/predictive').then(r => r.data),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
   })
+
+  const refetchFresh = useCallback(async () => {
+    const data = await api.get<PredictiveAIData>('/ai/predictive?refresh=1').then(r => r.data)
+    queryClient.setQueryData(tq(tk, 'ai', 'predictive'), data)
+    return { data, isError: false as const }
+  }, [queryClient, tk])
 
   return {
     forecast: query.data?.forecast ?? [],
@@ -108,7 +116,8 @@ export function usePredictiveAI() {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,
-    refetch: query.refetch,
+    refetch: refetchFresh,
+    refetchCached: query.refetch,
   }
 }
 

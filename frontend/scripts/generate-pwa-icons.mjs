@@ -20,14 +20,13 @@ const ADAPTIVE_DENSITIES = [
   { name: 'xxxhdpi', size: 192 },
 ]
 
-const GOLD_TOP = '#F7E7CE'
-const GOLD_BOTTOM = '#B8921F'
-const GOLD_TOP_RGB = { r: 247, g: 231, b: 206 }
+/** Navy app — sfondo adaptive Android (evita bianco launcher) */
+const ADAPTIVE_BG = { r: 11, g: 14, b: 20, alpha: 255 }
 
-/** Logo A+anello nella zona sicura maskable Android */
-const MASKABLE_MARK_RATIO = 0.42
-/** Icona standard — logo leggermente più grande */
-const STANDARD_MARK_RATIO = 0.48
+/** Logo A+anello — massimo riempimento canvas */
+const STANDARD_FILL = 0.94
+/** Zona sicura maskable (~80% canvas) */
+const MASKABLE_FILL = 0.82
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
@@ -35,12 +34,11 @@ await mkdir(androidDir, { recursive: true })
 const logoBuffer = await readFile(logoPath)
 
 /**
- * Estrae solo i pixel scuri del logo (A + anello), scartando lo squircle oro
- * e qualsiasi frangia bianca anti-alias del PNG sorgente.
+ * Estrae solo il marchio scuro (A + anello), ignora squircle oro e frangia bianca.
+ * Ritaglia al bounding box del contenuto.
  */
 async function buildDarkMarkBuffer() {
   const { data, info } = await sharp(logoBuffer)
-    .flatten({ background: GOLD_TOP_RGB })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
@@ -55,9 +53,14 @@ async function buildDarkMarkBuffer() {
     const r = data[src]
     const g = data[src + 1]
     const b = data[src + 2]
+    const a = ch >= 4 ? data[src + 3] : 255
     const lum = 0.299 * r + 0.587 * g + 0.114 * b
 
-    if (lum < 90) {
+    const isNearWhite = r > 235 && g > 235 && b > 235
+    const isGoldBg = lum > 95 && !isNearWhite
+    const isDarkMark = lum < 95 && a > 40 && !isNearWhite
+
+    if (isDarkMark && !isGoldBg) {
       out[dst] = r
       out[dst + 1] = g
       out[dst + 2] = b
@@ -66,75 +69,71 @@ async function buildDarkMarkBuffer() {
   }
 
   return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .trim()
     .png()
     .toBuffer()
 }
 
 const darkMarkBuffer = await buildDarkMarkBuffer()
 
-function goldGradientSvg(size) {
-  return Buffer.from(`<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${GOLD_TOP}"/>
-      <stop offset="100%" stop-color="${GOLD_BOTTOM}"/>
-    </linearGradient>
-  </defs>
-  <rect width="${size}" height="${size}" fill="url(#gold)"/>
-</svg>`)
-}
-
-async function goldBackground(size) {
-  return sharp(goldGradientSvg(size)).png().toBuffer()
-}
-
-async function markLayer(size, ratio) {
-  const markSize = Math.max(1, Math.round(size * ratio))
+async function markLayer(size, fillRatio) {
+  const markSize = Math.max(1, Math.round(size * fillRatio))
   return sharp(darkMarkBuffer)
-    .resize(markSize, markSize, { fit: 'contain' })
+    .resize(markSize, markSize, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .png()
     .toBuffer()
 }
 
-/** Sfondo oro edge-to-edge + solo logo scuro, output RGB senza alpha */
-async function composeFullBleedIcon(size, markRatio) {
-  const bg = await goldBackground(size)
-  const mark = await markLayer(size, markRatio)
-  return sharp(bg)
+/** Icona trasparente — solo logo, nessuno sfondo oro */
+async function composeTransparentIcon(size, fillRatio) {
+  const mark = await markLayer(size, fillRatio)
+  return sharp({
+    create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
     .composite([{ input: mark, gravity: 'center' }])
-    .removeAlpha()
     .png()
     .toBuffer()
 }
 
 async function writeStandardIcon(size) {
-  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
+  const png = await composeTransparentIcon(size, STANDARD_FILL)
   await sharp(png).toFile(join(outDir, `icon-${size}.png`))
   console.log(`  icon-${size}.png`)
 }
 
 async function writeMaskableIcon(size) {
-  const png = await composeFullBleedIcon(size, MASKABLE_MARK_RATIO)
+  const png = await composeTransparentIcon(size, MASKABLE_FILL)
   await sharp(png).toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
 async function writeAdaptivePair(size, densityName) {
-  const bg = await goldBackground(size)
-  const mark = await markLayer(size, MASKABLE_MARK_RATIO)
+  const foreground = await markLayer(size, MASKABLE_FILL)
 
-  await sharp(bg).removeAlpha().toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
+  await sharp({
+    create: { width: size, height: size, channels: 4, background: ADAPTIVE_BG },
+  })
+    .png()
+    .toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
 
   await sharp({
     create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
-    .composite([{ input: mark, gravity: 'center' }])
+    .composite([{ input: foreground, gravity: 'center' }])
     .png()
     .toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
 
-  const combined = await composeFullBleedIcon(size, MASKABLE_MARK_RATIO)
-  await sharp(combined).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
+  const combined = await sharp({
+    create: { width: size, height: size, channels: 4, background: ADAPTIVE_BG },
+  })
+    .composite([{ input: foreground, gravity: 'center' }])
+    .png()
+    .toBuffer()
 
+  await sharp(combined).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
   console.log(`  android/ic_launcher_${densityName}.png (+ foreground/background)`)
 }
 
@@ -148,9 +147,16 @@ for (const size of MASKABLE_SIZES) {
 
 {
   const size = 180
-  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
+  const png = await composeTransparentIcon(size, STANDARD_FILL)
   await sharp(png).toFile(join(outDir, 'apple-touch-icon.png'))
   console.log('  apple-touch-icon.png')
+}
+
+console.log('Updating favicon.png (transparent mark, full bleed)…')
+{
+  const cleanFavicon = await composeTransparentIcon(512, STANDARD_FILL)
+  await sharp(cleanFavicon).toFile(logoPath)
+  console.log('  favicon.png')
 }
 
 console.log('Generating Android adaptive icons…')
@@ -189,7 +195,7 @@ console.log('Generating favicon.ico…')
 const faviconSizes = [16, 32, 48]
 const faviconPngs = []
 for (const size of faviconSizes) {
-  const png = await composeFullBleedIcon(size, STANDARD_MARK_RATIO)
+  const png = await composeTransparentIcon(size, STANDARD_FILL)
   faviconPngs.push({ width: size, height: size, png })
 }
 await writeFile(join(publicDir, 'favicon.ico'), createIcoFromPngBuffers(faviconPngs))
@@ -198,20 +204,13 @@ console.log('  favicon.ico')
 console.log('Generating og-image.jpg…')
 const ogWidth = 1200
 const ogHeight = 630
-const ogBg = '#020201'
+const ogBg = '#0B0E14'
 
-const logoMeta = await sharp(logoPath).metadata()
-const logoAspect = (logoMeta.width ?? 1) / (logoMeta.height ?? 1)
-const maxLogoWidth = Math.round(ogWidth * 0.42)
-const maxLogoHeight = Math.round(ogHeight * 0.72)
-let logoWidth = maxLogoWidth
-let logoHeight = Math.round(logoWidth / logoAspect)
-if (logoHeight > maxLogoHeight) {
-  logoHeight = maxLogoHeight
-  logoWidth = Math.round(logoHeight * logoAspect)
-}
-
-const ogLogoBuffer = await sharp(logoPath).resize(logoWidth, logoHeight).png().toBuffer()
+const ogLogoSize = Math.round(Math.min(ogWidth, ogHeight) * 0.55)
+const ogLogoBuffer = await sharp(darkMarkBuffer)
+  .resize(ogLogoSize, ogLogoSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .png()
+  .toBuffer()
 
 await sharp({
   create: { width: ogWidth, height: ogHeight, channels: 3, background: ogBg },
@@ -219,8 +218,8 @@ await sharp({
   .composite([
     {
       input: ogLogoBuffer,
-      top: Math.round((ogHeight - logoHeight) / 2),
-      left: Math.round((ogWidth - logoWidth) / 2),
+      top: Math.round((ogHeight - ogLogoSize) / 2),
+      left: Math.round((ogWidth - ogLogoSize) / 2),
     },
   ])
   .jpeg({ quality: 92, mozjpeg: true })

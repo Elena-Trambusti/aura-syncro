@@ -8,7 +8,6 @@ import AppProviders from './components/AppProviders'
 import DeferredMetrics from './components/DeferredMetrics'
 import AuraSonner from './components/AuraSonner'
 import ErrorBoundary from './components/ErrorBoundary'
-import SentryTestButton from './components/SentryTestButton'
 
 const root = createRoot(document.getElementById('root')!)
 
@@ -20,7 +19,6 @@ root.render(
         <App />
         <DeferredMetrics />
         <AuraSonner />
-        <SentryTestButton />
       </AppProviders>
     </ErrorBoundary>
   </StrictMode>,

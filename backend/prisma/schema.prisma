@@ -355,6 +355,7 @@ model Table {
   reservations Reservation[]
 
   @@unique([restaurantId, number])
+  @@index([restaurantId])
 }
 
 enum TableStatus {
@@ -513,6 +514,7 @@ model Order {
 
   @@index([restaurantId, status, paidAt])
   @@index([restaurantId, createdAt])
+  @@index([tableId, status])
 }
 
 model OrderItem {
@@ -536,6 +538,7 @@ model OrderItem {
   modifiers OrderItemModifier[]
 
   @@index([orderId])
+  @@index([menuItemId, createdAt])
 }
 
 model OrderItemModifier {
@@ -605,6 +608,7 @@ model Reservation {
   updatedAt              DateTime          @updatedAt
 
   @@index([restaurantId, date])
+  @@index([tableId, date, status])
 }
 
 enum ReservationStatus {

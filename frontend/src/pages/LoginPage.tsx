@@ -7,7 +7,7 @@ import { BRAND } from '../lib/brand'
 import { ui } from '../lib/ui'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
-import { formatApiError } from '../lib/errors'
+import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
 import { usePublicPageMeta } from '../lib/publicPageMeta'
 
@@ -37,7 +37,7 @@ export default function LoginPage() {
         setTenantOptions(data.restaurants ?? [])
         toast.error(t('auth.multipleTenantsHint'))
       } else {
-        toast.error(formatApiError(err))
+        toast.error(formatApiError(t, err))
       }
     } finally {
       setLoading(false)

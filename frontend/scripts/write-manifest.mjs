@@ -21,8 +21,8 @@ const manifest = {
   scope: '/',
   display: 'standalone',
   orientation: 'any',
-  theme_color: '#E5A93C',
-  background_color: '#B8921F',
+  theme_color: '#0B0E14',
+  background_color: '#0B0E14',
   lang: 'it',
   categories: ['business', 'food'],
   icons: [

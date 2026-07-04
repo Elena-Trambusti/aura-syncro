@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, memo, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { FloorPlanLayoutV1, FloorPlanZoneLabel as ZoneLabelType } from '../../lib/floorPlanLayout'
@@ -453,7 +453,7 @@ export default function TableFloorPlan({
   )
 }
 
-function TableLabelPill({
+const TableLabelPill = memo(function TableLabelPill({
   table, statusLabel, seatsWord, orderTotal, reservationHint, transferRole, transferHint, isCompactTable, isHovered, isActive,
 }: {
   table: FloorTable
@@ -505,9 +505,9 @@ function TableLabelPill({
       )}
     </div>
   )
-}
+})
 
-function TableTile({
+const TableTile = memo(function TableTile({
   table, isDisabledInTransfer, isHovered, isActive, onMeasureLabels, onActivate, onClick, interactive, style, className,
 }: {
   table: FloorTable
@@ -719,7 +719,7 @@ function TableTile({
       </div>
     </div>
   )
-}
+})
 
 export const TABLE_LEGEND_DOT: Record<TableStatus, string> = {
   FREE: 'bg-[#8A9A7B]',

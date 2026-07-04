@@ -41,6 +41,7 @@ import { requireTenantContext } from './middleware/tenantContext'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
 import { requireProPlan } from './middleware/planTier'
 import { buildDashboardSummary } from './lib/analyticsSummary'
+import { getTenantCache, setTenantCacheBounded } from './lib/tenantCache'
 import { runAllMarketingJobs } from './lib/marketingSend'
 import { errorHandler } from './middleware/errorHandler'
 import { requirePermission } from './middleware/permissions'
@@ -150,7 +151,16 @@ app.get('/api/analytics/summary', ...apiGuard, requirePermission('analytics.read
       res.status(401).json({ error: 'Non autenticato' })
       return
     }
+    const cacheKey = `${restaurantId}:dashboard:summary`
+    const cached = getTenantCache<Awaited<ReturnType<typeof buildDashboardSummary>>>(cacheKey)
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT')
+      res.json(cached)
+      return
+    }
     const summary = await buildDashboardSummary(restaurantId)
+    setTenantCacheBounded(cacheKey, summary, 60_000)
+    res.setHeader('X-Cache', 'MISS')
     res.json(summary)
   } catch {
     res.status(500).json({ error: 'Errore caricamento dashboard' })

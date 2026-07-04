@@ -137,9 +137,5 @@ export function bootstrapI18nSync(): void {
   }
 }
 
-/** @deprecated Usare bootstrapI18nSync — mantenuto per test */
-export async function bootstrapI18n(): Promise<void> {
-  bootstrapI18nSync()
-}
 
 export default i18n

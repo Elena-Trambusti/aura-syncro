@@ -9,8 +9,8 @@ import {
   buildFiscalTransactionRow,
   computePaymentSplit,
   computePosPaymentAmounts,
-  sumElectronicTips,
 } from './tipFiscal'
+import { sumElectronicTips } from './fiscal/tipTracking'
 
 describe('tipFiscal', () => {
   const foodOrder = { subtotal: 100, tax: 10, total: 110, revenueAmount: 110, tipAmount: 0 }

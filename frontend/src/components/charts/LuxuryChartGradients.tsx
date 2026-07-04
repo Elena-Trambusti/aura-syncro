@@ -6,12 +6,6 @@ import {
   type LuxuryChartAccent,
 } from './luxuryChartTheme'
 
-interface LuxuryChartGradientsProps {
-  accent?: LuxuryChartAccent
-  /** Sfuma verso nero profondo sotto la linea (default true) */
-  fadeToBlack?: boolean
-}
-
 export function useLuxuryGradientId(accent: LuxuryChartAccent = 'gold') {
   const rawId = useId()
   const areaId = `luxury-area-${accent}${rawId.replace(/:/g, '')}`
@@ -46,18 +40,5 @@ export function LuxuryBarGradientDef({
       <stop offset="0%" stopColor={ACCENT_GRADIENT_TOP[accent]} />
       <stop offset="100%" stopColor={ACCENT_GRADIENT_MID[accent]} stopOpacity={0.85} />
     </linearGradient>
-  )
-}
-
-export default function LuxuryChartGradients({
-  accent = 'gold',
-  fadeToBlack = true,
-}: LuxuryChartGradientsProps) {
-  const { areaId, barId } = useLuxuryGradientId(accent)
-  return (
-  <>
-    <LuxuryAreaGradientDef id={areaId} accent={accent} fadeToBlack={fadeToBlack} />
-    <LuxuryBarGradientDef id={barId} accent={accent} />
-  </>
   )
 }

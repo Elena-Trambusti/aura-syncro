@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); prisma.user.updateMany({ where: { email: 'admin@demo.it' }, data: { name: 'Mario Rossi' } }).then(console.log).finally(() => prisma.$disconnect());

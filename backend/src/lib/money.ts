@@ -52,14 +52,6 @@ function deepSerializeMoney(value: unknown): unknown {
   return value
 }
 
-/** @deprecated Usa serializeDecimals — il replacer non intercetta Decimal.toJSON(). */
-export function decimalJsonReplacer(_key: string, value: unknown): unknown {
-  if (isDecimal(value)) {
-    return moneyNumber(value)
-  }
-  return value
-}
-
 /** Campi _sum Prisma aggregate su importi monetari. */
 export type MoneyAggSum = {
   revenueAmount?: MoneyInput | null

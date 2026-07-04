@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); prisma.table.findMany({where: {restaurant: {slug: 'ristorante-demo'}, area: 'Sala'}, orderBy: {number: 'asc'}}).then(tables => console.table(tables.map(t => ({number: t.number, x: t.posX, y: t.posY, status: t.status})))).finally(() => prisma.$disconnect());

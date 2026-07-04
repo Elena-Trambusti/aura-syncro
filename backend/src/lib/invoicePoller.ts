@@ -1,6 +1,6 @@
 import cron from 'node-cron'
 import { prisma } from './prisma'
-import { ArubaInvoiceService } from './arubaInvoiceService'
+import { logger } from './logger'
 
 export function startInvoicePoller() {
   // Ogni 30 secondi
@@ -30,11 +30,11 @@ export function startInvoicePoller() {
             where: { id: inv.id },
             data: { statoSdi: nuovoStato }
           })
-          console.log(`[SDI Poller] Fattura ${inv.documentNumber} aggiornata a ${nuovoStato}`)
+          logger.debug(`[SDI Poller] Fattura ${inv.documentNumber} → ${nuovoStato}`)
         }
       }
     } catch (err) {
-      console.error('[SDI Poller] Errore durante il polling fatture:', err)
+      logger.error('[SDI Poller] Errore durante il polling fatture:', err)
     }
   })
 }

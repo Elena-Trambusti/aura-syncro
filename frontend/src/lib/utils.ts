@@ -106,13 +106,3 @@ export const TABLE_STATUS_COLORS: Record<string, string> = {
   RESERVED: 'bg-aura-gold/100',
   CLEANING: 'bg-blue-500/100',
 }
-
-/** @deprecated Use getReservationStatusLabel() */
-export const RESERVATION_STATUS_LABELS: Record<string, string> = new Proxy({} as Record<string, string>, {
-  get: (_, prop: string) => getReservationStatusLabel(prop),
-})
-
-/** @deprecated Use getRoleLabel() */
-export const ROLE_LABELS: Record<string, string> = new Proxy({} as Record<string, string>, {
-  get: (_, prop: string) => getRoleLabel(prop),
-})

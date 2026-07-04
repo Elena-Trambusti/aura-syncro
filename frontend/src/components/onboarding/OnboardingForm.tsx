@@ -16,7 +16,7 @@ import {
 import { toast } from '@/lib/toast'
 import { api } from '../../lib/api'
 import { BRAND_LOGO_SRC } from '../../lib/brand'
-import { formatApiError } from '../../lib/errors'
+import { formatApiError } from '../../lib/formatApiError'
 import { cn } from '../../lib/utils'
 import SetupCalendar from './SetupCalendar'
 import {
@@ -140,7 +140,7 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
       onSubmitted?.()
     },
     onError: (err: unknown) => {
-      toast.error(formatApiError(err))
+      toast.error(formatApiError(t, err))
     },
   })
 
