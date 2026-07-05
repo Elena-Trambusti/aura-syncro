@@ -2086,7 +2086,8 @@
           "Gestione Turni e Scorte",
           "Marketing Automation"
         ],
-        "missingFeatures": []
+        "missingFeatures": [],
+        "conciergeNote": "Il piano include il servizio Concierge: mappatura personalizzata della sala in 2.5D e caricamento del menu digitale a cura del nostro team tecnico prima del go-live."
       }
     },
     "floorPlan": {

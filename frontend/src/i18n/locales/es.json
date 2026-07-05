@@ -1598,7 +1598,8 @@
           "Gestión de Turnos e Inventario",
           "Marketing Automation"
         ],
-        "missingFeatures": []
+        "missingFeatures": [],
+        "conciergeNote": "Este plan incluye el servicio Concierge: mapeo 2.5D personalizado de la sala y carga del menú digital por nuestro equipo técnico antes del go-live."
       }
     },
     "floorPlan": {

@@ -2,6 +2,7 @@ import LandingTrustBar from './LandingTrustBar'
 import LandingFeatures from './LandingFeatures'
 import LandingGallery from './LandingGallery'
 import LandingPricing from './LandingPricing'
+import LandingConcierge from './LandingConcierge'
 import LandingFooter from './LandingFooter'
 
 /** Sezioni sotto la piega — chunk unico per evitare layout shift a catena. */
@@ -12,6 +13,7 @@ export default function LandingBelowFold() {
       <LandingFeatures />
       <LandingGallery />
       <LandingPricing />
+      <LandingConcierge />
       <LandingFooter />
     </>
   )

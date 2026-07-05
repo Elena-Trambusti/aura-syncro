@@ -1566,8 +1566,15 @@
           "Gestion des Tournées et Stocks",
           "Marketing Automation"
         ],
-        "missingFeatures": []
+        "missingFeatures": [],
+        "conciergeNote": "Cette offre inclut le service Concierge : plan de salle 2.5D personnalisé et menu digital configuré par notre équipe technique avant le go-live."
       }
+    },
+    "concierge": {
+      "title": "Un démarrage sans friction",
+      "subtitle": "Notre équipe configure la vraie planimétrie de votre établissement et le menu digital avant le go-live. Vous ne serez jamais seul face aux configurations complexes.",
+      "heading": "Service Concierge exclusif",
+      "body": "Le setup n'est pas un coût caché, mais votre passeport vers une exploitation immédiate. Nos experts cartographient votre restaurant en 2.5D, digitalisent le menu, les variantes et les imprimantes fiscales. Nous livrons un système clé en main, prêt à vendre dès la première minute."
     },
     "footer": {
       "tagline": "Logiciel cloud pour la restauration en Italie, Espagne et Îles Canaries.",

@@ -1972,8 +1972,15 @@
           "Shift & Inventory Management",
           "Marketing Automation"
         ],
-        "missingFeatures": []
+        "missingFeatures": [],
+        "conciergeNote": "This plan includes Concierge service: personalized 2.5D floor mapping and digital menu setup by our technical team before go-live."
       }
+    },
+    "concierge": {
+      "title": "A frictionless start",
+      "subtitle": "Our technical team configures your real floor plan and digital menu before go-live. You will never be left alone with complex setup.",
+      "heading": "Exclusive Concierge Service",
+      "body": "Setup is not a hidden cost — it is your passport to immediate operations. Our experts map your restaurant in 2.5D, digitize the full menu, variants and fiscal printers. We deliver a turnkey system, ready to sell from minute one."
     },
     "footer": {
       "tagline": "Cloud software for restaurants in Italy, Spain and the Canary Islands.",
