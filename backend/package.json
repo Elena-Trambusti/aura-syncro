@@ -23,7 +23,8 @@
     "test:legacy": "tsx --test src/lib/money.test.ts src/lib/taxEngine.test.ts src/lib/tipFiscal.test.ts src/lib/predictiveEngine.test.ts src/lib/predictivePayload.test.ts src/lib/fiscalInvoice.test.ts src/lib/menuStock.test.ts src/lib/posIntegration.test.ts src/lib/orderDiscount.test.ts src/lib/apiIdempotency.test.ts src/lib/fiscal/fiscalIntegrityChain.test.ts src/lib/fiscal/strategies/fiscalStrategies.test.ts src/lib/saasFatturaPaXml.test.ts src/lib/prismaTransactions.test.ts src/lib/splitSettlement.test.ts src/lib/tableReleaseGuard.test.ts",
     "stripe:verify": "tsx scripts/verify-stripe.ts",
     "stripe:sync-webhooks": "tsx scripts/sync-stripe-webhooks.ts",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "db:supabase-rls": "tsx scripts/run-supabase-rls.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
