@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-import { BRAND_LOGO_SRC } from '../../lib/brand'
+import { BRAND_LOGO_DISPLAY_SRC } from '../../lib/brand'
 
 export type AuraConfirmVariant = 'default' | 'cleaning' | 'danger'
 
@@ -87,7 +87,7 @@ export default function AuraConfirmToast({
             <span className="aura-confirm-medallion__label">{formatBadge(badge)}</span>
           </div>
         ) : (
-          <img src={BRAND_LOGO_SRC} alt="" className="aura-confirm-brand" aria-hidden />
+          <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="aura-confirm-brand" aria-hidden />
         )}
 
         {eyebrow ? (

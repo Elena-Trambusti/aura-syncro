@@ -1,6 +1,6 @@
 import { cn } from '../../lib/utils'
 import { useTranslation } from 'react-i18next'
-import { BRAND, BRAND_LOGO_SRC } from '../../lib/brand'
+import { BRAND, BRAND_LOGO_DISPLAY_SRC } from '../../lib/brand'
 
 const SIZES = {
   sm: { img: 'h-8 w-8', text: 'text-sm' },
@@ -8,7 +8,7 @@ const SIZES = {
   lg: { img: 'h-14 w-14', text: 'text-lg' },
 } as const
 
-const ICON_SRC = BRAND_LOGO_SRC
+const ICON_SRC = BRAND_LOGO_DISPLAY_SRC
 
 type BrandLogoSize = keyof typeof SIZES
 

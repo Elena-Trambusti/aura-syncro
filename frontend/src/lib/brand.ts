@@ -29,8 +29,17 @@ export const BRAND = {
 /** Logo ufficiale — PNG oro con sfondo trasparente (master in /brand) */
 export const BRAND_LOGO_PATH = '/brand/aura-syncro-app-icon.png'
 export const BRAND_OG_IMAGE_PATH = '/og-image.jpg'
-export const BRAND_LOGO_VERSION = '16'
+/** Bump quando cambiano asset ottimizzati (WebP landing, logo display, …) */
+export const BRAND_ASSETS_VERSION = '17'
+export const BRAND_LOGO_VERSION = BRAND_ASSETS_VERSION
 export const BRAND_LOGO_SRC = `${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
+
+/** Logo UI (badge, nav, toast) — WebP 112px, non il master 869px */
+export const BRAND_LOGO_DISPLAY_PATH = '/brand/aura-syncro-logo-display.webp'
+export const BRAND_LOGO_DISPLAY_SRC = `${BRAND_LOGO_DISPLAY_PATH}?v=${BRAND_ASSETS_VERSION}`
+
+/** Sfondo marmo app/tavoli — WebP compresso */
+export const MARBLE_BG_WEBP = `/assets/marble-bg.webp?v=${BRAND_ASSETS_VERSION}`
 
 /** Favicon/PWA derivati dal master (rigenerati da generate-pwa-icons) */
 export const BRAND_APP_ICON_PATH = '/favicon.png'

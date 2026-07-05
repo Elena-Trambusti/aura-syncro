@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency, cn } from '../lib/utils'
 import { formatApiError } from '../lib/formatApiError'
-import { BRAND, BRAND_LOGO_SRC } from '../lib/brand'
+import { BRAND, BRAND_LOGO_DISPLAY_SRC } from '../lib/brand'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
@@ -93,7 +93,7 @@ export default function BillingPage() {
         subtitle={t('billing.plansPageSubtitle', { defaultValue: 'Gestisci il tuo abbonamento ad Aura Syncro' })}
         meta={(
           <img
-            src={BRAND_LOGO_SRC}
+            src={BRAND_LOGO_DISPLAY_SRC}
             alt={BRAND.name}
             className="mt-4 h-12 w-auto sm:h-14"
           />

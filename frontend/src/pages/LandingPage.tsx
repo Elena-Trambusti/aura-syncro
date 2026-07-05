@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
 import { injectLandingStructuredData } from '../lib/landingStructuredData'
+import { LANDING_MARBLE } from '../lib/landingAssets'
 import {
   LANDING_HREFLANG_ALTERNATES,
   ogLocaleForLanguage,
@@ -48,13 +49,20 @@ export default function LandingPage() {
   return (
     <div lang={i18n.language} className="landing-page relative flex min-h-[100dvh] flex-col overflow-x-hidden lux-text selection:bg-aura-gold/30">
       <div className="aura-marble-bg--landing" aria-hidden>
-        <img
-          src="/assets/marble-bg.png"
-          alt=""
-          className="landing-page__marble"
-          draggable={false}
-          fetchPriority="high"
-        />
+        <picture>
+          <source media="(max-width: 767px)" srcSet={LANDING_MARBLE.mobile} type="image/webp" />
+          <source srcSet={LANDING_MARBLE.desktop} type="image/webp" />
+          <img
+            src={LANDING_MARBLE.fallback}
+            alt=""
+            className="landing-page__marble"
+            draggable={false}
+            fetchPriority="high"
+            decoding="async"
+            width={1920}
+            height={1080}
+          />
+        </picture>
         <div className="landing-page__overlay" />
         <div className="landing-page__grain" />
       </div>

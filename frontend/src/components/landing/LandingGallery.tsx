@@ -7,6 +7,7 @@ import {
   LandingSectionHeader,
   LandingSectionShell,
 } from './landingLuxury'
+import { LANDING_FLOOR_PLAN } from '../../lib/landingAssets'
 import DemoBookingModal from './DemoBookingModal'
 
 function FloorPlanCaption({ className }: { className?: string }) {
@@ -38,9 +39,15 @@ export default function LandingGallery() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15),transparent_60%)]" />
 
             <img
-              src="/brand/tavoli-floor-plan-25d.png?v=2"
+              src={LANDING_FLOOR_PLAN.mobile}
+              srcSet={`${LANDING_FLOOR_PLAN.mobile} 680w, ${LANDING_FLOOR_PLAN.desktop} 1024w`}
+              sizes="(max-width: 640px) 100vw, 662px"
               alt={t('landing.floorPlan.imageAlt')}
               className="h-full w-full object-contain object-center transition-opacity duration-500 group-hover:opacity-100 sm:object-cover"
+              loading="lazy"
+              decoding="async"
+              width={1024}
+              height={526}
             />
 
             <div className="absolute bottom-4 left-4 right-4 hidden items-end justify-between sm:flex">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { BRAND_LOGO_SRC } from '../../lib/brand'
+import { BRAND_LOGO_DISPLAY_SRC } from '../../lib/brand'
 
 export interface AuraPromptToastProps {
   title: string
@@ -66,7 +66,7 @@ export default function AuraPromptToast({
         )}
       >
         <div className="aura-confirm-card__accent" aria-hidden />
-        <img src={BRAND_LOGO_SRC} alt="" className="aura-confirm-brand" aria-hidden />
+        <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="aura-confirm-brand" aria-hidden />
 
         <h2
           id="aura-prompt-title"

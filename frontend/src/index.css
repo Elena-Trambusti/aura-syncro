@@ -1039,7 +1039,7 @@
     background-color: #0d0d11;
     background-image:
       linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
-      url('/assets/marble-bg.png');
+      url('/assets/marble-bg.webp');
     background-size: auto, cover;
     background-position: top left, center;
     background-blend-mode: normal, lighten;
@@ -1049,7 +1049,7 @@
     background-color: #0d0d11;
     background-image:
       linear-gradient(165deg, rgba(13, 13, 17, 0.42) 0%, rgba(13, 13, 17, 0.68) 100%),
-      url('/assets/marble-bg.png');
+      url('/assets/marble-bg.webp');
     background-size: cover, cover;
     background-position: center, center;
     background-blend-mode: normal, lighten;
@@ -1208,7 +1208,7 @@
     background-color: #0d0d11;
     background-image:
       linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
-      url('/assets/marble-bg.png');
+      url('/assets/marble-bg.webp');
     background-size: auto, cover;
     background-position: top left, center;
     background-blend-mode: normal, lighten;
@@ -1356,7 +1356,7 @@
     background-color: #0d0d11;
     background-image:
       linear-gradient(180deg, rgba(13, 13, 17, 0.8) 0%, rgba(13, 13, 17, 0.9) 100%),
-      url('/assets/marble-bg.png');
+      url('/assets/marble-bg.webp');
     background-size: auto, cover;
     background-position: top left, center;
     background-blend-mode: normal, lighten;
@@ -1697,7 +1697,7 @@
 
   .table-3d-edge {
     background-color: #121218;
-    background-image: url('/assets/marble-bg.png');
+    background-image: url('/assets/marble-bg.webp');
     background-size: cover;
     background-position: center;
     filter: brightness(0.72) contrast(1.05);

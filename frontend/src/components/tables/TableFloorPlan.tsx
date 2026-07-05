@@ -70,7 +70,9 @@ export interface TableFloorPlanProps {
   embedded?: boolean
 }
 
-const MARBLE_BG = '/assets/marble-bg.png'
+import { MARBLE_BG_WEBP } from '../../lib/brand'
+
+const MARBLE_BG = MARBLE_BG_WEBP
 export const TABLE_TOP_Z = 48
 export const FLOOR_ROT_X_DEG = 58
 export const FLOOR_ROT_Z_DEG = -45

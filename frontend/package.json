@@ -9,8 +9,9 @@
   },
   "scripts": {
     "dev": "node scripts/write-manifest.mjs && vite",
-    "build": "node scripts/generate-pwa-icons.mjs && tsc -b && vite build",
+    "build": "node scripts/generate-pwa-icons.mjs && node scripts/optimize-landing-images.mjs && tsc -b && vite build",
     "generate-pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "optimize-images": "node scripts/optimize-landing-images.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
