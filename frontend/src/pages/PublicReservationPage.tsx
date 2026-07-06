@@ -45,7 +45,7 @@ export default function PublicReservationPage() {
     guestName: '',
     guestPhone: '',
     guestEmail: '',
-    covers: 2,
+    covers: '2',
     date: '',
     time: '20:00',
     notes: '',
@@ -62,6 +62,10 @@ export default function PublicReservationPage() {
 
   const bookMutation = useMutation({
     mutationFn: async () => {
+      const covers = Number.parseInt(form.covers, 10)
+      if (!Number.isFinite(covers) || covers < 1 || covers > maxCovers) {
+        throw new Error(t('publicBooking.coversInvalid', { max: maxCovers }))
+      }
       const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
         : `booking_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
@@ -75,7 +79,7 @@ export default function PublicReservationPage() {
         guestName: form.guestName.trim(),
         guestPhone: form.guestPhone.trim(),
         guestEmail: form.guestEmail.trim() || undefined,
-        covers: form.covers,
+        covers,
         ...combineDateAndTime(form.date, form.time),
         notes: form.notes.trim() || undefined,
       }, { headers: { 'X-Idempotency-Key': idempotencyKey } })
@@ -90,8 +94,9 @@ export default function PublicReservationPage() {
       toast.success(t('publicBooking.success'))
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      toast.error(msg ?? t('publicBooking.error'))
+      const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      const localMsg = err instanceof Error ? err.message : undefined
+      toast.error(apiMsg ?? localMsg ?? t('publicBooking.error'))
     },
   })
 
@@ -267,12 +272,31 @@ export default function PublicReservationPage() {
               <input
                 required
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={maxCovers}
                 value={form.covers}
                 onChange={e => {
-                  const n = Number(e.target.value)
-                  setForm(f => ({ ...f, covers: Math.min(maxCovers, Math.max(1, n || 1)) }))
+                  const raw = e.target.value
+                  if (raw === '') {
+                    setForm(f => ({ ...f, covers: '' }))
+                    return
+                  }
+                  const digits = raw.replace(/\D/g, '')
+                  if (digits === '') {
+                    setForm(f => ({ ...f, covers: '' }))
+                    return
+                  }
+                  const n = Number.parseInt(digits, 10)
+                  setForm(f => ({
+                    ...f,
+                    covers: String(Math.min(maxCovers, Math.max(1, n))),
+                  }))
+                }}
+                onBlur={() => {
+                  if (form.covers === '' || Number.parseInt(form.covers, 10) < 1) {
+                    setForm(f => ({ ...f, covers: '1' }))
+                  }
                 }}
                 className="w-full rounded-xl border border-white/[0.06] bg-navy-elevated/40 px-4 py-3.5 text-sm text-white shadow-inner transition-all hover:border-white/[0.1] focus:border-aura-gold/50 focus:bg-navy-elevated/80 focus:outline-none focus:ring-1 focus:ring-aura-gold/50"
               />

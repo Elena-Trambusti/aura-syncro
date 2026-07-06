@@ -1931,6 +1931,7 @@
     "successDesc": "Il ristorante ha ricevuto la tua prenotazione. Riceverai conferma telefonica o via email.",
     "viewMenu": "Vedi il menu digitale",
     "notFound": "Ristorante non trovato",
+    "coversInvalid": "Inserisci un numero di persone tra 1 e {{max}}.",
     "error": "Impossibile inviare la prenotazione. Riprova o chiama il ristorante."
   },
   "payment": {

@@ -6,7 +6,7 @@ import sharp from 'sharp'
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { logoToDisplayWebp, stripLogoHalos } from './logoImagePrep.mjs'
+import { logoToDisplayWebp } from './logoImagePrep.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public')
@@ -38,9 +38,9 @@ await writeWebp(marblePath, join(assetsDir, 'marble-bg.webp'), { width: 1280, qu
 
 console.log('Optimizing logo display sizes…')
 const logoPath = await requireFile(join(brandDir, 'aura-syncro-app-icon.png'))
-const preparedLogo = await stripLogoHalos(await readFile(logoPath))
-await writeFile(join(brandDir, 'aura-syncro-logo-display.webp'), await logoToDisplayWebp(preparedLogo, 112))
-await writeFile(join(brandDir, 'aura-syncro-logo-display-40.webp'), await logoToDisplayWebp(preparedLogo, 40))
+const logoBuffer = await readFile(logoPath)
+await writeFile(join(brandDir, 'aura-syncro-logo-display.webp'), await logoToDisplayWebp(logoBuffer, 112))
+await writeFile(join(brandDir, 'aura-syncro-logo-display-40.webp'), await logoToDisplayWebp(logoBuffer, 40))
 console.log('  aura-syncro-logo-display.webp')
 console.log('  aura-syncro-logo-display-40.webp')
 

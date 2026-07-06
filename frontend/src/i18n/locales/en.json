@@ -1821,6 +1821,7 @@
     "successDesc": "The restaurant has received your booking. You will get confirmation by phone or email.",
     "viewMenu": "View digital menu",
     "notFound": "Restaurant not found",
+    "coversInvalid": "Enter a party size between 1 and {{max}}.",
     "error": "Could not send the reservation. Please try again or call the restaurant."
   },
   "payment": {

@@ -57,7 +57,7 @@ export default function LandingHero() {
             <div className="rounded-[2rem] border border-[#D4AF37]/12 bg-[#050505]/95 p-5 lux-text-soft shadow-inner transition-colors duration-700 group-hover:border-[#D4AF37]/22">
               <div className="flex items-center justify-between rounded-2xl bg-[#0a0a0a] px-5 py-4 ring-1 ring-[#D4AF37]/10">
                 <div className="flex items-center gap-3 text-sm font-bold tracking-wide lux-text-bright">
-                  <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="h-5 w-5 object-cover" width={20} height={20} decoding="async" />
+                  <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="h-5 w-5 object-contain" width={20} height={20} decoding="async" />
                   {BRAND.name}
                 </div>
                 <span className="rounded-full border border-aura-gold/20 bg-aura-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-aura-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]">

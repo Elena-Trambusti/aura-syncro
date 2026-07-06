@@ -29,8 +29,8 @@ export const BRAND = {
 /** Logo ufficiale — PNG oro con sfondo trasparente (master in /brand) */
 export const BRAND_LOGO_PATH = '/brand/aura-syncro-app-icon.png'
 export const BRAND_OG_IMAGE_PATH = '/og-image.jpg'
-/** Bump quando cambiano asset ottimizzati (WebP landing, logo display, …) */
-export const BRAND_ASSETS_VERSION = '18'
+/** Bump quando cambiano asset logo / PWA */
+export const BRAND_ASSETS_VERSION = '19'
 export const BRAND_LOGO_VERSION = BRAND_ASSETS_VERSION
 export const BRAND_LOGO_SRC = `${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
 
@@ -47,8 +47,8 @@ export const BRAND_APP_ICON_SRC = `${BRAND_APP_ICON_PATH}?v=${BRAND_LOGO_VERSION
 
 export const BRAND_LOGO_GRADIENT = `linear-gradient(135deg, ${BRAND.gold}, ${BRAND.amber})`
 
-/** Colori PWA — splash/barra allineati al navy app (icone = logo trasparente) */
+/** Colori PWA — splash allineato all'oro del logo (no bordi bianchi all'installazione) */
 export const PWA = {
   themeColor: '#0B0E14',
-  backgroundColor: '#0B0E14',
+  backgroundColor: '#C9A227',
 } as const
