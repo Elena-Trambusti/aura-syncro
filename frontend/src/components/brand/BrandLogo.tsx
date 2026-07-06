@@ -37,7 +37,7 @@ export default function BrandLogo({
     <img
       src={ICON_SRC}
       alt=""
-      className={cn(s.img, 'shrink-0 object-contain object-center')}
+      className={cn(s.img, 'shrink-0 object-cover object-center')}
       width={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       height={size === 'sm' ? 32 : size === 'md' ? 44 : 56}
       loading={priority ? 'eager' : 'lazy'}

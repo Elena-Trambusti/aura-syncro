@@ -2106,6 +2106,7 @@
     "demoModal": {
       "title": "Riserva una Demo Privata",
       "subtitle": "Scegli il giorno e l'ora. Un nostro specialista ti contatterà per analizzare il tuo ristorante.",
+      "loading": "Caricamento calendario…",
       "a11yTitle": "Prenota una demo",
       "a11yDescription": "Calendario prenotazione demo Aura Syncro"
     },

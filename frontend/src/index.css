@@ -132,7 +132,7 @@
   }
 
   .lux-hero-badge__logo {
-    @apply h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11;
+    @apply h-10 w-10 shrink-0 object-cover sm:h-11 sm:w-11;
   }
 
   .lux-hero-badge__text {
@@ -593,7 +593,7 @@
   }
 
   .aura-confirm-brand {
-    @apply mb-5 h-11 w-11 shrink-0 object-contain opacity-95;
+    @apply mb-5 h-11 w-11 shrink-0 object-cover opacity-95;
     filter: drop-shadow(0 0 14px rgba(212, 175, 55, 0.22));
   }
 
@@ -856,6 +856,15 @@
 
   .aura-dialog-footer {
     @apply mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end;
+  }
+
+  .landing-demo-modal.aura-dialog-content {
+    @apply overflow-hidden;
+  }
+
+  .landing-calendly-shell iframe {
+    color-scheme: dark;
+    background-color: #0a0a0a;
   }
 
   .aura-select-trigger {

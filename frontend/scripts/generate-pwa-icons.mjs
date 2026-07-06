@@ -2,6 +2,7 @@
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logoToSquarePng, stripLogoHalos } from './logoImagePrep.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
@@ -24,8 +25,10 @@ const ADAPTIVE_DENSITIES = [
 
 /** Logo squircle oro — massimo riempimento, sfondo trasparente */
 const STANDARD_FILL = 1
-/** Zona sicura maskable Android (~80% cerchio) */
-const MASKABLE_FILL = 0.82
+/** Navy app — sfondo launcher Android/iOS (evita bordi bianchi) */
+const PWA_BG = '#0B0E14'
+/** Maskable Android — quasi full-bleed (zona sicura minima) */
+const MASKABLE_FILL = 0.92
 
 await mkdir(outDir, { recursive: true })
 await mkdir(androidDir, { recursive: true })
@@ -40,33 +43,13 @@ try {
 }
 
 const logoBuffer = await readFile(sourcePath)
+const preparedLogo = await stripLogoHalos(logoBuffer)
 
 /**
- * Solo logo oro ufficiale, sfondo trasparente — nessun flatten, nessun box oro aggiunto.
+ * Logo oro full-bleed su canvas trasparente — nessun margine bianco/nero.
  */
 async function transparentLogoPng(size, fillRatio = STANDARD_FILL) {
-  const markSize = Math.max(1, Math.round(size * fillRatio))
-  const mark = await sharp(logoBuffer)
-    .ensureAlpha()
-    .resize(markSize, markSize, {
-      fit: 'contain',
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-      kernel: 'lanczos3',
-    })
-    .png()
-    .toBuffer()
-
-  return sharp({
-    create: {
-      width: size,
-      height: size,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([{ input: mark, gravity: 'center' }])
-    .png()
-    .toBuffer()
+  return logoToSquarePng(preparedLogo, size, fillRatio)
 }
 
 async function transparentCanvas(size) {
@@ -88,20 +71,40 @@ async function writeStandardIcon(size) {
   console.log(`  icon-${size}.png`)
 }
 
+async function navyCanvas(size) {
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 3,
+      background: PWA_BG,
+    },
+  })
+    .png()
+    .toBuffer()
+}
+
+async function logoOnNavyPng(size, fillRatio = MASKABLE_FILL) {
+  const logo = await transparentLogoPng(size, fillRatio)
+  const bg = await navyCanvas(size)
+  return sharp(bg).composite([{ input: logo, gravity: 'center' }]).png().toBuffer()
+}
+
 async function writeMaskableIcon(size) {
-  const png = await transparentLogoPng(size, MASKABLE_FILL)
+  const png = await logoOnNavyPng(size, MASKABLE_FILL)
   await sharp(png).toFile(join(outDir, `maskable-${size}.png`))
   console.log(`  maskable-${size}.png`)
 }
 
-/** Adaptive Android: foreground logo trasparente, background trasparente */
+/** Adaptive Android: foreground logo, background navy */
 async function writeAdaptivePair(size, densityName) {
   const foreground = await transparentLogoPng(size, MASKABLE_FILL)
-  const background = await transparentCanvas(size)
+  const background = await navyCanvas(size)
+  const combined = await logoOnNavyPng(size, MASKABLE_FILL)
 
   await sharp(background).toFile(join(androidDir, `ic_launcher_background_${densityName}.png`))
   await sharp(foreground).toFile(join(androidDir, `ic_launcher_foreground_${densityName}.png`))
-  await sharp(foreground).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
+  await sharp(combined).toFile(join(androidDir, `ic_launcher_${densityName}.png`))
   console.log(`  android/ic_launcher_${densityName}.png`)
 }
 

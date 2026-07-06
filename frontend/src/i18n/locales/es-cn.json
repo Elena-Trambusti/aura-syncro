@@ -1496,6 +1496,7 @@
     "demoModal": {
       "title": "Reservar una demo privada",
       "subtitle": "Elige día y hora. Un especialista analizará tu restaurante en Canarias.",
+      "loading": "Cargando calendario…",
       "a11yTitle": "Reservar demo",
       "a11yDescription": "Calendario de reserva demo Aura Syncro"
     },

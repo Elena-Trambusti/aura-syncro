@@ -1982,6 +1982,13 @@
       "heading": "Exclusive Concierge Service",
       "body": "Setup is not a hidden cost — it is your passport to immediate operations. Our experts map your restaurant in 2.5D, digitize the full menu, variants and fiscal printers. We deliver a turnkey system, ready to sell from minute one."
     },
+    "demoModal": {
+      "title": "Book a Private Demo",
+      "subtitle": "Pick a day and time. A specialist will review your restaurant with you.",
+      "loading": "Loading calendar…",
+      "a11yTitle": "Book a demo",
+      "a11yDescription": "Aura Syncro demo booking calendar"
+    },
     "footer": {
       "tagline": "Cloud software for restaurants in Italy, Spain and the Canary Islands.",
       "privacy": "Privacy Policy",

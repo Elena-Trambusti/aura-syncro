@@ -30,7 +30,7 @@ export const BRAND = {
 export const BRAND_LOGO_PATH = '/brand/aura-syncro-app-icon.png'
 export const BRAND_OG_IMAGE_PATH = '/og-image.jpg'
 /** Bump quando cambiano asset ottimizzati (WebP landing, logo display, …) */
-export const BRAND_ASSETS_VERSION = '17'
+export const BRAND_ASSETS_VERSION = '18'
 export const BRAND_LOGO_VERSION = BRAND_ASSETS_VERSION
 export const BRAND_LOGO_SRC = `${BRAND_LOGO_PATH}?v=${BRAND_LOGO_VERSION}`
 

@@ -176,7 +176,7 @@ export default function OnboardingForm({ initial, onSubmitted, readOnly = false 
       <div className="border-b border-[#333333] bg-[#111111] px-4 py-5 sm:px-8">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg shadow-lg shadow-[#D4AF37]/10">
-            <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="h-full w-full object-contain" aria-hidden />
+            <img src={BRAND_LOGO_DISPLAY_SRC} alt="" className="h-full w-full object-cover" aria-hidden />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#D4AF37]">

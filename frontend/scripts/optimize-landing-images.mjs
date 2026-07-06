@@ -3,9 +3,10 @@
  * Uso: node scripts/optimize-landing-images.mjs
  */
 import sharp from 'sharp'
-import { access, mkdir } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logoToDisplayWebp, stripLogoHalos } from './logoImagePrep.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public')
@@ -37,14 +38,11 @@ await writeWebp(marblePath, join(assetsDir, 'marble-bg.webp'), { width: 1280, qu
 
 console.log('Optimizing logo display sizes…')
 const logoPath = await requireFile(join(brandDir, 'aura-syncro-app-icon.png'))
-await writeWebp(logoPath, join(brandDir, 'aura-syncro-logo-display.webp'), {
-  width: 112,
-  quality: 85,
-})
-await writeWebp(logoPath, join(brandDir, 'aura-syncro-logo-display-40.webp'), {
-  width: 40,
-  quality: 85,
-})
+const preparedLogo = await stripLogoHalos(await readFile(logoPath))
+await writeFile(join(brandDir, 'aura-syncro-logo-display.webp'), await logoToDisplayWebp(preparedLogo, 112))
+await writeFile(join(brandDir, 'aura-syncro-logo-display-40.webp'), await logoToDisplayWebp(preparedLogo, 40))
+console.log('  aura-syncro-logo-display.webp')
+console.log('  aura-syncro-logo-display-40.webp')
 
 console.log('Optimizing floor plan preview…')
 const floorPath = await requireFile(join(brandDir, 'tavoli-floor-plan-25d.png'))

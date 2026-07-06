@@ -1576,6 +1576,13 @@
       "heading": "Service Concierge exclusif",
       "body": "Le setup n'est pas un coût caché, mais votre passeport vers une exploitation immédiate. Nos experts cartographient votre restaurant en 2.5D, digitalisent le menu, les variantes et les imprimantes fiscales. Nous livrons un système clé en main, prêt à vendre dès la première minute."
     },
+    "demoModal": {
+      "title": "Réserver une démo privée",
+      "subtitle": "Choisissez le jour et l'heure. Un spécialiste analysera votre restaurant avec vous.",
+      "loading": "Chargement du calendrier…",
+      "a11yTitle": "Réserver une démo",
+      "a11yDescription": "Calendrier de réservation démo Aura Syncro"
+    },
     "footer": {
       "tagline": "Logiciel cloud pour la restauration en Italie, Espagne et Îles Canaries.",
       "privacy": "Politique de confidentialité",
