@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Minus, Sparkles, ArrowRight } from 'lucide-react'
+import { Check, Minus, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import AuraIcon from '../ui/AuraIcon'
 import {
@@ -9,7 +8,6 @@ import {
   LUXURY_CARD_CLASS,
   LuxuryCardHoverLine,
 } from './landingLuxury'
-import DemoBookingModal from './DemoBookingModal'
 
 type PricingPlan = {
   id: 'starter' | 'pro'
@@ -25,7 +23,6 @@ type PricingPlan = {
 
 export default function LandingPricing() {
   const { t } = useTranslation()
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   const plans: PricingPlan[] = [
     {
@@ -117,23 +114,7 @@ export default function LandingPricing() {
                   <p className="mt-6 text-center text-xs font-light italic leading-relaxed text-[#F0E6D2]/55">
                     {plan.conciergeNote}
                   </p>
-                ) : (
-                  <div className="mt-6 min-h-[3.25rem]" aria-hidden />
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsDemoModalOpen(true)}
-                  className={cn(
-                    'mt-6 w-full',
-                    isPro
-                      ? 'lux-hero-cta'
-                      : 'group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full border border-[#C5A059]/40 bg-neutral-950/90 px-8 py-4 text-sm font-medium uppercase tracking-widest text-[#C5A059] backdrop-blur-md transition-all duration-300 hover:border-[#C5A059] hover:shadow-[0_0_15px_rgba(197,160,89,0.2)]',
-                  )}
-                >
-                  {t('landing.hero.ctaDemoPrivate')}
-                  <AuraIcon icon={ArrowRight} size="md" className="transition-transform duration-300 group-hover:translate-x-1" />
-                </button>
+                ) : null}
 
                 <LuxuryCardHoverLine />
               </article>
@@ -141,7 +122,6 @@ export default function LandingPricing() {
           })}
         </div>
       </div>
-      <DemoBookingModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </LandingSectionShell>
   )
 }
