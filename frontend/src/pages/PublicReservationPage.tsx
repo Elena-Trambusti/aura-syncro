@@ -151,11 +151,13 @@ export default function PublicReservationPage() {
         ...introStyle
       }}
     >
-      <div className="absolute top-0 inset-x-0 p-5 flex justify-end z-10">
-        <PublicLanguageSwitcher />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
+        <div className="pointer-events-auto">
+          <PublicLanguageSwitcher />
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center py-10 sm:py-16 px-3 sm:px-6 mb-8 sm:mb-0">
+      <div className="flex flex-1 flex-col items-center justify-center px-3 py-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 sm:px-6 sm:py-16 sm:pb-0">
         
         <div className="text-center flex flex-col items-center mb-10">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-aura-gold/40 bg-navy-surface/90 shadow-[0_0_40px_rgba(212,175,55,0.3)] backdrop-blur-xl mb-6">

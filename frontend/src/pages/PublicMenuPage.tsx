@@ -306,11 +306,13 @@ export default function PublicMenuPage() {
         backgroundAttachment: 'fixed',
       }}
     >
-      <div className="absolute top-0 inset-x-0 p-5 flex justify-end z-30">
-        <PublicLanguageSwitcher />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
+        <div className="pointer-events-auto">
+          <PublicLanguageSwitcher />
+        </div>
       </div>
 
-      <div className="mx-auto max-w-2xl min-h-[100dvh] flex flex-col relative pb-28 pt-12 sm:pt-16 px-3 sm:px-6">
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-3 pb-28 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pt-24">
         
         <div className="text-center flex flex-col items-center mb-10">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-aura-gold/40 bg-navy-surface/90 shadow-[0_0_40px_rgba(212,175,55,0.3)] backdrop-blur-xl mb-6">
