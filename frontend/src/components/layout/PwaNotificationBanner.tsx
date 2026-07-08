@@ -11,15 +11,15 @@ interface PwaNotificationBannerProps {
 
 export default function PwaNotificationBanner({ enabled }: PwaNotificationBannerProps) {
   const { t } = useTranslation()
-  const { supported, permission, subscribed, ready, enablePush } = usePushNotifications(enabled)
+  const { supported, permission, subscribed, enablePush } = usePushNotifications(enabled)
   const [dismissed, setDismissed] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('pwa-push-banner-dismissed') === '1',
   )
 
-  if (!enabled || !ready || !supported || permission === 'denied' || subscribed || dismissed) return null
+  if (!enabled || !supported || permission === 'denied' || subscribed || dismissed) return null
 
   return (
-    <div className="pwa-notification-banner mx-0 mb-4 flex flex-col gap-3 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="pwa-notification-banner mx-0 flex flex-col gap-3 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-4 py-3 shadow-lg sm:flex-row sm:items-center sm:justify-between lg:mb-4">
       <div className="flex items-start gap-3 min-w-0">
         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100">
           <BellRing className="h-4 w-4 text-aura-gold" />
@@ -70,7 +70,7 @@ export function PwaInstallHint() {
   }
 
   return (
-    <div className="pwa-install-hint mb-4 flex flex-col gap-3 rounded-xl border border-aura-gold/25/80 bg-navy-elevated px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between lg:hidden">
+    <div className="pwa-install-hint flex flex-col gap-3 rounded-xl border border-aura-gold/25/80 bg-navy-elevated px-4 py-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-pietra">{t('pwa.installTitle')}</p>
         <p className="text-xs text-fumo mt-0.5">{t('pwa.installHint')}</p>

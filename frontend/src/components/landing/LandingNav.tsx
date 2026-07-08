@@ -24,10 +24,10 @@ export default function LandingNav() {
             {BRAND.name}
           </span>
         </Link>
-        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:gap-3">
+        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:gap-3 min-w-[8.5rem] sm:min-w-[12rem] justify-end">
           <LanguageSwitcher compact />
           {isLoading ? (
-            <div className="h-8 w-16 animate-pulse rounded-lg bg-white/5 sm:h-9 sm:w-32" />
+            <div className="h-8 w-full max-w-[8rem] animate-pulse rounded-lg bg-white/5 sm:h-9 sm:max-w-[12rem]" aria-hidden />
           ) : user && !isDemoUserEmail(user.email) ? (
             <Link
               to="/dashboard"

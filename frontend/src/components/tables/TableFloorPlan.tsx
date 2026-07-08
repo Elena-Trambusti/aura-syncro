@@ -59,6 +59,7 @@ export interface TableFloorPlanProps {
   statusLabel: (status: TableStatus) => string
   seatsLabel: (n: number) => string
   onTableClick?: (table: FloorTable) => void
+  onTableHover?: (table: FloorTable) => void
   activeOrderTotal?: (tableId: string) => string | null
   reservationLabel?: (table: FloorTable) => string | null
   transferSourceId?: string | null
@@ -105,6 +106,7 @@ export default function TableFloorPlan({
   statusLabel,
   seatsLabel,
   onTableClick,
+  onTableHover,
   activeOrderTotal,
   reservationLabel,
   transferSourceId,
@@ -125,6 +127,7 @@ export default function TableFloorPlan({
   const [zoneLabelPositions, setZoneLabelPositions] = useState<Record<string, LabelPosition>>({})
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null)
   const [activeTableId, setActiveTableId] = useState<string | null>(null)
+  const [lowPerformanceMode, setLowPerformanceMode] = useState(false)
   const activeFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastTapRef = useRef<{ tableId: string; at: number } | null>(null)
 
@@ -146,6 +149,21 @@ export default function TableFloorPlan({
 
   useEffect(() => () => {
     if (activeFlashTimeoutRef.current) clearTimeout(activeFlashTimeoutRef.current)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mediaQueries = [
+      window.matchMedia('(max-width: 900px)'),
+      window.matchMedia('(pointer: coarse)'),
+      window.matchMedia('(prefers-reduced-motion: reduce)'),
+    ]
+    const sync = () => setLowPerformanceMode(mediaQueries.some(query => query.matches))
+    sync()
+    for (const query of mediaQueries) query.addEventListener('change', sync)
+    return () => {
+      for (const query of mediaQueries) query.removeEventListener('change', sync)
+    }
   }, [])
 
   useEffect(() => {
@@ -220,7 +238,6 @@ export default function TableFloorPlan({
 
   const handleTableHoverEnd = () => {
     setHoveredTableId(null)
-    window.setTimeout(measureLabels, 620)
   }
 
   const flashTableActive = useCallback((tableId: string) => {
@@ -256,8 +273,11 @@ export default function TableFloorPlan({
 
   const handleTableHoverStart = (tableId: string) => {
     setHoveredTableId(tableId)
-    measureLabels()
+    const table = tables.find(tbl => tbl.id === tableId)
+    if (table) onTableHover?.(table)
   }
+
+  const renderLite = lowPerformanceMode || tables.length >= 18
 
   const sceneContent = (
     <div
@@ -315,7 +335,7 @@ export default function TableFloorPlan({
               isDisabledInTransfer={transferRole === 'disabled'}
               isHovered={hoveredTableId === table.id}
               isActive={activeTableId === table.id}
-              onMeasureLabels={measureLabels}
+              renderLite={renderLite}
               onActivate={() => flashTableActive(table.id)}
               onClick={() => handleTableClick(table)}
               interactive={interactive && !useScreenHits}
@@ -510,13 +530,13 @@ const TableLabelPill = memo(function TableLabelPill({
 })
 
 const TableTile = memo(function TableTile({
-  table, isDisabledInTransfer, isHovered, isActive, onMeasureLabels, onActivate, onClick, interactive, style, className,
+  table, isDisabledInTransfer, isHovered, isActive, renderLite, onActivate, onClick, interactive, style, className,
 }: {
   table: FloorTable
   isDisabledInTransfer: boolean
   isHovered?: boolean
   isActive?: boolean
-  onMeasureLabels: () => void
+  renderLite: boolean
   onActivate?: () => void
   onClick: () => void
   interactive?: boolean
@@ -556,8 +576,6 @@ const TableTile = memo(function TableTile({
   const legShadow = '0 6px 16px rgba(20, 15, 10, 0.8)'
   const marbleSrc = MARBLE_BG
 
-  const handleHoverEnd = () => window.setTimeout(onMeasureLabels, 620)
-
   const renderTableLeg = (pos: { left?: string; right?: string; top?: string; bottom?: string }) => (
     <div
       className="absolute origin-bottom bg-gradient-to-t from-[#5a4205] via-[#a67c0a] to-[#e8c872] transition-all duration-[600ms] ease-in-out"
@@ -591,6 +609,7 @@ const TableTile = memo(function TableTile({
   }
 
   const renderChairs = () => {
+    if (renderLite) return null
     if (isBarStool || chairSize === 0) return null
     const chairs: React.ReactNode[] = []
     const padding = 12
@@ -673,15 +692,17 @@ const TableTile = memo(function TableTile({
       onClick={interactive && !isDisabledInTransfer ? onClick : undefined}
       onKeyDown={(e) => { if (interactive && !isDisabledInTransfer && e.key === 'Enter') onClick() }}
       onMouseDown={interactive && !isDisabledInTransfer ? onActivate : undefined}
-      onMouseEnter={onMeasureLabels}
-      onMouseLeave={handleHoverEnd}
     >
       <div className="table-3d-body">
         <div className="table-3d-contact-shadow" />
-        <div className="table-luxury-ambient-glow table-luxury-ambient-glow--base pointer-events-none absolute left-1/2 top-1/2 blur-[32px] rounded-full"
-          style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
-        <div className={cn('table-luxury-ambient-glow pointer-events-none absolute left-1/2 top-1/2 blur-[36px] rounded-full opacity-80', statusGlowClass)}
-          style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
+        {!renderLite && (
+          <>
+            <div className="table-luxury-ambient-glow table-luxury-ambient-glow--base pointer-events-none absolute left-1/2 top-1/2 blur-[32px] rounded-full"
+              style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
+            <div className={cn('table-luxury-ambient-glow pointer-events-none absolute left-1/2 top-1/2 blur-[36px] rounded-full opacity-80', statusGlowClass)}
+              style={{ transform: 'translate(-50%, -50%) translateZ(0)' }} />
+          </>
+        )}
         <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>{renderChairs()}</div>
         {!isBarStool && (
           <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>

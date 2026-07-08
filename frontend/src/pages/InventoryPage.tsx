@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { Plus, AlertTriangle, Package, Edit2, Trash2 } from 'lucide-react'
@@ -15,6 +15,13 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import FilterPills from '../components/ui/FilterPills'
 import ModuleFrame from '../components/ui/ModuleFrame'
+import { useInstantMutation } from '../hooks/useInstantMutation'
+import {
+  adjustInventoryQty,
+  removeInventoryItem,
+  restoreInventory,
+} from '../lib/inventoryQueryCache'
+import AuraButton from '../components/ui/AuraButton'
 import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface InventoryItem {
@@ -124,24 +131,44 @@ export default function InventoryPage() {
 
   const inventoryError = () => toast.error(t('inventory.saveError', { defaultValue: 'Operazione magazzino non riuscita' }))
 
-  const create = useMutation({
+  const create = useInstantMutation({
     mutationFn: (d: Record<string, unknown>) => api.post('/inventory', d),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setShowForm(false); toast.success(t('inventory.added')) },
-    onError: inventoryError,
-  })
-  const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/inventory/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); setEditingItem(null); toast.success(t('inventory.updated')) },
-    onError: inventoryError,
-  })
-  const remove = useMutation({
-    mutationFn: (id: string) => api.delete(`/inventory/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }); toast.success(t('inventory.deleted')) },
-    onError: inventoryError,
-  })
-  const adjustQty = useMutation({
-    mutationFn: ({ id, delta }: { id: string; delta: number }) => api.patch(`/inventory/${id}/quantity`, { delta, operation: 'add' }),
+    onInstant: () => {
+      setShowForm(false)
+      toast.success(t('inventory.added'))
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }),
+    onError: () => {
+      setShowForm(true)
+      inventoryError()
+    },
+  })
+  const update = useInstantMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/inventory/${id}`, data),
+    onInstant: () => {
+      setEditingItem(null)
+      toast.success(t('inventory.updated'))
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') }),
+    onError: inventoryError,
+  })
+  const remove = useInstantMutation({
+    mutationFn: (id: string) => api.delete(`/inventory/${id}`),
+    actionKey: id => `inventory-remove-${id}`,
+    onOptimistic: id => removeInventoryItem(queryClient, tk, id),
+    onRollback: snapshot => restoreInventory(queryClient, tk, snapshot),
+    onSuccess: () => toast.success(t('inventory.deleted')),
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'inventory') })
+      inventoryError()
+    },
+  })
+  const adjustQty = useInstantMutation({
+    mutationFn: ({ id, delta }: { id: string; delta: number }) =>
+      api.patch(`/inventory/${id}/quantity`, { delta, operation: 'add' }),
+    actionKey: ({ id, delta }) => `inventory-qty-${id}-${delta}`,
+    onOptimistic: ({ id, delta }) => adjustInventoryQty(queryClient, tk, id, delta),
+    onRollback: snapshot => restoreInventory(queryClient, tk, snapshot),
     onError: inventoryError,
   })
 
@@ -231,13 +258,25 @@ export default function InventoryPage() {
                     <div className="flex items-center gap-2">
                       {canManageInventory ? (
                         <>
-                      <button onClick={() => adjustQty.mutate({ id: item.id, delta: -1 })}
-                        className="w-6 h-6 rounded-full bg-navy-surface hover:bg-red-100 flex items-center justify-center text-fumo hover:text-red-400 transition-colors text-xs font-bold">−</button>
+                      <AuraButton
+                        variant="ghost"
+                        instant
+                        onClick={() => adjustQty.mutate({ id: item.id, delta: -1 })}
+                        className="h-6 w-6 min-w-6 rounded-full bg-navy-surface p-0 text-xs font-bold text-fumo hover:bg-red-100 hover:text-red-400"
+                      >
+                        −
+                      </AuraButton>
                       <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-400' : 'text-pietra'}`}>
                         {item.quantity} {item.unit}
                       </span>
-                      <button onClick={() => adjustQty.mutate({ id: item.id, delta: 1 })}
-                        className="w-6 h-6 rounded-full bg-navy-surface hover:bg-emerald-100 flex items-center justify-center text-fumo hover:text-emerald-400 transition-colors text-xs font-bold">+</button>
+                      <AuraButton
+                        variant="ghost"
+                        instant
+                        onClick={() => adjustQty.mutate({ id: item.id, delta: 1 })}
+                        className="h-6 w-6 min-w-6 rounded-full bg-navy-surface p-0 text-xs font-bold text-fumo hover:bg-emerald-100 hover:text-emerald-400"
+                      >
+                        +
+                      </AuraButton>
                         </>
                       ) : (
                       <span className={`text-sm font-semibold min-w-12 text-center ${isLow ? 'text-red-400' : 'text-pietra'}`}>

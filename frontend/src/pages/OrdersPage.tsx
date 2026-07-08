@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -20,6 +20,9 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import PageSkeleton from '../components/ui/PageSkeleton'
 import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
+import { useInstantMutation } from '../hooks/useInstantMutation'
+import { patchOrderStatusInCaches, removeOrderFromCaches, restoreOrderCaches } from '../lib/ordersQueryCache'
+import AuraButton from '../components/ui/AuraButton'
 import FilterPills from '../components/ui/FilterPills'
 
 interface OrderItem {
@@ -76,11 +79,16 @@ export default function OrdersPage() {
   const showOrdersSkeleton = useShowQuerySkeleton(isLoading, ordersData !== undefined)
   const orders = ordersData ?? []
 
-  const updateStatus = useMutation({
+  const updateStatus = useInstantMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       api.patch(`/orders/${id}/status`, { status }),
+    actionKey: ({ id, status }) => `order-status-${id}-${status}`,
+    onOptimistic: ({ id, status }) => {
+      if (status === 'CANCELLED') return removeOrderFromCaches(queryClient, tk, id)
+      return patchOrderStatusInCaches(queryClient, tk, id, status)
+    },
+    onRollback: snapshots => restoreOrderCaches(queryClient, snapshots),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'kitchen', 'orders') })
       toast.success(t('orders.statusUpdated'))
@@ -217,13 +225,15 @@ export default function OrdersPage() {
                   </Link>
                 )}
                 {can('orders.cancel') && !['PAID', 'CANCELLED'].includes(order.status) && (
-                  <button
+                  <AuraButton
+                    variant="ghost"
+                    instant
                     onClick={() => updateStatus.mutate({ id: order.id, status: 'CANCELLED' })}
-                    className="p-2 hover:bg-red-500/10 rounded-lg text-fumo hover:text-red-500 transition-colors"
+                    className="p-2 hover:bg-red-500/10 text-fumo hover:text-red-500"
                     title={t('orders.cancel')}
                   >
                     <XCircle className="w-4 h-4" />
-                  </button>
+                  </AuraButton>
                 )}
                 {order.status === 'PAID' && (
                   <div className="flex items-center gap-2">

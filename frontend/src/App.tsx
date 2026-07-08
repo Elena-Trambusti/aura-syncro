@@ -18,8 +18,8 @@ import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import RouteLoadingFallback from './components/auth/RouteLoadingFallback'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 import LandingRoute from './components/landing/LandingRoute'
-
-const LandingPage = lazyRoute(() => import('./pages/LandingPage'))
+import LandingPage from './pages/LandingPage'
+import DashboardLayout from './components/layout/DashboardLayout'
 
 const LoginPage = lazyRoute(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
@@ -34,7 +34,6 @@ const CookiePage = lazyRoute(() => import('./pages/CookiePage'))
 const DPAPage = lazyRoute(() => import('./pages/DPAPage'))
 const ContactPage = lazyRoute(() => import('./pages/ContactPage'))
 const GuestPrivacyPage = lazyRoute(() => import('./pages/GuestPrivacyPage'))
-const DashboardLayout = lazyRoute(() => import('./components/layout/DashboardLayout'))
 const DashboardPage = lazyRoute(() => import('./pages/DashboardPage'))
 const TablesPage = lazyRoute(() => import('./pages/TablesPage'))
 const OrdersPage = lazyRoute(() => import('./pages/OrdersPage'))

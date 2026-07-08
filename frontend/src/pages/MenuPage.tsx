@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
@@ -19,6 +19,12 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import RecipeEditorModal from '../components/menu/RecipeEditorModal'
 import { useRealtimeQuery } from '../hooks/useRealtimeInvalidation'
+import { useInstantMutation } from '../hooks/useInstantMutation'
+import {
+  patchMenuItemAvailability,
+  removeMenuItem,
+  restoreMenuCategories,
+} from '../lib/menuQueryCache'
 import { numericFieldFrom, numericInputProps, numericToNumber } from '../lib/numericInput'
 
 interface MenuItem {
@@ -156,33 +162,55 @@ export default function MenuPage() {
     queryFn: () => api.get('/menu/categories').then(r => r.data),
   })
 
-  const createItem = useMutation({
+  const createItem = useInstantMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/menu/items', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setShowForm(false); toast.success(t('menu.added')) },
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
+    onInstant: () => {
+      setShowForm(false)
+      toast.success(t('menu.added'))
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
+    onError: (err: unknown) => {
+      setShowForm(true)
+      toast.error(resolveToastApiError(t, err, 'menu.saveError'))
+    },
   })
-  const updateItem = useMutation({
+  const updateItem = useInstantMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => api.put(`/menu/items/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }); setEditingItem(null); toast.success(t('menu.updated')) },
+    onInstant: () => {
+      setEditingItem(null)
+      toast.success(t('menu.updated'))
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
     onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
   })
-  const deleteItem = useMutation({
+  const deleteItem = useInstantMutation({
     mutationFn: (id: string) => api.delete(`/menu/items/${id}`),
+    actionKey: id => `menu-delete-${id}`,
+    onOptimistic: id => removeMenuItem(queryClient, tk, id),
+    onRollback: snapshot => restoreMenuCategories(queryClient, tk, snapshot),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
       toast.success(res.data?.archived ? t('menu.archived') : t('menu.deleted'))
     },
     onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'menu.deleteError'))
     },
   })
-  const toggleAvail = useMutation({
-    mutationFn: ({ id, available }: { id: string; available: boolean }) => api.patch(`/menu/items/${id}/availability`, { available }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') }),
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.saveError')),
+  const toggleAvail = useInstantMutation({
+    mutationFn: ({ id, available }: { id: string; available: boolean }) =>
+      api.patch(`/menu/items/${id}/availability`, { available }),
+    actionKey: ({ id }) => `menu-avail-${id}`,
+    onOptimistic: ({ id, available }) =>
+      patchMenuItemAvailability(queryClient, tk, id, available),
+    onRollback: snapshot => restoreMenuCategories(queryClient, tk, snapshot),
+    onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      toast.error(resolveToastApiError(t, err, 'menu.saveError'))
+    },
   })
 
-  const createCategory = useMutation({
+  const createCategory = useInstantMutation({
     mutationFn: (name: string) => api.post('/menu/categories', { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
@@ -192,7 +220,7 @@ export default function MenuPage() {
     onError: (err: unknown) => toast.error(formatApiError(t, err, 'menu.categorySaveError')),
   })
 
-  const updateCategory = useMutation({
+  const updateCategory = useInstantMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => api.put(`/menu/categories/${id}`, { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
@@ -202,7 +230,7 @@ export default function MenuPage() {
     onError: (err: unknown) => toast.error(formatApiError(t, err, 'menu.categorySaveError')),
   })
 
-  const deleteCategory = useMutation({
+  const deleteCategory = useInstantMutation({
     mutationFn: (id: string) => api.delete(`/menu/categories/${id}`),
     onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })

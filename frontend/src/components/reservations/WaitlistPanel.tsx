@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../lib/api'
 import { formatTime, cn } from '../../lib/utils'
@@ -9,9 +9,17 @@ import {
   Plus, Users, Phone, Clock, Bell, CheckCircle2, XCircle, Loader2, ListOrdered,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { formatApiError, resolveToastApiError } from '@/lib/formatApiError'
+import { formatApiError, resolveToastApiError } from '../../lib/formatApiError'
 import { useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
+import { useInstantMutation } from '../../hooks/useInstantMutation'
+import {
+  appendWaitlistEntry,
+  patchWaitlistEntry,
+  removeWaitlistEntry,
+  restoreWaitlist,
+} from '../../lib/reservationQueryCache'
+import AuraButton from '../ui/AuraButton'
 import {
   AuraDialog,
   AuraDialogBody,
@@ -117,20 +125,21 @@ function WaitlistForm({ date, onSave, onCancel }: WaitlistFormProps) {
         </label>
       </AuraDialogBody>
       <AuraDialogFooter className="flex gap-3 sm:flex-row">
-        <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-white/[0.08] py-2.5 text-sm font-medium text-fumo">
+        <AuraButton variant="ghost" type="button" onClick={onCancel} className="flex-1">
           {t('common.cancel')}
-        </button>
-        <button
+        </AuraButton>
+        <AuraButton
           type="button"
+          instant
           onClick={() => onSave({
             ...form,
             requestedDate: new Date(form.requestedDate).toISOString(),
           })}
           disabled={!form.guestName || !form.guestPhone}
-          className="flex-1 rounded-xl bg-aura-gold py-2.5 text-sm font-semibold text-navy hover:bg-aura-gold-light disabled:opacity-60"
+          className="flex-1"
         >
           {t('waitlist.addToList')}
-        </button>
+        </AuraButton>
       </AuraDialogFooter>
     </AuraDialog>
   )
@@ -155,42 +164,68 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
     queryFn: () => api.get(`/waitlist?date=${selectedDate}`).then(r => r.data),
   })
 
-  const createEntry = useMutation({
+  const createEntry = useInstantMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/waitlist', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
+    onInstant: data => {
       setShowForm(false)
+      const tempId = `temp-${Date.now()}`
+      appendWaitlistEntry(queryClient, tk, selectedDate, {
+        id: tempId,
+        status: 'WAITING',
+        guestName: String(data.guestName ?? ''),
+        guestPhone: String(data.guestPhone ?? ''),
+        covers: Number(data.covers ?? 2),
+        requestedDate: String(data.requestedDate ?? ''),
+        notes: data.notes ? String(data.notes) : undefined,
+        createdAt: new Date().toISOString(),
+      })
       toast.success(t('waitlist.added'))
     },
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'waitlist.addError')),
-  })
-
-  const notifyGuest = useMutation({
-    mutationFn: (id: string) => api.patch(`/waitlist/${id}/notify`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
-      toast.success(t('waitlist.notified'))
     },
+    onError: (err: unknown) => {
+      setShowForm(true)
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
+      toast.error(resolveToastApiError(t, err, 'waitlist.addError'))
+    },
+  })
+
+  const notifyGuest = useInstantMutation({
+    mutationFn: (id: string) => api.patch(`/waitlist/${id}/notify`),
+    actionKey: id => `waitlist-notify-${id}`,
+    onOptimistic: id =>
+      patchWaitlistEntry(queryClient, tk, selectedDate, id, {
+        notifiedAt: new Date().toISOString(),
+      }),
+    onRollback: snapshot => restoreWaitlist(queryClient, tk, selectedDate, snapshot),
+    onSuccess: () => toast.success(t('waitlist.notified')),
     onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'waitlist.notifyError')),
   })
 
-  const confirmGuest = useMutation({
+  const confirmGuest = useInstantMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/confirm`),
+    actionKey: id => `waitlist-confirm-${id}`,
+    onOptimistic: id => removeWaitlistEntry(queryClient, tk, selectedDate, id),
+    onRollback: snapshot => restoreWaitlist(queryClient, tk, selectedDate, snapshot),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
       toast.success(t('waitlist.confirmed'))
     },
     onError: (err: { response?: { data?: { error?: string } } }) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'waitlist.confirmError'))
     },
   })
 
-  const cancelEntry = useMutation({
+  const cancelEntry = useInstantMutation({
     mutationFn: (id: string) => api.patch(`/waitlist/${id}/cancel`),
-    onSuccess: () => {
+    actionKey: id => `waitlist-cancel-${id}`,
+    onOptimistic: id => removeWaitlistEntry(queryClient, tk, selectedDate, id),
+    onRollback: snapshot => restoreWaitlist(queryClient, tk, selectedDate, snapshot),
+    onSuccess: () => toast.success(t('waitlist.removed')),
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'waitlist') })
-      toast.success(t('waitlist.removed'))
     },
   })
 
@@ -207,14 +242,10 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
           {t('waitlist.subtitle', { count: entries.length })}
         </p>
         {canManage && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2 text-sm font-semibold text-white hover:bg-aura-gold-light"
-          >
+          <AuraButton instant onClick={() => setShowForm(true)} className="gap-2 px-4 py-2">
             <Plus className="h-4 w-4" />
             {t('waitlist.addGuest')}
-          </button>
+          </AuraButton>
         )}
       </div>
 
@@ -254,30 +285,33 @@ export default function WaitlistPanel({ selectedDate }: WaitlistPanelProps) {
               </div>
               {canManage && (
                 <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
+                  <AuraButton
+                    variant="ghost"
+                    instant
                     onClick={() => notifyGuest.mutate(entry.id)}
                     className="rounded-lg p-2 text-blue-400 hover:bg-blue-500/10"
                     title={t('waitlist.notify')}
                   >
                     <Bell className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
+                  </AuraButton>
+                  <AuraButton
+                    variant="ghost"
+                    instant
                     onClick={() => confirmGuest.mutate(entry.id)}
                     className="rounded-lg p-2 text-emerald-400 hover:bg-emerald-500/10"
                     title={t('waitlist.confirm')}
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
+                  </AuraButton>
+                  <AuraButton
+                    variant="ghost"
+                    instant
                     onClick={() => cancelEntry.mutate(entry.id)}
                     className="rounded-lg p-2 text-fumo hover:bg-red-500/10 hover:text-red-400"
                     title={t('waitlist.cancel')}
                   >
                     <XCircle className="h-4 w-4" />
-                  </button>
+                  </AuraButton>
                 </div>
               )}
             </div>

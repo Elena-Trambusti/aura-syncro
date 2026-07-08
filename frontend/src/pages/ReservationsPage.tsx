@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatTime, getReservationStatusLabel, toDateInputInTimezone, dateInputOffsetInTimezone } from '../lib/utils'
@@ -25,6 +25,11 @@ import EmptyState from '../components/ui/EmptyState'
 import GlassModal from '../components/ui/GlassModal'
 import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { isVipCustomer } from '../lib/customerTags'
+import { useInstantMutation } from '../hooks/useInstantMutation'
+import {
+  patchReservationStatus,
+  restoreReservations,
+} from '../lib/reservationQueryCache'
 
 type ReservationTab = 'bookings' | 'waitlist'
 
@@ -233,28 +238,41 @@ export default function ReservationsPage() {
     queryFn: () => api.get(`/reservations?date=${selectedDate}`).then(r => r.data),
   })
 
-  const createReservation = useMutation({
+  const createReservation = useInstantMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/reservations', data),
+    onInstant: () => {
+      setShowForm(false)
+    },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
-      setShowForm(false)
       if (res.data?.depositRequired) {
         toast.success(t('reservations.depositRequiredNotice'))
       } else {
         toast.success(t('reservations.confirmed'))
       }
     },
-  })
-
-  const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`/reservations/${id}/status`, { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+    onError: (err: unknown) => {
+      setShowForm(true)
+      toast.error(resolveToastApiError(t, err, 'common.saveError'))
     },
   })
 
-  const copyDepositLink = useMutation({
+  const updateStatus = useInstantMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      api.patch(`/reservations/${id}/status`, { status }),
+    actionKey: ({ id, status }) => `reservation-${id}-${status}`,
+    onOptimistic: ({ id, status }) =>
+      patchReservationStatus(queryClient, tk, selectedDate, id, status),
+    onRollback: snapshot => restoreReservations(queryClient, tk, selectedDate, snapshot),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+    },
+    onError: (err: unknown) => {
+      toast.error(resolveToastApiError(t, err, 'common.saveError'))
+    },
+  })
+
+  const copyDepositLink = useInstantMutation({
     mutationFn: (reservationId: string) =>
       api.post(`/reservations/${reservationId}/deposit-checkout`),
     onSuccess: async (res) => {
@@ -269,7 +287,7 @@ export default function ReservationsPage() {
     onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'reservations.depositPayError')),
   })
 
-  const chargeNoShow = useMutation({
+  const chargeNoShow = useInstantMutation({
     mutationFn: (reservationId: string) => api.post(`/reservations/${reservationId}/charge-no-show`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })

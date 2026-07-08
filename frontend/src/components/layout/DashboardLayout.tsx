@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Sidebar from './Sidebar'
@@ -7,6 +7,7 @@ import CommandPalette from './CommandPalette'
 import PwaNotificationBanner, { PwaInstallHint } from './PwaNotificationBanner'
 import OfflineSyncBanner from '../OfflineSyncBanner'
 import DemoBanner from '../DemoBanner'
+import PageSkeleton from '../ui/PageSkeleton'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 import { tq } from '../../lib/queryKeys'
@@ -87,11 +88,30 @@ export default function DashboardLayout() {
         <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden !bg-transparent !bg-none">
           <Header />
           <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
-            <PwaInstallHint />
-            <PwaNotificationBanner enabled={!!user} />
+            <div className="dashboard-top-alerts pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col-reverse gap-2 px-3 sm:px-6 lg:hidden">
+              <div className="pointer-events-auto">
+                <PwaInstallHint />
+              </div>
+              <div className="pointer-events-auto">
+                <PwaNotificationBanner enabled={!!user} />
+              </div>
+            </div>
+            <div className="dashboard-inline-alerts mb-3 hidden space-y-3 lg:block">
+              <PwaInstallHint />
+              <PwaNotificationBanner enabled={!!user} />
+            </div>
             <OfflineSyncBanner enabled={!!user} onSynced={handleOfflineSynced} className="mb-3" />
             <DemoBanner />
-            <Outlet />
+            <Suspense
+              fallback={(
+                <div className="min-h-[50vh]">
+                  <PageSkeleton variant="kpi" count={4} className="mb-6" />
+                  <PageSkeleton variant="list" count={4} />
+                </div>
+              )}
+            >
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>

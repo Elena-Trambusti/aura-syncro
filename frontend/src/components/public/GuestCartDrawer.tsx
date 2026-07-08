@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import {
@@ -127,18 +128,18 @@ export default function GuestCartDrawer({
       toast.error(t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' }))
       return
     }
-    setLoading('table')
     const clientRequestId = createClientRequestId()
-    try {
-      await api.post('/public/orders', basePayload, { headers: { 'X-Idempotency-Key': clientRequestId } })
+    flushSync(() => {
       setOrderSuccess(true)
       onClearCart()
       toast.success(t('publicMenu.orderSuccess'))
+    })
+    try {
+      await api.post('/public/orders', basePayload, { headers: { 'X-Idempotency-Key': clientRequestId } })
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
+      setOrderSuccess(false)
       toast.error(resolvePublicOrderErrorMessage(t, data))
-    } finally {
-      setLoading(null)
     }
   }
 

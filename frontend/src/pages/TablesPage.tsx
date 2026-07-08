@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -35,6 +35,7 @@ import {
   markTableSeatedFromReservation,
   restoreTablesCache,
 } from '../lib/tableQueryCache'
+import { prefetchTableOrderData } from '../lib/tablePrefetch'
 import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
@@ -155,6 +156,7 @@ export default function TablesPage() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [seatedCustomerId, setSeatedCustomerId] = useState<string | null>(null)
   const [transferSourceId, setTransferSourceId] = useState<string | null>(null)
+  const [freeingTableIds, setFreeingTableIds] = useState<Set<string>>(() => new Set())
   const [showManage, setShowManage] = useState(false)
   const [showAreaManager, setShowAreaManager] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -179,6 +181,16 @@ export default function TablesPage() {
   const floorLayout = floorLayoutData ?? EMPTY_FLOOR_PLAN_LAYOUT
   const showTablesSkeleton = useShowQuerySkeleton(isLoading, tablesData !== undefined)
   const tables = tablesData ?? []
+  const hoverPrefetchTimeoutRef = useRef<number | null>(null)
+  const prefetchedOrderIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    return () => {
+      if (hoverPrefetchTimeoutRef.current) {
+        window.clearTimeout(hoverPrefetchTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const defaultArea = t('common.area')
 
@@ -246,6 +258,7 @@ export default function TablesPage() {
   const markTableFree = useMutation({
     mutationFn: (id: string) => api.patch(`/tables/${id}/status`, { status: 'FREE' }),
     onMutate: (id) => {
+      setFreeingTableIds(prev => new Set(prev).add(id))
       const previousTables = markTableFreeInCache(queryClient, tk, id)
       const table = tables.find(tbl => tbl.id === id)
       toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
@@ -259,6 +272,13 @@ export default function TablesPage() {
         return
       }
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
+    },
+    onSettled: (_data, _err, id) => {
+      setFreeingTableIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
     },
   })
 
@@ -309,6 +329,21 @@ export default function TablesPage() {
   const transferSourceTable = transferSourceId
     ? tables.find(tbl => tbl.id === transferSourceId)
     : undefined
+
+  const tablesById = useMemo(() => {
+    const map = new Map<string, Table>()
+    for (const table of tables) map.set(table.id, table)
+    return map
+  }, [tables])
+
+  const activeOrderTotalByTableId = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const table of tables) {
+      const activeOrder = getActiveOrder(table)
+      if (activeOrder) map.set(table.id, formatCurrency(activeOrder.total))
+    }
+    return map
+  }, [tables])
 
   const floorPlanTables = (transferSourceId ? tables : filtered).map(tbl => ({
     ...tbl,
@@ -572,14 +607,26 @@ export default function TablesPage() {
           statusLabel={status => TABLE_STATUS_LABELS[status]}
           seatsLabel={n => `${n} ${t('common.seats')}`}
           onTableClick={handleTableClick}
+          onTableHover={table => {
+            if (hoverPrefetchTimeoutRef.current) {
+              window.clearTimeout(hoverPrefetchTimeoutRef.current)
+            }
+            hoverPrefetchTimeoutRef.current = window.setTimeout(() => {
+              const full = tablesById.get(table.id)
+              if (!full) return
+              const activeOrder = getActiveOrder(full)
+              if (!activeOrder) return
+              if (prefetchedOrderIdsRef.current.has(activeOrder.id)) return
+              prefetchedOrderIdsRef.current.add(activeOrder.id)
+              prefetchTableOrderData(queryClient, tk, full)
+            }, 80)
+          }}
           transferSourceId={transferSourceId}
           onTransferTargetClick={handleTransferTarget}
           transferSourceLabel={t('tables.transferFromHere')}
           transferTargetLabel={t('tables.transferTapHere')}
           activeOrderTotal={id => {
-            const table = tables.find(tbl => tbl.id === id)
-            const order = table ? getActiveOrder(table) : null
-            return order ? formatCurrency(order.total) : null
+            return activeOrderTotalByTableId.get(id) ?? null
           }}
           reservationLabel={getReservationLabel}
         />
@@ -595,7 +642,7 @@ export default function TablesPage() {
                 key={table.id}
                 type="button"
                 onClick={() => { void requestCleaningConfirm(table) }}
-                disabled={markTableFree.isPending}
+                disabled={freeingTableIds.has(table.id)}
                 className="rounded-lg border border-[#7A9BB8]/30 bg-[#0B0E14]/80 px-3 py-2 text-xs font-semibold text-[#7A9BB8] transition-colors hover:border-[#8A9A7B]/40 hover:bg-[#8A9A7B]/10 hover:text-[#8A9A7B] disabled:opacity-50"
               >
                 T{table.number} — {t('tables.markFree')}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
@@ -14,6 +14,8 @@ import { toast } from '@/lib/toast'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import { useInstantMutation } from '../hooks/useInstantMutation'
+import AuraButton from '../components/ui/AuraButton'
 
 interface RestaurantSettings {
   countryCode?: CountryCode
@@ -201,12 +203,14 @@ export default function SettingsPage() {
     }))
   }
 
-  const save = useMutation({
+  const save = useInstantMutation({
     mutationFn: (data: typeof form) => api.put('/restaurant', buildSavePayload(data)),
+    onInstant: () => {
+      toast.success(t('settings.saved'))
+    },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'restaurant') })
       await refreshRestaurant()
-      toast.success(t('settings.saved'))
     },
     onError: (err: unknown) => {
       toast.error(formatApiError(t, err))
@@ -626,15 +630,15 @@ export default function SettingsPage() {
       </div>
 
       <div className="sticky bottom-4 z-20">
-        <button
+        <AuraButton
           type="button"
+          instant
           onClick={handleSave}
-          disabled={save.isPending}
-          className="w-full flex items-center justify-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-5 py-3 rounded-xl text-sm font-semibold shadow-lg transition-colors disabled:opacity-60"
+          className="w-full gap-2 px-5 py-3 text-sm font-semibold shadow-lg"
         >
           <Save className="w-4 h-4" />
-          {save.isPending ? t('common.saving') : t('settings.saveChanges')}
-        </button>
+          {t('settings.saveChanges')}
+        </AuraButton>
       </div>
     </ExecutivePageShell>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatTime } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
@@ -8,6 +8,7 @@ import { tq } from '../lib/queryKeys'
 import { Wallet, Plus, Lock, Unlock } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { resolveToastApiError } from '../lib/formatApiError'
+import { useInstantMutation } from '../hooks/useInstantMutation'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import { ui } from '../lib/ui'
@@ -58,37 +59,72 @@ export default function CashDrawerPage() {
     enabled: !!session,
   })
 
-  const openSession = useMutation({
+  const openSession = useInstantMutation<unknown, unknown, void>({
     mutationFn: () => api.post('/cash/session/open', { openingBalance: amount }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+    onInstant: () => {
       setShowOpenModal(false)
+      queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), {
+        id: `temp-${Date.now()}`,
+        openedBy: { name: '…' },
+        openedAt: new Date().toISOString(),
+        status: 'OPEN',
+        openingBalance: amount,
+      } as CashSession)
       toast.success(t('cashDrawer.openSuccess'))
     },
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.openError')),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+    },
+    onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+      setShowOpenModal(true)
+      toast.error(resolveToastApiError(t, err, 'cashDrawer.openError'))
+    },
   })
 
-  const closeSession = useMutation({
+  const closeSession = useInstantMutation<{ data: { difference: number } }, unknown, void>({
     mutationFn: () => api.post('/cash/session/close', { closingBalance: amount }),
+    onInstant: () => {
+      setShowCloseModal(false)
+      queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), null)
+    },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
-      setShowCloseModal(false)
       const diff = res.data.difference
       if (diff === 0) toast.success(t('cashDrawer.closeBalanced'))
       else if (diff > 0) toast.success(t('cashDrawer.closeSurplus', { amount: diff }))
       else toast.error(t('cashDrawer.closeShortage', { amount: diff }))
     },
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.closeError')),
+    onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+      setShowCloseModal(true)
+      toast.error(resolveToastApiError(t, err, 'cashDrawer.closeError'))
+    },
   })
 
-  const addTx = useMutation({
+  const addTx = useInstantMutation<unknown, unknown, void>({
     mutationFn: () => api.post('/cash/transactions', { type: txType, amount, reason }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+    onInstant: () => {
+      const tempTx: CashTx = {
+        id: `temp-${Date.now()}`,
+        type: txType,
+        amount,
+        reason,
+        createdAt: new Date().toISOString(),
+        user: { name: '…' },
+      }
+      queryClient.setQueryData<CashTx[]>(tq(tk, 'cash', 'transactions'), prev => [...(prev ?? []), tempTx])
       setShowTxModal(false)
       toast.success(t('cashDrawer.txSuccess'))
     },
-    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'cashDrawer.txError')),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+    },
+    onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+      setShowTxModal(true)
+      toast.error(resolveToastApiError(t, err, 'cashDrawer.txError'))
+    },
   })
 
   const sales = txs.filter(t => t.type === 'SALE' || t.type === 'PAYIN').reduce((sum, t) => sum + t.amount, 0)
@@ -190,7 +226,7 @@ export default function CashDrawerPage() {
           <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-3 text-center text-xl'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowOpenModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" onClick={() => openSession.mutate()} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
+            <button type="button" onClick={() => openSession.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3 active:scale-[0.98]'}>{t('common.confirm')}</button>
           </div>
         </GlassModal>
       )}
@@ -206,7 +242,7 @@ export default function CashDrawerPage() {
           <input type="text" value={reason} onChange={e => setReason(e.target.value)} className={ui.input + ' mb-6 w-full p-3'} placeholder="Motivazione (es. Pagamento fornitore)" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowTxModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" disabled={amount <= 0 || !reason} onClick={() => addTx.mutate()} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
+            <button type="button" disabled={amount <= 0 || !reason} onClick={() => addTx.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
           </div>
         </GlassModal>
       )}
@@ -218,7 +254,7 @@ export default function CashDrawerPage() {
           <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-4 text-center text-3xl font-black'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowCloseModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" onClick={() => closeSession.mutate()} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>
+            <button type="button" onClick={() => closeSession.mutate(undefined)} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>
           </div>
         </GlassModal>
       )}

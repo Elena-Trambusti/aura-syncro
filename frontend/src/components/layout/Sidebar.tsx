@@ -16,6 +16,7 @@ import { BRAND } from '../../lib/brand'
 import BrandLogo from '../brand/BrandLogo'
 import { useDashboardLayout } from './DashboardLayout'
 import { BILLING_PATH, ONBOARDING_PATH, isFreeTierNavItem } from '../../lib/accessTier'
+import { prefetchRoute } from '../../lib/routePrefetch'
 
 const navItems: Array<{
   to: string
@@ -214,7 +215,12 @@ export default function Sidebar() {
                       <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-[#C5A059]/50" aria-hidden />
                     </button>
                   ) : (
-                    <NavLink to={item.to} className={itemClass}>
+                    <NavLink
+                      to={item.to}
+                      className={itemClass}
+                      onMouseEnter={() => prefetchRoute(item.to)}
+                      onFocus={() => prefetchRoute(item.to)}
+                    >
                       <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
                         <FeatureIcon className="h-[17px] w-[17px]" />
                       </span>
@@ -255,6 +261,8 @@ export default function Sidebar() {
                 <NavLink
                   to={kitchenLink.to}
                   className={cn('premium-nav-item', isActive && 'premium-nav-item--active')}
+                  onMouseEnter={() => prefetchRoute(kitchenLink.to)}
+                  onFocus={() => prefetchRoute(kitchenLink.to)}
                 >
                   <span className={cn('aura-nav-icon', isActive && 'aura-nav-icon--active')}>
                     <FeatureIcon className="h-[17px] w-[17px]" />

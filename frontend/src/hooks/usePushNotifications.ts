@@ -11,9 +11,11 @@ import {
 
 export function usePushNotifications(enabled: boolean) {
   const { t } = useTranslation()
-  const [permission, setPermission] = useState<NotificationPermission>('default')
+  const [permission, setPermission] = useState<NotificationPermission>(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'default',
+  )
   const [subscribed, setSubscribed] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(true)
 
   useEffect(() => {
     if (!enabled || !isPushSupported()) {

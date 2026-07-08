@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react'
+import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
@@ -10,9 +10,8 @@ import {
 } from '../lib/siteUrl'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
+import LandingBelowFold from '../components/landing/LandingBelowFold'
 import { LuxuryGoldGradientDefs } from '../components/landing/landingLuxury'
-
-const LandingBelowFold = lazy(() => import('../components/landing/LandingBelowFold'))
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation()
@@ -71,9 +70,7 @@ export default function LandingPage() {
       <LuxuryGoldGradientDefs />
       <main className="relative z-10 flex-1">
         <LandingHero />
-        <Suspense fallback={null}>
-          <LandingBelowFold />
-        </Suspense>
+        <LandingBelowFold />
       </main>
     </div>
   )

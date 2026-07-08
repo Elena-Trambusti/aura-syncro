@@ -123,7 +123,7 @@
   }
 
   .lux-hero-badge {
-    @apply mb-0 inline-flex items-center gap-3 rounded-full px-4 py-2 sm:px-5 sm:py-2.5;
+    @apply mb-0 inline-flex min-h-[2.75rem] items-center gap-3 rounded-full px-4 py-2 sm:min-h-[3rem] sm:px-5 sm:py-2.5;
     border: 1px solid rgba(212, 175, 55, 0.22);
     background: linear-gradient(135deg, rgba(12, 10, 8, 0.88) 0%, rgba(4, 4, 4, 0.92) 100%);
     box-shadow:
@@ -1149,6 +1149,7 @@
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.08;
+    min-height: clamp(4.5rem, 12vw, 7.5rem);
   }
 
   .lux-hero-sub {
@@ -1156,6 +1157,7 @@
     font-weight: 300;
     letter-spacing: 0.01em;
     line-height: 1.75;
+    min-height: 4.5rem;
   }
 
   .lux-hero-rule {

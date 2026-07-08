@@ -1,12 +1,15 @@
 import { type CSSProperties, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
 import AuraIcon from '../components/ui/AuraIcon'
+import AuraButton from '../components/ui/AuraButton'
+import { useInstantMutation } from '../hooks/useInstantMutation'
 import { AlertCircle, CalendarDays, CheckCircle2, Users, Phone, Mail, User, UtensilsCrossed } from 'lucide-react'
 
 interface BookingInfo {
@@ -60,7 +63,11 @@ export default function PublicReservationPage() {
 
   const maxCovers = data?.settings.effectiveMaxCoversPerSlot ?? data?.settings.maxCoversPerSlot ?? 20
 
-  const bookMutation = useMutation({
+  const bookMutation = useInstantMutation<
+    { reservationId: string; status: string; depositRequired: boolean; checkoutUrl?: string },
+    unknown,
+    void
+  >({
     mutationFn: async () => {
       const covers = Number.parseInt(form.covers, 10)
       if (!Number.isFinite(covers) || covers < 1 || covers > maxCovers) {
@@ -85,15 +92,19 @@ export default function PublicReservationPage() {
       }, { headers: { 'X-Idempotency-Key': idempotencyKey } })
       return res.data
     },
+    onInstant: () => {
+      flushSync(() => {
+        setSubmitted(true)
+      })
+      toast.success(t('publicBooking.success'))
+    },
     onSuccess: result => {
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl
-        return
       }
-      setSubmitted(true)
-      toast.success(t('publicBooking.success'))
     },
     onError: (err: unknown) => {
+      setSubmitted(false)
       const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       const localMsg = err instanceof Error ? err.message : undefined
       toast.error(apiMsg ?? localMsg ?? t('publicBooking.error'))
@@ -197,7 +208,7 @@ export default function PublicReservationPage() {
             className="mt-8 space-y-5"
             onSubmit={e => {
               e.preventDefault()
-              bookMutation.mutate()
+              bookMutation.mutate(undefined)
             }}
           >
             <div>
@@ -327,13 +338,13 @@ export default function PublicReservationPage() {
             )}
 
             <div className="pt-2">
-              <button
+              <AuraButton
                 type="submit"
-                disabled={bookMutation.isPending}
-                className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-aura-gold to-amber-400 py-4 text-sm font-extrabold uppercase tracking-[0.15em] text-navy shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-all hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:hover:scale-100"
+                instant
+                className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-aura-gold to-amber-400 py-4 text-sm font-extrabold uppercase tracking-[0.15em] text-navy shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-all hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:scale-[1.01] active:scale-[0.99]"
               >
-                {bookMutation.isPending ? t('common.loading') : t('publicBooking.submit')}
-              </button>
+                {t('publicBooking.submit')}
+              </AuraButton>
             </div>
 
             <Link

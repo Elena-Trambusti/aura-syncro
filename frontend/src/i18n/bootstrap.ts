@@ -13,9 +13,16 @@ const SUPPORTED = ['it', 'en', 'es', CANARIAS_LOCALE, 'fr', 'de'] as const
 export type SupportedLocale = (typeof SUPPORTED)[number]
 
 import itLocale from './locales/it.json'
+import enLocale from './locales/en.json'
+import esLocale from './locales/es.json'
+import esCanLocale from './locales/es-cn.json'
 
+/** Landing + lingue principali — nel bundle iniziale per evitare reflow i18n (CLS). */
 const EAGER_LOCALE_BUNDLES: Partial<Record<SupportedLocale, Record<string, unknown>>> = {
   it: itLocale as Record<string, unknown>,
+  en: enLocale as Record<string, unknown>,
+  es: esLocale as Record<string, unknown>,
+  [CANARIAS_LOCALE]: esCanLocale as Record<string, unknown>,
 }
 
 const localeLoaders: Record<SupportedLocale, () => Promise<{ default: Record<string, unknown> }>> = {
@@ -132,8 +139,6 @@ export function bootstrapI18nSync(): void {
 
   if (!eager) {
     void applyLocale(initial)
-  } else if (initial !== 'it') {
-    void loadLocaleBundle('it')
   }
 }
 
