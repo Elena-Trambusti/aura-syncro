@@ -265,7 +265,7 @@
     "emptyHint": "Ajoutez les tables de votre établissement pour utiliser le plan et le POS.",
     "emptyAction": "Ajouter la première table",
     "transferModeBanner": "Déplacer la commande de la Table {{number}}",
-    "transferModeHint": "Touchez une table libre sur le plan",
+    "transferModeHint": "Touchez une table libre",
     "transferCancel": "Annuler le déplacement",
     "transferFromHere": "D'ici",
     "transferTapHere": "Toucher",

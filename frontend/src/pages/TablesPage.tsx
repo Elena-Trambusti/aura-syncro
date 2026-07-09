@@ -10,6 +10,7 @@ import { formatApiError, apiErrorPayload } from '../lib/formatApiError'
 import OrderModal from '../components/orders/OrderModal'
 import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
+import TableMobileGrid from '../components/tables/TableMobileGrid'
 import type { FloorPlanLayoutV1 } from '../lib/floorPlanLayout'
 import { EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
@@ -601,35 +602,49 @@ export default function TablesPage() {
         />
       ) : (
         <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
-        <TableFloorPlan
-          tables={floorPlanTables}
-          floorLayout={floorLayout}
-          statusLabel={status => TABLE_STATUS_LABELS[status]}
-          seatsLabel={n => `${n} ${t('common.seats')}`}
-          onTableClick={handleTableClick}
-          onTableHover={table => {
-            if (hoverPrefetchTimeoutRef.current) {
-              window.clearTimeout(hoverPrefetchTimeoutRef.current)
-            }
-            hoverPrefetchTimeoutRef.current = window.setTimeout(() => {
-              const full = tablesById.get(table.id)
-              if (!full) return
-              const activeOrder = getActiveOrder(full)
-              if (!activeOrder) return
-              if (prefetchedOrderIdsRef.current.has(activeOrder.id)) return
-              prefetchedOrderIdsRef.current.add(activeOrder.id)
-              prefetchTableOrderData(queryClient, tk, full)
-            }, 80)
-          }}
-          transferSourceId={transferSourceId}
-          onTransferTargetClick={handleTransferTarget}
-          transferSourceLabel={t('tables.transferFromHere')}
-          transferTargetLabel={t('tables.transferTapHere')}
-          activeOrderTotal={id => {
-            return activeOrderTotalByTableId.get(id) ?? null
-          }}
-          reservationLabel={getReservationLabel}
-        />
+          <div className="lg:hidden">
+            <TableMobileGrid
+              tables={floorPlanTables}
+              statusLabel={status => TABLE_STATUS_LABELS[status]}
+              seatsLabel={n => `${n} ${t('common.seats')}`}
+              onTableClick={handleTableClick}
+              transferSourceId={transferSourceId}
+              onTransferTargetClick={handleTransferTarget}
+              transferSourceLabel={t('tables.transferFromHere')}
+              transferTargetLabel={t('tables.transferTapHere')}
+              activeOrderTotal={id => activeOrderTotalByTableId.get(id) ?? null}
+              reservationLabel={getReservationLabel}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <TableFloorPlan
+              tables={floorPlanTables}
+              floorLayout={floorLayout}
+              statusLabel={status => TABLE_STATUS_LABELS[status]}
+              seatsLabel={n => `${n} ${t('common.seats')}`}
+              onTableClick={handleTableClick}
+              onTableHover={table => {
+                if (hoverPrefetchTimeoutRef.current) {
+                  window.clearTimeout(hoverPrefetchTimeoutRef.current)
+                }
+                hoverPrefetchTimeoutRef.current = window.setTimeout(() => {
+                  const full = tablesById.get(table.id)
+                  if (!full) return
+                  const activeOrder = getActiveOrder(full)
+                  if (!activeOrder) return
+                  if (prefetchedOrderIdsRef.current.has(activeOrder.id)) return
+                  prefetchedOrderIdsRef.current.add(activeOrder.id)
+                  prefetchTableOrderData(queryClient, tk, full)
+                }, 80)
+              }}
+              transferSourceId={transferSourceId}
+              onTransferTargetClick={handleTransferTarget}
+              transferSourceLabel={t('tables.transferFromHere')}
+              transferTargetLabel={t('tables.transferTapHere')}
+              activeOrderTotal={id => activeOrderTotalByTableId.get(id) ?? null}
+              reservationLabel={getReservationLabel}
+            />
+          </div>
         </div>
       )}
 

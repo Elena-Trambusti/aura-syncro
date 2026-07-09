@@ -265,7 +265,7 @@
     "emptyHint": "Añade las mesas del local para usar el plano y el POS.",
     "emptyAction": "Añadir primera mesa",
     "transferModeBanner": "Mover pedido de la Mesa {{number}}",
-    "transferModeHint": "Toca una mesa libre en el mapa",
+    "transferModeHint": "Toca una mesa libre",
     "transferCancel": "Cancelar traslado",
     "transferFromHere": "Desde aquí",
     "transferTapHere": "Toca",

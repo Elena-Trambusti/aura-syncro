@@ -312,7 +312,7 @@
     "emptyHint": "Aggiungi i tavoli del locale per usare la mappa e il POS.",
     "emptyAction": "Aggiungi primo tavolo",
     "transferModeBanner": "Sposta la comanda dal Tavolo {{number}}",
-    "transferModeHint": "Tocca un tavolo libero sulla mappa",
+    "transferModeHint": "Tocca un tavolo libero",
     "transferCancel": "Annulla spostamento",
     "transferFromHere": "Da qui",
     "transferTapHere": "Tocca",

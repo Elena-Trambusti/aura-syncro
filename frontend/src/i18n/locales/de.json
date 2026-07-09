@@ -265,7 +265,7 @@
     "emptyHint": "Fügen Sie die Tische Ihres Lokals hinzu, um Plan und POS zu nutzen.",
     "emptyAction": "Ersten Tisch hinzufügen",
     "transferModeBanner": "Bestellung von Tisch {{number}} verschieben",
-    "transferModeHint": "Freien Tisch auf der Karte antippen",
+    "transferModeHint": "Freien Tisch antippen",
     "transferCancel": "Verschieben abbrechen",
     "transferFromHere": "Von hier",
     "transferTapHere": "Tippen",

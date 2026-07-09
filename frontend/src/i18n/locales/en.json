@@ -286,7 +286,7 @@
     "emptyHint": "Add your venue tables to use the floor plan and POS.",
     "emptyAction": "Add first table",
     "transferModeBanner": "Move order from Table {{number}}",
-    "transferModeHint": "Tap a free table on the map",
+    "transferModeHint": "Tap a free table",
     "transferCancel": "Cancel move",
     "transferFromHere": "From here",
     "transferTapHere": "Tap",
