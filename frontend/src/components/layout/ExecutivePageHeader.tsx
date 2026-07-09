@@ -22,7 +22,7 @@ export default function ExecutivePageHeader({
   return (
     <div className={cn('aura-executive-header', className)}>
       <div className="min-w-0 flex-1 space-y-1">
-        {eyebrow && <p className="aura-brand-eyebrow">{eyebrow}</p>}
+        {eyebrow && <p className="aura-brand-eyebrow hidden lg:block">{eyebrow}</p>}
         <h1 className="aura-page-title">{title}</h1>
         {subtitle && <div className="aura-page-subtitle">{subtitle}</div>}
         {meta}

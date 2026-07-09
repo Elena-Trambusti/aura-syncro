@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials, cn } from '../../lib/utils'
 import BrandLogo from '../brand/BrandLogo'
+import { BRAND } from '../../lib/brand'
 import AuraIcon from '../ui/AuraIcon'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -41,8 +42,9 @@ export default function Header() {
           <Link
             to="/"
             className="inline-block transition-transform hover:scale-[1.02] hover:opacity-80 active:scale-[0.98]"
+            aria-label={BRAND.name}
           >
-            <BrandLogo size="sm" showName layout="horizontal" compact />
+            <BrandLogo size="sm" layout="icon" priority />
           </Link>
         </div>
 
