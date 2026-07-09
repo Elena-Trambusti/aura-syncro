@@ -61,6 +61,22 @@ function fitCanvasSize(shellWidth: number, shellHeight: number) {
   return { width: Math.round(width), height: Math.round(height) }
 }
 
+function clampTablePositionPercent(
+  posX: number,
+  posY: number,
+  table: Pick<FloorTable, 'seats' | 'shape'>,
+  canvasW: number,
+  canvasH: number,
+) {
+  const { w, h } = tableSize(table.seats, table.shape || 'SQUARE')
+  const maxX = Math.max(0, 100 - (w / canvasW) * 100)
+  const maxY = Math.max(0, 100 - (h / canvasH) * 100)
+  return {
+    posX: Math.max(0, Math.min(maxX, posX)),
+    posY: Math.max(0, Math.min(maxY, posY)),
+  }
+}
+
 export default function FloorPlanEditor({ tables, initialLayout, onClose }: FloorPlanEditorProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -73,7 +89,6 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
   const [wallDraft, setWallDraft] = useState<{ x: number; y: number } | null>(null)
   const [selected, setSelected] = useState<Selectable>(null)
   const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
   const [activeArea, setActiveArea] = useState(defaultArea)
 
   const editorAreas = resolveEditorAreas(floorLayout, tables, defaultArea)
@@ -87,9 +102,11 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
         const posX = 2 + (unplaced % 6) * 12
         const posY = 2 + Math.floor(unplaced / 6) * 15
         unplaced++
-        return { ...tbl, posX, posY, rotation: tbl.rotation || 0 }
+        const clamped = clampTablePositionPercent(posX, posY, tbl, FLOOR_CANVAS_W, FLOOR_CANVAS_H)
+        return { ...tbl, posX: clamped.posX, posY: clamped.posY, rotation: tbl.rotation || 0 }
       }
-      return { ...tbl, posX: px, posY: py, rotation: tbl.rotation || 0 }
+      const clamped = clampTablePositionPercent(px, py, tbl, FLOOR_CANVAS_W, FLOOR_CANVAS_H)
+      return { ...tbl, posX: clamped.posX, posY: clamped.posY, rotation: tbl.rotation || 0 }
     })
   })
 
@@ -195,8 +212,7 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
         number: nextTableNumber(),
         seats,
         area: activeArea,
-        posX: pt.x,
-        posY: pt.y,
+        ...clampTablePositionPercent(pt.x, pt.y, { seats, shape: 'SQUARE' }, canvasW, canvasH),
       })
       return
     }
@@ -256,13 +272,15 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
     setSelected(null)
   }
 
-  const handleDragStop = (id: string, d: { x: number; y: number }) => {
-    if (canvasW === 0) return
-    let posX = (d.x / canvasW) * 100
-    let posY = (d.y / canvasH) * 100
-    posX = Math.max(0, Math.min(100, posX))
-    posY = Math.max(0, Math.min(100, posY))
-    setTableLayout(prev => prev.map(tbl => tbl.id === id ? { ...tbl, posX, posY } : tbl))
+  const handleDragStop = (id: string, d: { x: number; y: number }, dragCanvasW: number, dragCanvasH: number) => {
+    if (dragCanvasW === 0 || dragCanvasH === 0) return
+    setTableLayout(prev => prev.map(tbl => {
+      if (tbl.id !== id) return tbl
+      const rawX = (d.x / dragCanvasW) * 100
+      const rawY = (d.y / dragCanvasH) * 100
+      const clamped = clampTablePositionPercent(rawX, rawY, tbl, dragCanvasW, dragCanvasH)
+      return { ...tbl, posX: clamped.posX, posY: clamped.posY }
+    }))
   }
 
   const handleRotate = (id: string, currentRotation: number, e: React.MouseEvent) => {
@@ -356,6 +374,8 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
   const visibleTables = tableLayout.filter(tbl => (tbl.area || defaultArea) === activeArea)
   const canvasW = canvasSize.width > 0 ? canvasSize.width : 800
   const canvasH = canvasSize.height > 0 ? canvasSize.height : 640
+  const editorCanvasW = Math.round(canvasW * zoom)
+  const editorCanvasH = Math.round(canvasH * zoom)
   const scaleX = canvasW / FLOOR_CANVAS_W
 
   return (
@@ -465,7 +485,7 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
               <button type="button" onClick={() => setZoom(z => Math.max(0.6, z - 0.1))} className="rounded-lg border border-white/10 p-2 text-slate-400 hover:bg-white/5" aria-label="Zoom out">
                 <ZoomOut className="h-4 w-4" />
               </button>
-              <button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }} className="rounded-lg border border-white/10 px-2 text-xs text-slate-500">
+              <button type="button" onClick={() => { setZoom(1) }} className="rounded-lg border border-white/10 px-2 text-xs text-slate-500">
                 {Math.round(zoom * 100)}%
               </button>
             </div>
@@ -525,25 +545,14 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
             <div
               className="relative shrink-0"
               style={{
-                width: canvasW,
-                height: canvasH,
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: 'center center',
-              }}
-              onMouseDown={e => {
-                if (e.button === 1 || (e.button === 0 && e.altKey)) {
-                  const start = { x: e.clientX - pan.x, y: e.clientY - pan.y }
-                  const onMove = (ev: MouseEvent) => setPan({ x: ev.clientX - start.x, y: ev.clientY - start.y })
-                  const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-                  window.addEventListener('mousemove', onMove)
-                  window.addEventListener('mouseup', onUp)
-                }
+                width: editorCanvasW,
+                height: editorCanvasH,
               }}
             >
               <div
                 ref={canvasRef}
                 className="relative cursor-crosshair overflow-hidden rounded-xl border border-[#D4AF37]/20 bg-[#0a0a0e]"
-                style={{ width: canvasW, height: canvasH }}
+                style={{ width: editorCanvasW, height: editorCanvasH }}
                 onClick={e => { void handleCanvasClick(e) }}
               >
                 <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -610,20 +619,20 @@ export default function FloorPlanEditor({ tables, initialLayout, onClose }: Floo
                 {visibleTables.map(table => {
                   const rot = table.rotation || 0
                   const size = tableSize(table.seats, table.shape || 'SQUARE')
-                  const editorW = (size.w / FLOOR_CANVAS_W) * canvasW
-                  const editorH = (size.h / FLOOR_CANVAS_H) * canvasH
+                  const tableW = (size.w / FLOOR_CANVAS_W) * editorCanvasW
+                  const tableH = (size.h / FLOOR_CANVAS_H) * editorCanvasH
 
                   return (
                     <Rnd
                       key={table.id}
                       bounds="parent"
                       position={{
-                        x: (table.posX / 100) * canvasW,
-                        y: (table.posY / 100) * canvasH,
+                        x: (table.posX / 100) * editorCanvasW,
+                        y: (table.posY / 100) * editorCanvasH,
                       }}
-                      size={{ width: editorW, height: editorH }}
+                      size={{ width: tableW, height: tableH }}
                       enableResizing={false}
-                      onDragStop={(_, d) => handleDragStop(table.id, d)}
+                      onDragStop={(_, d) => handleDragStop(table.id, d, editorCanvasW, editorCanvasH)}
                       className="group z-10"
                       style={{ position: 'absolute' }}
                       onMouseDown={e => { e.stopPropagation(); setSelected({ kind: 'table', id: table.id }) }}

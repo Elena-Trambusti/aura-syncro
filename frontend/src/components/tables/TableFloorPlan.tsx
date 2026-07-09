@@ -328,6 +328,7 @@ export default function TableFloorPlan({
 
         {tables.map(table => {
           const transferRole = getTableTransferRole(table, transferSourceId)
+          const size = tableSize(table.seats, table.shape || 'SQUARE')
           return (
             <TableTile
               key={table.id}
@@ -341,8 +342,8 @@ export default function TableFloorPlan({
               interactive={interactive && !useScreenHits}
               className="absolute"
               style={{
-                left: `${table.posX}%`,
-                top: `${table.posY}%`,
+                left: `clamp(0px, ${table.posX}%, calc(100% - ${size.w}px))`,
+                top: `clamp(0px, ${table.posY}%, calc(100% - ${size.h}px))`,
                 transform: `rotateZ(${table.rotation || 0}deg) translateZ(1px)`,
                 transformStyle: 'preserve-3d',
               }}

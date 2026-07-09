@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, Suspense } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, Suspense, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Sidebar from './Sidebar'
@@ -47,6 +47,7 @@ export default function DashboardLayout() {
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
   const toggleSidebar = useCallback(() => setSidebarOpen(o => !o), [])
   const openCommandPalette = useCallback(() => setCommandOpen(true), [])
+  const mainScrollRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -70,6 +71,43 @@ export default function DashboardLayout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    const node = mainScrollRef.current
+    if (!node || typeof window === 'undefined') return
+
+    let touchStartY = 0
+    let touchStartX = 0
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      touchStartY = e.touches[0].clientY
+      touchStartX = e.touches[0].clientX
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const currentY = e.touches[0].clientY
+      const currentX = e.touches[0].clientX
+      const deltaY = currentY - touchStartY
+      const deltaX = currentX - touchStartX
+
+      if (Math.abs(deltaY) <= Math.abs(deltaX)) return
+
+      const atTop = node.scrollTop <= 0
+      const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        e.preventDefault()
+      }
+    }
+
+    node.addEventListener('touchstart', onTouchStart, { passive: true })
+    node.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => {
+      node.removeEventListener('touchstart', onTouchStart)
+      node.removeEventListener('touchmove', onTouchMove)
+    }
+  }, [])
+
   return (
     <LayoutContext.Provider value={{ sidebarOpen, openSidebar, closeSidebar, toggleSidebar, openCommandPalette }}>
       <div className="pwa-app-shell relative bg-transparent z-0">
@@ -87,7 +125,10 @@ export default function DashboardLayout() {
         <Sidebar />
         <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden !bg-transparent !bg-none">
           <Header />
-          <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+          <main
+            ref={mainScrollRef}
+            className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8"
+          >
             <div className="dashboard-top-alerts pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col-reverse gap-2 px-3 sm:px-6 lg:hidden">
               <div className="pointer-events-auto">
                 <PwaInstallHint />

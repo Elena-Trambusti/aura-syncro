@@ -16,6 +16,11 @@ import { floorPlanLayoutSchema, parseFloorPlanLayout, EMPTY_FLOOR_PLAN_LAYOUT } 
 
 export const tablesRouter = Router()
 
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.min(100, value))
+}
+
 tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: tenantId(req) },
@@ -102,7 +107,11 @@ tablesRouter.patch('/positions', requirePermission('tables.manage'), async (req:
   await prisma.$transaction(
     result.data.map(table => prisma.table.updateMany({
       where: scopedWhere(req, table.id),
-      data: { posX: table.posX, posY: table.posY, rotation: table.rotation }
+      data: {
+        posX: clampPercent(table.posX),
+        posY: clampPercent(table.posY),
+        rotation: Number.isFinite(table.rotation) ? table.rotation : 0,
+      }
     }))
   )
   
