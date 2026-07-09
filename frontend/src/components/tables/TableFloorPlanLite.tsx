@@ -1,4 +1,5 @@
-import { memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { Minus, Plus, Maximize2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { FloorPlanLayoutV1, FloorPlanZoneLabel as ZoneLabelType } from '../../lib/floorPlanLayout'
@@ -33,12 +34,12 @@ function tablePrefix(shape: string) {
 
 /** Dimensioni compatte per mappa 2D mobile — stesse forme del layout, meno DOM */
 function tableLiteSize(seats: number, shape: string) {
-  if (shape === 'BAR_STOOL') return { w: 44, h: 44 }
-  if (shape === 'BOOTH') return { w: 88, h: 48 }
+  if (shape === 'BAR_STOOL') return { w: 52, h: 52 }
+  if (shape === 'BOOTH') return { w: 104, h: 56 }
   if (shape === 'RECTANGLE') {
-    return seats >= 6 ? { w: 96, h: 56 } : { w: 80, h: 48 }
+    return seats >= 6 ? { w: 114, h: 66 } : { w: 96, h: 58 }
   }
-  const size = seats <= 2 ? 52 : seats <= 4 ? 58 : 64
+  const size = seats <= 2 ? 62 : seats <= 4 ? 70 : 78
   return { w: size, h: size }
 }
 
@@ -103,30 +104,30 @@ const LiteTableMarker = memo(function LiteTableMarker({
         disabled && 'pointer-events-none opacity-35',
       )}
       style={{
-        left: `${table.posX}%`,
-        top: `${table.posY}%`,
+        left: `clamp(${Math.round((w / 2) + 8)}px, ${table.posX}%, calc(100% - ${Math.round((w / 2) + 8)}px))`,
+        top: `clamp(${Math.round((h / 2) + 8)}px, ${table.posY}%, calc(100% - ${Math.round((h / 2) + 8)}px))`,
         width: w,
         height: h,
-        minWidth: 44,
-        minHeight: 44,
+        minWidth: 52,
+        minHeight: 52,
         transform: `translate(-50%, -50%) rotate(${table.rotation || 0}deg)`,
       }}
       aria-label={`${tablePrefix(shape)}${table.number}`}
     >
-      <span className="text-sm font-bold leading-none tabular-nums">
+      <span className="text-base font-extrabold leading-none tabular-nums">
         {tablePrefix(shape)}{table.number}
       </span>
-      <span className="max-w-full truncate text-[9px] font-medium leading-tight opacity-90">
+      <span className="max-w-full truncate text-[10px] font-semibold leading-tight opacity-95">
         {transferHint ?? seatsLabel(table.seats)}
       </span>
       {!transferHint && orderTotal && (
-        <span className="max-w-full truncate text-[9px] font-bold leading-tight">{orderTotal}</span>
+        <span className="max-w-full truncate text-[10px] font-extrabold leading-tight">{orderTotal}</span>
       )}
       {!transferHint && !orderTotal && reservationHint && (
-        <span className="max-w-full truncate text-[8px] font-medium leading-tight opacity-90">{reservationHint}</span>
+        <span className="max-w-full truncate text-[9px] font-semibold leading-tight opacity-95">{reservationHint}</span>
       )}
       {!transferHint && table.status !== 'FREE' && !orderTotal && !reservationHint && (
-        <span className="max-w-full truncate text-[8px] font-semibold uppercase leading-tight opacity-80">
+        <span className="max-w-full truncate text-[9px] font-bold uppercase leading-tight opacity-85">
           {statusLabel(status)}
         </span>
       )}
@@ -150,6 +151,12 @@ export default function TableFloorPlanLite({
   const { t } = useTranslation()
   const lastTapRef = useRef<{ tableId: string; at: number } | null>(null)
   const inTransferMode = Boolean(transferSourceId)
+  const [zoom, setZoom] = useState(1.15)
+
+  const clampedZoom = useMemo(() => Math.max(1, Math.min(2, zoom)), [zoom])
+  const zoomIn = () => setZoom(z => Math.min(2, Number((z + 0.15).toFixed(2))))
+  const zoomOut = () => setZoom(z => Math.max(1, Number((z - 0.15).toFixed(2))))
+  const zoomReset = () => setZoom(1.15)
 
   const handleClick = useCallback((table: FloorTable) => {
     const now = Date.now()
@@ -174,6 +181,16 @@ export default function TableFloorPlanLite({
           backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.35)), url(${MARBLE_BG_WEBP})`,
         }}
       >
+        <div className="absolute inset-0 overflow-auto overscroll-contain">
+          <div
+            className="relative origin-top-left"
+            style={{
+              width: '100%',
+              height: '100%',
+              transform: `scale(${clampedZoom})`,
+            }}
+            onDoubleClick={zoomIn}
+          >
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -249,6 +266,35 @@ export default function TableFloorPlanLite({
             />
           )
         })}
+          </div>
+        </div>
+
+        <div className="absolute bottom-2 right-2 z-30 flex flex-col gap-1.5 rounded-xl border border-white/[0.08] bg-[#0B0E14]/90 p-1.5 shadow-sm">
+          <button
+            type="button"
+            onClick={zoomIn}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-pietra active:bg-white/[0.08]"
+            aria-label={t('common.zoomIn', { defaultValue: 'Zoom in' })}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={zoomOut}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-pietra active:bg-white/[0.08]"
+            aria-label={t('common.zoomOut', { defaultValue: 'Zoom out' })}
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={zoomReset}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-pietra active:bg-white/[0.08]"
+            aria-label={t('common.reset', { defaultValue: 'Reset' })}
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   )
