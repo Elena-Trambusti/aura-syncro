@@ -1419,6 +1419,8 @@
     "tip": "Tip",
     "tipNo": "No",
     "tipYes": "Yes",
+    "assignWaiter": "Assign waiter",
+    "noWaitersForTip": "No waiters available for tip assignment",
     "paymentMethod": "Payment method",
     "card": "Card",
     "cash": "Cash",

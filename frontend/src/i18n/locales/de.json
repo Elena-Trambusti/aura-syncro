@@ -1194,6 +1194,8 @@
     "tip": "Trinkgeld",
     "tipNo": "Nein",
     "tipYes": "Ja",
+    "assignWaiter": "Kellner zuweisen",
+    "noWaitersForTip": "Kein Kellner für Trinkgeld verfügbar",
     "paymentMethod": "Zahlungsmethode",
     "card": "Karte",
     "cash": "Bar",

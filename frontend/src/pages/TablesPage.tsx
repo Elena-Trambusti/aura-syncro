@@ -200,6 +200,7 @@ export default function TablesPage() {
   const tables = tablesData ?? []
   const hoverPrefetchTimeoutRef = useRef<number | null>(null)
   const prefetchedOrderIdsRef = useRef<Set<string>>(new Set())
+  const cleaningConfirmTableIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -278,8 +279,12 @@ export default function TablesPage() {
       setFreeingTableIds(prev => new Set(prev).add(id))
       const previousTables = markTableFreeInCache(queryClient, tk, id)
       const table = tables.find(tbl => tbl.id === id)
-      toast.success(t('tables.tableReady', { number: table?.number ?? '' }))
-      return { previousTables, id }
+      return { previousTables, id, tableNumber: table?.number }
+    },
+    onSuccess: (_data, id, context) => {
+      toast.success(t('tables.tableReady', { number: context?.tableNumber ?? '' }), {
+        id: `table-free-${id}`,
+      })
     },
     onError: (err: unknown, _id, context) => {
       restoreTablesCache(queryClient, tk, context?.previousTables)
@@ -423,16 +428,25 @@ export default function TablesPage() {
   }
 
   const requestCleaningConfirm = async (table: FloorTable) => {
-    const confirmed = await toast.confirm({
-      title: t('tables.confirmCleaningTitle'),
-      description: t('tables.confirmCleaningDescription', { number: table.number }),
-      confirmLabel: t('tables.confirmCleaningConfirm'),
-      cancelLabel: t('common.cancel'),
-      variant: 'cleaning',
-      badge: table.number,
-      eyebrow: t('tables.cleaning'),
-    })
-    if (confirmed) markTableFree.mutate(table.id)
+    if (freeingTableIds.has(table.id) || markTableFree.isPending) return
+    if (cleaningConfirmTableIdRef.current === table.id) return
+    cleaningConfirmTableIdRef.current = table.id
+    try {
+      const confirmed = await toast.confirm({
+        title: t('tables.confirmCleaningTitle'),
+        description: t('tables.confirmCleaningDescription', { number: table.number }),
+        confirmLabel: t('tables.confirmCleaningConfirm'),
+        cancelLabel: t('common.cancel'),
+        variant: 'cleaning',
+        badge: table.number,
+        eyebrow: t('tables.cleaning'),
+      })
+      if (confirmed && !freeingTableIds.has(table.id)) {
+        markTableFree.mutate(table.id)
+      }
+    } finally {
+      cleaningConfirmTableIdRef.current = null
+    }
   }
 
   const openOrderForTable = (tableId: string) => {
@@ -478,8 +492,7 @@ export default function TablesPage() {
       return
     }
     if (detailTable.status === 'CLEANING') {
-      void requestCleaningConfirm(detailTable)
-      setDetailTable(null)
+      handleDetailMarkFree()
       return
     }
     openOrderForTable(detailTable.id)
@@ -495,7 +508,10 @@ export default function TablesPage() {
 
   const handleDetailMarkFree = () => {
     if (!detailTable) return
-    void requestCleaningConfirm(detailTable).then(() => setDetailTable(null))
+    if (freeingTableIds.has(detailTable.id) || markTableFree.isPending) return
+    const table = detailTable
+    setDetailTable(null)
+    void requestCleaningConfirm(table)
   }
 
   const handleDetailSeatReservation = () => {

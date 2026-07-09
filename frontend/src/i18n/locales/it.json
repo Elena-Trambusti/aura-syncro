@@ -1524,6 +1524,8 @@
     "tip": "Mancia",
     "tipNo": "No",
     "tipYes": "Sì",
+    "assignWaiter": "Assegna cameriere",
+    "noWaitersForTip": "Nessun cameriere disponibile per la mancia",
     "paymentMethod": "Metodo di pagamento",
     "card": "Carta",
     "cash": "Contanti",

@@ -12,6 +12,7 @@ import { tRegime } from '../lib/fiscalRegime'
 import { printReceipt } from '../lib/export'
 import ReceiptPreviewModal, { type CheckoutFinalizeResult } from '../components/checkout/ReceiptPreviewModal'
 import CustomerPicker from '../components/checkout/CustomerPicker'
+import TipWaiterPicker from '../components/checkout/TipWaiterPicker'
 import { useRole } from '../hooks/useRole'
 import {
   ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt, RotateCcw,
@@ -752,26 +753,21 @@ export default function CheckoutPage() {
             </div>
           </div>
           {wantsTip && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-4 flex flex-col gap-3">
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={tipAmount}
                 onChange={e => setTipAmount(e.target.value)}
-                placeholder="0.00"
+                placeholder={t('checkout.tipPlaceholder', { defaultValue: '0.00' })}
                 className="saas-input w-full py-3 text-center text-sm text-pietra"
               />
-              <select
+              <TipWaiterPicker
+                staff={staff ?? []}
                 value={tipWaiterId}
-                onChange={e => setTipWaiterId(e.target.value)}
-                className="saas-input w-full py-3 text-sm text-pietra appearance-none bg-navy-mid focus:border-aura-gold focus:ring-1 focus:ring-aura-gold"
-              >
-                <option value="">Assegna cameriere</option>
-                {staff?.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
-                ))}
-              </select>
+                onChange={setTipWaiterId}
+              />
             </div>
           )}
           <p className="mt-4 text-xs text-fumo">{tRegime(t, fiscal.taxRegion, 'tipExemptNote')}</p>

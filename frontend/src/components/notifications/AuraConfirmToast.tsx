@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { useRef } from 'react'
 
 import { BRAND_LOGO_DISPLAY_SRC } from '../../lib/brand'
 
@@ -54,6 +55,19 @@ export default function AuraConfirmToast({
   onCancel,
 }: AuraConfirmToastProps) {
   const styles = VARIANT_STYLES[variant]
+  const confirmedRef = useRef(false)
+
+  const handleConfirm = () => {
+    if (confirmedRef.current) return
+    confirmedRef.current = true
+    onConfirm()
+  }
+
+  const handleCancel = () => {
+    if (confirmedRef.current) return
+    confirmedRef.current = true
+    onCancel()
+  }
 
   return (
     <div
@@ -66,7 +80,7 @@ export default function AuraConfirmToast({
       <button
         type="button"
         className="absolute inset-0 bg-black/75 backdrop-blur-sm animate-[aura-overlay-in_200ms_ease-out]"
-        onClick={onCancel}
+        onClick={handleCancel}
         aria-label={cancelLabel}
       />
       <div
@@ -107,14 +121,14 @@ export default function AuraConfirmToast({
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:text-slate-200"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className={cn(
               'rounded-xl border bg-[#0B0E14] px-5 py-2.5 text-sm font-semibold transition-all hover:bg-[#12151C]',
               styles.confirmBtn,

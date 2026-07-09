@@ -1101,6 +1101,8 @@
     "tip": "Propina",
     "tipNo": "No",
     "tipYes": "Sí",
+    "assignWaiter": "Asignar camarero",
+    "noWaitersForTip": "No hay camareros disponibles para la propina",
     "paymentMethod": "Método de pago",
     "card": "Tarjeta",
     "cash": "Efectivo",

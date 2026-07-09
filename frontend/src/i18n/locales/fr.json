@@ -1194,6 +1194,8 @@
     "tip": "Pourboire",
     "tipNo": "Non",
     "tipYes": "Oui",
+    "assignWaiter": "Attribuer le serveur",
+    "noWaitersForTip": "Aucun serveur disponible pour le pourboire",
     "paymentMethod": "Mode de paiement",
     "card": "Carte",
     "cash": "Espèces",
