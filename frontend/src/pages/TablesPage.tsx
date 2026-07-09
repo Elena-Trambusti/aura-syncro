@@ -10,7 +10,7 @@ import { formatApiError, apiErrorPayload } from '../lib/formatApiError'
 import OrderModal from '../components/orders/OrderModal'
 import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
-import TableMobileGrid from '../components/tables/TableMobileGrid'
+import TableFloorPlanLite from '../components/tables/TableFloorPlanLite'
 import type { FloorPlanLayoutV1 } from '../lib/floorPlanLayout'
 import { EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
 import FloorPlanEditor from '../components/tables/FloorPlanEditor'
@@ -603,8 +603,9 @@ export default function TablesPage() {
       ) : (
         <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
           <div className="lg:hidden">
-            <TableMobileGrid
+            <TableFloorPlanLite
               tables={floorPlanTables}
+              floorLayout={floorLayout}
               statusLabel={status => TABLE_STATUS_LABELS[status]}
               seatsLabel={n => `${n} ${t('common.seats')}`}
               onTableClick={handleTableClick}
