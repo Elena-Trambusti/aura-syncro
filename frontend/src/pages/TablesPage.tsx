@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -12,8 +12,6 @@ import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import type { FloorPlanLayoutV1 } from '../lib/floorPlanLayout'
 import { EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
-import FloorPlanEditor from '../components/tables/FloorPlanEditor'
-import AreaManagerModal from '../components/tables/AreaManagerModal'
 import { cn } from '../lib/utils'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
@@ -37,6 +35,9 @@ import {
 } from '../lib/tableQueryCache'
 import { prefetchTableOrderData } from '../lib/tablePrefetch'
 import { numericFieldFrom, numericInputProps, numericToNumber, type NumericField } from '../lib/numericInput'
+
+const FloorPlanEditor = lazy(() => import('../components/tables/FloorPlanEditor'))
+const AreaManagerModal = lazy(() => import('../components/tables/AreaManagerModal'))
 
 interface MenuItem { id: string; name: string; price: number; available: boolean; category: { name: string } }
 interface OrderItem { id: string; menuItem: MenuItem; quantity: number; unitPrice: number; status: string; notes?: string }
@@ -303,19 +304,22 @@ export default function TablesPage() {
     },
   })
 
-  const allAreasRaw = Array.from(new Set([
+  const allAreasRaw = useMemo(() => Array.from(new Set([
     ...tables.map(tbl => tbl.area || defaultArea).filter(Boolean),
     ...(floorLayout.areas ?? []),
-  ]))
-  const areas = [allAreasKey, ...allAreasRaw]
-  const filtered = filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)
+  ])), [defaultArea, floorLayout.areas, tables])
+  const areas = useMemo(() => [allAreasKey, ...allAreasRaw], [allAreasKey, allAreasRaw])
+  const filtered = useMemo(
+    () => (filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)),
+    [allAreasKey, defaultArea, filterArea, tables],
+  )
 
-  const stats = {
+  const stats = useMemo(() => ({
     free: tables.filter(tbl => tbl.status === 'FREE').length,
     occupied: tables.filter(tbl => tbl.status === 'OCCUPIED').length,
     reserved: tables.filter(tbl => tbl.status === 'RESERVED').length,
     cleaning: tables.filter(tbl => tbl.status === 'CLEANING').length,
-  }
+  }), [tables])
 
   const statLabels: Record<typeof STAT_ACCENTS[number]['key'], string> = {
     free: t('tables.free'),
@@ -324,17 +328,15 @@ export default function TablesPage() {
     cleaning: t('tables.cleaning'),
   }
 
-  const getActiveOrder = (table: Table) => findActiveTableOrder(table.orders)
-
-  const transferSourceTable = transferSourceId
-    ? tables.find(tbl => tbl.id === transferSourceId)
-    : undefined
+  const getActiveOrder = useCallback((table: Table) => findActiveTableOrder(table.orders), [])
 
   const tablesById = useMemo(() => {
     const map = new Map<string, Table>()
     for (const table of tables) map.set(table.id, table)
     return map
   }, [tables])
+
+  const transferSourceTable = transferSourceId ? tablesById.get(transferSourceId) : undefined
 
   const activeOrderTotalByTableId = useMemo(() => {
     const map = new Map<string, string>()
@@ -345,10 +347,35 @@ export default function TablesPage() {
     return map
   }, [tables])
 
-  const floorPlanTables = (transferSourceId ? tables : filtered).map(tbl => ({
+  const floorPlanTables = useMemo(() => (transferSourceId ? tables : filtered).map(tbl => ({
     ...tbl,
     upcomingReservation: tbl.reservations?.[0] ?? null,
-  }))
+  })), [filtered, tables, transferSourceId])
+
+  const cleaningTables = useMemo(() => filtered.filter(tbl => tbl.status === 'CLEANING'), [filtered])
+
+  const canHoverPrefetch = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  }, [])
+
+  const handleTableHoverPrefetch = useCallback((table: FloorTable) => {
+    if (!canHoverPrefetch) return
+    if (hoverPrefetchTimeoutRef.current) {
+      window.clearTimeout(hoverPrefetchTimeoutRef.current)
+    }
+    hoverPrefetchTimeoutRef.current = window.setTimeout(() => {
+      const full = tablesById.get(table.id)
+      if (!full) return
+      const activeOrder = getActiveOrder(full)
+      if (!activeOrder) return
+      if (prefetchedOrderIdsRef.current.has(activeOrder.id)) return
+      prefetchedOrderIdsRef.current.add(activeOrder.id)
+      prefetchTableOrderData(queryClient, tk, full)
+    }, 80)
+  }, [canHoverPrefetch, getActiveOrder, queryClient, tablesById, tk])
+
+  const activeOrderTotal = useCallback((id: string) => activeOrderTotalByTableId.get(id) ?? null, [activeOrderTotalByTableId])
 
   const getReservationLabel = (table: FloorTable) => {
     const res = table.upcomingReservation
@@ -392,7 +419,7 @@ export default function TablesPage() {
       void requestCleaningConfirm(table)
       return
     }
-    const fullTable = tables.find(tbl => tbl.id === table.id)
+    const fullTable = tablesById.get(table.id)
     if (table.status === 'RESERVED' && fullTable?.reservations?.[0]) {
       setReservedTable(fullTable)
       return
@@ -607,35 +634,22 @@ export default function TablesPage() {
             statusLabel={status => TABLE_STATUS_LABELS[status]}
             seatsLabel={n => `${n} ${t('common.seats')}`}
             onTableClick={handleTableClick}
-            onTableHover={table => {
-              if (hoverPrefetchTimeoutRef.current) {
-                window.clearTimeout(hoverPrefetchTimeoutRef.current)
-              }
-              hoverPrefetchTimeoutRef.current = window.setTimeout(() => {
-                const full = tablesById.get(table.id)
-                if (!full) return
-                const activeOrder = getActiveOrder(full)
-                if (!activeOrder) return
-                if (prefetchedOrderIdsRef.current.has(activeOrder.id)) return
-                prefetchedOrderIdsRef.current.add(activeOrder.id)
-                prefetchTableOrderData(queryClient, tk, full)
-              }, 80)
-            }}
+            onTableHover={handleTableHoverPrefetch}
             transferSourceId={transferSourceId}
             onTransferTargetClick={handleTransferTarget}
             transferSourceLabel={t('tables.transferFromHere')}
             transferTargetLabel={t('tables.transferTapHere')}
-            activeOrderTotal={id => activeOrderTotalByTableId.get(id) ?? null}
+            activeOrderTotal={activeOrderTotal}
             reservationLabel={getReservationLabel}
           />
         </div>
       )}
 
-      {filtered.some(tbl => tbl.status === 'CLEANING') && (
+      {cleaningTables.length > 0 && (
         <div className="saas-card p-4">
           <p className="text-xs font-medium text-fumo uppercase tracking-wider mb-3">{t('tables.needsCleaning')}</p>
           <div className="flex flex-wrap gap-2">
-            {filtered.filter(tbl => tbl.status === 'CLEANING').map(table => (
+            {cleaningTables.map(table => (
               <button
                 key={table.id}
                 type="button"
@@ -715,19 +729,23 @@ export default function TablesPage() {
       )}
 
       {isEditorOpen && (
-        <FloorPlanEditor
-          tables={tables}
-          initialLayout={floorLayout}
-          onClose={() => setIsEditorOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <FloorPlanEditor
+            tables={tables}
+            initialLayout={floorLayout}
+            onClose={() => setIsEditorOpen(false)}
+          />
+        </Suspense>
       )}
 
       {showAreaManager && (
-        <AreaManagerModal
-          areas={allAreasRaw}
-          floorLayout={floorLayout}
-          onClose={() => setShowAreaManager(false)}
-        />
+        <Suspense fallback={null}>
+          <AreaManagerModal
+            areas={allAreasRaw}
+            floorLayout={floorLayout}
+            onClose={() => setShowAreaManager(false)}
+          />
+        </Suspense>
       )}
     </ExecutivePageShell>
   )
