@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Receipt, ShoppingBag, Sparkles, Users } from 'lucide-react'
-import { AuraDialog, AuraDialogBody, AuraDialogFooter, AuraDialogHeader } from '../ui/AuraDialog'
+import MobileBottomSheet from '../ui/MobileBottomSheet'
 import { cn, formatCurrency, formatTime } from '../../lib/utils'
 import { findActiveTableOrder } from '../../lib/orderSession'
 import { isTableBillStage } from '../../lib/tableFilters'
@@ -63,68 +63,63 @@ export default function TableDetailSheet({
     return null
   })()
 
+  const titleId = `table-detail-${table.id}`
+
   return (
-    <AuraDialog
+    <MobileBottomSheet
+      open
       onClose={onClose}
-      variant="bottomSheet"
-      hideClose
-      a11yTitle={t('tables.mobile.detailTitle', { number: table.number })}
-    >
-      <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full bg-white/25" aria-hidden />
-
-      <AuraDialogHeader
-        title={`${prefix}${table.number}`}
-        description={`${table.seats} ${t('common.seats')}${table.area ? ` · ${table.area}` : ''}`}
-      />
-
-      <AuraDialogBody>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={cn('rounded-full px-3 py-1 text-sm font-semibold', TABLE_STATUS_BADGE[table.status])}>
-            {isBill ? t('tables.mobile.bill') : statusLabel(table.status)}
-          </span>
-          {activeOrder && (
-            <span className="text-sm font-semibold tabular-nums text-[#F5E6A3]">
-              {formatCurrency(activeOrder.total)}
-            </span>
+      title={`${prefix}${table.number}`}
+      description={`${table.seats} ${t('common.seats')}${table.area ? ` · ${table.area}` : ''}`}
+      titleId={titleId}
+      footer={(
+        <>
+          {primaryAction && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={primaryAction.onClick}
+              className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-aura-gold py-3.5 text-base font-semibold text-navy transition-colors hover:bg-aura-gold-light disabled:opacity-60"
+            >
+              <primaryAction.icon className="h-5 w-5 shrink-0" />
+              {primaryAction.label}
+            </button>
           )}
-        </div>
-
-        {reservation && table.status === 'RESERVED' && (
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-            <p className="text-base font-semibold text-pietra">{reservation.guestName}</p>
-            <p className="mt-1 text-sm text-fumo">
-              {formatTime(reservation.date)} · {reservation.covers} {t('common.seats')}
-            </p>
-          </div>
-        )}
-
-        {activeOrder && (
-          <p className="text-sm text-fumo">
-            {t('tables.mobile.orderSince', { time: formatTime(activeOrder.createdAt) })}
-          </p>
-        )}
-      </AuraDialogBody>
-
-      <AuraDialogFooter className="!mt-4 !flex-col gap-2 sm:!flex-col">
-        {primaryAction && (
           <button
             type="button"
-            disabled={isPending}
-            onClick={primaryAction.onClick}
-            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-aura-gold py-3.5 text-base font-semibold text-navy transition-colors hover:bg-aura-gold-light disabled:opacity-60"
+            onClick={onClose}
+            className="w-full min-h-[48px] rounded-xl border border-white/10 bg-white/5 py-3.5 text-base font-medium text-pietra transition-colors hover:bg-white/10"
           >
-            <primaryAction.icon className="h-5 w-5" />
-            {primaryAction.label}
+            {t('common.close')}
           </button>
+        </>
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={cn('rounded-full px-3 py-1 text-sm font-semibold', TABLE_STATUS_BADGE[table.status])}>
+          {isBill ? t('tables.mobile.bill') : statusLabel(table.status)}
+        </span>
+        {activeOrder && (
+          <span className="text-sm font-semibold tabular-nums text-[#F5E6A3]">
+            {formatCurrency(activeOrder.total)}
+          </span>
         )}
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full min-h-[48px] rounded-xl border border-white/10 bg-white/5 py-3.5 text-base font-medium text-pietra transition-colors hover:bg-white/10"
-        >
-          {t('common.close')}
-        </button>
-      </AuraDialogFooter>
-    </AuraDialog>
+      </div>
+
+      {reservation && table.status === 'RESERVED' && (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+          <p className="text-base font-semibold text-pietra">{reservation.guestName}</p>
+          <p className="mt-1 text-sm text-fumo">
+            {formatTime(reservation.date)} · {reservation.covers} {t('common.seats')}
+          </p>
+        </div>
+      )}
+
+      {activeOrder && (
+        <p className="text-sm text-fumo">
+          {t('tables.mobile.orderSince', { time: formatTime(activeOrder.createdAt) })}
+        </p>
+      )}
+    </MobileBottomSheet>
   )
 }
