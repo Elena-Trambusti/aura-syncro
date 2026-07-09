@@ -94,10 +94,13 @@ export default function DashboardLayout() {
       if (Math.abs(deltaY) <= Math.abs(deltaX)) return
 
       const atTop = node.scrollTop <= 0
-      const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1
-      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+      // Blocca solo il gesto di pull-to-refresh in alto; non interferire con la risalita.
+      if (atTop && deltaY > 0) {
         e.preventDefault()
       }
+
+      touchStartY = currentY
+      touchStartX = currentX
     }
 
     node.addEventListener('touchstart', onTouchStart, { passive: true })
