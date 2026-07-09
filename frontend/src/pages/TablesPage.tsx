@@ -1,15 +1,21 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { TABLE_STATUS_LABELS, formatCurrency, formatTime } from '../lib/utils'
 import { ui } from '../lib/ui'
-import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles } from 'lucide-react'
+import { RefreshCw, Plus, Edit2, Trash2, Settings2, X, CheckCircle2, Users, CalendarCheck, Sparkles, LayoutGrid, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { formatApiError, apiErrorPayload } from '../lib/formatApiError'
 import OrderModal from '../components/orders/OrderModal'
 import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
+import TableCardGrid from '../components/tables/TableCardGrid'
+import TableDetailSheet from '../components/tables/TableDetailSheet'
+import TableFloorPlanPanZoom from '../components/tables/TableFloorPlanPanZoom'
+import { matchesTableQuickFilter, type TableQuickFilter } from '../lib/tableFilters'
+import { useMediaQuery, TABLE_MOBILE_LAYOUT_QUERY, TABLE_PHONE_QUERY } from '../hooks/useMediaQuery'
 import type { FloorPlanLayoutV1 } from '../lib/floorPlanLayout'
 import { EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
 import { cn } from '../lib/utils'
@@ -143,14 +149,20 @@ function TableFormModal({
   )
 }
 
+type MobileViewMode = 'list' | 'floor'
+
 export default function TablesPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   const { can } = useRole()
   const canManageTables = can('tables.manage')
   const canTransferOrder = can('orders.items')
   const canCreateOrder = can('orders.create')
+  const canPayOrder = can('orders.pay')
+  const isMobileLayout = useMediaQuery(TABLE_MOBILE_LAYOUT_QUERY)
+  const isPhone = useMediaQuery(TABLE_PHONE_QUERY)
   useRealtimeTables()
   const socketConnected = useSocketStatus()
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
@@ -164,6 +176,10 @@ export default function TablesPage() {
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const allAreasKey = t('common.allAreas')
   const [filterArea, setFilterArea] = useState(allAreasKey)
+  const [filterStatus, setFilterStatus] = useState<TableQuickFilter>('ALL')
+  const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>('list')
+  const [toolbarExpanded, setToolbarExpanded] = useState(false)
+  const [detailTable, setDetailTable] = useState<Table | null>(null)
   const [reservedTable, setReservedTable] = useState<Table | null>(null)
 
   const { data: tablesData, isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
@@ -309,10 +325,16 @@ export default function TablesPage() {
     ...(floorLayout.areas ?? []),
   ])), [defaultArea, floorLayout.areas, tables])
   const areas = useMemo(() => [allAreasKey, ...allAreasRaw], [allAreasKey, allAreasRaw])
-  const filtered = useMemo(
-    () => (filterArea === allAreasKey ? tables : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)),
-    [allAreasKey, defaultArea, filterArea, tables],
-  )
+  const filtered = useMemo(() => {
+    const byArea = filterArea === allAreasKey
+      ? tables
+      : tables.filter(tbl => (tbl.area || defaultArea) === filterArea)
+    return byArea.filter(tbl => matchesTableQuickFilter(tbl, filterStatus))
+  }, [allAreasKey, defaultArea, filterArea, filterStatus, tables])
+
+  useEffect(() => {
+    if (isPhone) setMobileViewMode('list')
+  }, [isPhone])
 
   const stats = useMemo(() => ({
     free: tables.filter(tbl => tbl.status === 'FREE').length,
@@ -413,25 +435,85 @@ export default function TablesPage() {
     if (confirmed) markTableFree.mutate(table.id)
   }
 
-  const handleTableClick = (table: FloorTable) => {
-    if (transferSourceId) return
-    if (table.status === 'CLEANING') {
-      void requestCleaningConfirm(table)
-      return
-    }
-    const fullTable = tablesById.get(table.id)
-    if (table.status === 'RESERVED' && fullTable?.reservations?.[0]) {
-      setReservedTable(fullTable)
-      return
-    }
+  const openOrderForTable = (tableId: string) => {
+    const fullTable = tablesById.get(tableId)
     const activeOrder = fullTable ? findActiveTableOrder(fullTable.orders) : undefined
     if (!activeOrder && !canCreateOrder) {
       toast.error(t('tables.noOrderPermission', { defaultValue: 'Non hai permesso di aprire nuove comande su questo tavolo' }))
       return
     }
-    setSelectedTableId(table.id)
+    setDetailTable(null)
+    setSelectedTableId(tableId)
     setShowOrderModal(true)
   }
+
+  const handleTableClick = (table: FloorTable) => {
+    if (transferSourceId) {
+      handleTransferTarget(table)
+      return
+    }
+    const fullTable = tablesById.get(table.id) ?? (table as Table)
+
+    if (isMobileLayout) {
+      setDetailTable(fullTable)
+      return
+    }
+
+    if (table.status === 'CLEANING') {
+      void requestCleaningConfirm(table)
+      return
+    }
+    if (table.status === 'RESERVED' && fullTable?.reservations?.[0]) {
+      setReservedTable(fullTable)
+      return
+    }
+    openOrderForTable(table.id)
+  }
+
+  const handleDetailOpenOrder = () => {
+    if (!detailTable) return
+    if (detailTable.status === 'RESERVED' && detailTable.reservations?.[0]) {
+      setReservedTable(detailTable)
+      setDetailTable(null)
+      return
+    }
+    if (detailTable.status === 'CLEANING') {
+      void requestCleaningConfirm(detailTable)
+      setDetailTable(null)
+      return
+    }
+    openOrderForTable(detailTable.id)
+  }
+
+  const handleDetailGoToPayment = () => {
+    if (!detailTable) return
+    const activeOrder = findActiveTableOrder(detailTable.orders)
+    if (!activeOrder || !canPayOrder) return
+    setDetailTable(null)
+    navigate(`/checkout/${activeOrder.id}`)
+  }
+
+  const handleDetailMarkFree = () => {
+    if (!detailTable) return
+    void requestCleaningConfirm(detailTable).then(() => setDetailTable(null))
+  }
+
+  const handleDetailSeatReservation = () => {
+    if (!detailTable?.reservations?.[0]) return
+    seatReservation.mutate({
+      reservationId: detailTable.reservations[0].id,
+      tableId: detailTable.id,
+    })
+    setDetailTable(null)
+  }
+
+  const statusFilters: { key: TableQuickFilter; label: string }[] = [
+    { key: 'ALL', label: t('common.all') },
+    { key: 'FREE', label: t('tables.free') },
+    { key: 'OCCUPIED', label: t('tables.occupied') },
+    { key: 'BILL', label: t('tables.mobile.bill') },
+    { key: 'RESERVED', label: t('tables.reserved') },
+  ]
 
   const handleSaveTable = (data: TableFormData) => {
     if (editingTable?.id) {
@@ -445,10 +527,21 @@ export default function TablesPage() {
     <ExecutivePageShell className="space-y-6">
       <ExecutivePageHeader
         title={t('tables.title')}
-        subtitle={t('tables.subtitle')}
+        subtitle={isMobileLayout ? undefined : t('tables.subtitle')}
         actions={(
           <>
-            {canManageTables && (
+            {isMobileLayout && (
+              <button
+                type="button"
+                onClick={() => setToolbarExpanded(v => !v)}
+                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium saas-chip text-fumo transition-colors hover:bg-white/5 hover:text-pietra sm:w-auto"
+                aria-expanded={toolbarExpanded}
+              >
+                {toolbarExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {toolbarExpanded ? t('tables.mobile.collapseToolbar') : t('tables.mobile.expandToolbar')}
+              </button>
+            )}
+            {(!isMobileLayout || toolbarExpanded) && canManageTables && (
               <button
                 type="button"
                 onClick={() => {
@@ -472,7 +565,7 @@ export default function TablesPage() {
                 {t('tables.manageSection')}
               </button>
             )}
-            {canManageTables && (
+            {(!isMobileLayout || toolbarExpanded) && canManageTables && (
               <button
                 type="button"
                 onClick={() => setIsEditorOpen(true)}
@@ -576,18 +669,57 @@ export default function TablesPage() {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        {STAT_ACCENTS.map(({ key, accent, icon: Icon }) => (
-          <KpiStatCard
-            key={key}
-            label={statLabels[key]}
-            value={stats[key]}
-            icon={Icon}
-            accent={accent}
-            luxuryCounters
+      {(!isMobileLayout || toolbarExpanded) && (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          {STAT_ACCENTS.map(({ key, accent, icon: Icon }) => (
+            <KpiStatCard
+              key={key}
+              label={statLabels[key]}
+              value={stats[key]}
+              icon={Icon}
+              accent={accent}
+              luxuryCounters
+            />
+          ))}
+        </div>
+      )}
+
+      {isMobileLayout && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 rounded-xl border border-white/[0.08] bg-[#0B0E14] p-1">
+              <button
+                type="button"
+                onClick={() => setMobileViewMode('list')}
+                className={cn(
+                  'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors touch-manipulation',
+                  mobileViewMode === 'list' ? 'bg-aura-gold text-navy' : 'text-slate-300',
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                {t('tables.mobile.viewList')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileViewMode('floor')}
+                className={cn(
+                  'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors touch-manipulation',
+                  mobileViewMode === 'floor' ? 'bg-aura-gold text-navy' : 'text-slate-300',
+                )}
+              >
+                <MapIcon className="h-4 w-4" />
+                {t('tables.mobile.viewFloor')}
+              </button>
+            </div>
+          </div>
+
+          <FilterPills
+            filters={statusFilters.map(f => ({ key: f.key, label: f.label }))}
+            active={filterStatus}
+            onChange={key => setFilterStatus(key as TableQuickFilter)}
           />
-        ))}
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <FilterPills
@@ -596,6 +728,16 @@ export default function TablesPage() {
           onChange={setFilterArea}
         />
 
+        {!isMobileLayout && (
+          <FilterPills
+            filters={statusFilters.map(f => ({ key: f.key, label: f.label }))}
+            active={filterStatus}
+            onChange={key => setFilterStatus(key as TableQuickFilter)}
+            className="sm:justify-end"
+          />
+        )}
+
+        {!isMobileLayout && (
         <div className="flex items-center gap-3 flex-wrap">
           {STAT_ACCENTS.map(({ status }) => (
             <div key={status} className="flex items-center gap-1.5 text-xs text-fumo">
@@ -604,6 +746,7 @@ export default function TablesPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {isError ? (
@@ -628,20 +771,59 @@ export default function TablesPage() {
         />
       ) : (
         <div className={cn(transferSourceId && 'rounded-xl ring-4 ring-amber-300 ring-offset-2')}>
-          <TableFloorPlan
-            tables={floorPlanTables}
-            floorLayout={floorLayout}
-            statusLabel={status => TABLE_STATUS_LABELS[status]}
-            seatsLabel={n => `${n} ${t('common.seats')}`}
-            onTableClick={handleTableClick}
-            onTableHover={handleTableHoverPrefetch}
-            transferSourceId={transferSourceId}
-            onTransferTargetClick={handleTransferTarget}
-            transferSourceLabel={t('tables.transferFromHere')}
-            transferTargetLabel={t('tables.transferTapHere')}
-            activeOrderTotal={activeOrderTotal}
-            reservationLabel={getReservationLabel}
-          />
+          {isMobileLayout && mobileViewMode === 'list' ? (
+            <TableCardGrid
+              tables={floorPlanTables}
+              statusLabel={status => TABLE_STATUS_LABELS[status]}
+              onTableClick={table => {
+                if (transferSourceId) {
+                  handleTransferTarget(table)
+                  return
+                }
+                handleTableClick(table)
+              }}
+              transferSourceId={transferSourceId}
+            />
+          ) : isMobileLayout && mobileViewMode === 'floor' ? (
+            <TableFloorPlanPanZoom
+              tableCount={floorPlanTables.length}
+              onForceListView={() => {
+                setMobileViewMode('list')
+                toast.success(t('tables.mobile.autoListFallback'))
+              }}
+            >
+              <TableFloorPlan
+                tables={floorPlanTables}
+                floorLayout={floorLayout}
+                statusLabel={status => TABLE_STATUS_LABELS[status]}
+                seatsLabel={n => `${n} ${t('common.seats')}`}
+                onTableClick={handleTableClick}
+                onTableHover={handleTableHoverPrefetch}
+                transferSourceId={transferSourceId}
+                onTransferTargetClick={handleTransferTarget}
+                transferSourceLabel={t('tables.transferFromHere')}
+                transferTargetLabel={t('tables.transferTapHere')}
+                activeOrderTotal={activeOrderTotal}
+                reservationLabel={getReservationLabel}
+                embedded
+              />
+            </TableFloorPlanPanZoom>
+          ) : (
+            <TableFloorPlan
+              tables={floorPlanTables}
+              floorLayout={floorLayout}
+              statusLabel={status => TABLE_STATUS_LABELS[status]}
+              seatsLabel={n => `${n} ${t('common.seats')}`}
+              onTableClick={handleTableClick}
+              onTableHover={handleTableHoverPrefetch}
+              transferSourceId={transferSourceId}
+              onTransferTargetClick={handleTransferTarget}
+              transferSourceLabel={t('tables.transferFromHere')}
+              transferTargetLabel={t('tables.transferTapHere')}
+              activeOrderTotal={activeOrderTotal}
+              reservationLabel={getReservationLabel}
+            />
+          )}
         </div>
       )}
 
@@ -697,6 +879,21 @@ export default function TablesPage() {
               </button>
             </div>
         </GlassModal>
+      )}
+
+      {detailTable && (
+        <TableDetailSheet
+          table={detailTable}
+          statusLabel={status => TABLE_STATUS_LABELS[status]}
+          onClose={() => setDetailTable(null)}
+          onOpenOrder={handleDetailOpenOrder}
+          onGoToPayment={handleDetailGoToPayment}
+          onMarkFree={handleDetailMarkFree}
+          onSeatReservation={handleDetailSeatReservation}
+          canCreateOrder={canCreateOrder}
+          canPayOrder={canPayOrder}
+          isPending={seatReservation.isPending || markTableFree.isPending}
+        />
       )}
 
       {showOrderModal && selectedTableId && (

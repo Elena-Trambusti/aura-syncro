@@ -302,6 +302,19 @@
       "bar": "BAR",
       "staffOnly": "STAFF ONLY"
     },
+    "mobile": {
+      "viewList": "List",
+      "viewFloor": "Floor plan",
+      "bill": "Bill",
+      "detailTitle": "Table {{number}}",
+      "openOrder": "Open order",
+      "newOrder": "New order",
+      "orderSince": "Order since {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Tools",
+      "collapseToolbar": "Hide tools",
+      "autoListFallback": "Tables too small — switched to list view"
+    },
     "editor": {
       "title": "2.5D Layout Editor",
       "subtitle": "Walls, zones and tables — saved per restaurant",

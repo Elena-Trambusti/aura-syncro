@@ -328,6 +328,19 @@
       "bar": "BAR",
       "staffOnly": "STAFF ONLY"
     },
+    "mobile": {
+      "viewList": "Lista",
+      "viewFloor": "Piantina",
+      "bill": "Conto",
+      "detailTitle": "Tavolo {{number}}",
+      "openOrder": "Apri comanda",
+      "newOrder": "Nuova comanda",
+      "orderSince": "Ordine dalle {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Strumenti",
+      "collapseToolbar": "Nascondi strumenti",
+      "autoListFallback": "Tavoli troppo piccoli — vista lista attivata"
+    },
     "editor": {
       "title": "Editor Layout 2.5D",
       "subtitle": "Muri, zone e tavoli — salvataggio per il tuo ristorante",

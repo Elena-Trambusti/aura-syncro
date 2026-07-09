@@ -281,6 +281,19 @@
       "bar": "BAR",
       "staffOnly": "SOLO PERSONAL"
     },
+    "mobile": {
+      "viewList": "Lista",
+      "viewFloor": "Plano",
+      "bill": "Cuenta",
+      "detailTitle": "Mesa {{number}}",
+      "openOrder": "Abrir comanda",
+      "newOrder": "Nueva comanda",
+      "orderSince": "Pedido desde {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Herramientas",
+      "collapseToolbar": "Ocultar herramientas",
+      "autoListFallback": "Mesas demasiado pequeñas — vista lista activada"
+    },
     "editor": {
       "title": "Editor Layout 2.5D",
       "subtitle": "Muros, zonas y mesas",

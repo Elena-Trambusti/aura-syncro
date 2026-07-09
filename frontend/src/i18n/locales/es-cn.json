@@ -271,7 +271,20 @@
     "transferTapHere": "Toca",
     "reservedTitle": "Mesa {{number}} — Reservada",
     "seatAndOpenOrder": "Sentar y abrir pedido",
-    "reservationSeated": "Comensales en mesa — puedes tomar el pedido"
+    "reservationSeated": "Comensales en mesa — puedes tomar el pedido",
+    "mobile": {
+      "viewList": "Lista",
+      "viewFloor": "Plano",
+      "bill": "Cuenta",
+      "detailTitle": "Mesa {{number}}",
+      "openOrder": "Abrir comanda",
+      "newOrder": "Nueva comanda",
+      "orderSince": "Pedido desde {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Herramientas",
+      "collapseToolbar": "Ocultar herramientas",
+      "autoListFallback": "Mesas demasiado pequeñas — vista lista activada"
+    }
   },
   "orders": {
     "title": "Pedidos",

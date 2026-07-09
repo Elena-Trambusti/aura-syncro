@@ -271,7 +271,20 @@
     "transferTapHere": "Toucher",
     "reservedTitle": "Table {{number}} — Réservée",
     "seatAndOpenOrder": "Installer et ouvrir la commande",
-    "reservationSeated": "Clients à table — vous pouvez prendre la commande"
+    "reservationSeated": "Clients à table — vous pouvez prendre la commande",
+    "mobile": {
+      "viewList": "Liste",
+      "viewFloor": "Plan",
+      "bill": "Addition",
+      "detailTitle": "Table {{number}}",
+      "openOrder": "Ouvrir commande",
+      "newOrder": "Nouvelle commande",
+      "orderSince": "Commande depuis {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Outils",
+      "collapseToolbar": "Masquer outils",
+      "autoListFallback": "Tables trop petites — vue liste activée"
+    }
   },
   "orders": {
     "title": "Commandes",

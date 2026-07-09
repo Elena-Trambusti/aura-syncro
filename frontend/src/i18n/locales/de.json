@@ -271,7 +271,20 @@
     "transferTapHere": "Tippen",
     "reservedTitle": "Tisch {{number}} — Reserviert",
     "seatAndOpenOrder": "Platzieren und Bestellung öffnen",
-    "reservationSeated": "Gäste am Tisch — Bestellung aufnehmen"
+    "reservationSeated": "Gäste am Tisch — Bestellung aufnehmen",
+    "mobile": {
+      "viewList": "Liste",
+      "viewFloor": "Grundriss",
+      "bill": "Rechnung",
+      "detailTitle": "Tisch {{number}}",
+      "openOrder": "Bestellung öffnen",
+      "newOrder": "Neue Bestellung",
+      "orderSince": "Bestellung seit {{time}}",
+      "elapsed": "{{minutes}} min",
+      "expandToolbar": "Werkzeuge",
+      "collapseToolbar": "Werkzeuge ausblenden",
+      "autoListFallback": "Tische zu klein — Listenansicht aktiviert"
+    }
   },
   "orders": {
     "title": "Bestellungen",
