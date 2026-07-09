@@ -292,6 +292,7 @@
     width: 100%;
     position: relative;
     background-color: var(--color-navy);
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -305,6 +306,7 @@
     position: relative;
     margin: 0;
     touch-action: manipulation;
+    overscroll-behavior-y: none;
   }
 
   button,
@@ -323,6 +325,7 @@
     width: 100%;
     max-width: 100%;
     background-color: var(--color-navy);
+    overscroll-behavior-y: none;
     background-image:
       radial-gradient(ellipse 90% 45% at 50% -8%, rgba(212, 175, 55, 0.05) 0%, transparent 58%),
       linear-gradient(180deg, var(--color-navy-mid) 0%, var(--color-navy) 120px);
@@ -2390,11 +2393,13 @@
 
   .pwa-app-shell {
     @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-full flex-row overflow-hidden overflow-x-hidden text-pietra bg-transparent;
+    overscroll-behavior: none;
   }
 
   .pwa-main-scroll {
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: none;
+    touch-action: pan-y pinch-zoom;
     @apply w-full max-w-full overflow-x-hidden;
   }
 
