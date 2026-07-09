@@ -66,18 +66,15 @@ export default function TableDetailSheet({
   return (
     <AuraDialog
       onClose={onClose}
-      variant="sheet"
-      maxWidth="md"
+      variant="bottomSheet"
+      hideClose
       a11yTitle={t('tables.mobile.detailTitle', { number: table.number })}
-      className="!bottom-0 !top-auto !max-h-[85dvh] !translate-x-[-50%] !translate-y-0 rounded-t-2xl rounded-b-none pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:!bottom-0 sm:!top-auto sm:!translate-y-0"
-      overlayClassName="sm:items-end"
     >
-      <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden />
+      <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full bg-white/25" aria-hidden />
 
       <AuraDialogHeader
         title={`${prefix}${table.number}`}
         description={`${table.seats} ${t('common.seats')}${table.area ? ` · ${table.area}` : ''}`}
-        onClose={onClose}
       />
 
       <AuraDialogBody>
@@ -108,13 +105,13 @@ export default function TableDetailSheet({
         )}
       </AuraDialogBody>
 
-      <AuraDialogFooter className="!flex-col gap-2">
+      <AuraDialogFooter className="!mt-4 !flex-col gap-2 sm:!flex-col">
         {primaryAction && (
           <button
             type="button"
             disabled={isPending}
             onClick={primaryAction.onClick}
-            className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl bg-aura-gold py-3 text-sm font-semibold text-navy transition-colors hover:bg-aura-gold-light disabled:opacity-60"
+            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-aura-gold py-3.5 text-base font-semibold text-navy transition-colors hover:bg-aura-gold-light disabled:opacity-60"
           >
             <primaryAction.icon className="h-5 w-5" />
             {primaryAction.label}
@@ -123,7 +120,7 @@ export default function TableDetailSheet({
         <button
           type="button"
           onClick={onClose}
-          className="w-full min-h-[44px] rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-pietra transition-colors hover:bg-white/10"
+          className="w-full min-h-[48px] rounded-xl border border-white/10 bg-white/5 py-3.5 text-base font-medium text-pietra transition-colors hover:bg-white/10"
         >
           {t('common.close')}
         </button>

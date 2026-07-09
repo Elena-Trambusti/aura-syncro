@@ -14,7 +14,7 @@ const MAX_W = {
 } as const
 
 export type AuraDialogMaxWidth = keyof typeof MAX_W
-export type AuraDialogVariant = 'default' | 'sheet' | 'fullscreen'
+export type AuraDialogVariant = 'default' | 'sheet' | 'bottomSheet' | 'fullscreen'
 
 export interface AuraDialogProps {
   open?: boolean
@@ -61,6 +61,14 @@ export function AuraDialog({
           'lg:h-[85dvh] lg:max-h-[85dvh] lg:rounded-xl',
           className,
         )
+      : variant === 'bottomSheet'
+        ? cn(
+            'aura-dialog-content aura-dialog-content--bottom-sheet',
+            'w-full max-w-none',
+            ui.glassModal,
+            'rounded-t-2xl rounded-b-none p-6',
+            className,
+          )
       : variant === 'sheet'
         ? cn(
             'aura-dialog-content aura-dialog-content--sheet',
@@ -94,7 +102,7 @@ export function AuraDialog({
           onClick={e => e.stopPropagation()}
           onOpenAutoFocus={e => variant === 'fullscreen' && e.preventDefault()}
         >
-          {!hideClose && variant !== 'fullscreen' && (
+          {!hideClose && variant !== 'fullscreen' && variant !== 'bottomSheet' && (
             <Dialog.Close asChild>
               <button
                 type="button"

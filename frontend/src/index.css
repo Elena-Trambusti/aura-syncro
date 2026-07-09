@@ -781,7 +781,7 @@
     @apply fixed z-[99999] outline-none;
   }
 
-  .aura-dialog-content:not(.aura-dialog-content--fullscreen) {
+  .aura-dialog-content:not(.aura-dialog-content--fullscreen):not(.aura-dialog-content--bottom-sheet) {
     @apply max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto;
     left: 50%;
     bottom: 0;
@@ -789,8 +789,28 @@
     animation: aura-dialog-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* Bottom sheet mobile — full width, ancorato in basso (no translateX che rompe su WebView) */
+  .aura-dialog-content--bottom-sheet {
+    @apply max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto;
+    inset-inline: 0;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    transform: none;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    animation: aura-bottom-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aura-dialog-content--bottom-sheet[data-state='closed'] {
+    animation: aura-bottom-sheet-out 180ms ease-in forwards;
+  }
+
   @media (min-width: 640px) {
-    .aura-dialog-content:not(.aura-dialog-content--fullscreen) {
+    .aura-dialog-content:not(.aura-dialog-content--fullscreen):not(.aura-dialog-content--bottom-sheet) {
       top: 50%;
       bottom: auto;
       transform: translate(-50%, -50%);
@@ -798,7 +818,7 @@
     }
   }
 
-  .aura-dialog-content[data-state='closed'] {
+  .aura-dialog-content[data-state='closed']:not(.aura-dialog-content--bottom-sheet) {
     animation: aura-dialog-out 180ms ease-in forwards;
   }
 
@@ -998,6 +1018,16 @@
   @keyframes aura-dialog-sheet-in {
     from { opacity: 0; transform: translateX(-50%) translateY(12px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @keyframes aura-bottom-sheet-in {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes aura-bottom-sheet-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(100%); }
   }
 
   @keyframes aura-dialog-fade-in {
