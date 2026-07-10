@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency, monthYearInTimezone, toDateInputInTimezone } from '../lib/utils'
@@ -21,7 +21,6 @@ import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import FilterPills from '../components/ui/FilterPills'
 import KpiStatCard from '../components/ui/KpiStatCard'
 import PageSkeleton from '../components/ui/PageSkeleton'
-import { useMutation } from '@tanstack/react-query'
 import { toast } from '@/lib/toast'
 
 interface PLSummary {
@@ -119,14 +118,15 @@ export default function ReportsPage() {
                   type="date"
                   value={zetaDate}
                   onChange={e => setZetaDate(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                  aria-label={t('reports.zetaDate', { defaultValue: 'Data chiusura Zeta' })}
+                  className="glass-input rounded-xl px-3 py-2 text-sm"
+                  aria-label={t('reports.zetaDate')}
                 />
                 <button
+                  type="button"
                   onClick={() => {
                     void (async () => {
                       const confirmed = await toast.confirm({
-                        title: t('reports.zetaConfirmTitle', { defaultValue: 'Chiusura Zeta' }),
+                        title: t('reports.zetaConfirmTitle'),
                         description: t('reports.zetaConfirm'),
                         confirmLabel: t('common.confirm'),
                         cancelLabel: t('common.cancel'),
