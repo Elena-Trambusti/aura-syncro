@@ -11,6 +11,7 @@ interface TableFloorPlanPanZoomProps {
 
 const MIN_SCALE = 0.2
 const MAX_SCALE = 2.5
+const FIT_SCALE_BOOST = 1.18
 
 export default function TableFloorPlanPanZoom({
   children,
@@ -53,10 +54,11 @@ export default function TableFloorPlanPanZoom({
       (ch - padding * 2) / contentH,
       1,
     )
-    const clamped = Math.max(MIN_SCALE, scale)
-    const x = (cw - contentW * clamped) / 2
-    const y = (ch - contentH * clamped) / 2
-    setTransform({ scale: clamped, x, y })
+    const fitted = Math.max(MIN_SCALE, scale)
+    const boosted = Math.min(MAX_SCALE, Math.max(MIN_SCALE, fitted * FIT_SCALE_BOOST))
+    const x = (cw - contentW * boosted) / 2
+    const y = (ch - contentH * boosted) / 2
+    setTransform({ scale: boosted, x, y })
   }, [onForceListView, tableCount])
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function TableFloorPlanPanZoom({
       ref={containerRef}
       className={cn(
         'relative w-full overflow-hidden rounded-xl bg-[#020202] touch-none',
-        'h-[min(72dvh,calc(100dvh-280px))]',
+        'h-[min(82dvh,calc(100dvh-220px))]',
         className,
       )}
       onTouchStart={onTouchStart}

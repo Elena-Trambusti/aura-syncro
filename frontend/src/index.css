@@ -2768,6 +2768,11 @@
     box-shadow: var(--shadow-premium-sm);
   }
 
+  /* Fallback anti-cache: eventuale vecchio box icona nei KPI non deve vedersi. */
+  .aura-stat-card > .aura-kpi-icon {
+    display: none !important;
+  }
+
   .aura-stat-card__value {
     @apply mt-2 text-2xl font-display font-semibold tabular-nums text-pietra sm:text-3xl;
   }

@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import AuraIcon from './AuraIcon'
 
 type Accent =
   | 'gold'
@@ -35,12 +34,10 @@ const ACCENT = {
   sapphire: 'text-[#7A9BB8]',
 } as const
 
-const LUXURY_ICON_BOX = 'border border-white/[0.08] bg-[#0B0E14]/90'
-
 export default function KpiStatCard({
   label,
   value,
-  icon: Icon,
+  icon: _icon,
   accent = 'gold',
   luxuryCounters = false,
   className,
@@ -52,14 +49,6 @@ export default function KpiStatCard({
       <div className="min-w-0 flex-1">
         <p className="aura-kpi-label">{label}</p>
         <p className={cn('aura-stat-card__value', luxuryCounters && tone)}>{value}</p>
-      </div>
-      <div
-        className={cn(
-          'aura-kpi-icon h-10 w-10 rounded-xl',
-          luxuryCounters ? cn(LUXURY_ICON_BOX, tone) : cn('rounded-xl', tone),
-        )}
-      >
-        <AuraIcon icon={Icon} size="md" className={luxuryCounters ? tone : undefined} />
       </div>
     </div>
   )
