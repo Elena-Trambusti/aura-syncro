@@ -94,8 +94,16 @@
     <script>
       (function () {
         var standalone = window.matchMedia('(display-mode: standalone)').matches
-          || window.navigator.standalone === true;
+          || window.matchMedia('(display-mode: fullscreen)').matches
+          || window.matchMedia('(display-mode: minimal-ui)').matches
+          || window.navigator.standalone === true
+          || document.referrer.indexOf('android-app://') === 0
+          || location.search.indexOf('pwa=') !== -1;
+        try {
+          if (localStorage.getItem('aura-installed-app') === '1') standalone = true;
+        } catch (e) {}
         if (standalone) {
+          try { localStorage.setItem('aura-installed-app', '1'); } catch (e) {}
           document.documentElement.classList.add('pwa-standalone');
           var p = (location.pathname.replace(/\/$/, '') || '/');
           if (['/', '/it', '/es', '/es-cn'].indexOf(p) !== -1) {

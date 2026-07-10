@@ -13,7 +13,7 @@ export default function PublicStandaloneEscape() {
       window.history.back()
       return
     }
-    window.location.assign('/dashboard')
+    window.location.replace('/dashboard')
   }
 
   return (

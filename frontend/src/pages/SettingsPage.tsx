@@ -534,7 +534,7 @@ export default function SettingsPage() {
         <div className="flex items-center gap-3">
           <code className="flex-1 text-xs bg-navy-surface px-3 py-2 rounded-lg text-pietra break-all">{kitchenUrl}</code>
           <button
-            onClick={() => window.open(kitchenUrl, '_blank')}
+            onClick={() => openPublicPreviewOrNotify(kitchenUrl)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium transition-colors"
           >
             <MonitorCheck className="w-4 h-4" />
