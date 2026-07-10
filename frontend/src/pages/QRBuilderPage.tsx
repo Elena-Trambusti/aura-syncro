@@ -8,6 +8,7 @@ import { api } from '../lib/api'
 import { Download, ExternalLink, Copy, BookOpen, CalendarDays } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../lib/utils'
+import { openPublicPreviewOrNotify } from '../lib/openPublicPreview'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import PageSkeleton from '../components/ui/PageSkeleton'
@@ -167,13 +168,32 @@ export default function QRBuilderPage() {
             />
           </div>
 
-          <div className="mt-10 w-full text-center">
+          <div className="mt-6 w-full text-center">
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-aura-gold">
               {t('qrBuilder.scanTarget')}
             </p>
             <p className="break-all font-mono text-sm font-medium leading-relaxed text-pietra bg-navy-mid rounded-xl p-3 border border-white/[0.04]">
               {activeUrl}
             </p>
+          </div>
+
+          <div className="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => openPublicPreviewOrNotify(activeUrl)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-aura-gold/40 bg-aura-gold/10 px-4 py-3.5 text-sm font-semibold text-aura-gold transition-colors hover:bg-aura-gold/20 active:scale-[0.98]"
+            >
+              <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+              {mode === 'menu' ? t('qrBuilder.previewMenu') : t('qrBuilder.previewBooking')}
+            </button>
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-navy-mid px-4 py-3.5 text-sm font-semibold text-pietra transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
+            >
+              <Copy className="h-4 w-4 shrink-0" aria-hidden />
+              {t('common.copyLink')}
+            </button>
           </div>
 
           <button
@@ -186,26 +206,6 @@ export default function QRBuilderPage() {
           </button>
 
           <p className="mt-4 text-center text-xs text-fumo">{t('qrBuilder.printHint')}</p>
-
-          <div className="mt-6 flex w-full flex-wrap justify-center gap-3 border-t border-white/[0.06] pt-6">
-            <button
-              type="button"
-              onClick={() => window.open(activeUrl, '_blank')}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-fumo transition-colors hover:text-pietra"
-            >
-              <ExternalLink className="h-4 w-4" aria-hidden />
-              {mode === 'menu' ? t('qrBuilder.previewMenu') : t('qrBuilder.previewBooking')}
-            </button>
-            <span className="text-slate-300" aria-hidden>|</span>
-            <button
-              type="button"
-              onClick={copyLink}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-fumo transition-colors hover:text-pietra"
-            >
-              <Copy className="h-4 w-4" aria-hidden />
-              {t('common.copyLink')}
-            </button>
-          </div>
         </div>
       </div>
 

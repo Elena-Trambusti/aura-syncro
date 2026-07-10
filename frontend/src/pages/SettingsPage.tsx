@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
+import { openPublicPreviewOrNotify } from '../lib/openPublicPreview'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -479,7 +480,9 @@ export default function SettingsPage() {
               <QrCode className="w-4 h-4" />
               {t('nav.qrMenu')}
             </Link>
-            <button onClick={() => window.open(menuUrl, '_blank')}
+            <button
+              type="button"
+              onClick={() => openPublicPreviewOrNotify(menuUrl)}
               className="flex items-center gap-2 px-4 py-2 premium-card hover:bg-white/[0.05] text-fumo rounded-xl text-sm font-medium transition-colors">
               <ExternalLink className="w-4 h-4" />
               {t('settings.openMenu')}
@@ -514,7 +517,9 @@ export default function SettingsPage() {
               <CalendarDays className="w-4 h-4" />
               {t('settings.bookingQr')}
             </Link>
-            <button onClick={() => window.open(bookingUrl, '_blank')}
+            <button
+              type="button"
+              onClick={() => openPublicPreviewOrNotify(bookingUrl)}
               className="flex items-center gap-2 px-4 py-2 premium-card hover:bg-white/[0.05] text-fumo rounded-xl text-sm font-medium transition-colors">
               <ExternalLink className="w-4 h-4" />
               {t('settings.openBooking')}

@@ -1925,7 +1925,8 @@
     "tableNumberPlaceholder": "Es. 5 — lascia vuoto per menu generico",
     "tableNumberHint": "Con il numero tavolo nel QR, il cliente vede l’esperienza «sono già seduto» (senza link prenotazione). Lascia vuoto per menu generico + prenotazione.",
     "slugMissing": "Slug del ristorante mancante. Configuralo in Impostazioni per generare i QR.",
-    "goToSettings": "Vai alle Impostazioni"
+    "goToSettings": "Vai alle Impostazioni",
+    "previewOpenFailed": "Impossibile aprire l'anteprima qui. Link copiato: incollalo nel browser."
   },
   "publicBooking": {
     "badge": "Prenotazione tavolo",
@@ -1983,7 +1984,10 @@
     "installSuccess": "App installata! Aprila dalla schermata Home.",
     "updateAvailable": "È disponibile una nuova versione dell'app.",
     "updateRefresh": "Aggiorna ora",
-    "reload": "Ricarica"
+    "reload": "Ricarica",
+    "backToApp": "Torna all'app",
+    "loadingTimeout": "Il caricamento sta impiegando più del solito.",
+    "loadingRetry": "Riprova"
   },
   "export": {
     "receipt": "Scontrino",

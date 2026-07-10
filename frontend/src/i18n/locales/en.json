@@ -1815,7 +1815,8 @@
     "tableNumberPlaceholder": "e.g. 5 — leave empty for generic menu",
     "tableNumberHint": "With a table number in the QR, guests see the «already seated» experience (no booking link). Leave empty for generic menu + booking.",
     "slugMissing": "Restaurant slug missing. Configure it in Settings to generate QR codes.",
-    "goToSettings": "Go to Settings"
+    "goToSettings": "Go to Settings",
+    "previewOpenFailed": "Could not open preview here. Link copied — paste it in your browser."
   },
   "publicBooking": {
     "badge": "Table reservation",
@@ -1873,7 +1874,10 @@
     "installSuccess": "App installed! Open it from your Home screen.",
     "updateAvailable": "A new version of the app is available.",
     "updateRefresh": "Update now",
-    "reload": "Reload"
+    "reload": "Reload",
+    "backToApp": "Back to app",
+    "loadingTimeout": "Loading is taking longer than usual.",
+    "loadingRetry": "Try again"
   },
   "export": {
     "receipt": "Receipt",

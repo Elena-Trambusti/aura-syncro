@@ -1,4 +1,4 @@
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -7,6 +7,7 @@ import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
+import PublicStandaloneEscape from '../components/public/PublicStandaloneEscape'
 import AuraIcon from '../components/ui/AuraIcon'
 import AuraButton from '../components/ui/AuraButton'
 import { useInstantMutation } from '../hooks/useInstantMutation'
@@ -44,6 +45,7 @@ export default function PublicReservationPage() {
   const { slug } = useParams<{ slug: string }>()
   const { t } = useTranslation()
   const [submitted, setSubmitted] = useState(false)
+  const [bgAttachment, setBgAttachment] = useState<'fixed' | 'scroll'>('scroll')
   const [form, setForm] = useState({
     guestName: '',
     guestPhone: '',
@@ -62,6 +64,14 @@ export default function PublicReservationPage() {
   })
 
   const maxCovers = data?.settings.effectiveMaxCoversPerSlot ?? data?.settings.maxCoversPerSlot ?? 20
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const update = () => setBgAttachment(mq.matches ? 'fixed' : 'scroll')
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const bookMutation = useInstantMutation<
     { reservationId: string; status: string; depositRequired: boolean; checkoutUrl?: string },
@@ -114,6 +124,7 @@ export default function PublicReservationPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-navy">
+        <PublicStandaloneEscape />
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-aura-gold" />
       </div>
     )
@@ -122,6 +133,7 @@ export default function PublicReservationPage() {
   if (error || !data || !slug) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-navy p-6">
+        <PublicStandaloneEscape />
         <div className="max-w-sm rounded-2xl border border-white/[0.08] bg-navy-surface p-10 text-center shadow-2xl">
           <AlertCircle className="mx-auto mb-5 h-12 w-12 text-rose-400" />
           <h2 className="text-xl font-bold text-pietra">{t('publicBooking.notFound')}</h2>
@@ -163,10 +175,11 @@ export default function PublicReservationPage() {
         backgroundImage: `linear-gradient(to bottom, rgba(3, 7, 18, 0.5) 0%, rgba(3, 7, 18, 0.95) 100%), url('${heroImage}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundAttachment: bgAttachment,
         ...introStyle
       }}
     >
+      <PublicStandaloneEscape />
       <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
         <div className="pointer-events-auto">
           <PublicLanguageSwitcher />

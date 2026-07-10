@@ -18,6 +18,7 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { useRealtimeReservations } from '../hooks/useRealtimeInvalidation'
 import { formatApiError, resolveToastApiError } from '../lib/formatApiError'
+import { openPublicPreviewOrNotify } from '../lib/openPublicPreview'
 import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
@@ -333,24 +334,24 @@ export default function ReservationsPage() {
               <ReservationsHelpTooltip />
             </div>
             {bookingUrl && activeTab === 'bookings' && (
-              <div className="mt-2 flex max-w-xl items-center gap-1.5 text-xs text-fumo">
+              <div className="mt-2 flex max-w-xl flex-wrap items-center gap-2 text-xs text-fumo">
                 <Link2 className="h-3.5 w-3.5 shrink-0 text-fumo" />
-                <span className="truncate">{bookingUrl.replace(/^https?:\/\//, '')}</span>
+                <span className="min-w-0 flex-1 truncate">{bookingUrl.replace(/^https?:\/\//, '')}</span>
                 <button
                   type="button"
                   onClick={copyBookingLink}
-                  className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
+                  className="shrink-0 rounded-lg border border-white/[0.08] p-1.5 text-fumo hover:bg-white/[0.05] hover:text-pietra"
                   title={t('common.copyLink')}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.open(bookingUrl, '_blank')}
-                  className="shrink-0 rounded-md p-1 text-fumo hover:bg-white/[0.05] hover:text-fumo"
-                  title={t('reservations.openPublicBooking')}
+                  onClick={() => openPublicPreviewOrNotify(bookingUrl)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-aura-gold/30 bg-aura-gold/10 px-2.5 py-1.5 text-xs font-semibold text-aura-gold hover:bg-aura-gold/20"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
+                  {t('reservations.openPublicBooking')}
                 </button>
               </div>
             )}

@@ -6,6 +6,7 @@ import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
+import PublicStandaloneEscape from '../components/public/PublicStandaloneEscape'
 import GuestCartBar from '../components/public/GuestCartBar'
 import GuestCartDrawer from '../components/public/GuestCartDrawer'
 import GuestItemCustomizer, { type GuestMenuItemForCustomize } from '../components/public/GuestItemCustomizer'
@@ -179,7 +180,16 @@ export default function PublicMenuPage() {
   const [search, setSearch] = useState('')
   const [cartOpen, setCartOpen] = useState(false)
   const [customizingItem, setCustomizingItem] = useState<GuestMenuItemForCustomize | null>(null)
+  const [bgAttachment, setBgAttachment] = useState<'fixed' | 'scroll'>('scroll')
   const cart = useGuestCart(slug)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const update = () => setBgAttachment(mq.matches ? 'fixed' : 'scroll')
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const tableNumber = useMemo(() => parseTableFromSearch(searchParams), [searchParams])
   const tableToken = useMemo(() => parseTableTokenFromSearch(searchParams), [searchParams])
@@ -273,6 +283,7 @@ export default function PublicMenuPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-navy">
+        <PublicStandaloneEscape />
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-aura-gold" />
           <p className="text-sm font-semibold tracking-widest text-fumo uppercase">{t('publicMenu.loading')}</p>
@@ -284,6 +295,7 @@ export default function PublicMenuPage() {
   if (error || !data || !slug) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-navy p-6">
+        <PublicStandaloneEscape />
         <div className="max-w-sm rounded-2xl border border-white/[0.08] bg-navy-surface p-10 text-center shadow-2xl">
           <AlertCircle className="mx-auto mb-5 h-12 w-12 text-rose-400" />
           <h2 className="text-xl font-bold text-pietra">{t('publicMenu.notFound')}</h2>
@@ -303,9 +315,10 @@ export default function PublicMenuPage() {
         backgroundImage: `linear-gradient(to bottom, rgba(3, 7, 18, 0.6) 0%, rgba(3, 7, 18, 0.98) 100%), url('${heroImage}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundAttachment: bgAttachment,
       }}
     >
+      <PublicStandaloneEscape />
       <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
         <div className="pointer-events-auto">
           <PublicLanguageSwitcher />

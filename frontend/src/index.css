@@ -150,6 +150,14 @@
     animation: route-fade-up var(--motion-duration-base) var(--motion-ease-luxury) both;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .aura-route-transition {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   .lux-hero-badge__logo {
     @apply h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11;
   }
