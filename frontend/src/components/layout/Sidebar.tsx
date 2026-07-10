@@ -143,23 +143,14 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="relative px-6 pt-8 pb-6 flex flex-col gap-6 shrink-0">
-          <button
-            type="button"
-            onClick={closeSidebar}
-            className="absolute top-5 right-5 lg:hidden text-fumo hover:text-pietra transition-colors"
-            aria-label={t('common.closeMenu')}
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center justify-center w-full">
+        <div className="relative shrink-0 border-b border-[#D4AF37]/10 px-4 pb-3 pt-3 lg:px-6 lg:pb-6 lg:pt-8">
+          <div className="mb-4 hidden w-full items-center justify-center lg:flex">
             <Link to="/" className="inline-block transition-transform hover:scale-105 hover:opacity-80 active:scale-95" aria-label="Torna alla Home">
               <BrandLogo size="md" showName layout="horizontal" />
             </Link>
           </div>
 
-          <div className="flex flex-row items-center justify-center w-full gap-2.5 mt-2 pb-4 border-b border-[#D4AF37]/10">
+          <div className="flex items-center gap-2.5 lg:mt-2 lg:justify-center lg:pb-4">
             {restaurant?.logoUrl ? (
               <img src={restaurant.logoUrl} alt={restaurant.name} className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[#D4AF37]/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]" />
             ) : (
@@ -167,23 +158,31 @@ export default function Sidebar() {
                 <UtensilsCrossed className="h-4 w-4 text-[#D4AF37]" />
               </div>
             )}
-            <div className="flex items-center min-w-0">
+            <div className="min-w-0 flex-1 lg:flex-initial">
               <p className="truncate text-base font-medium text-[#F7E7CE] tracking-wide" style={{ fontFamily: 'var(--font-display)', textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}>
                 {restaurant?.name || t('common.restaurant')}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={closeSidebar}
+              className="shrink-0 rounded-lg p-1.5 text-fumo transition-colors hover:bg-white/5 hover:text-pietra lg:hidden"
+              aria-label={t('common.closeMenu')}
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
         {isPreviewMode && (
-          <div className="mx-4 mt-4 rounded-lg border border-aura-gold/25 bg-aura-gold/10 px-3 py-2.5">
+          <div className="mx-4 mt-2 rounded-lg border border-aura-gold/25 bg-aura-gold/10 px-3 py-2.5 lg:mt-4">
             <p className="text-[11px] leading-relaxed text-champagne/90">
               {tier === 'unsubscribed' ? t('nav.previewUnsubscribed') : t('nav.previewOnboarding')}
             </p>
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 lg:min-h-0">
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 max-lg:pt-1 lg:py-4 lg:min-h-0">
           <p className="aura-nav-section">{t('nav.operations', { defaultValue: 'Operatività' })}</p>
           <ul className="space-y-0.5">
             {visibleNavItems.map(item => {

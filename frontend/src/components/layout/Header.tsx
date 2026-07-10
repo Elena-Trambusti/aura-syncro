@@ -3,8 +3,6 @@ import { LogOut, MonitorCheck, Menu, Radio, UtensilsCrossed, ClipboardList, Cale
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials, cn } from '../../lib/utils'
-import BrandLogo from '../brand/BrandLogo'
-import { BRAND } from '../../lib/brand'
 import AuraIcon from '../ui/AuraIcon'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -38,16 +36,6 @@ export default function Header() {
       </button>
 
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-4">
-        <div className="shrink-0 lg:hidden">
-          <Link
-            to="/"
-            className="inline-block transition-transform hover:scale-[1.02] hover:opacity-80 active:scale-[0.98]"
-            aria-label={BRAND.name}
-          >
-            <BrandLogo size="sm" layout="icon" priority />
-          </Link>
-        </div>
-
         <div className="aura-topbar-context hidden lg:inline-flex">
           <Radio className="h-3 w-3 shrink-0 text-aura-gold" aria-hidden />
           <span className="truncate max-w-[14rem] font-medium">

@@ -13,6 +13,7 @@ import GlassModal from '../components/ui/GlassModal'
 import TableFloorPlan, { TABLE_STATUS_BADGE, TABLE_LEGEND_DOT, type FloorTable, type TableStatus } from '../components/tables/TableFloorPlan'
 import TableCardGrid from '../components/tables/TableCardGrid'
 import TableDetailSheet from '../components/tables/TableDetailSheet'
+import CleaningConfirmSheet from '../components/tables/CleaningConfirmSheet'
 import TableFloorPlanPanZoom from '../components/tables/TableFloorPlanPanZoom'
 import { matchesTableQuickFilter, type TableQuickFilter } from '../lib/tableFilters'
 import { useMediaQuery, TABLE_MOBILE_LAYOUT_QUERY, TABLE_PHONE_QUERY } from '../hooks/useMediaQuery'
@@ -180,6 +181,7 @@ export default function TablesPage() {
   const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>('list')
   const [toolbarExpanded, setToolbarExpanded] = useState(false)
   const [detailTable, setDetailTable] = useState<Table | null>(null)
+  const [cleaningConfirmTable, setCleaningConfirmTable] = useState<Table | null>(null)
   const [reservedTable, setReservedTable] = useState<Table | null>(null)
 
   const { data: tablesData, isLoading, isError, isFetching, refetch } = useQuery<Table[]>({
@@ -200,7 +202,6 @@ export default function TablesPage() {
   const tables = tablesData ?? []
   const hoverPrefetchTimeoutRef = useRef<number | null>(null)
   const prefetchedOrderIdsRef = useRef<Set<string>>(new Set())
-  const cleaningConfirmTableIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -281,10 +282,8 @@ export default function TablesPage() {
       const table = tables.find(tbl => tbl.id === id)
       return { previousTables, id, tableNumber: table?.number }
     },
-    onSuccess: (_data, id, context) => {
-      toast.success(t('tables.tableReady', { number: context?.tableNumber ?? '' }), {
-        id: `table-free-${id}`,
-      })
+    onSuccess: () => {
+      /* Nessun toast: la conferma pulizia o il bottom sheet sono feedback sufficienti */
     },
     onError: (err: unknown, _id, context) => {
       restoreTablesCache(queryClient, tk, context?.previousTables)
@@ -422,34 +421,17 @@ export default function TablesPage() {
     setFilterArea(allAreasKey)
   }
 
-  const handleTransferTarget = (target: FloorTable) => {
-    if (!transferSourceId || target.status !== 'FREE' || target.id === transferSourceId) return
-    transferOrder.mutate({ sourceId: transferSourceId, targetId: target.id })
-  }
-
-  const requestCleaningConfirm = async (table: FloorTable) => {
+  const markTableFreeDirect = useCallback((table: FloorTable) => {
     if (freeingTableIds.has(table.id) || markTableFree.isPending) return
-    if (cleaningConfirmTableIdRef.current === table.id) return
-    cleaningConfirmTableIdRef.current = table.id
-    try {
-      const confirmed = await toast.confirm({
-        title: t('tables.confirmCleaningTitle'),
-        description: t('tables.confirmCleaningDescription', { number: table.number }),
-        confirmLabel: t('tables.confirmCleaningConfirm'),
-        cancelLabel: t('common.cancel'),
-        variant: 'cleaning',
-        badge: table.number,
-        eyebrow: t('tables.cleaning'),
-      })
-      if (confirmed && !freeingTableIds.has(table.id)) {
-        markTableFree.mutate(table.id)
-      }
-    } finally {
-      cleaningConfirmTableIdRef.current = null
-    }
-  }
+    markTableFree.mutate(table.id)
+  }, [freeingTableIds, markTableFree])
 
-  const openOrderForTable = (tableId: string) => {
+  const openCleaningConfirm = useCallback((table: FloorTable) => {
+    if (freeingTableIds.has(table.id) || markTableFree.isPending) return
+    setCleaningConfirmTable(tablesById.get(table.id) ?? (table as Table))
+  }, [freeingTableIds, markTableFree.isPending, tablesById])
+
+  const openOrderForTable = useCallback((tableId: string) => {
     const fullTable = tablesById.get(tableId)
     const activeOrder = fullTable ? findActiveTableOrder(fullTable.orders) : undefined
     if (!activeOrder && !canCreateOrder) {
@@ -459,6 +441,11 @@ export default function TablesPage() {
     setDetailTable(null)
     setSelectedTableId(tableId)
     setShowOrderModal(true)
+  }, [canCreateOrder, tablesById, t])
+
+  const handleTransferTarget = (target: FloorTable) => {
+    if (!transferSourceId || target.status !== 'FREE' || target.id === transferSourceId) return
+    transferOrder.mutate({ sourceId: transferSourceId, targetId: target.id })
   }
 
   const handleTableClick = (table: FloorTable) => {
@@ -468,15 +455,16 @@ export default function TablesPage() {
     }
     const fullTable = tablesById.get(table.id) ?? (table as Table)
 
+    if (table.status === 'CLEANING') {
+      openCleaningConfirm(fullTable)
+      return
+    }
+
     if (isMobileLayout) {
       setDetailTable(fullTable)
       return
     }
 
-    if (table.status === 'CLEANING') {
-      void requestCleaningConfirm(table)
-      return
-    }
     if (table.status === 'RESERVED' && fullTable?.reservations?.[0]) {
       setReservedTable(fullTable)
       return
@@ -508,10 +496,9 @@ export default function TablesPage() {
 
   const handleDetailMarkFree = () => {
     if (!detailTable) return
-    if (freeingTableIds.has(detailTable.id) || markTableFree.isPending) return
     const table = detailTable
     setDetailTable(null)
-    void requestCleaningConfirm(table)
+    markTableFreeDirect(table)
   }
 
   const handleDetailSeatReservation = () => {
@@ -851,7 +838,7 @@ export default function TablesPage() {
               <button
                 key={table.id}
                 type="button"
-                onClick={() => { void requestCleaningConfirm(table) }}
+                onClick={() => openCleaningConfirm(table)}
                 disabled={freeingTableIds.has(table.id)}
                 className="rounded-lg border border-[#7A9BB8]/30 bg-[#0B0E14]/80 px-3 py-2 text-xs font-semibold text-[#7A9BB8] transition-colors hover:border-[#8A9A7B]/40 hover:bg-[#8A9A7B]/10 hover:text-[#8A9A7B] disabled:opacity-50"
               >
@@ -895,6 +882,18 @@ export default function TablesPage() {
               </button>
             </div>
         </GlassModal>
+      )}
+
+      {cleaningConfirmTable && (
+        <CleaningConfirmSheet
+          table={cleaningConfirmTable}
+          onClose={() => setCleaningConfirmTable(null)}
+          onConfirm={() => {
+            markTableFreeDirect(cleaningConfirmTable)
+            setCleaningConfirmTable(null)
+          }}
+          isPending={freeingTableIds.has(cleaningConfirmTable.id) || markTableFree.isPending}
+        />
       )}
 
       {detailTable && (

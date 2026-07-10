@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import AuraSelect from './AuraSelect'
 import { cn } from '@/lib/utils'
-import { useMediaQuery, TABLE_PHONE_QUERY } from '@/hooks/useMediaQuery'
 
 export interface TipWaiterOption {
   id: string
@@ -15,6 +13,10 @@ interface TipWaiterPickerProps {
   className?: string
 }
 
+/**
+ * Selezione cameriere per mancia — sempre card/pill (mai <select> nativo).
+ * Il picker di sistema Android/iOS è bianco e fuori tema.
+ */
 export default function TipWaiterPicker({
   staff,
   value,
@@ -22,8 +24,7 @@ export default function TipWaiterPicker({
   className,
 }: TipWaiterPickerProps) {
   const { t } = useTranslation()
-  const isPhone = useMediaQuery(TABLE_PHONE_QUERY)
-  const placeholder = t('checkout.assignWaiter')
+  const label = t('checkout.assignWaiter')
 
   if (!staff.length) {
     return (
@@ -31,9 +32,14 @@ export default function TipWaiterPicker({
     )
   }
 
-  if (isPhone) {
-    return (
-      <div className={cn('grid grid-cols-2 gap-2', className)} role="listbox" aria-label={placeholder}>
+  return (
+    <div className={cn('space-y-2', className)}>
+      <p className="text-xs font-medium uppercase tracking-wide text-fumo">{label}</p>
+      <div
+        className="grid max-h-[min(40dvh,280px)] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3"
+        role="listbox"
+        aria-label={label}
+      >
         {staff.map(user => {
           const selected = value === user.id
           return (
@@ -55,18 +61,6 @@ export default function TipWaiterPicker({
           )
         })}
       </div>
-    )
-  }
-
-  return (
-    <AuraSelect
-      value={value}
-      onValueChange={onChange}
-      options={staff.map(user => ({ value: user.id, label: user.name }))}
-      placeholder={placeholder}
-      className={className}
-      triggerClassName="min-h-[44px] py-3"
-      aria-label={placeholder}
-    />
+    </div>
   )
 }
