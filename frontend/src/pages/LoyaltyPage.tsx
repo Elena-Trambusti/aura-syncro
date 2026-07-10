@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import { ui } from '../lib/ui'
-import { Star, Gift, TrendingUp, Users, ChevronRight, Sparkles } from 'lucide-react'
+import { Star, Gift, TrendingUp, Users, ChevronRight } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { formatApiError } from '../lib/formatApiError'
 import { useTenantQueryKey } from '../contexts/AuthContext'
@@ -81,19 +81,27 @@ export default function LoyaltyPage() {
   return (
     <ExecutivePageShell className="space-y-6">
       <ExecutivePageHeader
+        className="[&_.aura-brand-eyebrow]:block"
+        eyebrow={t('loyalty.eyebrow')}
         title={t('loyalty.title')}
         subtitle={t('loyalty.subtitleAuto')}
-        actions={overview?.autoManaged !== false ? (
-          <div className="flex items-center gap-2 rounded-xl border border-aura-gold/25 bg-aura-gold/10 px-4 py-2.5 text-sm font-medium text-amber-900 shrink-0">
-            <Sparkles className="h-4 w-4 text-aura-gold" aria-hidden />
-            {t('loyalty.autoManagedBadge')}
+        meta={overview?.autoManaged !== false ? (
+          <div className="mt-4 max-w-2xl border-t border-white/[0.06] pt-4">
+            <div className="relative overflow-hidden rounded-xl border border-aura-gold/15 bg-gradient-to-br from-white/[0.04] via-transparent to-transparent px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div
+                className="pointer-events-none absolute inset-y-3 left-0 w-px bg-gradient-to-b from-aura-gold/70 via-aura-gold/25 to-transparent"
+                aria-hidden
+              />
+              <p className="pl-3 text-[10px] font-bold uppercase tracking-[0.22em] text-aura-gold/85">
+                {t('loyalty.autoManagedLabel')}
+              </p>
+              <p className="mt-1.5 pl-3 text-sm leading-relaxed text-fumo">
+                {t('loyalty.autoManagedHint')}
+              </p>
+            </div>
           </div>
         ) : undefined}
       />
-
-      <div className="rounded-xl premium-card p-4 shadow-sm">
-        <p className="text-sm text-fumo">{t('loyalty.autoManagedHint')}</p>
-      </div>
 
       {(overviewError || customersError) && <QueryErrorBanner />}
 

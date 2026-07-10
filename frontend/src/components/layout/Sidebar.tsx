@@ -143,14 +143,14 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="relative shrink-0 border-b border-[#D4AF37]/10 px-4 pb-3 pt-3 lg:px-6 lg:pb-6 lg:pt-8">
+        <div className="relative shrink-0 border-b border-[#D4AF37]/10 lg:px-6 lg:pb-6 lg:pt-8">
           <div className="mb-4 hidden w-full items-center justify-center lg:flex">
             <Link to="/" className="inline-block transition-transform hover:scale-105 hover:opacity-80 active:scale-95" aria-label="Torna alla Home">
               <BrandLogo size="md" showName layout="horizontal" />
             </Link>
           </div>
 
-          <div className="flex items-center gap-2.5 lg:mt-2 lg:justify-center lg:pb-4">
+          <div className="hidden items-center justify-center gap-2.5 pb-4 lg:flex">
             {restaurant?.logoUrl ? (
               <img src={restaurant.logoUrl} alt={restaurant.name} className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[#D4AF37]/50 shadow-[0_0_10px_rgba(212,175,55,0.2)]" />
             ) : (
@@ -158,15 +158,25 @@ export default function Sidebar() {
                 <UtensilsCrossed className="h-4 w-4 text-[#D4AF37]" />
               </div>
             )}
-            <div className="min-w-0 flex-1 lg:flex-initial">
-              <p className="truncate text-base font-medium text-[#F7E7CE] tracking-wide" style={{ fontFamily: 'var(--font-display)', textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}>
-                {restaurant?.name || t('common.restaurant')}
-              </p>
-            </div>
+            <p
+              className="truncate text-base font-medium text-[#F7E7CE] tracking-wide"
+              style={{ fontFamily: 'var(--font-display)', textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}
+            >
+              {restaurant?.name || t('common.restaurant')}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-6 lg:hidden">
+            <p
+              className="min-w-0 flex-1 truncate pr-2 font-display text-[1.125rem] font-semibold leading-snug tracking-wide text-[#F7E7CE]"
+              style={{ textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}
+            >
+              {restaurant?.name || t('common.restaurant')}
+            </p>
             <button
               type="button"
               onClick={closeSidebar}
-              className="shrink-0 rounded-lg p-1.5 text-fumo transition-colors hover:bg-white/5 hover:text-pietra lg:hidden"
+              className="shrink-0 rounded-lg p-1.5 text-fumo transition-colors hover:bg-white/5 hover:text-pietra"
               aria-label={t('common.closeMenu')}
             >
               <X className="h-5 w-5" />
@@ -182,8 +192,8 @@ export default function Sidebar() {
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 max-lg:pt-1 lg:py-4 lg:min-h-0">
-          <p className="aura-nav-section">{t('nav.operations', { defaultValue: 'Operatività' })}</p>
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 max-lg:pt-4 lg:py-4 lg:min-h-0">
+          <p className="aura-nav-section max-lg:mt-1">{t('nav.operations', { defaultValue: 'Operatività' })}</p>
           <ul className="space-y-0.5">
             {visibleNavItems.map(item => {
               const locked = isItemLocked(item)
@@ -286,7 +296,7 @@ export default function Sidebar() {
               </div>
             </div>
           )}
-          <p className="mt-3 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-fumo/50">
+          <p className="mt-3 hidden text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-fumo/50 lg:block">
             {BRAND.name}
           </p>
         </div>

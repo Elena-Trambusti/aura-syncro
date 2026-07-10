@@ -788,10 +788,11 @@
   },
   "loyalty": {
     "title": "Programma Fedeltà",
+    "eyebrow": "Esperienza VIP",
     "subtitle": "Punti e livelli clienti",
     "subtitleAuto": "Punti e livelli assegnati automaticamente ad ogni pagamento",
-    "autoManagedBadge": "Gestito da Aura Syncro",
-    "autoManagedHint": "Bronze, Silver e Gold si attivano da soli. I punti vengono accreditati quando chiudi un conto con cliente collegato (email o telefono in comanda). I livelli salgono in base ai punti accumulati.",
+    "autoManagedLabel": "Automazione attiva",
+    "autoManagedHint": "Livelli e punti si aggiornano a ogni chiusura conto con ospite identificato. Nessuna configurazione manuale.",
     "heroHint": "Livelli VIP, punti e premi per i tuoi clienti",
     "newTier": "Nuovo Livello",
     "stats": {

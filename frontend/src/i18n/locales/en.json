@@ -730,10 +730,11 @@
   },
   "loyalty": {
     "title": "Loyalty Programme",
+    "eyebrow": "VIP Experience",
     "subtitle": "Customer points and tiers",
     "subtitleAuto": "Points and tiers assigned automatically on every payment",
-    "autoManagedBadge": "Managed by Aura Syncro",
-    "autoManagedHint": "Bronze, Silver and Gold activate automatically. Points are credited when you close a bill with a linked customer (email or phone on the order). Tiers upgrade based on accumulated points.",
+    "autoManagedLabel": "Active automation",
+    "autoManagedHint": "Tiers and points update on every settled bill with a recognised guest. No manual setup.",
     "heroHint": "VIP tiers, points and rewards for your customers",
     "newTier": "New Tier",
     "stats": {

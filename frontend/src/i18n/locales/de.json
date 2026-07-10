@@ -642,10 +642,11 @@
   },
   "loyalty": {
     "title": "Treueprogramm",
+    "eyebrow": "VIP-Erlebnis",
     "subtitle": "Kundenpunkte und Stufen",
     "subtitleAuto": "Punkte und Stufen werden bei jeder Zahlung automatisch vergeben",
-    "autoManagedBadge": "Verwaltet von Aura Syncro",
-    "autoManagedHint": "Bronze, Silver und Gold aktivieren sich automatisch. Punkte werden gutgeschrieben, wenn Sie eine Rechnung mit verknüpftem Gast schließen (E-Mail oder Telefon in der Bestellung). Stufen steigen mit den gesammelten Punkten.",
+    "autoManagedLabel": "Aktive Automatisierung",
+    "autoManagedHint": "Stufen und Punkte aktualisieren sich bei jedem abgeschlossenen Konto mit identifiziertem Gast. Keine manuelle Einrichtung.",
     "heroHint": "VIP-Stufen, Punkte und Belohnungen für Ihre Gäste",
     "newTier": "Neue Stufe",
     "stats": {
