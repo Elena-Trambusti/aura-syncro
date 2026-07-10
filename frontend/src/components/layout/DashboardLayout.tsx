@@ -6,7 +6,6 @@ import Header from './Header'
 import CommandPalette from './CommandPalette'
 import PwaNotificationBanner, { PwaInstallHint } from './PwaNotificationBanner'
 import OfflineSyncBanner from '../OfflineSyncBanner'
-import DemoBanner from '../DemoBanner'
 import PageSkeleton from '../ui/PageSkeleton'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
@@ -102,7 +101,6 @@ export default function DashboardLayout() {
               <PwaNotificationBanner enabled={!!user} />
             </div>
             <OfflineSyncBanner enabled={!!user} onSynced={handleOfflineSynced} className="mb-3" />
-            <DemoBanner />
             <Suspense
               fallback={(
                 <div className="min-h-[50vh]">
