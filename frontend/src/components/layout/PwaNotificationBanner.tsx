@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 import { usePwaInstall } from '../../hooks/usePwaInstall'
+import { useMediaQuery, TABLE_MOBILE_LAYOUT_QUERY } from '../../hooks/useMediaQuery'
 
 interface PwaNotificationBannerProps {
   enabled: boolean
@@ -53,15 +54,16 @@ export default function PwaNotificationBanner({ enabled }: PwaNotificationBanner
   )
 }
 
-/** Banner installazione PWA — visibile su mobile/tablet finché l'app non è installata */
+/** Banner installazione PWA — solo su mobile/tablet nel browser, non su desktop */
 export function PwaInstallHint() {
   const { t } = useTranslation()
   const { canInstall, isStandalone, install } = usePwaInstall()
+  const isMobileBrowser = useMediaQuery(TABLE_MOBILE_LAYOUT_QUERY)
   const [dismissed, setDismissed] = useState(
     () => typeof window !== 'undefined' && localStorage.getItem('pwa-install-hint-dismissed') === '1',
   )
 
-  if (dismissed || isStandalone) return null
+  if (dismissed || isStandalone || !isMobileBrowser) return null
 
   const handleInstall = async () => {
     if (!canInstall) return
