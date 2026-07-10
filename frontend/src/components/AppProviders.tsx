@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '../lib/queryClient'
 import { isPublicAppRoute } from '../lib/publicRoutes'
 import AuraProvider from './ui/AuraProvider'
+import { startMobileExperienceMetrics } from '../lib/mobileExperienceMetrics'
 
 const PERSIST_OPTIONS = { maxAge: 1000 * 60 * 60 * 24 } as const
 
@@ -15,6 +16,12 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     typeof window !== 'undefined' && isPublicAppRoute(window.location.pathname)
 
   const [PersistProvider, setPersistProvider] = useState<ComponentType<{ children: ReactNode }> | null>(null)
+
+  useEffect(() => {
+    if (!isPublicLanding) {
+      startMobileExperienceMetrics()
+    }
+  }, [isPublicLanding])
 
   useEffect(() => {
     if (isPublicLanding) return

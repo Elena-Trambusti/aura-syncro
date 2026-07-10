@@ -45,7 +45,7 @@ export default function KpiStatCard({
   const tone = ACCENT[accent]
 
   return (
-    <div className={cn('aura-stat-card', className)}>
+    <div className={cn('aura-stat-card aura-interactive-lift', className)}>
       <div className="min-w-0 flex-1">
         <p className="aura-kpi-label">{label}</p>
         <p className={cn('aura-stat-card__value', luxuryCounters && tone)}>{value}</p>

@@ -16,6 +16,8 @@ const TABLE_ONLY_EVENTS = [
   'table:position_changed',
 ] as const
 
+const REFRESH_THROTTLE_MS = 220
+
 /**
  * Mantiene la query tavoli allineata via Socket.IO (sostituisce il polling).
  */
@@ -26,8 +28,11 @@ export function useRealtimeTables(): void {
   useEffect(() => {
     let cancelled = false
     let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null
+    let queued = false
 
-    const refresh = () => {
+    const runRefresh = () => {
+      queued = false
       void queryClient.invalidateQueries({
         queryKey: tq(tenantKey, 'tables'),
         refetchType: 'active',
@@ -36,6 +41,15 @@ export function useRealtimeTables(): void {
         queryKey: tq(tenantKey, 'floor-layout'),
         refetchType: 'active',
       })
+    }
+
+    const refresh = () => {
+      if (queued) return
+      queued = true
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
+      refreshTimeout = setTimeout(runRefresh, REFRESH_THROTTLE_MS)
     }
 
     const onTableUpdated = (payload: TableSocketPatch) => {
@@ -63,6 +77,7 @@ export function useRealtimeTables(): void {
 
     return () => {
       cancelled = true
+      if (refreshTimeout) clearTimeout(refreshTimeout)
       if (!socket) return
       socket.off('table:updated', onTableUpdated)
       socket.off('order:created', onOrderEvent)
@@ -100,10 +115,20 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
   useEffect(() => {
     let cancelled = false
     let socket: Awaited<ReturnType<typeof ensureSocketConnected>> | null = null
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null
+    let queued = false
     const eventList = eventsKey.split('|').filter(Boolean)
 
+    const runRefresh = () => {
+      queued = false
+      void queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts), refetchType: 'active' })
+    }
+
     const refresh = () => {
-      void queryClient.invalidateQueries({ queryKey: tq(tenantKey, ...queryKeyParts) })
+      if (queued) return
+      queued = true
+      if (refreshTimeout) clearTimeout(refreshTimeout)
+      refreshTimeout = setTimeout(runRefresh, REFRESH_THROTTLE_MS)
     }
 
     void ensureSocketConnected()
@@ -118,6 +143,7 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
 
     return () => {
       cancelled = true
+      if (refreshTimeout) clearTimeout(refreshTimeout)
       if (!socket) return
       for (const event of eventList) {
         socket.off(event, refresh)

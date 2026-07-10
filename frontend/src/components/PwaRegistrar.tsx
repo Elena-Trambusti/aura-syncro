@@ -7,6 +7,9 @@ import i18n from '../i18n'
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
 /** Primo controllo differito: non disturbare l'apertura app. */
 const INITIAL_UPDATE_DELAY_MS = 5 * 60 * 1000
+/** Se l'utente ignora il prompt update, non riproporre subito. */
+const UPDATE_PROMPT_COOLDOWN_MS = 12 * 60 * 60 * 1000
+const UPDATE_PROMPT_KEY = 'pwa-update-prompt-ts'
 
 /**
  * Registra il Service Worker in produzione.
@@ -22,6 +25,7 @@ export default function PwaRegistrar() {
     if (!import.meta.env.PROD) return
 
     const checkForUpdates = () => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return
       const registration = registrationRef.current
       if (!registration) return
       const now = Date.now()
@@ -49,7 +53,11 @@ export default function PwaRegistrar() {
         },
         onNeedRefresh() {
           if (updatePromptShownRef.current) return
+          const lastPromptTs = Number(localStorage.getItem(UPDATE_PROMPT_KEY) ?? '0')
+          const now = Date.now()
+          if (now - lastPromptTs < UPDATE_PROMPT_COOLDOWN_MS) return
           updatePromptShownRef.current = true
+          localStorage.setItem(UPDATE_PROMPT_KEY, String(now))
           toast.message(i18n.t('pwa.updateAvailable'), {
             id: 'pwa-update',
             duration: Infinity,

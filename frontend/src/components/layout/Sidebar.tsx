@@ -7,6 +7,7 @@ import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../../lib/utils'
+import { triggerHaptic } from '../../lib/haptics'
 import { useAuth, useFiscalRegime } from '../../contexts/AuthContext'
 import { useAccessTier } from '../../hooks/useAccessTier'
 import { usePlanTier } from '../../hooks/usePlanTier'
@@ -108,6 +109,7 @@ export default function Sidebar() {
   }
 
   function handleLockedClick() {
+    triggerHaptic('warning')
     if (tier === 'unsubscribed') {
       toast(t('nav.lockedPremium'), { icon: '🔒' })
     } else if (tier === 'onboarding') {
@@ -175,7 +177,10 @@ export default function Sidebar() {
             </p>
             <button
               type="button"
-              onClick={closeSidebar}
+              onClick={() => {
+                triggerHaptic('soft')
+                closeSidebar()
+              }}
               className="shrink-0 rounded-lg p-1.5 text-fumo transition-colors hover:bg-white/5 hover:text-pietra"
               aria-label={t('common.closeMenu')}
             >
@@ -214,7 +219,7 @@ export default function Sidebar() {
                     <button
                       type="button"
                       onClick={handleLockedClick}
-                      className={itemClass}
+                      className={cn(itemClass, 'aura-focus-ring')}
                       aria-label={`${t(item.labelKey)} — ${t('nav.lockedAria')}`}
                     >
                       <span className="aura-nav-icon aura-nav-icon--muted">
@@ -226,7 +231,7 @@ export default function Sidebar() {
                   ) : (
                     <NavLink
                       to={item.to}
-                      className={itemClass}
+                      className={cn(itemClass, 'aura-focus-ring')}
                       onMouseEnter={() => prefetchRoute(item.to)}
                       onFocus={() => prefetchRoute(item.to)}
                     >
@@ -252,7 +257,7 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={handleLockedClick}
-                  className="premium-nav-item opacity-60"
+                  className="premium-nav-item aura-focus-ring opacity-60"
                   aria-label={`${t(kitchenLink.labelKey)} — ${t('nav.lockedAria')}`}
                 >
                   <span className="aura-nav-icon aura-nav-icon--muted">
@@ -269,7 +274,7 @@ export default function Sidebar() {
               return (
                 <NavLink
                   to={kitchenLink.to}
-                  className={cn('premium-nav-item', isActive && 'premium-nav-item--active')}
+                  className={cn('premium-nav-item aura-focus-ring', isActive && 'premium-nav-item--active')}
                   onMouseEnter={() => prefetchRoute(kitchenLink.to)}
                   onFocus={() => prefetchRoute(kitchenLink.to)}
                 >
@@ -286,7 +291,7 @@ export default function Sidebar() {
 
         <div className="border-t border-white/[0.06] p-4">
           {user && (
-            <div className="aura-sidebar-user">
+            <div className="aura-sidebar-user aura-interactive-lift">
               <div className="premium-avatar premium-avatar--lg">
                 {user.name.charAt(0).toUpperCase()}
               </div>

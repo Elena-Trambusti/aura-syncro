@@ -57,6 +57,16 @@
   --shadow-gold-glow: 0 0 20px rgba(212, 175, 55, 0.12);
   --shadow-kpi-depth: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --aura-signature-glow: 0 0 0 1px rgba(212, 175, 55, 0.18), 0 8px 32px rgba(212, 175, 55, 0.08);
+  --shadow-premium-mobile: 0 10px 28px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* Android luxury motion pack */
+  --motion-ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-snappy: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --motion-duration-fast: 140ms;
+  --motion-duration-base: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-press-scale: 0.98;
+  --motion-focus-ring: 0 0 0 1px rgba(197, 160, 89, 0.52), 0 0 0 4px rgba(197, 160, 89, 0.16);
 
   --animate-reveal-blur: reveal-blur 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-reveal-slide: reveal-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -70,6 +80,11 @@
 
   @keyframes reveal-slide {
     0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes route-fade-up {
+    0% { opacity: 0; transform: translateY(8px); }
     100% { opacity: 1; transform: translateY(0); }
   }
 
@@ -129,6 +144,10 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.05),
       0 4px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .aura-route-transition {
+    animation: route-fade-up var(--motion-duration-base) var(--motion-ease-luxury) both;
   }
 
   .lux-hero-badge__logo {
@@ -1286,6 +1305,11 @@
     @apply relative flex w-full items-center gap-4 rounded-full px-5 py-3 text-left text-[16px] text-stone-300 transition-colors duration-200;
     font-family: var(--font-display);
     letter-spacing: 0.04em;
+    transition:
+      color var(--motion-duration-fast) var(--motion-ease-luxury),
+      background-color var(--motion-duration-base) var(--motion-ease-luxury),
+      transform var(--motion-duration-fast) var(--motion-ease-snappy),
+      border-color var(--motion-duration-base) var(--motion-ease-luxury);
   }
 
   .premium-nav-item span.truncate {
@@ -1294,6 +1318,7 @@
 
   .premium-nav-item:hover {
     @apply bg-white/[0.04] text-stone-200;
+    transform: translateY(-1px);
   }
 
   .premium-nav-item:hover span.truncate {
@@ -1305,6 +1330,10 @@
     background: linear-gradient(90deg, rgba(15, 15, 15, 0.72) 0%, rgba(24, 24, 24, 0.55) 50%, rgba(15, 15, 15, 0.72) 100%);
     border: 1px solid rgba(197, 160, 89, 0.42);
     box-shadow: 0 0 16px rgba(197, 160, 89, 0.12), inset 0 0 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .premium-nav-item:active {
+    transform: scale(var(--motion-press-scale));
   }
 
   .premium-nav-item--active:hover {
@@ -1366,6 +1395,10 @@
   .premium-topbar-btn {
     @apply inline-flex items-center justify-center rounded-lg p-2 text-fumo transition-colors hover:bg-white/[0.06] hover:text-pietra;
     line-height: 0;
+    transition:
+      color var(--motion-duration-fast) var(--motion-ease-luxury),
+      background-color var(--motion-duration-fast) var(--motion-ease-luxury),
+      transform var(--motion-duration-fast) var(--motion-ease-snappy);
   }
 
   .premium-topbar-btn .lucide {
@@ -1378,6 +1411,39 @@
 
   .premium-topbar-btn--active {
     @apply bg-white/[0.06] text-aura-gold;
+  }
+
+  .premium-topbar-btn:active {
+    transform: scale(var(--motion-press-scale));
+  }
+
+  .aura-focus-ring:focus-visible {
+    outline: none;
+    box-shadow: var(--motion-focus-ring);
+  }
+
+  .aura-interactive-lift {
+    transition:
+      transform var(--motion-duration-base) var(--motion-ease-luxury),
+      box-shadow var(--motion-duration-base) var(--motion-ease-luxury);
+  }
+
+  .aura-interactive-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-premium-mobile);
+  }
+
+  .aura-interactive-lift:active {
+    transform: scale(var(--motion-press-scale));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .premium-topbar-btn,
+    .premium-nav-item,
+    .aura-interactive-lift {
+      transition: none !important;
+      transform: none !important;
+    }
   }
 
   .premium-avatar {

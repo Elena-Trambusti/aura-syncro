@@ -3,6 +3,7 @@ import { LogOut, MonitorCheck, Menu, Radio, UtensilsCrossed, ClipboardList, Cale
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { getInitials, cn } from '../../lib/utils'
+import { triggerHaptic } from '../../lib/haptics'
 import AuraIcon from '../ui/AuraIcon'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -27,8 +28,11 @@ export default function Header() {
     <header className={cn('aura-topbar pwa-header flex h-14 shrink-0 items-center gap-2 px-3 sm:h-[4.25rem] sm:gap-3 sm:px-5', sidebarOpen && 'max-lg:z-30')}>
       <button
         type="button"
-        onClick={toggleSidebar}
-        className={cn('premium-topbar-btn -ml-0.5 shrink-0 lg:hidden', sidebarOpen && 'premium-topbar-btn--active')}
+        onClick={() => {
+          triggerHaptic('soft')
+          toggleSidebar()
+        }}
+        className={cn('premium-topbar-btn aura-focus-ring -ml-0.5 shrink-0 lg:hidden', sidebarOpen && 'premium-topbar-btn--active')}
         aria-label={t('common.openMenu')}
         aria-expanded={sidebarOpen}
       >
@@ -45,8 +49,11 @@ export default function Header() {
 
         <button
           type="button"
-          onClick={openCommandPalette}
-          className="aura-topbar-search min-w-0 max-w-[10rem] shrink xl:max-w-md"
+          onClick={() => {
+            triggerHaptic('soft')
+            openCommandPalette()
+          }}
+          className="aura-topbar-search aura-focus-ring min-w-0 max-w-[10rem] shrink xl:max-w-md"
           aria-label={t('commandPalette.title', { defaultValue: 'Navigazione rapida' })}
         >
           <AuraIcon icon={Search} size="sm" className="aura-topbar-search__icon" />
@@ -63,7 +70,7 @@ export default function Header() {
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  cn('aura-topbar-quick__link', isActive && 'aura-topbar-quick__link--active')
+                  cn('aura-topbar-quick__link aura-focus-ring', isActive && 'aura-topbar-quick__link--active')
                 }
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -78,7 +85,7 @@ export default function Header() {
         <button
           type="button"
           onClick={openCommandPalette}
-          className="premium-topbar-btn premium-topbar-btn--icon hidden sm:inline-flex lg:hidden"
+          className="premium-topbar-btn premium-topbar-btn--icon aura-focus-ring hidden sm:inline-flex lg:hidden"
           aria-label={t('commandPalette.title')}
         >
           <AuraIcon icon={Search} size="md" className="text-fumo/70" />
@@ -89,7 +96,7 @@ export default function Header() {
         <div className="aura-topbar-cluster">
           <Link
             to="/cucina"
-            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-aura-gold sm:flex"
+            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-aura-gold sm:flex aura-focus-ring"
             title={t('nav.openKitchenDisplay')}
           >
             <MonitorCheck className="h-3.5 w-3.5" />
@@ -110,8 +117,11 @@ export default function Header() {
           </div>
           <button
             type="button"
-            onClick={logout}
-            className="premium-topbar-btn hover:!bg-rose-500/[0.1] hover:!text-rose-300"
+            onClick={() => {
+              triggerHaptic('warning')
+              logout()
+            }}
+            className="premium-topbar-btn aura-focus-ring hover:!bg-rose-500/[0.1] hover:!text-rose-300"
             title={t('common.logout')}
             aria-label={t('common.logout')}
           >

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -32,6 +32,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
   const { user } = useAuth()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const tk = useTenantQueryKey()
   usePushNotifications(!!user)
@@ -110,7 +111,9 @@ export default function DashboardLayout() {
                 </div>
               )}
             >
-              <Outlet />
+              <div key={location.pathname} className="aura-route-transition">
+                <Outlet />
+              </div>
             </Suspense>
           </main>
         </div>
