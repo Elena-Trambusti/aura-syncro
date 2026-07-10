@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { toast } from '@/lib/toast'
 import { registerSW } from 'virtual:pwa-register'
 import i18n from '../i18n'
+import { isInstalledAppShell } from '../lib/standaloneApp'
 
 /** Minimo intervallo tra due controlli aggiornamento SW (evita reload/toast a raffica dopo deploy). */
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -23,6 +24,8 @@ export default function PwaRegistrar() {
 
   useEffect(() => {
     if (!import.meta.env.PROD) return
+    // Nell'APK il Service Worker causa schermo nero (HTML/JS disallineati dopo deploy).
+    if (isInstalledAppShell()) return
 
     const checkForUpdates = () => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) return

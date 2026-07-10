@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Favicon -->
-    <link rel="icon" href="/favicon.png?v=19" sizes="any" type="image/png" />
-    <link rel="icon" href="/favicon.ico?v=19" sizes="48x48" />
-    <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png?v=19" />
-    <link rel="preload" href="/assets/marble-bg-768.webp?v=19" as="image" type="image/webp" fetchpriority="high" media="(max-width: 767px)" />
-    <link rel="preload" href="/assets/marble-bg-1920.webp?v=19" as="image" type="image/webp" fetchpriority="high" media="(min-width: 768px)" />
-    <link rel="preload" href="/brand/aura-syncro-logo-display.webp?v=19" as="image" type="image/webp" />
+    <link rel="icon" href="/favicon.png?v=20" sizes="any" type="image/png" />
+    <link rel="icon" href="/favicon.ico?v=20" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png?v=20" />
+    <link rel="preload" href="/assets/marble-bg-768.webp?v=20" as="image" type="image/webp" fetchpriority="high" media="(max-width: 767px)" />
+    <link rel="preload" href="/assets/marble-bg-1920.webp?v=20" as="image" type="image/webp" fetchpriority="high" media="(min-width: 768px)" />
+    <link rel="preload" href="/brand/aura-syncro-logo-display.webp?v=20" as="image" type="image/webp" />
 
     <!-- Open Graph / link preview -->
     <meta property="og:title" content="Aura Syncro | Software Per Ristoranti Innovativo" />
     <meta property="og:description" content="Aura Syncro è il software per ristoranti innovativo e gestionale cloud completo. Sincronizza sala e cucina, menu QR, comande e incassi in tempo reale." />
-    <meta property="og:image" content="https://www.aurasyncro.com/og-image.jpg?v=19" />
+    <meta property="og:image" content="https://www.aurasyncro.com/og-image.jpg?v=20" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Aura Syncro" />
@@ -27,25 +27,18 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Aura Syncro | Software Per Ristoranti Innovativo" />
     <meta name="twitter:description" content="Aura Syncro è il software per ristoranti innovativo e gestionale cloud completo." />
-    <meta name="twitter:image" content="https://www.aurasyncro.com/og-image.jpg?v=19" />
+    <meta name="twitter:image" content="https://www.aurasyncro.com/og-image.jpg?v=20" />
     <meta name="robots" content="index, follow" />
     <meta http-equiv="x-dns-prefetch-control" content="on" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preload"
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Inter:wght@300;400;500;600&display=optional"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
     />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Inter:wght@300;400;500;600&display=optional"
-        rel="stylesheet"
-      />
-    </noscript>
     <meta name="theme-color" content="#0B0E14" />
+    <meta name="aura-app-build" content="2026-07-10-pwa-boot" />
     <link rel="preconnect" href="https://www.aurasyncro.com" crossorigin />
     <link rel="dns-prefetch" href="https://www.aurasyncro.com" />
     <link rel="manifest" href="/manifest.json" />
@@ -59,29 +52,44 @@
     <title>Aura Syncro | Software Per Ristoranti Innovativo</title>
     <style>
       *,*::before,*::after{box-sizing:border-box}
-      html{-webkit-text-size-adjust:100%;background:#020202}
-      body{margin:0;min-height:100dvh;background:#020202;color:#d4bc8a;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-      #root{min-height:100dvh;background:#020202}
+      html{-webkit-text-size-adjust:100%;background:#0B0E14}
+      body{margin:0;min-height:100dvh;background:#0B0E14;color:#E8DFC7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+      #root{min-height:100dvh;background:#0B0E14;position:relative;z-index:1}
       #static-landing-fcp{position:fixed;inset:0;z-index:0;background:#020202;pointer-events:none}
       #static-landing-fcp .fcp-nav{height:calc(3.25rem + env(safe-area-inset-top,0px));border-bottom:1px solid rgba(212,175,55,0.12)}
       #static-landing-fcp .fcp-hero{padding:calc(5.5rem + env(safe-area-inset-top,0px)) 1rem 6rem;max-width:72rem;margin:0 auto}
       #static-landing-fcp .fcp-badge{height:2.75rem;width:14rem;border-radius:9999px;background:rgba(255,255,255,0.04);margin-bottom:2rem}
       #static-landing-fcp .fcp-title{min-height:clamp(4.5rem,12vw,7.5rem);max-width:36rem;margin-bottom:1.75rem}
       #static-landing-fcp .fcp-sub{min-height:4.5rem;max-width:28rem}
-      #static-landing-seo { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+      #static-landing-seo{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      #pwa-boot-shell{
+        display:none;position:fixed;inset:0;z-index:2147483646;
+        flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;
+        background:#0B0E14;color:#E8DFC7;padding:1.5rem;padding-top:max(1.5rem,env(safe-area-inset-top));
+        padding-bottom:max(1.5rem,env(safe-area-inset-bottom));text-align:center
+      }
+      #pwa-boot-shell .boot-spinner{
+        width:3rem;height:3rem;border-radius:9999px;
+        border:4px solid rgba(212,175,55,0.25);border-top-color:#D4AF37;
+        animation:boot-spin 0.9s linear infinite
+      }
+      @keyframes boot-spin{to{transform:rotate(360deg)}}
+      #pwa-boot-shell .boot-title{font-size:1.125rem;font-weight:700;color:#F5ECD8;margin:0}
+      #pwa-boot-shell .boot-msg{font-size:0.875rem;color:#A89B7A;margin:0;max-width:20rem;line-height:1.5}
+      #pwa-boot-shell .boot-actions{display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center;margin-top:0.5rem}
+      #pwa-boot-shell button{
+        font:inherit;cursor:pointer;border-radius:0.75rem;padding:0.65rem 1rem;
+        font-size:0.8125rem;font-weight:600;border:1px solid rgba(255,255,255,0.12)
+      }
+      #pwa-boot-shell .boot-btn-primary{background:#C9A227;color:#0B0E14;border-color:#C9A227}
+      #pwa-boot-shell .boot-btn-secondary{background:#12151C;color:#E8DFC7}
+      html.pwa-standalone #pwa-boot-shell{display:flex}
     </style>
   </head>
   <body>
-    <!-- Contenuto indicizzabile senza JS: i crawler leggono H1/H2 e testo prima dell'hydration React -->
     <main class="seo-static-shell" id="static-landing-seo">
       <p><strong>Aura Syncro — Software cloud per la ristorazione</strong></p>
       <p>Aura Syncro è il software cloud per la ristorazione in Italia, Spagna e Isole Canarie: tavoli, comande e incassi sincronizzati in tempo reale. Fiscale a norma, servizio fluido, controllo totale ogni sera.</p>
-      <h2>Tutto ciò che serve durante il servizio</h2>
-      <p>Gestione tavoli, menu QR digitale, pagamenti Stripe, reportistica fiscale, CRM e AI predittiva in un'unica piattaforma sincronizzata.</p>
-      <h2>I veri problemi di ogni servizio</h2>
-      <p>Quando sala, cucina e amministrazione non dialogano, perdi margine ogni sera.</p>
-      <h2>Piani chiari per ogni fase</h2>
-      <p>Setup chiavi in mano e abbonamento Premium da 199€/mese + IVA.</p>
     </main>
     <div id="static-landing-fcp" aria-hidden="true">
       <div class="fcp-nav"></div>
@@ -91,39 +99,85 @@
         <div class="fcp-sub"></div>
       </div>
     </div>
+    <div id="pwa-boot-shell" role="status" aria-live="polite">
+      <div class="boot-spinner" aria-hidden="true"></div>
+      <p class="boot-title">Aura Syncro</p>
+      <p class="boot-msg" data-boot-msg>Caricamento in corso…</p>
+      <div class="boot-actions">
+        <button type="button" class="boot-btn-primary" onclick="window.__auraResetApp && window.__auraResetApp()">Ripristina app</button>
+        <button type="button" class="boot-btn-secondary" onclick="location.replace('/login?pwa=1')">Vai al login</button>
+      </div>
+    </div>
     <script>
       (function () {
-        var standalone = window.matchMedia('(display-mode: standalone)').matches
-          || window.matchMedia('(display-mode: fullscreen)').matches
-          || window.matchMedia('(display-mode: minimal-ui)').matches
-          || window.navigator.standalone === true
-          || document.referrer.indexOf('android-app://') === 0
-          || location.search.indexOf('pwa=') !== -1;
-        try {
-          if (localStorage.getItem('aura-installed-app') === '1') standalone = true;
-        } catch (e) {}
-        if (standalone) {
+        function isAppShell() {
+          var standalone = window.matchMedia('(display-mode: standalone)').matches
+            || window.matchMedia('(display-mode: fullscreen)').matches
+            || window.matchMedia('(display-mode: minimal-ui)').matches
+            || window.navigator.standalone === true
+            || document.referrer.indexOf('android-app://') === 0
+            || location.search.indexOf('pwa=') !== -1;
+          try {
+            if (localStorage.getItem('aura-installed-app') === '1') standalone = true;
+          } catch (e) {}
+          return standalone;
+        }
+
+        window.__auraResetApp = function () {
+          try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.unregister(); });
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { caches.delete(k); });
+            });
+          }
+          location.replace('/login?pwa=1&reset=1');
+        };
+
+        var appShell = isAppShell();
+        if (appShell) {
           try { localStorage.setItem('aura-installed-app', '1'); } catch (e) {}
           document.documentElement.classList.add('pwa-standalone');
+          document.getElementById('static-landing-fcp')?.remove();
+
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.unregister(); });
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { caches.delete(k); });
+            });
+          }
+
           var p = (location.pathname.replace(/\/$/, '') || '/');
           if (['/', '/it', '/es', '/es-cn'].indexOf(p) !== -1) {
             location.replace('/login?pwa=1');
           }
+        } else {
+          var path = (location.pathname.replace(/\/$/, '') || '/');
+          if (!['/', '/it', '/es', '/es-cn'].includes(path)) {
+            document.getElementById('static-landing-fcp')?.remove();
+          }
         }
-        var p = (location.pathname.replace(/\/$/, '') || '/');
-        if (!['/', '/it', '/es', '/es-cn'].includes(p)) {
-          document.getElementById('static-landing-fcp')?.remove();
-        }
-        function forceStylesheets() {
-          document.querySelectorAll('link[rel="preload"][as="style"]').forEach(function (link) {
-            link.rel = 'stylesheet';
-            link.removeAttribute('as');
-          });
-        }
-        if (standalone) {
-          document.addEventListener('DOMContentLoaded', forceStylesheets);
-          setTimeout(forceStylesheets, 1500);
-        }
+
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          var hasReact = root && root.children.length > 0;
+          if (!hasReact && appShell) {
+            var shell = document.getElementById('pwa-boot-shell');
+            if (shell) {
+              shell.style.display = 'flex';
+              var msg = shell.querySelector('[data-boot-msg]');
+              if (msg) msg.textContent = 'L\'app non si è avviata. Premi Ripristina app.';
+            }
+          }
+        }, 7000);
       })();
     </script>
     <div id="root"></div>

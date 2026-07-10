@@ -16,7 +16,10 @@ export default function AuthLoadingScreen() {
   }, [])
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center aura-auth-shell px-6">
+    <div
+      className="flex min-h-[100dvh] items-center justify-center aura-auth-shell px-6"
+      style={{ background: '#0B0E14', color: '#E8DFC7' }}
+    >
       <div className="flex max-w-sm flex-col items-center gap-4 text-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-aura-gold/30 border-t-aura-gold" />
         <p className="font-medium text-fumo">{t('common.loading', { defaultValue: 'Caricamento…' })}</p>

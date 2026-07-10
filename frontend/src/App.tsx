@@ -19,10 +19,10 @@ import RouteLoadingFallback from './components/auth/RouteLoadingFallback'
 import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 import LandingRoute from './components/landing/LandingRoute'
 import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import StandaloneRecoveryBar from './components/layout/StandaloneRecoveryBar'
 
-const LoginPage = lazyRoute(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazyRoute(() => import('./pages/ResetPasswordPage'))
 const RegisterPage = lazyRoute(() => import('./pages/RegisterPage'))

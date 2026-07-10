@@ -109,7 +109,7 @@ export default function DashboardLayout() {
                 </div>
               )}
             >
-              <div key={location.pathname} className="aura-route-transition">
+              <div key={location.pathname}>
                 <Outlet />
               </div>
             </Suspense>
