@@ -1876,6 +1876,8 @@
     "updateRefresh": "Update now",
     "reload": "Reload",
     "backToApp": "Back to app",
+    "backToLogin": "Back to login",
+    "resetApp": "Reset app",
     "loadingTimeout": "Loading is taking longer than usual.",
     "loadingRetry": "Try again"
   },

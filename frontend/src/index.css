@@ -158,6 +158,12 @@
     }
   }
 
+  html.pwa-standalone .aura-route-transition {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   .lux-hero-badge__logo {
     @apply h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11;
   }

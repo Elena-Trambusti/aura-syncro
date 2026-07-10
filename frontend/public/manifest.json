@@ -3,7 +3,7 @@
   "name": "Aura Syncro",
   "short_name": "Aura Syncro",
   "description": "Gestionale ristoranti SaaS — POS, ordini e cucina in tempo reale",
-  "start_url": "/",
+  "start_url": "/login?pwa=1",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

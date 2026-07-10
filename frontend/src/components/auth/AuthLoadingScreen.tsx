@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { resetStandaloneAppSession } from '../../lib/bootstrapStandalone'
+import { isStandaloneApp } from '../../lib/standaloneApp'
 
 const LOADING_TIMEOUT_MS = 15_000
 
@@ -28,6 +30,15 @@ export default function AuthLoadingScreen() {
             >
               {t('pwa.loadingRetry')}
             </button>
+            {isStandaloneApp() && (
+              <button
+                type="button"
+                onClick={() => void resetStandaloneAppSession()}
+                className="rounded-xl border border-white/[0.1] px-5 py-2.5 text-sm font-semibold text-pietra"
+              >
+                {t('pwa.resetApp')}
+              </button>
+            )}
           </div>
         )}
       </div>

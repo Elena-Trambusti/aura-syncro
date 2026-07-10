@@ -1986,6 +1986,8 @@
     "updateRefresh": "Aggiorna ora",
     "reload": "Ricarica",
     "backToApp": "Torna all'app",
+    "backToLogin": "Torna al login",
+    "resetApp": "Ripristina app",
     "loadingTimeout": "Il caricamento sta impiegando più del solito.",
     "loadingRetry": "Riprova"
   },

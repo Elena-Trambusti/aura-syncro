@@ -20,6 +20,7 @@ import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 import LandingRoute from './components/landing/LandingRoute'
 import LandingPage from './pages/LandingPage'
 import DashboardLayout from './components/layout/DashboardLayout'
+import StandaloneRecoveryBar from './components/layout/StandaloneRecoveryBar'
 
 const LoginPage = lazyRoute(() => import('./pages/LoginPage'))
 const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
@@ -181,6 +182,7 @@ export default function App() {
           <PwaRegistrar />
           <DeferredCookieBanner />
         </Suspense>
+        <StandaloneRecoveryBar />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

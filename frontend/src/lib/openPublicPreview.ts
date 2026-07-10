@@ -4,9 +4,13 @@ import { isStandaloneApp } from './standaloneApp'
 
 /**
  * Apre menu/prenotazioni pubblici.
- * In PWA/APK non naviga mai nella stessa finestra (niente tasto indietro).
+ * Nell'APK/PWA non usa window.open: su Android spesso sostituisce l'app senza tasto indietro.
  */
 export function openPublicPreview(url: string): boolean {
+  if (isStandaloneApp()) {
+    return false
+  }
+
   const popup = window.open(url, '_blank', 'noopener,noreferrer')
   if (popup) {
     try {
@@ -15,10 +19,6 @@ export function openPublicPreview(url: string): boolean {
       /* ignore */
     }
     return true
-  }
-
-  if (isStandaloneApp()) {
-    return false
   }
 
   const link = document.createElement('a')
@@ -31,7 +31,7 @@ export function openPublicPreview(url: string): boolean {
   return true
 }
 
-/** Apre l'anteprima; se il WebView blocca le nuove schede, copia il link e avvisa. */
+/** Apre l'anteprima; nell'APK copia il link (unico modo affidabile). */
 export function openPublicPreviewOrNotify(url: string): void {
   if (openPublicPreview(url)) return
 

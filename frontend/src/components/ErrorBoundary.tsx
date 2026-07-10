@@ -1,6 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Sentry } from '../instrument'
+import { resetStandaloneAppSession } from '../lib/bootstrapStandalone'
+import { isStandaloneApp } from '../lib/standaloneApp'
 
 interface Props {
   children: ReactNode
@@ -41,6 +43,15 @@ export default class ErrorBoundary extends Component<Props, State> {
             >
               Ricarica
             </button>
+            {isStandaloneApp() && (
+              <button
+                type="button"
+                onClick={() => void resetStandaloneAppSession()}
+                className="mt-3 block w-full rounded-lg border border-white/[0.1] px-4 py-2 text-sm font-semibold text-pietra"
+              >
+                Ripristina app
+              </button>
+            )}
           </div>
         </div>
       )

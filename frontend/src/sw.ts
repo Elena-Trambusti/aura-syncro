@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
-import { NetworkFirst, NetworkOnly } from 'workbox-strategies'
+import { NetworkOnly } from 'workbox-strategies'
 import { BackgroundSyncPlugin } from 'workbox-background-sync'
 
 declare let self: ServiceWorkerGlobalScope
@@ -17,14 +17,25 @@ const precacheManifest = self.__WB_MANIFEST.filter(entry => {
 precacheAndRoute(precacheManifest)
 cleanupOutdatedCaches()
 
-/** Shell HTML sempre da rete per primi, con fallback cache (offline). */
+/** Shell HTML: sempre rete quando online; cache solo se offline (evita HTML stale → schermo nero). */
 registerRoute(
-  new NavigationRoute(
-    new NetworkFirst({
-      cacheName: 'aura-documents',
-      networkTimeoutSeconds: 5,
-    }),
-  ),
+  new NavigationRoute(async ({ request }) => {
+    try {
+      const response = await fetch(request)
+      if (response.ok) {
+        const cache = await caches.open('aura-nav-offline-v2')
+        void cache.put(request, response.clone())
+      }
+      return response
+    } catch {
+      const cache = await caches.open('aura-nav-offline-v2')
+      const cached = await cache.match(request)
+      if (cached) return cached
+      const fallback = await cache.match('/index.html')
+      if (fallback) return fallback
+      return Response.error()
+    }
+  }),
 )
 
 /** Background Sync per richieste API POST/PATCH di creazione/aggiornamento ordini */

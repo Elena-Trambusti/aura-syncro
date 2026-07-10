@@ -2,6 +2,7 @@ import './instrument'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { bootstrapI18nSync } from './i18n/bootstrap'
+import { bootstrapStandaloneApp } from './lib/bootstrapStandalone'
 import App from './App'
 import './index.css'
 import AppProviders from './components/AppProviders'
@@ -12,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 const root = createRoot(document.getElementById('root')!)
 
 bootstrapI18nSync()
+bootstrapStandaloneApp()
 root.render(
   <StrictMode>
     <ErrorBoundary>

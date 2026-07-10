@@ -93,9 +93,28 @@
     </div>
     <script>
       (function () {
+        var standalone = window.matchMedia('(display-mode: standalone)').matches
+          || window.navigator.standalone === true;
+        if (standalone) {
+          document.documentElement.classList.add('pwa-standalone');
+          var p = (location.pathname.replace(/\/$/, '') || '/');
+          if (['/', '/it', '/es', '/es-cn'].indexOf(p) !== -1) {
+            location.replace('/login?pwa=1');
+          }
+        }
         var p = (location.pathname.replace(/\/$/, '') || '/');
         if (!['/', '/it', '/es', '/es-cn'].includes(p)) {
           document.getElementById('static-landing-fcp')?.remove();
+        }
+        function forceStylesheets() {
+          document.querySelectorAll('link[rel="preload"][as="style"]').forEach(function (link) {
+            link.rel = 'stylesheet';
+            link.removeAttribute('as');
+          });
+        }
+        if (standalone) {
+          document.addEventListener('DOMContentLoaded', forceStylesheets);
+          setTimeout(forceStylesheets, 1500);
         }
       })();
     </script>

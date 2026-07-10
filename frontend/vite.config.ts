@@ -8,17 +8,14 @@ import { pwaIncludeAssets, pwaManifest } from './src/pwa/manifest'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-/** CSS principale non bloccante + nessun prefetch chunk dashboard sulla landing. */
-function nonBlockingCss(): Plugin {
+/** Ottimizza prefetch chunk sulla landing — CSS resta bloccante (WebView APK altrimenti schermo nero). */
+function landingPrefetchOptimize(): Plugin {
   return {
-    name: 'non-blocking-css',
+    name: 'landing-prefetch-optimize',
     apply: 'build',
     enforce: 'post',
     transformIndexHtml(html) {
-      let out = html.replace(
-        /<link rel="stylesheet"(?: crossorigin)? href="(\/assets\/[^"]+\.css)">/g,
-        '<link rel="preload" as="style" href="$1" onload="this.onload=null;this.rel=\'stylesheet\'"><noscript><link rel="stylesheet" href="$1"></noscript>',
-      )
+      let out = html
       // Evita download anticipato di chunk route (recharts, dashboard, landing below-fold, …)
       out = out.replace(/<link rel="modulepreload"[^>]+>/g, (tag) => {
         if (
@@ -60,7 +57,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    nonBlockingCss(),
+    landingPrefetchOptimize(),
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
