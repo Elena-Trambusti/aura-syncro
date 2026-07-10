@@ -1,44 +1,84 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { toast } from '@/lib/toast'
 import { registerSW } from 'virtual:pwa-register'
 import i18n from '../i18n'
+
+/** Minimo intervallo tra due controlli aggiornamento SW (evita reload/toast a raffica dopo deploy). */
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
+/** Primo controllo differito: non disturbare l'apertura app. */
+const INITIAL_UPDATE_DELAY_MS = 5 * 60 * 1000
 
 /**
  * Registra il Service Worker in produzione.
  * Differito con requestIdleCallback per non penalizzare il first paint (landing / SEO).
  */
 export default function PwaRegistrar() {
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined)
+  const lastUpdateCheckRef = useRef(0)
+  const updatePromptShownRef = useRef(false)
+  const applyUpdateRef = useRef<((reloadPage?: boolean) => Promise<void>) | undefined>(undefined)
+
   useEffect(() => {
     if (!import.meta.env.PROD) return
 
+    const checkForUpdates = () => {
+      const registration = registrationRef.current
+      if (!registration) return
+      const now = Date.now()
+      if (now - lastUpdateCheckRef.current < UPDATE_CHECK_INTERVAL_MS) return
+      lastUpdateCheckRef.current = now
+      void registration.update()
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForUpdates()
+      }
+    }
+
     const runRegister = () => {
-      registerSW({
+      applyUpdateRef.current = registerSW({
         immediate: true,
         onRegistered(registration) {
+          registrationRef.current = registration
           console.info('[Aura Syncro PWA] Service Worker registrato:', registration?.scope)
-          // Controlla subito aggiornamenti (bundle JS/CSS nuovi dopo deploy)
-          void registration?.update()
+          window.setTimeout(checkForUpdates, INITIAL_UPDATE_DELAY_MS)
         },
         onRegisterError(error) {
           console.error('[Aura Syncro PWA] Errore registrazione Service Worker:', error)
         },
         onNeedRefresh() {
-          toast.message(i18n.t('pwa.updateAvailable', { defaultValue: 'Nuova versione disponibile — ricarico…' }), {
+          if (updatePromptShownRef.current) return
+          updatePromptShownRef.current = true
+          toast.message(i18n.t('pwa.updateAvailable'), {
             id: 'pwa-update',
-            duration: 3000,
+            duration: Infinity,
+            action: {
+              label: i18n.t('pwa.updateRefresh'),
+              onClick: () => {
+                void applyUpdateRef.current?.(true)
+              },
+            },
           })
-          window.setTimeout(() => window.location.reload(), 1500)
         },
       })
     }
 
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     if (typeof window.requestIdleCallback === 'function') {
       const idleId = window.requestIdleCallback(runRegister, { timeout: 5000 })
-      return () => window.cancelIdleCallback(idleId)
+      return () => {
+        window.cancelIdleCallback(idleId)
+        document.removeEventListener('visibilitychange', onVisibilityChange)
+      }
     }
 
     const timeoutId = window.setTimeout(runRegister, 3000)
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      window.clearTimeout(timeoutId)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [])
 
   return null
