@@ -80,25 +80,10 @@ export default function PwaRegistrar() {
 
     document.addEventListener('visibilitychange', onVisibilityChange)
 
-    // TWA/APK: registra subito (offline + requisito PWABuilder). Browser: differisci per il first paint.
-    if (isShell) {
-      runRegister()
-      return () => {
-        document.removeEventListener('visibilitychange', onVisibilityChange)
-      }
-    }
+    // Registra subito: PWABuilder e Lighthouse non attendono requestIdleCallback.
+    runRegister()
 
-    if (typeof window.requestIdleCallback === 'function') {
-      const idleId = window.requestIdleCallback(runRegister, { timeout: 5000 })
-      return () => {
-        window.cancelIdleCallback(idleId)
-        document.removeEventListener('visibilitychange', onVisibilityChange)
-      }
-    }
-
-    const timeoutId = window.setTimeout(runRegister, 3000)
     return () => {
-      window.clearTimeout(timeoutId)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])

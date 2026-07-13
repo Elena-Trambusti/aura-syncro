@@ -70,6 +70,24 @@ const manifest = {
       icons: [shortcutIcon],
     },
   ],
+  screenshots: [
+    {
+      src: iconSrc('/og-image.jpg'),
+      sizes: '1200x630',
+      type: 'image/jpeg',
+      form_factor: 'wide',
+      label: 'Aura Syncro — gestionale cloud per ristoranti',
+    },
+    {
+      src: iconSrc('/pwa/maskable-512.png'),
+      sizes: '512x512',
+      type: 'image/png',
+      form_factor: 'narrow',
+      label: 'Aura Syncro — app mobile',
+    },
+  ],
+  prefer_related_applications: false,
+  related_applications: [],
 }
 
 writeFileSync(
