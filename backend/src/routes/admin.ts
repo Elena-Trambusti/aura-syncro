@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
+import { deleteRestaurantCascade } from '../lib/deleteRestaurant'
 import { requireAdminKey } from '../middleware/adminAuth'
 import { adminApiLimiter } from '../middleware/rateLimit'
 import { formatRomeDate, formatRomeDateTime } from '../lib/romeDate'
@@ -407,36 +408,9 @@ adminRouter.post('/restaurant-delete', async (req: Request, res: Response): Prom
   console.warn(`[admin] INIZIO ELIMINAZIONE DISTRUTTIVA TENANT: ${restaurantId} - ${restaurant.name}`)
 
   try {
-    await prisma.$transaction([
-      prisma.pushSubscription.deleteMany({ where: { restaurantId } }),
-      prisma.loyaltyTransaction.deleteMany({ where: { restaurantId } }),
-      prisma.orderItemModifier.deleteMany({ where: { orderItem: { order: { restaurantId } } } }),
-      prisma.orderItem.deleteMany({ where: { order: { restaurantId } } }),
-      prisma.shift.deleteMany({ where: { user: { restaurantId } } }),
-      prisma.user.deleteMany({ where: { restaurantId } }),
-      prisma.waitlistEntry.deleteMany({ where: { restaurantId } }),
-      prisma.reservation.deleteMany({ where: { restaurantId } }),
-      prisma.customer.deleteMany({ where: { restaurantId } }),
-      prisma.loyaltyTier.deleteMany({ where: { restaurantId } }),
-      prisma.order.deleteMany({ where: { restaurantId } }),
-      prisma.menuModifierOption.deleteMany({ where: { group: { menuItem: { restaurantId } } } }),
-      prisma.menuModifierGroup.deleteMany({ where: { menuItem: { restaurantId } } }),
-      prisma.menuItem.deleteMany({ where: { restaurantId } }),
-      prisma.menuCategory.deleteMany({ where: { restaurantId } }),
-      prisma.table.deleteMany({ where: { restaurantId } }),
-      prisma.inventoryItemLink.deleteMany({ where: { inventoryItem: { restaurantId } } }),
-      prisma.inventoryItem.deleteMany({ where: { restaurantId } }),
-      prisma.marketingAutomation.deleteMany({ where: { restaurantId } }),
-      prisma.campaign.deleteMany({ where: { restaurantId } }),
-      prisma.invoice.deleteMany({ where: { restaurantId } }),
-      prisma.fiscalClosure.deleteMany({ where: { restaurantId } }),
-      prisma.fiscalSequence.deleteMany({ where: { restaurantId } }),
-      prisma.fiscalChainState.deleteMany({ where: { restaurantId } }),
-      prisma.saasElectronicInvoice.deleteMany({ where: { restaurantId } }),
-      prisma.apiIdempotencyRecord.deleteMany({ where: { restaurantId } }),
-      prisma.restaurantSettings.deleteMany({ where: { restaurantId } }),
-      prisma.restaurant.delete({ where: { id: restaurantId } }),
-    ])
+    await prisma.$transaction(async tx => {
+      await deleteRestaurantCascade(tx, restaurantId)
+    })
 
     console.warn(`[admin] ELIMINAZIONE COMPLETATA: ${restaurantId}`)
     res.json({ success: true, message: 'Ristorante eliminato con successo.' })

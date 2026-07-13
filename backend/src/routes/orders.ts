@@ -544,8 +544,8 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
 
   // Apply discounts again if totals changed (never on fiscal-closed PAID orders)
   if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
-    const orderToDiscount = await prisma.order.findUnique({
-      where: { id: req.params.orderId },
+    const orderToDiscount = await prisma.order.findFirst({
+      where: { id: req.params.orderId, restaurantId: req.restaurantId! },
       include: { items: { select: { status: true } } },
     })
     const hasActiveItems = orderToDiscount?.items?.some(i => i.status !== 'CANCELLED')
@@ -554,8 +554,8 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
     }
   }
 
-  const updatedOrder = await prisma.order.findUnique({
-    where: { id: req.params.orderId },
+  const updatedOrder = await prisma.order.findFirst({
+    where: { id: req.params.orderId, restaurantId: req.restaurantId! },
     include: orderInclude,
   })
 

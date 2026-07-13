@@ -14,6 +14,7 @@ import { prisma } from './prisma'
 
 /** Modelli con colonna diretta `restaurantId` — scope obbligatorio. */
 export const TENANT_ROOT_MODELS = new Set<string>([
+  'User',
   'Table',
   'MenuCategory',
   'MenuItem',

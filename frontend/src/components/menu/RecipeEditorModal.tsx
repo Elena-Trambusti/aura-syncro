@@ -6,6 +6,8 @@ import { toast } from '@/lib/toast'
 import { resolveToastApiError } from '../../lib/formatApiError'
 import { api } from '../../lib/api'
 import { ui } from '../../lib/ui'
+import { useTenantQueryKey } from '../../contexts/AuthContext'
+import { tq } from '../../lib/queryKeys'
 import GlassModal from '../ui/GlassModal'
 import AuraSelect from '../ui/AuraSelect'
 
@@ -29,15 +31,16 @@ interface RecipeEditorModalProps {
 
 export default function RecipeEditorModal({ itemId, itemName, onClose, onSaved }: RecipeEditorModalProps) {
   const { t } = useTranslation()
+  const tk = useTenantQueryKey()
   const [rows, setRows] = useState<RecipeLinkRow[]>([])
 
   const { data: recipeLinks, isLoading: recipeLoading } = useQuery({
-    queryKey: ['menu-recipe', itemId],
+    queryKey: tq(tk, 'menu-recipe', itemId),
     queryFn: () => api.get<Array<{ inventoryItemId: string; quantity: number }>>(`/menu/items/${itemId}/recipe`).then(r => r.data),
   })
 
   const { data: inventory = [], isLoading: inventoryLoading } = useQuery<InventoryOption[]>({
-    queryKey: ['inventory-list'],
+    queryKey: tq(tk, 'inventory-list'),
     queryFn: () => api.get<{ items: InventoryOption[] }>('/inventory').then(r => r.data.items ?? []),
   })
 

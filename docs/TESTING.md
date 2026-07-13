@@ -1,5 +1,7 @@
 # Guida test automatici — Aura Syncro
 
+> Sintesi rapida: [`tests/README.md`](../tests/README.md) · Panoramica progetto: [`README.md`](../README.md)
+
 Stack usato nel monorepo:
 
 | Tipo | Strumento | Cartella |

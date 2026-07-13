@@ -17,6 +17,7 @@ const TABLE_ONLY_EVENTS = [
 ] as const
 
 const REFRESH_THROTTLE_MS = 220
+const ANALYTICS_SUMMARY_THROTTLE_MS = 5_000
 
 /**
  * Mantiene la query tavoli allineata via Socket.IO (sostituisce il polling).
@@ -93,7 +94,12 @@ export function useRealtimeOrders(): void {
   useRealtimeQuery(['order:created', 'order:updated'], 'orders')
   useRealtimeQuery(['order:created', 'order:updated'], 'inventory')
   useRealtimeQuery(['order:created', 'order:updated'], 'menu')
-  useRealtimeQuery(['order:created', 'order:updated'], 'analytics')
+  useRealtimeQueryThrottled(
+    ['order:created', 'order:updated'],
+    ANALYTICS_SUMMARY_THROTTLE_MS,
+    'analytics',
+    'summary',
+  )
 }
 
 const RESERVATION_EVENTS = [
@@ -108,6 +114,14 @@ export function useRealtimeReservations(): void {
 }
 
 export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: string[]): void {
+  useRealtimeQueryThrottled(events, REFRESH_THROTTLE_MS, ...queryKeyParts)
+}
+
+function useRealtimeQueryThrottled(
+  events: readonly string[],
+  throttleMs: number,
+  ...queryKeyParts: string[]
+): void {
   const queryClient = useQueryClient()
   const tenantKey = useTenantQueryKey()
   const eventsKey = events.join('|')
@@ -128,7 +142,7 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
       if (queued) return
       queued = true
       if (refreshTimeout) clearTimeout(refreshTimeout)
-      refreshTimeout = setTimeout(runRefresh, REFRESH_THROTTLE_MS)
+      refreshTimeout = setTimeout(runRefresh, throttleMs)
     }
 
     void ensureSocketConnected()
@@ -149,5 +163,5 @@ export function useRealtimeQuery(events: readonly string[], ...queryKeyParts: st
         socket.off(event, refresh)
       }
     }
-  }, [queryClient, tenantKey, eventsKey, queryKeyParts.join('|')])
+  }, [queryClient, tenantKey, eventsKey, throttleMs, queryKeyParts.join('|')])
 }

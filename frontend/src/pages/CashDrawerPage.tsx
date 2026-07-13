@@ -11,6 +11,9 @@ import { resolveToastApiError } from '../lib/formatApiError'
 import { useInstantMutation } from '../hooks/useInstantMutation'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import QueryErrorBanner from '../components/QueryErrorBanner'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 import { ui } from '../lib/ui'
 import GlassModal from '../components/ui/GlassModal'
 
@@ -48,12 +51,13 @@ export default function CashDrawerPage() {
   const [reason, setReason] = useState('')
   const [txType, setTxType] = useState<'PAYIN'|'PAYOUT'>('PAYOUT')
 
-  const { data: session } = useQuery<CashSession | null>({
+  const { data: session, isLoading: sessionLoading, isError: sessionError } = useQuery<CashSession | null>({
     queryKey: tq(tk, 'cash', 'current'),
     queryFn: () => api.get('/cash/session/current').then(r => r.data),
   })
+  const showSessionSkeleton = useShowQuerySkeleton(sessionLoading, session != null)
 
-  const { data: txs = [] } = useQuery<CashTx[]>({
+  const { data: txs = [], isError: txsError } = useQuery<CashTx[]>({
     queryKey: tq(tk, 'cash', 'transactions'),
     queryFn: () => api.get('/cash/transactions').then(r => r.data),
     enabled: !!session,
@@ -138,7 +142,11 @@ export default function CashDrawerPage() {
         subtitle={t('cashDrawer.subtitle')} 
       />
 
-      {!session ? (
+      {(sessionError || txsError) && <QueryErrorBanner />}
+
+      {showSessionSkeleton ? (
+        <PageSkeleton variant="cards" count={2} />
+      ) : !session ? (
         <div className="flex flex-col items-center justify-center p-12 text-stone-400 bg-navy-surface rounded-xl border border-white/5">
           <Wallet className="w-16 h-16 mb-4 opacity-50" />
           <h2 className="text-xl font-bold text-white mb-2">{t('cashDrawer.noSessionTitle')}</h2>

@@ -4,7 +4,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
 
 ---
@@ -15,30 +15,44 @@
 
 | Area | Funzionalità |
 |---|---|
-| Operatività | Dashboard, POS/tavoli, ordini, menu, pagamenti, report base |
+| Operatività | Dashboard, POS/tavoli, ordini, cassa, menu, pagamenti, report base |
 | Real-time | Socket.IO su tavoli, ordini, turni staff, waitlist |
 | Growth | KDS, menu QR pubblico, prenotazioni, waitlist, analytics |
-| Pro | CRM, fedeltà, marketing, AI predittiva, report fiscale |
-| SaaS | Onboarding Stripe Premium, upgrade Pro, RBAC granulare, i18n (it/en/es/fr/de) |
+| Premium | CRM, fedeltà, marketing, AI predittiva, report fiscale, fatturazione elettronica |
+| SaaS | Onboarding Stripe Premium, RBAC granulare, i18n (it/en/es/fr/de + `es-cn` Canarie) |
+| Mobile | PWA installabile, TWA Android (Play Store), offline sync, push notifications |
 
 ---
 
-## Architettura
+## Architettura monorepo
 
 ```
 aura-syncro/
-├── backend/          # Express + Prisma + PostgreSQL + Socket.IO + Stripe
-│   ├── prisma/schema.prisma
-│   └── src/routes/   # auth, orders, menu, tables, staff, waitlist, checkout, webhooks…
-├── frontend/         # React 19 + Vite + Tailwind + React Query + i18next
-│   └── src/
-│       ├── pages/    # Dashboard, Tavoli, CRM, Billing, Report Fiscal…
-│       ├── hooks/    # useRealtimeInvalidation, usePredictiveAI
-│       └── lib/      # accessTier, queryKeys (tenant-scoped cache)
-└── landing/          # Landing page statica
+├── backend/           # Express + Prisma + PostgreSQL + Socket.IO + Stripe
+│   ├── prisma/        # schema e migrations
+│   ├── src/routes/    # auth, orders, menu, tables, cash, invoices, webhooks…
+│   ├── src/lib/       # taxEngine, fiscal (IT/ES/Canarie), predictiveEngine
+│   └── docs/          # PRODUCT_SCOPE, PRODUCTION_LIVE_CUTOVER, DEMO_SCRIPT
+├── frontend/          # React 19 + Vite + Tailwind + React Query + i18next
+│   ├── src/pages/     # Dashboard, Tavoli, CRM, Billing, Report Fiscal…
+│   ├── src/lib/       # fiscalPdf, fiscalRegime, standaloneApp, nativeSafeArea
+│   ├── e2e/           # Playwright (flussi ordini, cassa, edge cases)
+│   └── docs/          # android-premium-qa-matrix.md
+├── print-agent/       # Daemon locale ESC/POS per stampa termica da PWA cloud
+├── tests/             # Vitest — business logic, tenant isolation, API edge cases
+├── docs/              # TESTING.md, informativa ospiti
+├── contratto/         # Template contratto, riepilogo PDF, email benvenuto
+├── .do/               # DigitalOcean App Platform (app.yaml)
+└── .github/           # CI (Vitest, typecheck, Playwright smoke)
 ```
 
-**Deploy attuale:** backend su DigitalOcean, frontend su Vercel.
+**Deploy attuale**
+
+| Componente | Piattaforma | Note |
+|---|---|---|
+| Frontend | **Vercel** | Proxy `/api` e Socket.IO verso backend DO (`frontend/vercel.json`) |
+| Backend | **DigitalOcean App Platform** | `.do/app.yaml`, region `fra`, health `/api/health` |
+| Database | **PostgreSQL** | `DATABASE_URL` + `DIRECT_URL` (pooler + direct per migrations) |
 
 ---
 
@@ -46,9 +60,43 @@ aura-syncro/
 
 | Layer | Tecnologie |
 |---|---|
-| Backend | Node.js 24, Express, Prisma, **PostgreSQL**, JWT, Zod, Stripe, Socket.IO |
-| Frontend | React 19, Vite, Tailwind, TanStack Query, React Router, Recharts, Radix UI |
-| Real-time | Socket.IO (invalidazione cache tenant via `useTenantQueryKey`) |
+| Backend | Node.js 20+, Express, Prisma, PostgreSQL, JWT, Zod, Stripe, Socket.IO, Sentry |
+| Frontend | React 19, Vite, Tailwind CSS 4, TanStack Query, React Router, Recharts, Radix UI, Sonner |
+| Real-time | Socket.IO + invalidazione cache tenant (`useTenantQueryKey`) |
+| PWA | `vite-plugin-pwa`, service worker (`sw.ts`), offline queue, Web Push (VAPID) |
+| Android | TWA (`com.aurasyncro.twa`) — wrapper web, nessun progetto Gradle nel repo |
+| Test | Vitest (`tests/`), Playwright (`frontend/e2e/`), `tsx --test` (unit backend legacy) |
+
+---
+
+## Regime fiscale multi-regione
+
+Ogni ristorante ha in `RestaurantSettings`:
+
+| Campo | Valori | Effetto |
+|---|---|---|
+| `countryCode` | `IT` \| `ES` | Paese operativo |
+| `taxRegion` | `IT_MAIN` \| `ES_PENINSULA` \| `ES_CANARIAS` | IVA vs IGIC, etichette PDF |
+| `taxRate`, `taxId`, `defaultLocale` | — | Calcoli e report |
+
+- Calcoli centralizzati in `backend/src/lib/taxEngine.ts`
+- PDF e dashboard: `frontend/src/lib/fiscalPdf.ts`, `fiscalRegime.ts`
+- Fatturazione elettronica IT: integrazione Aruba/SDI (`invoices` routes)
+
+---
+
+## PWA e app Android (TWA)
+
+| Asset / modulo | Ruolo |
+|---|---|
+| `frontend/public/manifest.json` | Manifest PWA (`display: standalone`, `start_url: /login?pwa=1`) |
+| `frontend/public/.well-known/assetlinks.json` | Digital Asset Links per TWA Play Store |
+| `frontend/src/lib/standaloneApp.ts` | Rileva shell PWA/TWA/WebView (`android-app://` referrer) |
+| `frontend/src/lib/nativeSafeArea.ts` | Misura `--safe-top` / `--safe-bottom` quando `env()` è 0 in WebView |
+| `frontend/src/index.css` | Variabili `--safe-top-pad` / `--safe-bottom-pad` per sidebar, header, toast Sonner |
+| `frontend/docs/android-premium-qa-matrix.md` | Checklist QA pre-release su dispositivi reali |
+
+**Safe area (notch / status bar / gesture nav):** sidebar, topbar, toast e profilo utente usano `calc(var(--safe-top) + 1rem)` — 1rem in browser, inset nativo + 1rem in app Android a tutto schermo.
 
 ---
 
@@ -57,17 +105,16 @@ aura-syncro/
 | Tier | Accesso |
 |---|---|
 | **Free (registrato)** | Dashboard, Ordini, Menu, Pagamenti, Report — anteprima senza abbonamento |
-| **Premium (Stripe €500 setup + €199/mo)** | Tutti i moduli inclusi: POS, CRM, AI, marketing, fedeltà, report fiscal, analytics |
+| **Premium (Stripe €500 setup + €199/mo)** | Tutti i moduli: POS, CRM, AI, marketing, fedeltà, report fiscal, analytics, cassa |
 
 Flusso checkout:
-- `POST /api/checkout` → setup €500 + abbonamento €199/mo (tutto incluso)
+
+- `POST /api/checkout` → setup €500 + abbonamento €199/mo
 - Webhook `POST /api/webhooks/stripe` attiva abbonamento e sblocca tutti i moduli
 
 ---
 
 ## Go-To-Market pilota (onboarding guidato)
-
-Il prodotto è configurato per un **lancio pilota concierge**: il ristoratore si registra e paga in autonomia, poi il team Aura Syncro completa il setup.
 
 ### Flusso cliente
 
@@ -95,6 +142,14 @@ curl -X POST https://<backend>/api/admin/setup-complete \
 
 Oppure usa **Platform Admin** nel frontend (`/platform-admin`, chiave `ADMIN_API_KEY` in sessione).
 
+### Documenti commerciali
+
+| Percorso | Contenuto |
+|---|---|
+| `CONTRATTO_ABBONAMENTO_AURA_SYNCRO_PREMIUM.md` | Contratto integrale v2.0 |
+| `contratto/` | Riepilogo esecutivo HTML, template email benvenuto — vedi `contratto/README.md` |
+| `Aura_Syncro_Onboarding.md` | Playbook onboarding concierge |
+
 ### Variabili produzione obbligatorie
 
 | Variabile | Note |
@@ -104,6 +159,7 @@ Oppure usa **Platform Admin** nel frontend (`/platform-admin`, chiave `ADMIN_API
 | `ADMIN_API_KEY` | Sblocco concierge + API admin |
 | `BACKEND_URL` | Su Vercel, proxy `/api` → backend |
 | `SMTP_*` | Reset password e notifiche email |
+| `VAPID_*` | Web Push (opzionale ma consigliato in produzione) |
 
 ---
 
@@ -111,7 +167,7 @@ Oppure usa **Platform Admin** nel frontend (`/platform-admin`, chiave `ADMIN_API
 
 ### Prerequisiti
 
-- Node.js 18+
+- Node.js **20+**
 - PostgreSQL (locale o Supabase/Neon)
 
 ### Setup
@@ -120,33 +176,68 @@ Oppure usa **Platform Admin** nel frontend (`/platform-admin`, chiave `ADMIN_API
 git clone https://github.com/Elena-Trambusti/aura-syncro.git
 cd aura-syncro
 
+# Dipendenze monorepo
+npm install
+npm install --prefix frontend
+npm install --prefix backend
+
 # Backend
 cd backend
-npm install
 cp .env.example .env
 # Compila DATABASE_URL, JWT_SECRET, Stripe…
 
 npx prisma generate
 npx prisma db push    # oppure: npx prisma migrate dev
-npx tsx src/seed.ts   # dati demo
+npx tsx src/seed.ts   # tenant demo IT / ES / Canarie
 
 npm run dev
 
 # Frontend (altro terminale)
 cd ../frontend
-npm install
 cp .env.example .env
 npm run dev
 ```
 
-Su Windows: `.\avvia-app.ps1` avvia backend + frontend insieme.
+Su Windows: `.\avvia-app.ps1` oppure `npm run dev` dalla root avvia backend + frontend insieme.
 
-### Credenziali demo
+### Credenziali demo (seed)
 
-| Campo | Valore |
-|---|---|
-| Email | `admin@demo.it` |
-| Password | `admin123` |
+| Tenant | Email | Password |
+|---|---|---|
+| Italia (`IT_MAIN`) | `admin@demo-it.com` | `admin123` |
+| Spagna penisola | `admin@demo-es.com` | `admin123` |
+| Canarie (`ES_CANARIAS`) | `admin@demo-es-cn.com` | `admin123` |
+
+> L'alias `admin@demo.it` è ancora accettato per compatibilità.
+
+---
+
+## Test automatici
+
+Guida completa: [`docs/TESTING.md`](./docs/TESTING.md)
+
+```powershell
+# Vitest — logica business + API (veloce)
+npm run test:vitest
+npm run test:business
+npm run test:api          # richiede backend su :3001
+
+# Playwright E2E (avvia automaticamente :3001 + :5173)
+npm run test:e2e
+
+# Suite completa
+npm run test:all
+```
+
+CI (`.github/workflows/ci-tests.yml`): Vitest + typecheck backend/frontend; job separato Playwright smoke su produzione.
+
+---
+
+## Print agent (stampa termica locale)
+
+Il modulo `print-agent/` è un daemon Node che collega la PWA cloud a stampanti ESC/POS via WebSocket sulla rete locale del ristorante.
+
+Vedi [`print-agent/README.md`](./print-agent/README.md) per installazione e configurazione.
 
 ---
 
@@ -166,7 +257,7 @@ Su Windows: `.\avvia-app.ps1` avvia backend + frontend insieme.
 | `STRIPE_PRICE_SUBSCRIPTION` | Price ID abbonamento mensile (€199) |
 | `ADMIN_API_KEY` | Endpoint admin (setup concierge, downgrade piano) |
 | `PREMIUM_DEV_UNLOCK` | `true` in dev → bypass paywall Premium |
-| `PRO_PLAN_DEV_UNLOCK` | `true` in dev → bypass paywall Pro |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push notifications |
 
 ### Frontend (`frontend/.env`)
 
@@ -180,7 +271,7 @@ Su Windows: `.\avvia-app.ps1` avvia backend + frontend insieme.
 
 ## Database
 
-Modelli principali: `Restaurant`, `User`, `Table`, `Order`, `MenuItem`, `Reservation`, `Customer`, `InventoryItem`, `Shift`, `WaitlistEntry`, `RestaurantSettings` (inclusi `stripeSubscriptionId`, `stripeProSubscriptionId`, `planTier`).
+Modelli principali: `Restaurant`, `User`, `Table`, `Order`, `MenuItem`, `Reservation`, `Customer`, `InventoryItem`, `Shift`, `WaitlistEntry`, `RestaurantSettings` (regime fiscale, Stripe, `planTier`), floor plan, chiusure fiscali, onboarding intake.
 
 ```bash
 cd backend
@@ -189,22 +280,45 @@ npx prisma migrate deploy   # produzione
 npx prisma studio           # UI esplorazione dati
 ```
 
+Script root utili: `npm run db:seed`, `npm run db:migrate`, `npm run db:studio`.
+
 ---
 
 ## API principali
 
 ```
 POST   /api/auth/login | /api/auth/register
-GET    /api/public/menu/:slug          # menu QR (solo consultazione)
-POST   /api/public/reservations        # prenotazioni + caparra
+GET    /api/public/menu/:slug           # menu QR (consultazione)
+POST   /api/public/reservations         # prenotazioni + caparra
 GET    /api/tables
+GET    /api/orders
+GET    /api/cash                        # cassa, chiusure, split checkout
 GET    /api/staff/shifts
 GET    /api/waitlist
-POST   /api/checkout               # Premium (€500 setup + €199/mo, tutto incluso)
+POST   /api/checkout                    # Premium (€500 + €199/mo)
 POST   /api/webhooks/stripe
-GET    /api/reports/fiscal         # Premium
-GET    /api/ai/predictive          # Premium
+GET    /api/reports/fiscal              # report fiscale multi-regione
+GET    /api/invoices                    # fatturazione elettronica (IT)
+GET    /api/ai/predictive               # AI predittiva
+POST   /api/admin/setup-complete        # sblocco concierge (ADMIN_API_KEY)
+POST   /api/push/subscribe              # Web Push
 ```
+
+---
+
+## Documentazione
+
+| Percorso | Contenuto |
+|---|---|
+| [`README.md`](./README.md) | Panoramica progetto (questo file) |
+| [`docs/TESTING.md`](./docs/TESTING.md) | Guida completa test automatici |
+| [`frontend/README.md`](./frontend/README.md) | Frontend React, PWA, safe-area, deploy Vercel |
+| [`print-agent/README.md`](./print-agent/README.md) | Stampa termica ESC/POS locale |
+| [`tests/README.md`](./tests/README.md) | Sintesi suite Vitest + Playwright |
+| [`contratto/README.md`](./contratto/README.md) | Contratti, PDF, email benvenuto |
+| [`Aura_Syncro_Onboarding.md`](./Aura_Syncro_Onboarding.md) | Playbook onboarding concierge |
+| [`frontend/docs/android-premium-qa-matrix.md`](./frontend/docs/android-premium-qa-matrix.md) | QA pre-release Android |
+| [`backend/docs/`](./backend/docs/) | PRODUCT_SCOPE, cutover produzione, demo script |
 
 ---
 

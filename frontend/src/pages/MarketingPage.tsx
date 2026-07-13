@@ -18,6 +18,7 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import PageSkeleton from '../components/ui/PageSkeleton'
+import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 
 type AutomationType = 'BIRTHDAY' | 'WIN_BACK' | 'VIP_THANKS' | 'REQUEST_REVIEW'
 type MarketingTab = 'automations' | 'campaigns'
@@ -205,12 +206,14 @@ export default function MarketingPage() {
     queryKey: tq(tk, 'marketing', 'automations'),
     queryFn: () => api.get('/marketing/automations').then(r => r.data),
   })
+  const showAutomationsSkeleton = useShowQuerySkeleton(isLoading, automations.length > 0)
 
   const { data: campaigns = [], isLoading: campaignsLoading, isError: campaignsError } = useQuery<Campaign[]>({
     queryKey: tq(tk, 'marketing', 'campaigns'),
     queryFn: () => api.get('/marketing').then(r => r.data),
     enabled: activeTab === 'campaigns',
   })
+  const showCampaignsSkeleton = useShowQuerySkeleton(campaignsLoading, campaigns.length > 0)
 
   const saveAutomation = useMutation({
     mutationFn: ({ type, ...body }: { type: AutomationType; isActive?: boolean; messageTemplate?: string }) =>
@@ -296,7 +299,7 @@ export default function MarketingPage() {
             <p className="text-sm text-fumo mt-1">{t('marketing.automations.sectionSubtitle')}</p>
           </div>
 
-          {isLoading ? (
+          {showAutomationsSkeleton ? (
             <PageSkeleton variant="cards" count={3} />
           ) : automationsError ? (
             <QueryErrorBanner />
@@ -350,7 +353,7 @@ export default function MarketingPage() {
             </button>
           </div>
 
-          {campaignsLoading ? (
+          {showCampaignsSkeleton ? (
             <PageSkeleton variant="list" count={4} />
           ) : campaignsError ? (
             <QueryErrorBanner />

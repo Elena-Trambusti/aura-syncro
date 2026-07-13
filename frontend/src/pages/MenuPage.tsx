@@ -312,7 +312,7 @@ export default function MenuPage() {
       {isError ? (
         <QueryErrorBanner />
       ) : (
-      <div className={`${ui.card} overflow-hidden`}>
+      <div className={`${ui.card} overflow-x-hidden`}>
         <div className={ui.tableWrap}>
         <table className="w-full">
           <thead>

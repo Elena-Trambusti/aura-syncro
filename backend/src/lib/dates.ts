@@ -1,4 +1,5 @@
 /** Parse YYYY-MM-DD as local calendar date (avoids UTC shift from `new Date('YYYY-MM-DD')`). */
+import type { Prisma } from '@prisma/client'
 import { dayBoundsInTimezone } from './romeDate'
 
 export { dayBoundsInTimezone }
@@ -99,27 +100,27 @@ export function paidOrdersInPeriodWhere(
   end: Date,
   endExclusive = false,
   includeRefunded = false,
-) {
+): Prisma.OrderWhereInput {
   const paidAtBound = endExclusive
     ? { gte: start, lt: end }
     : { gte: start, lte: end }
   const createdAtBound = endExclusive
     ? { gte: start, lt: end }
     : { gte: start, lte: end }
-    
-  const where: any = {
+
+  const where: Prisma.OrderWhereInput = {
     restaurantId,
-    status: 'PAID' as const,
+    status: 'PAID',
     OR: [
       { paidAt: paidAtBound },
       { paidAt: null, createdAt: createdAtBound },
     ],
   }
-  
+
   if (!includeRefunded) {
     where.refundedAt = null
   }
-  
+
   return where
 }
 

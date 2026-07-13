@@ -38,6 +38,16 @@ function ChartError({ message }: { message: string }) {
   )
 }
 
+function ChartLoading({ height = 280 }: { height?: number }) {
+  return (
+    <div
+      className="animate-pulse rounded-xl bg-white/[0.04]"
+      style={{ height }}
+      aria-hidden
+    />
+  )
+}
+
 function TopDishRow({
   rank,
   name,
@@ -92,38 +102,43 @@ export default function DashboardPage() {
   const canAnalytics = can('analytics.read')
   const locale = getIntlLocale()
 
+  const tenantReady = Boolean(restaurant?.id)
+
   const { data: dashboard, isError: summaryError, isLoading: summaryLoading } = useQuery<DashboardData>({
     queryKey: tq(tk, 'analytics', 'summary'),
     queryFn: () => api.get('/analytics/summary').then(r => r.data),
     refetchInterval: 30_000,
-    enabled: canAnalytics,
+    enabled: tenantReady && canAnalytics,
   })
   const showSummarySkeleton = useShowQuerySkeleton(summaryLoading, dashboard != null)
 
-  const { data: revenueData, isError: revenueError } = useQuery({
+  const { data: revenueData, isError: revenueError, isLoading: revenueLoading } = useQuery({
     queryKey: tq(tk, 'analytics', 'revenue', '7d'),
     queryFn: () => api.get('/analytics/revenue?period=7d').then(r => r.data),
-    enabled: hasProPlan && canAnalytics,
+    enabled: tenantReady && hasProPlan && canAnalytics,
   })
+  const showRevenueSkeleton = useShowQuerySkeleton(revenueLoading, revenueData != null)
 
-  const { data: topItems, isError: topItemsError } = useQuery({
+  const { data: topItems, isError: topItemsError, isLoading: topItemsLoading } = useQuery({
     queryKey: tq(tk, 'analytics', 'top-items'),
     queryFn: () => api.get('/analytics/top-items').then(r => r.data),
-    enabled: hasProPlan && canAnalytics,
+    enabled: tenantReady && hasProPlan && canAnalytics,
   })
+  const showTopItemsSkeleton = useShowQuerySkeleton(topItemsLoading, topItems != null)
 
-  const { data: hourlyData } = useQuery({
+  const { data: hourlyData, isError: hourlyError, isLoading: hourlyLoading } = useQuery({
     queryKey: tq(tk, 'analytics', 'hourly'),
     queryFn: () => api.get('/analytics/hourly').then(r => r.data),
-    enabled: hasProPlan && canAnalytics,
+    enabled: tenantReady && hasProPlan && canAnalytics,
   })
+  const showHourlySkeleton = useShowQuerySkeleton(hourlyLoading, hourlyData != null)
 
   const revenueSparkline = useMemo(
     () => (revenueData as Array<{ revenue?: number }> | undefined)?.map(d => d.revenue ?? 0) ?? [],
     [revenueData],
   )
 
-  const opsItems = [
+  const opsItems = useMemo(() => [
     {
       key: 'service',
       label: t('dashboard.opsService', { defaultValue: 'Servizio' }),
@@ -139,7 +154,7 @@ export default function DashboardPage() {
       key: 'orders',
       label: t('dashboard.opsOrders', { defaultValue: 'Ordini oggi' }),
       value: String(dashboard?.today.orders || 0),
-      hint: t('dashboard.todayRevenueSub'),
+      hint: t('dashboard.todayOrdersSub'),
       icon: ClipboardList,
       tone: 'blue' as const,
     },
@@ -159,7 +174,7 @@ export default function DashboardPage() {
       icon: AlertTriangle,
       tone: (dashboard?.totals.lowStockAlerts || 0) > 0 ? 'rose' as const : 'amber' as const,
     },
-  ]
+  ], [t, dashboard])
 
   return (
     <ExecutivePageShell className="space-y-6">
@@ -295,6 +310,8 @@ export default function DashboardPage() {
             </div>
             {revenueError ? (
               <ChartError message={t('common.loadError')} />
+            ) : showRevenueSkeleton ? (
+              <ChartLoading height={280} />
             ) : (
               <ChartSuspense height={280}>
                 <LuxuryAreaChart
@@ -315,12 +332,18 @@ export default function DashboardPage() {
               <h3 className="premium-section-title mt-1 mb-4">
                 {t('dashboard.serviceHeatmap', { defaultValue: 'Intensità oraria' })}
               </h3>
-              <ServiceHeatmap
-                data={hourlyData || []}
-                locale={locale}
-                peakLabel={t('dashboard.peakHour', { defaultValue: 'Ora di punta' })}
-                quietLabel={t('dashboard.last7Days', { defaultValue: 'Ultimi 7 giorni' })}
-              />
+              {hourlyError ? (
+                <ChartError message={t('common.loadError')} />
+              ) : showHourlySkeleton ? (
+                <ChartLoading height={160} />
+              ) : (
+                <ServiceHeatmap
+                  data={hourlyData || []}
+                  locale={locale}
+                  peakLabel={t('dashboard.peakHour', { defaultValue: 'Ora di punta' })}
+                  quietLabel={t('dashboard.last7Days', { defaultValue: 'Ultimi 7 giorni' })}
+                />
+              )}
             </div>
 
             <div className="aura-module-frame p-5 sm:p-6">
@@ -328,6 +351,8 @@ export default function DashboardPage() {
               <h3 className="premium-section-title mt-1 mb-3">{t('dashboard.topDishes')}</h3>
               {topItemsError ? (
                 <ChartError message={t('common.loadError')} />
+              ) : showTopItemsSkeleton ? (
+                <PageSkeleton variant="list" count={5} />
               ) : (
                 <div className="space-y-0.5">
                   {(topItems || []).slice(0, 5).map((item: { menuItemId: string; name: string; quantity: number }, idx: number) => (

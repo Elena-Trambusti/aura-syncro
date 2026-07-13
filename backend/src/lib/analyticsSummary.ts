@@ -54,9 +54,35 @@ export async function loadTenantTimeRanges(restaurantId: string) {
   }
 }
 
+/** Media minuti occupazione tavolo (ordini pagati con tavolo oggi, 0 < durata < 480 min). */
+async function computeAvgTurnoverMinutes(
+  restaurantId: string,
+  todayStart: Date,
+  todayEnd: Date,
+): Promise<number> {
+  const rows = await prisma.$queryRaw<[{ avg_minutes: number | null }]>`
+    SELECT ROUND(AVG(
+      EXTRACT(EPOCH FROM (COALESCE(o."paidAt", o."createdAt") - o."createdAt")) / 60
+    ))::int AS avg_minutes
+    FROM "Order" o
+    WHERE o."restaurantId" = ${restaurantId}
+      AND o.status = 'PAID'
+      AND o."refundedAt" IS NULL
+      AND o."tableId" IS NOT NULL
+      AND (
+        (o."paidAt" >= ${todayStart} AND o."paidAt" < ${todayEnd})
+        OR (o."paidAt" IS NULL AND o."createdAt" >= ${todayStart} AND o."createdAt" < ${todayEnd})
+      )
+      AND EXTRACT(EPOCH FROM (COALESCE(o."paidAt", o."createdAt") - o."createdAt")) / 60 > 0
+      AND EXTRACT(EPOCH FROM (COALESCE(o."paidAt", o."createdAt") - o."createdAt")) / 60 < 480
+  `
+  return rows[0]?.avg_minutes ?? 0
+}
+
 /** KPI dashboard — disponibile anche piano Base (senza Pro). */
 export async function buildDashboardSummary(restaurantId: string) {
   const ranges = await loadTenantTimeRanges(restaurantId)
+  const todayPaidWhere = paidRevenueOrderWhere(restaurantId, ranges.todayStart, ranges.todayEnd)
 
   const [
     todayOrders,
@@ -67,17 +93,11 @@ export async function buildDashboardSummary(restaurantId: string) {
     todayReservations,
     activeOrders,
     lowStockItems,
-    turnoverOrders,
+    avgTurnoverMinutes,
   ] = await Promise.all([
-    prisma.order.count({
-      where: {
-        restaurantId,
-        createdAt: { gte: ranges.todayStart, lt: ranges.todayEnd },
-        status: { notIn: ['CANCELLED'] },
-      },
-    }),
+    prisma.order.count({ where: todayPaidWhere }),
     prisma.order.aggregate({
-      where: paidRevenueOrderWhere(restaurantId, ranges.todayStart, ranges.todayEnd),
+      where: todayPaidWhere,
       _sum: { revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
     }),
     prisma.order.aggregate({
@@ -100,30 +120,12 @@ export async function buildDashboardSummary(restaurantId: string) {
     prisma.inventoryItem.count({
       where: { restaurantId, quantity: { lte: prisma.inventoryItem.fields.minQuantity } },
     }),
-    prisma.order.findMany({
-      where: {
-        ...paidRevenueOrderWhere(restaurantId, ranges.todayStart, ranges.todayEnd),
-        tableId: { not: null },
-      },
-      select: { createdAt: true, paidAt: true },
-    }),
+    computeAvgTurnoverMinutes(restaurantId, ranges.todayStart, ranges.todayEnd),
   ])
 
   const monthFood = sumFoodFromMoneyAgg(monthRevenue)
   const lastMonthFood = sumFoodFromMoneyAgg(lastMonthPartialRevenue)
   const revenueGrowth = lastMonthFood ? ((monthFood - lastMonthFood) / lastMonthFood) * 100 : 0
-
-  let totalMinutes = 0
-  let turnoverCount = 0
-  for (const o of turnoverOrders) {
-    const paid = o.paidAt ?? o.createdAt
-    const mins = (paid.getTime() - o.createdAt.getTime()) / 60_000
-    if (mins > 0 && mins < 480) {
-      totalMinutes += mins
-      turnoverCount++
-    }
-  }
-  const avgTurnoverMinutes = turnoverCount > 0 ? Math.round(totalMinutes / turnoverCount) : 0
 
   return {
     today: {

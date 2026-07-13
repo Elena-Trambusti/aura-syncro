@@ -7,6 +7,7 @@
  */
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import dotenv from 'dotenv'
@@ -52,6 +53,7 @@ import { globalApiLimiter, vapidPublicKeyLimiter } from './middleware/rateLimit'
 import { startInvoicePoller } from './lib/invoicePoller'
 import { serializeDecimals } from './lib/money'
 import { runTelegramDailyAlerts } from './lib/telegramScheduler'
+import { redactSensitiveFields } from './lib/sensitiveFields'
 
 // In produzione (DigitalOcean) le variabili sono iniettate dalla piattaforma;
 // in locale carichiamo backend/.env tramite dotenv.
@@ -75,10 +77,7 @@ Sentry.init({
     if (event.request && event.request.data) {
       try {
         const data = typeof event.request.data === 'string' ? JSON.parse(event.request.data) : event.request.data;
-        if (data && typeof data === 'object' && 'password' in data) {
-          data.password = '[FILTERED]';
-          event.request.data = JSON.stringify(data);
-        }
+        event.request.data = JSON.stringify(redactSensitiveFields(data));
       } catch {
         delete event.request?.data
       }
@@ -93,6 +92,15 @@ import { isOriginAllowed } from './lib/cors'
 
 const app = express()
 const httpServer = createServer(app)
+
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1)
+}
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+}))
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -144,9 +152,9 @@ app.use('/api/admin', adminRouter)
 // Middleware comune: auth → tenant context → dashboard access
 const apiGuard = [authenticate, requireTenantContext, requireDashboardAccess]
 
-app.get('/api/analytics/summary', ...apiGuard, requirePermission('analytics.read'), async (req, res) => {
+app.get('/api/analytics/summary', ...apiGuard, requirePermission('analytics.read'), async (req: AuthRequest, res) => {
   try {
-    const restaurantId = (req as AuthRequest).restaurantId
+    const restaurantId = req.restaurantId
     if (!restaurantId) {
       res.status(401).json({ error: 'Non autenticato' })
       return

@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, BookOpen,
   CalendarDays, Users, UserCog, Package, BarChart3, Settings,
-  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock, Receipt, Wallet
+  ChefHat, Star, Megaphone, FileText, CreditCard, Brain, Scale, X, QrCode, Crown, Sparkles, Lock, Receipt, Wallet, User
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../../lib/utils'
@@ -45,14 +45,15 @@ const navItems: Array<{
   { to: '/dashboard/ai-predictive', icon: Brain, labelKey: 'nav.ai', proOnly: true, permission: 'analytics.read' },
   { to: '/fedelta', icon: Star, labelKey: 'nav.loyalty', proOnly: true, permission: 'loyalty.manage' },
   { to: '/marketing', icon: Megaphone, labelKey: 'nav.marketing', proOnly: true, permission: 'marketing.manage' },
-  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments', adminOnly: true, proOnly: true, permission: 'payments.overview' },
-  { to: '/fatture', icon: Receipt, labelKey: 'nav.invoicesB2b', adminOnly: true, proOnly: true, italyOnly: true },
+  { to: '/pagamenti', icon: CreditCard, labelKey: 'nav.payments', proOnly: true, permission: 'payments.overview' },
+  { to: '/fatture', icon: Receipt, labelKey: 'nav.invoicesB2b', proOnly: true, italyOnly: true, permission: 'settings.manage' },
   { to: '/report', icon: FileText, labelKey: 'nav.reports', exact: true, permission: 'reports.read' },
-  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, adminOnly: true, proOnly: true },
+  { to: '/report/fiscal', icon: Scale, labelKey: 'nav.reportFiscal', exact: true, proOnly: true, permission: 'settings.manage' },
   { to: '/dashboard/staff', icon: UserCog, labelKey: 'nav.staff', staffManagersOnly: true },
   { to: '/magazzino', icon: Package, labelKey: 'nav.inventory', permission: 'inventory.read' },
   { to: '/analytics', icon: BarChart3, labelKey: 'nav.analytics', proOnly: true, permission: 'analytics.read' },
-  { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings', adminOnly: true },
+  { to: '/impostazioni', icon: Settings, labelKey: 'nav.settings', permission: 'settings.manage' },
+  { to: '/profilo', icon: User, labelKey: 'nav.profile' },
 ]
 
 const kitchenLink = { to: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay', permission: 'orders.read' as const }

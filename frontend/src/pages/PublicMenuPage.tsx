@@ -310,7 +310,7 @@ export default function PublicMenuPage() {
 
   return (
     <div 
-      className="min-h-[100dvh] w-full text-pietra relative"
+      className="public-guest-scroll min-h-[100dvh] w-full text-pietra relative"
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(3, 7, 18, 0.6) 0%, rgba(3, 7, 18, 0.98) 100%), url('${heroImage}')`,
         backgroundSize: 'cover',

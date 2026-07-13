@@ -25,6 +25,12 @@ import { buildFiscalSummary, buildFiscalTransactionRow } from '../lib/tipFiscal'
 import { verifyFiscalChainSequence } from '../lib/fiscal/fiscalIntegrityChain'
 import { moneyNumber, sumFoodFromMoneyAgg, toMoney } from '../lib/money'
 import { isFiscalRangeWithinLimit, MAX_FISCAL_RANGE_DAYS } from '../lib/fiscalReportLimits'
+import {
+  reportDaysQuerySchema,
+  reportYearMonthQuerySchema,
+  reportYearQuerySchema,
+} from '../lib/reportQuerySchemas'
+import { asyncHandler } from '../lib/asyncHandler'
 
 export const reportsRouter = Router()
 
@@ -77,9 +83,15 @@ async function resolveChainInitialPrevHash(
 
 // ── P&L Mensile ───────────────────────────────────────────────────────────────
 
-reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query
+reportsRouter.get('/pl', requirePermission('reports.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = reportYearMonthQuerySchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Parametri non validi', details: parsed.error.flatten() })
+    return
+  }
+
   const restaurantId = req.restaurantId!
+  const { year: y, month: m } = parsed.data
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
@@ -88,8 +100,6 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
   const fiscal = buildFiscalConfig(restaurant?.settings)
   const timeZone = restaurant?.timezone ?? fiscal.timezone
 
-  const y = Number(year)
-  const m = Number(month)
   const { start: startDate, end: endDate } = buildMonthRangeInTimezone(y, m, timeZone)
   const orderWhere = paidOrdersInPeriodWhere(restaurantId, startDate, endDate)
 
@@ -189,7 +199,7 @@ reportsRouter.get('/pl', requirePermission('reports.read'), async (req: AuthRequ
     },
     dailyBreakdown,
   })
-})
+}))
 
 // ── Food Cost per Piatto ───────────────────────────────────────────────────────
 
@@ -268,16 +278,21 @@ reportsRouter.get('/food-cost', requirePermission('reports.read'), async (req: A
 
 // ── Analisi per categoria ──────────────────────────────────────────────────────
 
-reportsRouter.get('/categories', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { days = 30 } = req.query
+reportsRouter.get('/categories', requirePermission('reports.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = reportDaysQuerySchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Parametri non validi', details: parsed.error.flatten() })
+    return
+  }
+
   const restaurantId = req.restaurantId!
+  const dayCount = parsed.data.days
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     include: { settings: true },
   })
   const fiscal = buildFiscalConfig(restaurant?.settings)
   const timeZone = restaurant?.timezone ?? fiscal.timezone
-  const dayCount = Math.max(1, Number(days) || 30)
   const toKey = calendarDateInTimezone(timeZone, new Date())
   const fromRef = new Date(Date.now() - (dayCount - 1) * 24 * 60 * 60 * 1000)
   const fromKey = calendarDateInTimezone(timeZone, fromRef)
@@ -314,58 +329,64 @@ reportsRouter.get('/categories', requirePermission('reports.read'), async (req: 
     .sort((a, b) => b.revenue - a.revenue)
 
   res.json(result)
-})
+}))
 
 // ── Trend mensili annuali ──────────────────────────────────────────────────────
 
-reportsRouter.get('/yearly', requirePermission('reports.read'), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { year = new Date().getFullYear() } = req.query
+reportsRouter.get('/yearly', requirePermission('reports.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = reportYearQuerySchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Parametri non validi', details: parsed.error.flatten() })
+    return
+  }
+
   const restaurantId = req.restaurantId!
-  const y = Number(year)
+  const y = parsed.data.year
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     include: { settings: true },
   })
   const fiscal = buildFiscalConfig(restaurant?.settings)
+  const yearTimeZone = restaurant?.timezone ?? fiscal.timezone
   const monthLocale = fiscal.defaultLocale === 'es' || fiscal.defaultLocale === 'es-cn'
     ? 'es-ES'
     : fiscal.defaultLocale === 'it'
       ? 'it-IT'
       : 'en-GB'
 
-  const months = []
-  for (let m = 1; m <= 12; m++) {
-    const yearTimeZone = restaurant?.timezone ?? fiscal.timezone
-    const { start, end } = buildMonthRangeInTimezone(y, m, yearTimeZone)
+  const months = await Promise.all(
+    Array.from({ length: 12 }, (_, index) => {
+      const m = index + 1
+      return (async () => {
+        const { start, end } = buildMonthRangeInTimezone(y, m, yearTimeZone)
+        const agg = await prisma.order.aggregate({
+          where: paidOrdersInPeriodWhere(restaurantId, start, end),
+          _sum: { revenueAmount: true, tipAmount: true, total: true, subtotal: true, tax: true },
+          _count: true,
+        })
+        const foodRevenue = sumFoodFromMoneyAgg(agg)
+        return {
+          month: m,
+          monthName: new Date(y, m - 1).toLocaleString(monthLocale, { month: 'short' }),
+          revenue: Math.round(foodRevenue * 100) / 100,
+          tips: Math.round(moneyNumber(agg._sum.tipAmount) * 100) / 100,
+          collected: Math.round(moneyNumber(agg._sum.total) * 100) / 100,
+          orders: agg._count,
+        }
+      })()
+    }),
+  )
 
-    const agg = await prisma.order.aggregate({
-      where: paidOrdersInPeriodWhere(restaurantId, start, end),
-      _sum: { revenueAmount: true, tipAmount: true, total: true, subtotal: true, tax: true },
-      _count: true,
-    })
-
-    const foodRevenue = sumFoodFromMoneyAgg(agg)
-
-    months.push({
-      month: m,
-      monthName: new Date(y, m - 1).toLocaleString(monthLocale, { month: 'short' }),
-      revenue: Math.round(foodRevenue * 100) / 100,
-      tips: Math.round(moneyNumber(agg._sum.tipAmount) * 100) / 100,
-      collected: Math.round(moneyNumber(agg._sum.total) * 100) / 100,
-      orders: agg._count,
-    })
-  }
-
-  const totalRevenue = months.reduce((s, m) => s + m.revenue, 0)
-  const bestMonth = months.reduce((best, m) => m.revenue > best.revenue ? m : best, months[0])
+  const totalRevenue = months.reduce((s, month) => s + month.revenue, 0)
+  const bestMonth = months.reduce((best, month) => month.revenue > best.revenue ? month : best, months[0])
 
   res.json({ year: y, months, totalRevenue: Math.round(totalRevenue * 100) / 100, bestMonth })
-})
+}))
 
 // ── Report fiscal (multi-nazione: IVA / IGIC) ─────────────────────────────────
 
-reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/fiscal', requireRole('OWNER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const fiscalQuerySchema = z.object({
     mode: z.enum(['day', 'month', 'range']).optional(),
@@ -484,7 +505,7 @@ reportsRouter.get('/fiscal', requireRole('OWNER', 'MANAGER'), requireProPlan, as
 
 // ── Liquidazione IVA/IGIC per aliquota ────────────────────────────────────────
 
-reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   // RC-04: use tenant timezone for date range (same as /fiscal)
@@ -536,7 +557,7 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER', 'MANAGER'), requ
 
 // ── Chiusura Fiscale Zeta (Aruba FE) ──────────────────────────────────────────
 
-reportsRouter.get('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.get('/zeta', requireRole('OWNER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const closures = await prisma.fiscalClosure.findMany({
     where: { restaurantId },
@@ -546,7 +567,7 @@ reportsRouter.get('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, asyn
   res.json(closures)
 })
 
-reportsRouter.post('/zeta', requireRole('OWNER', 'MANAGER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
+reportsRouter.post('/zeta', requireRole('OWNER'), requireProPlan, async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
 
   const bodySchema = z.object({

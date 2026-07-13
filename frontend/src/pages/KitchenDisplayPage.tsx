@@ -491,12 +491,12 @@ export default function KitchenDisplayPage() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 divide-y divide-slate-700 overflow-y-auto lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:overflow-hidden">
         <KitchenColumn
-          title={`In Attesa (${pending.length})`}
+          title={`${t('kitchen.pending')} (${pending.length})`}
           titleClass="bg-yellow-500/10"
           icon={<div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400" />}
           orders={pending}
           emptyIcon={<ChefHat className="mb-2 h-10 w-10 opacity-40" />}
-          emptyLabel="Nessun ordine in attesa"
+          emptyLabel={t('kitchen.emptyPending')}
           onItemStatusChange={handleItemStatusChange}
           isItemBusy={isItemBusy}
           isOrderBusy={isOrderBusy}
@@ -504,12 +504,12 @@ export default function KitchenDisplayPage() {
           onDismiss={handleDismiss}
         />
         <KitchenColumn
-          title={`In Preparazione (${preparing.length})`}
+          title={`${t('kitchen.preparing')} (${preparing.length})`}
           titleClass="bg-amber-600/10"
           icon={<Flame className="h-3.5 w-3.5 text-orange-400" />}
           orders={preparing}
           emptyIcon={<Flame className="mb-2 h-10 w-10 opacity-40" />}
-          emptyLabel="Nessun ordine in preparazione"
+          emptyLabel={t('kitchen.emptyPreparing')}
           onItemStatusChange={handleItemStatusChange}
           isItemBusy={isItemBusy}
           isOrderBusy={isOrderBusy}
@@ -517,13 +517,13 @@ export default function KitchenDisplayPage() {
           onDismiss={handleDismiss}
         />
         <KitchenColumn
-          title={`Pronti (${ready.length})`}
+          title={`${t('kitchen.ready')} (${ready.length})`}
           titleClass="bg-emerald-950/10"
           icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
           orders={ready}
           isReadyColumn
           emptyIcon={<CheckCircle2 className="mb-2 h-10 w-10 opacity-40" />}
-          emptyLabel="Nessun ordine pronto"
+          emptyLabel={t('kitchen.emptyReady')}
           onItemStatusChange={handleItemStatusChange}
           isItemBusy={isItemBusy}
           isOrderBusy={isOrderBusy}

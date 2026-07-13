@@ -2618,10 +2618,27 @@
   }
 
   .pwa-main-scroll {
+    min-height: 0;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: contain;
     touch-action: pan-y pinch-zoom;
     @apply w-full max-w-full overflow-x-hidden;
+  }
+
+  /* Pagine pubbliche guest (menu/prenota) — scroll interno in PWA/TWA quando il body è bloccato */
+  .public-guest-scroll {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  html.pwa-standalone .public-guest-scroll,
+  html.aura-native-shell .public-guest-scroll {
+    height: 100dvh;
+    max-height: 100dvh;
   }
 
   .pwa-mobile-page {

@@ -36,9 +36,34 @@ export type Permission = (typeof PERMISSIONS)[number]
 
 const ALL_PERMISSIONS = new Set<Permission>(PERMISSIONS)
 
+const MANAGER_PERMISSIONS = new Set<Permission>([
+  'tables.read',
+  'tables.manage',
+  'tables.status',
+  'orders.read',
+  'orders.create',
+  'orders.items',
+  'orders.status',
+  'orders.kitchen_status',
+  'orders.cancel',
+  'orders.pay',
+  'menu.read',
+  'menu.manage',
+  'menu.availability',
+  'reservations.read',
+  'reservations.manage',
+  'inventory.read',
+  'inventory.manage',
+  'staff.manage',
+  'reports.read',
+  'customers.read',
+  'customers.manage',
+  'analytics.read',
+])
+
 const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<Permission>> = {
   OWNER: ALL_PERMISSIONS,
-  MANAGER: ALL_PERMISSIONS,
+  MANAGER: MANAGER_PERMISSIONS,
   WAITER: new Set<Permission>([
     'tables.read',
     'tables.status',

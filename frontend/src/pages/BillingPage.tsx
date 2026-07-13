@@ -12,6 +12,7 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import QueryErrorBanner from '../components/QueryErrorBanner'
 import AuraIcon from '../components/ui/AuraIcon'
 import {
   LUXURY_CARD_CLASS,
@@ -39,7 +40,7 @@ export default function BillingPage() {
   const hasSubscription = restaurant?.hasActiveSubscription === true
   const activePlanId = (restaurant?.subscriptionPlan || 'STARTER') as PlanId
 
-  const { data: restaurantData } = useQuery<{ settings?: { hasStripeBilling?: boolean } | null }>({
+  const { data: restaurantData, isError: restaurantError } = useQuery<{ settings?: { hasStripeBilling?: boolean } | null }>({
     queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
     enabled: hasSubscription,
@@ -105,6 +106,8 @@ export default function BillingPage() {
           />
         )}
       />
+
+      {restaurantError && <QueryErrorBanner />}
 
       {hasSubscription && (
         <div className="flex flex-col gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

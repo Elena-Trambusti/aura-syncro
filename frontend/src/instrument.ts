@@ -3,6 +3,7 @@
  */
 import type * as SentryTypes from '@sentry/react'
 import { resolveApiBaseUrl } from './lib/backendUrl'
+import { redactSensitiveFields } from './lib/sensitiveFields'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
@@ -30,10 +31,7 @@ function initSentry(): Promise<typeof SentryTypes | null> {
               typeof event.request.data === 'string'
                 ? JSON.parse(event.request.data)
                 : event.request.data
-            if (data && typeof data === 'object' && 'password' in data) {
-              data.password = '[FILTERED]'
-              event.request.data = JSON.stringify(data)
-            }
+            event.request.data = JSON.stringify(redactSensitiveFields(data))
           } catch {
             /* ignore */
           }

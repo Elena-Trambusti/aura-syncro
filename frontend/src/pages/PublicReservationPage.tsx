@@ -170,7 +170,7 @@ export default function PublicReservationPage() {
 
   return (
     <div 
-      className="min-h-[100dvh] text-pietra flex flex-col relative" 
+      className="public-guest-scroll min-h-[100dvh] text-pietra flex flex-col relative" 
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(3, 7, 18, 0.5) 0%, rgba(3, 7, 18, 0.95) 100%), url('${heroImage}')`,
         backgroundSize: 'cover',
@@ -186,7 +186,7 @@ export default function PublicReservationPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center px-3 py-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 sm:px-6 sm:py-16 sm:pb-0">
+      <div className="flex flex-1 flex-col items-center justify-start px-3 py-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] sm:justify-center sm:px-6 sm:py-16 sm:pb-0">
         
         <div className="text-center flex flex-col items-center mb-10">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-aura-gold/40 bg-navy-surface/90 shadow-[0_0_40px_rgba(212,175,55,0.3)] backdrop-blur-xl mb-6">

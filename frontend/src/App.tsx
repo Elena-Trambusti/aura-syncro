@@ -16,7 +16,7 @@ import RequirePermission from './components/auth/RequirePermission'
 import DashboardAccessGate from './components/auth/DashboardAccessGate'
 import AuthLoadingScreen from './components/auth/AuthLoadingScreen'
 import RouteLoadingFallback from './components/auth/RouteLoadingFallback'
-import { ADMIN_NAV_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
+import { ADMIN_NAV_ROLES, OWNER_ONLY_ROLES, STAFF_MANAGE_ROLES } from './lib/rbac'
 import LandingRoute from './components/landing/LandingRoute'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -45,6 +45,7 @@ const StaffPage = lazyRoute(() => import('./pages/StaffPage'))
 const InventoryPage = lazyRoute(() => import('./pages/InventoryPage'))
 const AnalyticsPage = lazyRoute(() => import('./pages/AnalyticsPage'))
 const SettingsPage = lazyRoute(() => import('./pages/SettingsPage'))
+const ProfilePage = lazyRoute(() => import('./pages/ProfilePage'))
 const LoyaltyPage = lazyRoute(() => import('./pages/LoyaltyPage'))
 const MarketingPage = lazyRoute(() => import('./pages/MarketingPage'))
 const ReportsPage = lazyRoute(() => import('./pages/ReportsPage'))
@@ -151,7 +152,7 @@ function AppRoutes() {
         <Route path="clienti" element={<Navigate to="/crm" replace />} />
         <Route path="personale" element={<Navigate to="/dashboard/staff" replace />} />
         <Route path="dashboard/onboarding" element={<RequireRole roles={ADMIN_NAV_ROLES}><OnboardingPage /></RequireRole>} />
-        <Route path="dashboard/billing" element={<RequirePermission permissions={['settings.manage']}><BillingPage /></RequirePermission>} />
+        <Route path="dashboard/billing" element={<RequireRole roles={OWNER_ONLY_ROLES}><BillingPage /></RequireRole>} />
         <Route path="dashboard/staff" element={<RequireRole roles={STAFF_MANAGE_ROLES}><StaffPage /></RequireRole>} />
         <Route path="magazzino" element={<RequirePermission permissions={['inventory.read']}><InventoryPage /></RequirePermission>} />
         <Route path="analytics" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AnalyticsPage /></RequirePermission></RequireProPlan>} />
@@ -159,14 +160,15 @@ function AppRoutes() {
         <Route path="marketing" element={<RequireProPlan><RequirePermission permissions={['marketing.manage']}><MarketingPage /></RequirePermission></RequireProPlan>} />
         <Route path="report" element={<Outlet />}>
           <Route index element={<RequirePermission permissions={['reports.read']}><ReportsPage /></RequirePermission>} />
-          <Route path="fiscal" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />
+          <Route path="fiscal" element={<RequireRole roles={OWNER_ONLY_ROLES}><RequireProPlan><ReportFiscal /></RequireProPlan></RequireRole>} />
         </Route>
-        <Route path="pagamenti" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequirePermission permissions={['payments.overview']}><RequireProPlan><PaymentsPage /></RequireProPlan></RequirePermission></RequireRole>} />
-        <Route path="fatture" element={<RequireRole roles={ADMIN_NAV_ROLES}><RequireProPlan><InvoicesPage /></RequireProPlan></RequireRole>} />
+        <Route path="pagamenti" element={<RequireRole roles={OWNER_ONLY_ROLES}><RequirePermission permissions={['payments.overview']}><RequireProPlan><PaymentsPage /></RequireProPlan></RequirePermission></RequireRole>} />
+        <Route path="fatture" element={<RequireRole roles={OWNER_ONLY_ROLES}><RequireProPlan><InvoicesPage /></RequireProPlan></RequireRole>} />
         <Route path="dashboard/ai-predictive" element={<RequireProPlan><RequirePermission permissions={['analytics.read']}><AIPredictivePage /></RequirePermission></RequireProPlan>} />
         <Route path="dashboard/qr-builder" element={<RequirePermission permissions={['menu.manage']}><QRBuilderPage /></RequirePermission>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
         <Route path="impostazioni" element={<RequirePermission permissions={['settings.manage']}><SettingsPage /></RequirePermission>} />
+        <Route path="profilo" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -10,6 +10,10 @@ import { ALLOWED_TAX_RATES } from '../lib/fiscalRegime'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import QueryErrorBanner from '../components/QueryErrorBanner'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
+import { formatApiError } from '../lib/formatApiError'
 import { AuraDialog, AuraDialogTitle, AuraDialogDescription } from '@/components/ui/AuraDialog'
 import AuraSelect from '@/components/ui/AuraSelect'
 
@@ -31,11 +35,12 @@ export default function InvoicesPage() {
   const [showModal, setShowModal] = useState(false)
   const isItaly = fiscal.countryCode === 'IT'
 
-  const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
+  const { data: invoices = [], isLoading, isError: invoicesError } = useQuery<Invoice[]>({
     queryKey: tq(tk, 'invoices'),
     queryFn: () => api.get('/invoices').then(r => r.data),
     enabled: isItaly,
   })
+  const showInvoicesSkeleton = useShowQuerySkeleton(isLoading, invoices.length > 0)
 
   if (!isItaly) {
     return (
@@ -63,6 +68,8 @@ export default function InvoicesPage() {
         }
       />
 
+      {invoicesError && <QueryErrorBanner />}
+
       <div className="saas-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -77,9 +84,9 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {isLoading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-fumo">{t('invoices.loading')}</td></tr>
-              ) : invoices.length === 0 ? (
+              {showInvoicesSkeleton ? (
+                <tr><td colSpan={6} className="p-4"><PageSkeleton variant="list" count={4} /></td></tr>
+              ) : invoicesError ? null : invoices.length === 0 ? (
                 <tr><td colSpan={6} className="p-8 text-center text-fumo">{t('invoices.empty')}</td></tr>
               ) : invoices.map(inv => (
                 <tr key={inv.id} className="hover:bg-white/[0.02]">
@@ -142,7 +149,7 @@ function InvoiceModal({
       onSaved()
       onClose()
     },
-    onError: (e: { response?: { data?: { error?: string } } }) => toast.error(e.response?.data?.error || t('invoices.error')),
+    onError: (err: unknown) => toast.error(formatApiError(t, err, 'invoices.error')),
   })
 
   const submit = (e: React.FormEvent) => {

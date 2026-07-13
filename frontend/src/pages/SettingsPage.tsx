@@ -206,10 +206,8 @@ export default function SettingsPage() {
 
   const save = useInstantMutation({
     mutationFn: (data: typeof form) => api.put('/restaurant', buildSavePayload(data)),
-    onInstant: () => {
-      toast.success(t('settings.saved'))
-    },
     onSuccess: async () => {
+      toast.success(t('settings.saved'))
       queryClient.invalidateQueries({ queryKey: tq(tk, 'restaurant') })
       await refreshRestaurant()
     },

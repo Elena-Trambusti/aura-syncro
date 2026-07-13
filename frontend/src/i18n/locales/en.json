@@ -79,6 +79,7 @@
     "inventory": "Inventory",
     "analytics": "Analytics",
     "settings": "Settings",
+    "profile": "My profile",
     "kitchenDisplay": "Kitchen Display",
     "openKitchenDisplay": "Open kitchen display",
     "lockedPremium": "Activate Premium to unlock this section",
@@ -222,12 +223,34 @@
     "CAMPAIGN_ALREADY_SENT": "Campaign already sent.",
     "INVOICES_IT_ONLY": "E-invoicing available only for Italian restaurants.",
     "LOYALTY_ALREADY_EARNED": "Points already earned for this order.",
-    "INSUFFICIENT_POINTS": "Insufficient loyalty points."
+    "INSUFFICIENT_POINTS": "Insufficient loyalty points.",
+    "EMAIL_ALREADY_EXISTS": "Email already registered.",
+    "OWNER_CANNOT_DEACTIVATE": "The owner account cannot be deactivated.",
+    "OWNER_ROLE_LOCKED": "The owner role cannot be changed.",
+    "INVALID_PASSWORD": "Current password is incorrect.",
+    "ACCOUNT_INACTIVE": "Account is not active."
+  },
+  "profile": {
+    "title": "My profile",
+    "subtitle": "Update your personal details and sign-in password",
+    "name": "Name",
+    "email": "Email",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordHint": "At least {{min}} characters. Leave blank to keep your password.",
+    "save": "Save profile",
+    "saved": "Profile updated",
+    "nameRequired": "Name is required (minimum 2 characters)",
+    "emailRequired": "Email is required",
+    "passwordTooShort": "Password must be at least {{min}} characters",
+    "currentPasswordRequired": "Enter your current password to set a new one"
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
     "todayRevenue": "Today's Revenue",
     "todayRevenueSub": "orders paid today",
+    "todayOrdersSub": "collected orders today",
     "activeOrders": "Active Orders",
     "activeOrdersSub": "tables with open order",
     "todayReservations": "Today's Reservations",
@@ -1302,7 +1325,10 @@
     "footerHint": "Tap ✓ to advance · +1 marks one portion ready · Served removes the order",
     "legendPending": "Pending",
     "legendPreparing": "Prep.",
-    "legendReady": "Ready"
+    "legendReady": "Ready",
+    "emptyPending": "No orders waiting",
+    "emptyPreparing": "No orders in preparation",
+    "emptyReady": "No orders ready"
   },
   "offline": {
     "bannerOffline": "You are offline — orders will send when connection returns",

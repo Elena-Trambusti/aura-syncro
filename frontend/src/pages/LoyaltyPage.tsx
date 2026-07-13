@@ -14,6 +14,8 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import KpiStatCard from '../components/ui/KpiStatCard'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 
 interface LoyaltyTier {
   id: string; name: string; minPoints: number; color: string
@@ -44,15 +46,17 @@ export default function LoyaltyPage() {
   const [customerPage, setCustomerPage] = useState(1)
   const CUSTOMERS_PAGE_SIZE = 20
 
-  const { data: overview, isError: overviewError } = useQuery<Overview>({
+  const { data: overview, isError: overviewError, isLoading: overviewLoading } = useQuery<Overview>({
     queryKey: tq(tk, 'loyalty', 'overview'),
     queryFn: () => api.get('/loyalty/overview').then(r => r.data),
   })
+  const showOverviewSkeleton = useShowQuerySkeleton(overviewLoading, overview != null)
 
-  const { data: customers = [], isError: customersError } = useQuery<Customer[]>({
+  const { data: customers = [], isError: customersError, isLoading: customersLoading } = useQuery<Customer[]>({
     queryKey: tq(tk, 'loyalty', 'customers'),
     queryFn: () => api.get('/customers').then(r => r.data),
   })
+  const showCustomersSkeleton = useShowQuerySkeleton(customersLoading, customers.length > 0)
 
   const adjustMutation = useMutation({
     mutationFn: () => api.post('/loyalty/adjust', {
@@ -72,6 +76,12 @@ export default function LoyaltyPage() {
   const tiers = [...(overview?.tiers || [])].sort((a, b) => b.minPoints - a.minPoints)
   const stats = overview?.stats
   const topCustomers = overview?.topCustomers || []
+  const kpiUnavailable = overviewError || showOverviewSkeleton
+  const formatKpi = (value: number | undefined, formatter?: (n: number) => string) => {
+    if (kpiUnavailable) return '—'
+    const n = value ?? 0
+    return formatter ? formatter(n) : String(n)
+  }
   const totalCustomerPages = Math.max(1, Math.ceil(customers.length / CUSTOMERS_PAGE_SIZE))
   const pagedCustomers = customers.slice(
     (customerPage - 1) * CUSTOMERS_PAGE_SIZE,
@@ -107,9 +117,9 @@ export default function LoyaltyPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: t('loyalty.stats.members'), value: stats?.totalMembers || 0, icon: Users, accent: 'gold' as const },
-          { label: t('loyalty.stats.activeMonth'), value: stats?.activeThisMonth || 0, icon: TrendingUp, accent: 'blue' as const },
-          { label: t('loyalty.stats.pointsIssued'), value: (stats?.totalPointsIssued || 0).toLocaleString(), icon: Star, accent: 'amber' as const },
+          { label: t('loyalty.stats.members'), value: formatKpi(stats?.totalMembers), icon: Users, accent: 'gold' as const },
+          { label: t('loyalty.stats.activeMonth'), value: formatKpi(stats?.activeThisMonth), icon: TrendingUp, accent: 'blue' as const },
+          { label: t('loyalty.stats.pointsIssued'), value: formatKpi(stats?.totalPointsIssued, n => n.toLocaleString()), icon: Star, accent: 'amber' as const },
         ].map(s => (
           <KpiStatCard key={s.label} label={s.label} value={s.value} icon={s.icon} accent={s.accent} />
         ))}
@@ -118,6 +128,9 @@ export default function LoyaltyPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-4">
           <h2 className="text-base font-semibold text-fumo">{t('loyalty.vipLevels')}</h2>
+          {showOverviewSkeleton ? (
+            <PageSkeleton variant="list" count={3} />
+          ) : (
           <div className="space-y-3">
             {tiers.map(tier => (
               <div key={tier.id} className="premium-card p-5">
@@ -143,12 +156,15 @@ export default function LoyaltyPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         <div className="space-y-4">
           <h2 className="text-base font-semibold text-fumo">{t('loyalty.topCustomers')}</h2>
           <div className="premium-card overflow-hidden">
-            {topCustomers.length === 0 ? (
+            {showOverviewSkeleton ? (
+              <PageSkeleton variant="list" count={4} />
+            ) : topCustomers.length === 0 ? (
               <EmptyState icon={Gift} title={t('loyalty.noData')} />
             ) : (
               <ul className="divide-y divide-white/[0.06]">
@@ -179,6 +195,10 @@ export default function LoyaltyPage() {
       <div>
         <h2 className="text-base font-semibold text-fumo mb-3">{t('loyalty.allCustomers')}</h2>
 
+        {showCustomersSkeleton ? (
+          <PageSkeleton variant="list" count={6} />
+        ) : (
+        <>
         {/* Mobile: card layout */}
         <div className="space-y-3 md:hidden">
           {pagedCustomers.map(c => (
@@ -264,6 +284,8 @@ export default function LoyaltyPage() {
               {t('common.next', { defaultValue: 'Successivo' })}
             </button>
           </div>
+        )}
+        </>
         )}
       </div>
 

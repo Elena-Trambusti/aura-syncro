@@ -77,6 +77,7 @@
     "inventory": "Lager",
     "analytics": "Analytik",
     "settings": "Einstellungen",
+    "profile": "Mein Profil",
     "kitchenDisplay": "Küchenanzeige",
     "openKitchenDisplay": "Küchenanzeige öffnen",
     "lockedPremium": "Aktivieren Sie Premium, um diesen Bereich freizuschalten",
@@ -1121,7 +1122,10 @@
     "orderReady": "Bestellung servierbereit!",
     "orderReadyError": "Bestellung konnte nicht als fertig markiert werden",
     "orderDismissError": "Bestellung konnte nicht archiviert werden",
-    "orderDismissed": "Bestellung serviert und aus der Küche entfernt"
+    "orderDismissed": "Bestellung serviert und aus der Küche entfernt",
+    "emptyPending": "Keine wartenden Bestellungen",
+    "emptyPreparing": "Keine Bestellungen in Zubereitung",
+    "emptyReady": "Keine fertigen Bestellungen"
   },
   "offline": {
     "bannerOffline": "Offline — Bestellungen werden gesendet, sobald die Verbindung wiederhergestellt ist",

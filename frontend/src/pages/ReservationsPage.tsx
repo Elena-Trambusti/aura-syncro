@@ -23,6 +23,8 @@ import QueryErrorBanner from '../components/QueryErrorBanner'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import EmptyState from '../components/ui/EmptyState'
+import PageSkeleton from '../components/ui/PageSkeleton'
+import { useShowQuerySkeleton } from '../hooks/useShowQuerySkeleton'
 import GlassModal from '../components/ui/GlassModal'
 import { AuraTabs, AuraTabsList, AuraTabsTrigger } from '../components/ui/AuraTabs'
 import { isVipCustomer } from '../lib/customerTags'
@@ -234,10 +236,11 @@ export default function ReservationsPage() {
     ?? restaurantProfile?.settings?.maxCoversPerSlot
     ?? 20
 
-  const { data: reservations = [], isError: reservationsError } = useQuery<Reservation[]>({
+  const { data: reservations = [], isError: reservationsError, isLoading: reservationsLoading } = useQuery<Reservation[]>({
     queryKey: tq(tk, 'reservations', selectedDate),
     queryFn: () => api.get(`/reservations?date=${selectedDate}`).then(r => r.data),
   })
+  const showReservationsSkeleton = useShowQuerySkeleton(reservationsLoading, reservations.length > 0)
 
   const createReservation = useInstantMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/reservations', data),
@@ -415,6 +418,8 @@ export default function ReservationsPage() {
         <WaitlistPanel selectedDate={selectedDate} />
       ) : reservationsError ? (
         <QueryErrorBanner />
+      ) : showReservationsSkeleton ? (
+        <PageSkeleton variant="list" count={5} />
       ) : (
       <>
       <div className="space-y-2">

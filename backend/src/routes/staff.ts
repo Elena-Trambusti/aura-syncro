@@ -6,7 +6,7 @@ import { prisma } from '../lib/prisma'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
-import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
+import { tenantId, tenantNotFound, tenantPrisma } from '../lib/tenant'
 import { weekBoundsInTimezone, parseLocalDateTimeInTimezone } from '../lib/romeDate'
 import { asyncHandler } from '../lib/asyncHandler'
 
@@ -30,9 +30,9 @@ function isEndAfterStart(startTime: string, endTime: string): boolean {
 }
 
 staffRouter.get('/tip-recipients', requirePermission('orders.pay'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  const staff = await prisma.user.findMany({
+  const db = tenantPrisma(req)
+  const staff = await db.user.findMany({
     where: {
-      ...tenantWhere(req),
       active: true,
       role: { in: ['WAITER', 'MANAGER', 'OWNER', 'HOST', 'BARTENDER'] },
     },
@@ -43,8 +43,8 @@ staffRouter.get('/tip-recipients', requirePermission('orders.pay'), asyncHandler
 }))
 
 staffRouter.get('/', requirePermission('staff.manage'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  const staff = await prisma.user.findMany({
-    where: tenantWhere(req),
+  const db = tenantPrisma(req)
+  const staff = await db.user.findMany({
     select: {
       id: true, name: true, email: true, role: true,
       phone: true, active: true, createdAt: true,
@@ -69,8 +69,9 @@ staffRouter.post('/', requirePermission('staff.manage'), asyncHandler(async (req
   }
 
   const hashedPassword = await bcrypt.hash(result.data.password, 12)
+  const db = tenantPrisma(req)
   try {
-    const user = await prisma.user.create({
+    const user = await db.user.create({
       data: {
         ...result.data,
         password: hashedPassword,
@@ -103,8 +104,9 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
     return
   }
 
-  const target = await prisma.user.findFirst({
-    where: scopedWhere(req, req.params.id),
+  const db = tenantPrisma(req)
+  const target = await db.user.findFirst({
+    where: { id: req.params.id },
     select: { id: true, role: true },
   })
   if (!target) {
@@ -117,15 +119,28 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
     return
   }
 
+  if (target.role === 'OWNER' && result.data.active === false) {
+    res.status(403).json({ error: 'Il titolare non può essere disattivato', code: 'OWNER_CANNOT_DEACTIVATE' })
+    return
+  }
+
+  if (target.role === 'OWNER' && result.data.role !== undefined) {
+    res.status(403).json({ error: 'Il ruolo del titolare non può essere modificato', code: 'OWNER_ROLE_LOCKED' })
+    return
+  }
+
   const updateData: Record<string, unknown> = { ...result.data }
+  const shouldRevokeSessions = result.data.password !== undefined || result.data.active === false
   if (result.data.password) {
     updateData.password = await bcrypt.hash(result.data.password, 12)
+  }
+  if (shouldRevokeSessions) {
     updateData.tokenVersion = { increment: 1 }
   }
 
   try {
-    const updated = await prisma.user.updateMany({
-      where: scopedWhere(req, req.params.id),
+    const updated = await db.user.updateMany({
+      where: { id: req.params.id },
       data: updateData,
     })
     if (updated.count === 0) {
@@ -140,15 +155,8 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
     throw err
   }
 
-  if (result.data.active === false) {
-    await prisma.user.updateMany({
-      where: scopedWhere(req, req.params.id),
-      data: { tokenVersion: { increment: 1 } },
-    })
-  }
-
-  const user = await prisma.user.findFirst({
-    where: scopedWhere(req, req.params.id),
+  const user = await db.user.findFirst({
+    where: { id: req.params.id },
     select: { id: true, name: true, email: true, role: true, phone: true, active: true },
   })
   res.json(user)
@@ -175,10 +183,10 @@ staffRouter.get('/shifts', requirePermission('staff.manage'), asyncHandler(async
   }
 
   const { gte, lt } = weekBoundsInTimezone(weekStartStr, timeZone)
+  const db = tenantPrisma(req)
 
-  const shifts = await prisma.shift.findMany({
+  const shifts = await db.shift.findMany({
     where: {
-      restaurantId: tenantId(req),
       date: { gte, lt },
     },
     include: { user: { select: { id: true, name: true, role: true } } },
@@ -219,8 +227,9 @@ staffRouter.post('/shifts', requirePermission('staff.manage'), asyncHandler(asyn
   })
   const timeZone = restaurant?.timezone ?? 'Europe/Rome'
 
-  const user = await prisma.user.findFirst({
-    where: { id: result.data.userId, restaurantId: tenantId(req) },
+  const db = tenantPrisma(req)
+  const user = await db.user.findFirst({
+    where: { id: result.data.userId },
     select: { id: true, role: true, active: true },
   })
   if (!user) {
@@ -236,15 +245,15 @@ staffRouter.post('/shifts', requirePermission('staff.manage'), asyncHandler(asyn
     return
   }
 
-  const shift = await prisma.shift.create({
+  const shift = await db.shift.create({
     data: {
       userId: result.data.userId,
+      restaurantId: tenantId(req),
       date: parseShiftDate(result.data.date, timeZone),
       startTime: result.data.startTime,
       endTime: result.data.endTime,
       role: result.data.role,
       notes: result.data.notes,
-      restaurantId: tenantId(req),
     },
     include: { user: { select: { id: true, name: true, role: true } } },
   })
@@ -264,21 +273,23 @@ staffRouter.patch('/shifts/:id/clock', requirePermission('staff.manage'), asyncH
     ? { clockIn: new Date(), status: 'ACTIVE' as const }
     : { clockOut: new Date(), status: 'COMPLETED' as const }
 
-  const updated = await prisma.shift.updateMany({
-    where: scopedWhere(req, req.params.id),
+  const db = tenantPrisma(req)
+  const updated = await db.shift.updateMany({
+    where: { id: req.params.id },
     data,
   })
   if (updated.count === 0) {
     tenantNotFound(res, 'Turno non trovato')
     return
   }
-  const shift = await prisma.shift.findFirst({ where: scopedWhere(req, req.params.id) })
+  const shift = await db.shift.findFirst({ where: { id: req.params.id } })
   if (shift) io.to(tenantId(req)).emit('shift:updated', shift)
   res.json(shift)
 }))
 
 staffRouter.delete('/shifts/:id', requirePermission('staff.manage'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await prisma.shift.deleteMany({ where: scopedWhere(req, req.params.id) })
+  const db = tenantPrisma(req)
+  const deleted = await db.shift.deleteMany({ where: { id: req.params.id } })
   if (deleted.count === 0) {
     tenantNotFound(res, 'Turno non trovato')
     return

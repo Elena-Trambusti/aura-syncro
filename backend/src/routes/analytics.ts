@@ -7,19 +7,27 @@ import { resolveRevenueAmount } from '../lib/fiscalAmounts'
 import { buildDashboardSummary, loadTenantTimeRanges } from '../lib/analyticsSummary'
 import { paidRevenueOrderWhere } from '../lib/analyticsFilters'
 import { moneyNumber } from '../lib/money'
+import { analyticsPeriodQuerySchema } from '../lib/reportQuerySchemas'
+import { asyncHandler } from '../lib/asyncHandler'
 
 export const analyticsRouter = Router()
 
 /** @deprecated Usare GET /summary — delega a buildDashboardSummary per evitare drift. */
-analyticsRouter.get('/dashboard', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/dashboard', requirePermission('analytics.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const summary = await buildDashboardSummary(req.restaurantId!)
   res.json(summary)
-})
+}))
 
-analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {  const { period = '7d' } = req.query
+analyticsRouter.get('/revenue', requirePermission('analytics.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = analyticsPeriodQuerySchema.safeParse(req.query)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Parametri non validi', details: parsed.error.flatten() })
+    return
+  }
+
   const restaurantId = req.restaurantId!
   const ranges = await loadTenantTimeRanges(restaurantId)
-  const days = period === '30d' ? 30 : period === '90d' ? 90 : 7
+  const days = parsed.data.period === '30d' ? 30 : parsed.data.period === '90d' ? 90 : 7
 
   const todayStr = calendarDateInTimezone(ranges.timeZone)
   const startDateStr = shiftCalendarDate(todayStr, -(days - 1))
@@ -54,19 +62,22 @@ analyticsRouter.get('/revenue', requirePermission('analytics.read'), async (req:
   }))
 
   res.json(data)
-})
+}))
 
-analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/top-items', requirePermission('analytics.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const ranges = await loadTenantTimeRanges(restaurantId)
-  const thirtyDaysAgoStr = shiftCalendarDate(calendarDateInTimezone(ranges.timeZone), -30)
+  const todayStr = calendarDateInTimezone(ranges.timeZone)
+  const thirtyDaysAgoStr = shiftCalendarDate(todayStr, -30)
   const { gte: thirtyDaysAgo } = dayBoundsInTimezone(thirtyDaysAgoStr, ranges.timeZone)
+  const { lt: periodEnd } = dayBoundsInTimezone(shiftCalendarDate(todayStr, 1), ranges.timeZone)
+  const paidOrderWhere = paidRevenueOrderWhere(restaurantId, thirtyDaysAgo, periodEnd)
 
   const items = await prisma.orderItem.groupBy({
     by: ['menuItemId'],
     where: {
       status: { not: 'CANCELLED' },
-      order: paidRevenueOrderWhere(restaurantId, thirtyDaysAgo, new Date()),
+      order: paidOrderWhere,
     },
     _sum: { quantity: true },
     _count: { id: true },
@@ -74,30 +85,39 @@ analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (re
     take: 10,
   })
 
+  const menuItemIds = items.map(i => i.menuItemId)
+  if (menuItemIds.length === 0) {
+    res.json([])
+    return
+  }
+
   const menuItems = await prisma.menuItem.findMany({
-    where: {
-      restaurantId,
-      id: { in: items.map((i: { menuItemId: string }) => i.menuItemId) },
-    },
+    where: { restaurantId, id: { in: menuItemIds } },
     select: { id: true, name: true, price: true, category: { select: { name: true } } },
   })
 
   const orderItems = await prisma.orderItem.findMany({
     where: {
-      menuItemId: { in: items.map(i => i.menuItemId) },
+      menuItemId: { in: menuItemIds },
       status: { not: 'CANCELLED' },
-      order: paidRevenueOrderWhere(restaurantId, thirtyDaysAgo, new Date()),
+      order: paidOrderWhere,
     },
-    select: { menuItemId: true, quantity: true, unitPrice: true },
+    select: {
+      menuItemId: true,
+      quantity: true,
+      unitPrice: true,
+      modifiers: { select: { price: true } },
+    },
   })
 
   const revenueByItem = new Map<string, number>()
   for (const oi of orderItems) {
-    const gross = moneyNumber(oi.unitPrice) * oi.quantity
+    const modifierTotal = oi.modifiers.reduce((sum, m) => sum + moneyNumber(m.price), 0)
+    const gross = (moneyNumber(oi.unitPrice) + modifierTotal) * oi.quantity
     revenueByItem.set(oi.menuItemId, (revenueByItem.get(oi.menuItemId) ?? 0) + gross)
   }
 
-  const result = items.map((item) => {
+  const result = items.map(item => {
     const menuItem = menuItems.find(m => m.id === item.menuItemId)
     return {
       menuItemId: item.menuItemId,
@@ -110,16 +130,18 @@ analyticsRouter.get('/top-items', requirePermission('analytics.read'), async (re
   })
 
   res.json(result)
-})
+}))
 
-analyticsRouter.get('/hourly', requirePermission('analytics.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+analyticsRouter.get('/hourly', requirePermission('analytics.read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
   const ranges = await loadTenantTimeRanges(restaurantId)
-  const sevenDaysAgoStr = shiftCalendarDate(calendarDateInTimezone(ranges.timeZone), -7)
+  const todayStr = calendarDateInTimezone(ranges.timeZone)
+  const sevenDaysAgoStr = shiftCalendarDate(todayStr, -7)
   const { gte: sevenDaysAgo } = dayBoundsInTimezone(sevenDaysAgoStr, ranges.timeZone)
+  const { lt: periodEnd } = dayBoundsInTimezone(shiftCalendarDate(todayStr, 1), ranges.timeZone)
 
   const orders = await prisma.order.findMany({
-    where: paidRevenueOrderWhere(restaurantId, sevenDaysAgo, new Date()),
+    where: paidRevenueOrderWhere(restaurantId, sevenDaysAgo, periodEnd),
     select: { createdAt: true, paidAt: true, revenueAmount: true, subtotal: true, tax: true, tipAmount: true, total: true },
   })
 
@@ -140,4 +162,4 @@ analyticsRouter.get('/hourly', requirePermission('analytics.read'), async (req: 
   }))
 
   res.json(data)
-})
+}))

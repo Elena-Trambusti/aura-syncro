@@ -77,6 +77,7 @@
     "inventory": "Almacén",
     "analytics": "Analítica",
     "settings": "Ajustes",
+    "profile": "Mi perfil",
     "kitchenDisplay": "Pantalla Cocina",
     "openKitchenDisplay": "Abrir pantalla cocina",
     "lockedPremium": "Activa Premium para desbloquear esta sección",
@@ -1150,7 +1151,10 @@
     "orderReady": "¡Pedido listo para servir!",
     "orderReadyError": "No se puede marcar el pedido como listo",
     "orderDismissError": "No se puede archivar el pedido",
-    "orderDismissed": "Pedido servido y eliminado de cocina"
+    "orderDismissed": "Pedido servido y eliminado de cocina",
+    "emptyPending": "Ningún pedido en espera",
+    "emptyPreparing": "Ningún pedido en preparación",
+    "emptyReady": "Ningún pedido listo"
   },
   "offline": {
     "bannerOffline": "Sin conexión — los pedidos se enviarán cuando vuelva la conexión",

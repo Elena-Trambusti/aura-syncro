@@ -37,6 +37,7 @@ interface CrmStats {
   total: number
   vipCount: number
   avgSpent: number
+  activeCustomers?: number
 }
 
 interface NewCustomerForm {

@@ -50,21 +50,36 @@ function serializeCustomer(customer: {
 
 customersRouter.get('/stats', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = req.restaurantId!
-  const customers = await prisma.customer.findMany({
-    where: { restaurantId },
-    select: { totalSpent: true, totalVisits: true, tags: true },
-  })
 
-  const total = customers.length
-  const vipCount = customers.filter(c => {
-    const tags = c.tags ?? []
-    return tags.includes('VIP') || c.totalVisits >= 10 || moneyNumber(c.totalSpent) >= 500
-  }).length
-  const avgSpent = total
-    ? customers.reduce((sum, c) => sum + moneyNumber(c.totalSpent), 0) / total
+  const [total, spendingStats, vipCount] = await Promise.all([
+    prisma.customer.count({ where: { restaurantId } }),
+    prisma.customer.aggregate({
+      where: { restaurantId, totalVisits: { gt: 0 } },
+      _avg: { totalSpent: true },
+      _count: true,
+    }),
+    prisma.customer.count({
+      where: {
+        restaurantId,
+        OR: [
+          { tags: { has: 'VIP' } },
+          { totalVisits: { gte: 10 } },
+          { totalSpent: { gte: 500 } },
+        ],
+      },
+    }),
+  ])
+
+  const avgSpent = spendingStats._count > 0
+    ? moneyNumber(spendingStats._avg.totalSpent)
     : 0
 
-  res.json({ total, vipCount, avgSpent: Math.round(avgSpent * 100) / 100 })
+  res.json({
+    total,
+    vipCount,
+    avgSpent: Math.round(avgSpent * 100) / 100,
+    activeCustomers: spendingStats._count,
+  })
 })
 
 customersRouter.get('/', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {

@@ -77,6 +77,7 @@
     "inventory": "Stock",
     "analytics": "Analytique",
     "settings": "Paramètres",
+    "profile": "Mon profil",
     "kitchenDisplay": "Écran Cuisine",
     "openKitchenDisplay": "Ouvrir l'écran cuisine",
     "lockedPremium": "Activez Premium pour débloquer cette section",
@@ -1121,7 +1122,10 @@
     "orderReady": "Commande prête à servir !",
     "orderReadyError": "Impossible de marquer la commande comme prête",
     "orderDismissError": "Impossible d'archiver la commande",
-    "orderDismissed": "Commande servie et retirée de la cuisine"
+    "orderDismissed": "Commande servie et retirée de la cuisine",
+    "emptyPending": "Aucune commande en attente",
+    "emptyPreparing": "Aucune commande en préparation",
+    "emptyReady": "Aucune commande prête"
   },
   "offline": {
     "bannerOffline": "Hors ligne — les commandes seront envoyées dès le retour de la connexion",

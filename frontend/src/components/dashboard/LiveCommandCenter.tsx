@@ -11,6 +11,7 @@ import { cn, formatTime, toDateInputInTimezone } from '../../lib/utils'
 import { useAuth, useTenantQueryKey } from '../../contexts/AuthContext'
 import { tq } from '../../lib/queryKeys'
 import { useRole } from '../../hooks/useRole'
+import { useShowQuerySkeleton } from '../../hooks/useShowQuerySkeleton'
 import QueryErrorBanner from '../QueryErrorBanner'
 import {
   useRealtimeTables,
@@ -50,6 +51,7 @@ export default function LiveCommandCenter() {
   const tenantTz = restaurant?.timezone ?? 'Europe/Rome'
   const tk = useTenantQueryKey()
   const { can } = useRole()
+  const tenantReady = Boolean(restaurant?.id)
 
   const canTables = can('tables.read')
   const canReservations = can('reservations.read')
@@ -62,23 +64,27 @@ export default function LiveCommandCenter() {
   const { data: tables = [], isLoading: loadingTables, isError: tablesError } = useQuery<FloorTable[]>({
     queryKey: tq(tk, 'tables'),
     queryFn: () => api.get('/tables').then(r => r.data),
-    enabled: canTables,
+    enabled: tenantReady && canTables,
     refetchInterval: 60_000,
   })
 
   const { data: reservations = [], isLoading: loadingRes, isError: reservationsError } = useQuery<ReservationRow[]>({
     queryKey: tq(tk, 'reservations', 'today'),
     queryFn: () => api.get(`/reservations?date=${localToday(tenantTz)}`).then(r => r.data),
-    enabled: canReservations,
+    enabled: tenantReady && canReservations,
     refetchInterval: 60_000,
   })
 
   const { data: activeOrders = [], isLoading: loadingOrders, isError: ordersError } = useQuery<ActiveOrder[]>({
     queryKey: tq(tk, 'orders', 'active'),
     queryFn: () => api.get('/orders/active').then(r => r.data),
-    enabled: canOrders,
+    enabled: tenantReady && canOrders,
     refetchInterval: 30_000,
   })
+
+  const showTablesSkeleton = useShowQuerySkeleton(loadingTables, tables.length > 0)
+  const showResSkeleton = useShowQuerySkeleton(loadingRes, reservations.length > 0)
+  const showOrdersSkeleton = useShowQuerySkeleton(loadingOrders, activeOrders.length > 0)
 
   const tableStats = useMemo(() => {
     const counts = { FREE: 0, OCCUPIED: 0, RESERVED: 0, CLEANING: 0 }
@@ -108,13 +114,13 @@ export default function LiveCommandCenter() {
     return { pending, preparing, total: activeOrders.length }
   }, [activeOrders])
 
-  const modules = [
+  const modules = useMemo(() => [
     canTables && {
       key: 'tables',
       title: t('dashboard.tableStatus'),
       icon: UtensilsCrossed,
       tone: 'gold' as const,
-      loading: loadingTables,
+      loading: showTablesSkeleton,
       href: '/tavoli',
       cta: t('dashboard.viewFloor'),
       content: (
@@ -133,7 +139,7 @@ export default function LiveCommandCenter() {
       title: t('dashboard.upcomingReservations'),
       icon: CalendarClock,
       tone: 'blue' as const,
-      loading: loadingRes,
+      loading: showResSkeleton,
       href: '/prenotazioni',
       cta: t('dashboard.viewReservations'),
       content: upcoming.length === 0 ? (
@@ -163,7 +169,7 @@ export default function LiveCommandCenter() {
       title: t('dashboard.kitchenQueue'),
       icon: ChefHat,
       tone: 'emerald' as const,
-      loading: loadingOrders,
+      loading: showOrdersSkeleton,
       href: '/cucina',
       cta: t('dashboard.openKitchen'),
       content: (
@@ -193,7 +199,18 @@ export default function LiveCommandCenter() {
     cta: string
     external?: boolean
     content: ReactNode
-  }>
+  }>, [
+    canTables,
+    canReservations,
+    canOrders,
+    t,
+    tableStats,
+    upcoming,
+    kitchenStats,
+    showTablesSkeleton,
+    showResSkeleton,
+    showOrdersSkeleton,
+  ])
 
   if (modules.length === 0) return null
 

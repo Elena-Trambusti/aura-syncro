@@ -15,6 +15,9 @@ export const ROLES: AppRole[] = ['OWNER', 'MANAGER', 'WAITER', 'CHEF', 'BARTENDE
 
 export const STAFF_MANAGE_ROLES: AppRole[] = ['OWNER', 'MANAGER']
 
+/** Operazioni riservate al titolare (billing, fiscale, impostazioni tenant) */
+export const OWNER_ONLY_ROLES: AppRole[] = ['OWNER']
+
 /** Voci sidebar riservate a titolari e manager */
 export const ADMIN_NAV_ROLES: AppRole[] = ['OWNER', 'MANAGER']
 

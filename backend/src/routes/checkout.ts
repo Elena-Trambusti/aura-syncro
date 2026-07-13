@@ -22,7 +22,7 @@ function resolveStripePriceIds(plan: 'STARTER' | 'PREMIUM'): { setup: string; su
 }
 
 /** POST /api/checkout — Stripe Checkout Session (setup €500 + abbonamento €199/mo, tutto incluso) */
-checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+checkoutRouter.post('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const schema = z.object({
     plan: z.enum(['STARTER', 'PREMIUM']).default('PREMIUM')
   })
@@ -107,7 +107,7 @@ checkoutRouter.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReques
 })
 
 /** POST /api/checkout/portal — Stripe Customer Portal (gestione abbonamento / fatture) */
-checkoutRouter.post('/portal', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+checkoutRouter.post('/portal', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
   if (!STRIPE_ENABLED) {
     res.status(503).json({ error: 'Stripe non configurato' })
     return

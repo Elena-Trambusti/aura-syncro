@@ -24,7 +24,9 @@
     "stripe:verify": "tsx scripts/verify-stripe.ts",
     "stripe:sync-webhooks": "tsx scripts/sync-stripe-webhooks.ts",
     "db:studio": "npx prisma studio",
-    "db:supabase-rls": "tsx scripts/run-supabase-rls.ts"
+    "db:supabase-rls": "tsx scripts/run-supabase-rls.ts",
+    "db:purge-test": "tsx scripts/purge-test-accounts.ts",
+    "db:purge-test:execute": "tsx scripts/purge-test-accounts.ts --execute"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
@@ -36,6 +38,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.5.2",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.5.0",

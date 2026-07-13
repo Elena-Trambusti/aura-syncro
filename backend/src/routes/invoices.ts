@@ -48,7 +48,7 @@ const invoiceSchema = z.object({
   })).optional(),
 })
 
-router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = tenantId(req)
 
   try {
@@ -264,7 +264,7 @@ router.post('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: 
   }
 })
 
-router.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const restaurantId = tenantId(req)
   const invoices = await prisma.invoice.findMany({
     where: {

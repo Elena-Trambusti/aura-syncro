@@ -108,13 +108,15 @@ export default function Header() {
         </div>
 
         <div className="aura-topbar-profile">
-          <div className="premium-avatar">
-            {user ? getInitials(user.name) : 'U'}
-          </div>
-          <div className="hidden min-w-0 md:block">
-            <p className="truncate text-sm font-medium leading-none text-pietra">{user?.name}</p>
-            <p className="mt-0.5 truncate text-[11px] text-fumo">{roleLabel}</p>
-          </div>
+          <Link to="/profilo" className="aura-focus-ring flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 hover:bg-white/[0.04]">
+            <div className="premium-avatar">
+              {user ? getInitials(user.name) : 'U'}
+            </div>
+            <div className="hidden min-w-0 md:block">
+              <p className="truncate text-sm font-medium leading-none text-pietra">{user?.name}</p>
+              <p className="mt-0.5 truncate text-[11px] text-fumo">{roleLabel}</p>
+            </div>
+          </Link>
           <button
             type="button"
             onClick={() => {

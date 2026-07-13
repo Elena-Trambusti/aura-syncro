@@ -80,6 +80,7 @@
     "inventory": "Magazzino",
     "analytics": "Analytics",
     "settings": "Impostazioni",
+    "profile": "Il mio profilo",
     "kitchenDisplay": "Schermo Cucina",
     "openKitchenDisplay": "Apri schermo cucina",
     "lockedPremium": "Attiva il piano Premium per sbloccare questa sezione",
@@ -88,6 +89,22 @@
     "lockedAria": "bloccato",
     "previewUnsubscribed": "Anteprima gratuita — attiva Premium per sbloccare tutto",
     "previewOnboarding": "Onboarding in corso — le funzioni si sbloccano a setup completato"
+  },
+  "profile": {
+    "title": "Il mio profilo",
+    "subtitle": "Aggiorna i tuoi dati personali e la password di accesso",
+    "name": "Nome",
+    "email": "Email",
+    "changePassword": "Cambia password",
+    "currentPassword": "Password attuale",
+    "newPassword": "Nuova password",
+    "passwordHint": "Minimo {{min}} caratteri. Lascia vuoto per non cambiarla.",
+    "save": "Salva profilo",
+    "saved": "Profilo aggiornato",
+    "nameRequired": "Il nome è obbligatorio (minimo 2 caratteri)",
+    "emailRequired": "L'email è obbligatoria",
+    "passwordTooShort": "La password deve avere almeno {{min}} caratteri",
+    "currentPasswordRequired": "Inserisci la password attuale per impostarne una nuova"
   },
   "demo": {
     "bannerTitle": "Demo interattiva Aura Syncro",
@@ -230,12 +247,17 @@
     "EMAIL_ALREADY_EXISTS": "Email già registrata nel sistema.",
     "SHIFT_INVALID_TIME": "L'orario di fine deve essere successivo all'inizio.",
     "STAFF_INACTIVE": "Membro disattivato — riattivalo prima di assegnare turni.",
-    "SHIFT_OWNER_NOT_ALLOWED": "Il titolare non può essere assegnato ai turni."
+    "SHIFT_OWNER_NOT_ALLOWED": "Il titolare non può essere assegnato ai turni.",
+    "OWNER_CANNOT_DEACTIVATE": "Il titolare non può essere disattivato.",
+    "OWNER_ROLE_LOCKED": "Il ruolo del titolare non può essere modificato.",
+    "INVALID_PASSWORD": "Password attuale non corretta.",
+    "ACCOUNT_INACTIVE": "Account non attivo."
   },
   "dashboard": {
     "title": "Dashboard — {{name}}",
     "todayRevenue": "Incasso Oggi",
     "todayRevenueSub": "ordini pagati oggi",
+    "todayOrdersSub": "ordini incassati oggi",
     "activeOrders": "Ordini Attivi",
     "activeOrdersSub": "tavoli con ordine aperto",
     "todayReservations": "Prenotazioni Oggi",
@@ -1392,7 +1414,10 @@
     "footerHint": "Tocca ✓ per avanzare · +1 segna una porzione pronta · Consegnato rimuove l'ordine",
     "legendPending": "In attesa",
     "legendPreparing": "In prep.",
-    "legendReady": "Pronto"
+    "legendReady": "Pronto",
+    "emptyPending": "Nessun ordine in attesa",
+    "emptyPreparing": "Nessun ordine in preparazione",
+    "emptyReady": "Nessun ordine pronto"
   },
   "offline": {
     "bannerOffline": "Sei offline — le comande verranno inviate appena torna la connessione",

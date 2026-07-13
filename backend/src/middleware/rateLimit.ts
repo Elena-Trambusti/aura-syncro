@@ -24,6 +24,14 @@ export const authRegisterLimiter = rateLimit({
   message: message('Troppe registrazioni da questo indirizzo. Riprova tra un\'ora.'),
 })
 
+export const authMeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: message('Troppe richieste di sessione. Riprova tra un minuto.'),
+})
+
 export const authForgotPasswordLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
