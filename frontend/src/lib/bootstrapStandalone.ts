@@ -1,11 +1,12 @@
 import { api } from './api'
-import { detectInstalledAppShell } from './standaloneApp'
+import { isStandaloneApp, markInstalledAppShell } from './standaloneApp'
 
 /** Segna la shell; il redirect marketing → login è in index.html + LandingRoute (no reload qui). */
 export function bootstrapStandaloneApp(): void {
   if (typeof window === 'undefined') return
-  if (!detectInstalledAppShell()) return
+  if (!isStandaloneApp()) return
 
+  markInstalledAppShell()
   document.documentElement.classList.add('pwa-standalone')
 }
 

@@ -127,7 +127,8 @@
             || /; wv\)/i.test(navigator.userAgent);
           try {
             if (sessionStorage.getItem('aura-twa-active') === '1') standalone = true;
-            if (localStorage.getItem('aura-installed-app') === '1') standalone = true;
+            /* NON usare aura-installed-app: in browser normale la landing deve restare visibile
+               (allineato a isStandaloneApp() in src/lib/standaloneApp.ts). */
           } catch (e) {}
           if (document.referrer.indexOf('android-app://') === 0) {
             try { sessionStorage.setItem('aura-twa-active', '1'); } catch (e) {}

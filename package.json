@@ -15,8 +15,10 @@
     "test:vitest": "vitest run",
     "test:watch": "vitest",
     "test:business": "vitest run tests/business-logic",
+    "test:api": "vitest run tests/business-logic/tenant-isolation.test.ts tests/business-logic/order-api-edge-cases.test.ts tests/business-logic/checkout-cash-api.test.ts",
     "test:unit": "npm run test:legacy --prefix backend",
     "test:e2e": "npm run test:e2e --prefix frontend",
+    "test:all": "npm run test:vitest && npm run test:e2e --prefix frontend",
     "db:push": "npm run db:push --prefix backend",
     "db:migrate": "npm run db:migrate --prefix backend",
     "db:generate": "npm run db:generate --prefix backend",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zod": "^3.24.2"
   }
 }
