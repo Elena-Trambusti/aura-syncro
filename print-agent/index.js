@@ -8,12 +8,17 @@ escpos.USB = require('escpos-usb')
 
 const AURA_WS_URL = process.env.AURA_WS_URL || 'http://localhost:3001'
 const AURA_RESTAURANT_ID = process.env.AURA_RESTAURANT_ID
+const AURA_PRINT_TOKEN = process.env.AURA_PRINT_TOKEN
 const PRINTER_TYPE = process.env.PRINTER_TYPE || 'USB' // USB o NETWORK
 const PRINTER_IP = process.env.PRINTER_IP || '192.168.1.100' // Solo se NETWORK
 const PRINTER_PORT = process.env.PRINTER_PORT || 9100
 
 if (!AURA_RESTAURANT_ID) {
   console.error('❌ ERRORE: Manca AURA_RESTAURANT_ID nel file .env')
+  process.exit(1)
+}
+if (!AURA_PRINT_TOKEN) {
+  console.error('❌ ERRORE: Manca AURA_PRINT_TOKEN nel file .env (pairing Print Agent)')
   process.exit(1)
 }
 
@@ -38,8 +43,7 @@ const printer = device ? new escpos.Printer(device) : null
 console.log(`🔌 Connessione al server Aura Syncro (${AURA_WS_URL})...`)
 const socket = io(AURA_WS_URL, {
   auth: {
-    // Per un setup enterprise in futuro useremmo un API key dedicata al Print Agent.
-    // Qui simuliamo l'header usato dal frontend.
+    printToken: AURA_PRINT_TOKEN,
   },
   extraHeaders: {
     'X-Restaurant-Id': AURA_RESTAURANT_ID,

@@ -11,6 +11,7 @@ import { assertTableCanBeSetFree, TABLE_HAS_ACTIVE_ORDER } from '../lib/tableRel
 import { isManualTableTransitionAllowed, TABLE_TRANSITION_ERROR } from '../lib/tableStatus'
 import { signTableToken } from '../lib/tableToken'
 import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
+import { writeAuditLog } from '../lib/auditLog'
 
 import { floorPlanLayoutSchema, parseFloorPlanLayout, EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
 
@@ -336,13 +337,97 @@ tablesRouter.patch('/:id/status', requirePermission('tables.status'), async (req
 
   const updated = await prisma.table.update({
     where: { id: req.params.id, restaurantId: tenantId(req) },
-    data: { status },
+    data: {
+      status,
+      ...(status === 'FREE'
+        ? { servingUserId: null, servingUserName: null, servingClaimedAt: null }
+        : {}),
+    },
   })
 
   res.json(updated)
   setImmediate(() => {
     io.to(tenantId(req)).emit('table:updated', updated)
   })
+})
+
+tablesRouter.post('/:id/claim', requirePermission('tables.status'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!table) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+
+  if (table.servingUserId && table.servingUserId !== req.userId) {
+    res.status(409).json({
+      error: 'Tavolo già in carico a un altro cameriere',
+      code: 'TABLE_CLAIMED',
+      servingUserName: table.servingUserName,
+    })
+    return
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: req.userId!, restaurantId: tenantId(req) },
+    select: { name: true },
+  })
+
+  const updated = await prisma.table.update({
+    where: { id: table.id },
+    data: {
+      servingUserId: req.userId!,
+      servingUserName: user?.name ?? 'Staff',
+      servingClaimedAt: new Date(),
+    },
+  })
+
+  writeAuditLog({
+    restaurantId: tenantId(req),
+    userId: req.userId,
+    action: 'TABLE_CLAIM',
+    entityType: 'Table',
+    entityId: table.id,
+    metadata: { tableNumber: table.number },
+    req,
+  })
+
+  res.json(updated)
+  setImmediate(() => io.to(tenantId(req)).emit('table:updated', updated))
+})
+
+tablesRouter.post('/:id/release', requirePermission('tables.status'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const table = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+  if (!table) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
+
+  if (table.servingUserId && table.servingUserId !== req.userId && req.userRole !== 'OWNER' && req.userRole !== 'MANAGER') {
+    res.status(403).json({ error: 'Solo chi ha preso in carico il tavolo può rilasciarlo', code: 'TABLE_CLAIM_FORBIDDEN' })
+    return
+  }
+
+  const updated = await prisma.table.update({
+    where: { id: table.id },
+    data: {
+      servingUserId: null,
+      servingUserName: null,
+      servingClaimedAt: null,
+    },
+  })
+
+  writeAuditLog({
+    restaurantId: tenantId(req),
+    userId: req.userId,
+    action: 'TABLE_RELEASE',
+    entityType: 'Table',
+    entityId: table.id,
+    metadata: { tableNumber: table.number },
+    req,
+  })
+
+  res.json(updated)
+  setImmediate(() => io.to(tenantId(req)).emit('table:updated', updated))
 })
 
 tablesRouter.get('/:number/qr-token', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {

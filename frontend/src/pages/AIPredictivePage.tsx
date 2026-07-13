@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { toast } from '@/lib/toast'
@@ -34,6 +35,7 @@ function AIPredictivePageContent() {
     inventoryForecast,
     dishTrends,
     insights,
+    suggestedActions,
     hasRecipeLinks,
     isLoading,
     isFetching,
@@ -159,6 +161,30 @@ function AIPredictivePageContent() {
       )}
 
       <PredictiveKpiStrip metrics={metrics} sparklineCovers={sparklineCovers} />
+
+      {suggestedActions.length > 0 && (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+          <h3 className="text-sm font-semibold text-pietra mb-3">{t('aiPredictive.suggestedActionsTitle')}</h3>
+          <ul className="space-y-2">
+            {suggestedActions.map(action => (
+              <li key={action.id}>
+                <Link
+                  to={action.href}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm text-fumo hover:border-aura-gold/30 hover:text-pietra transition-colors"
+                >
+                  <span>{t(action.actionKey, action.params)}</span>
+                  <span className={cn(
+                    'text-[10px] font-bold uppercase tracking-wider',
+                    action.priority === 'high' ? 'text-red-400' : action.priority === 'medium' ? 'text-amber-400' : 'text-fumo',
+                  )}>
+                    {action.priority}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="hidden xl:block space-y-6">
         {mainGrid}

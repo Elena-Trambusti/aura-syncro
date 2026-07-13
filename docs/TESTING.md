@@ -132,6 +132,25 @@ npm run test:e2e:report --prefix frontend
 - Tavolo → comanda → “Vai al pagamento” → checkout carta → ricevuta
 - `/cassa` carica senza error boundary (turno aperto o chiuso)
 
+### `frontend/e2e/premium-ops.spec.ts`
+- `/impostazioni` — checklist conformità fiscale e sezione Print Agent
+- `/menu` — pulsante import CSV visibile
+- `/dashboard/onboarding` — verifica go-live o checklist sistema
+- Mobile — claim/release tavolo occupato dopo comanda inviata
+
+### `tests/business-logic/premium-ops-api.test.ts`
+- `GET /api/health/ready` — probe DB (DigitalOcean readiness)
+- `GET /api/restaurant/compliance-status` — score e checks
+- `GET /api/restaurant/onboarding-readiness` — prerequisiti go-live
+- `POST /api/restaurant/onboarding/go-live` — sblocco dashboard (o `alreadyComplete`)
+- `GET /api/restaurant/print-agent` — stato pairing
+- `POST /api/menu/import-csv` — import piatto + validazione 400
+- `POST /api/tables/:id/claim` e `/release` — lock cameriere
+- `GET /api/restaurant/audit-log` — trail OWNER
+
+### `tests/business-logic/menu-csv-import.test.ts`
+- Parser CSV `parseMenuCsv` — header, righe, errori prezzo
+
 ---
 
 ## 4. Variabili d’ambiente utili

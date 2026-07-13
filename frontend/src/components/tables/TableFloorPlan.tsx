@@ -29,6 +29,9 @@ export interface FloorTable {
   rotation?: number
   area?: string
   upcomingReservation?: TableReservationPreview | null
+  servingUserId?: string | null
+  servingUserName?: string | null
+  servingClaimedAt?: string | null
 }
 
 export function tableSize(seats: number, shape: string) {

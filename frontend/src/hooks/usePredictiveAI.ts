@@ -79,6 +79,13 @@ export interface PredictiveAIData {
   inventoryForecast: InventoryForecastItem[]
   dishTrends: DishTrendItem[]
   insights: PredictiveInsight[]
+  suggestedActions?: Array<{
+    id: string
+    actionKey: string
+    href: string
+    priority: 'high' | 'medium' | 'low'
+    params?: Record<string, string | number>
+  }>
   hasRecipeLinks: boolean
 }
 
@@ -112,6 +119,7 @@ export function usePredictiveAI() {
     inventoryForecast: query.data?.inventoryForecast ?? [],
     dishTrends: query.data?.dishTrends ?? [],
     insights: query.data?.insights ?? [],
+    suggestedActions: query.data?.suggestedActions ?? [],
     hasRecipeLinks: query.data?.hasRecipeLinks ?? false,
     isLoading: query.isLoading,
     isFetching: query.isFetching,

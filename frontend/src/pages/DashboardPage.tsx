@@ -27,6 +27,7 @@ interface DashboardData {
   today: { orders: number; revenue: number; reservations: number; activeOrders: number }
   month: { revenue: number; revenueGrowth: number }
   totals: { customers: number; lowStockAlerts: number; avgTurnoverMinutes: number }
+  opsInsights?: Array<{ id: string; key: string; params?: Record<string, number> }>
 }
 
 function ChartError({ message }: { message: string }) {
@@ -207,6 +208,20 @@ export default function DashboardPage() {
         <div className="premium-alert-error">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
           <p className="text-sm text-red-300">{t('common.loadError')}</p>
+        </div>
+      )}
+
+      {canAnalytics && (dashboard?.opsInsights?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 space-y-2">
+          <p className="text-sm font-semibold text-amber-200">{t('dashboard.insightsTitle')}</p>
+          <ul className="space-y-1 text-sm text-fumo">
+            {dashboard!.opsInsights!.map(insight => (
+              <li key={insight.id} className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                <span>{t(insight.key, insight.params)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

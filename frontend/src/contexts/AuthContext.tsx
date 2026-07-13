@@ -3,6 +3,7 @@ import i18n from '../i18n'
 import { toast } from '@/lib/toast'
 import { api, setTenantHeader } from '../lib/api'
 import { connectSocket, disconnectSocket } from '../lib/socket'
+import { syncSentryTenantContext } from '../instrument'
 import { bootstrapSessionToken, clearSessionToken, hasAuthSessionHint, setSessionToken } from '../lib/sessionToken'
 import { applyTenantCssVars } from '../lib/tenantTheme'
 import { invalidateTenantQueries, queryClient } from '../lib/queryClient'
@@ -212,6 +213,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void connectSocket(token)
     }
   }, [token, restaurant?.id])
+
+  useEffect(() => {
+    syncSentryTenantContext({
+      userId: user?.id,
+      restaurantId: restaurant?.id,
+      role: user?.role,
+    })
+  }, [user?.id, user?.role, restaurant?.id])
 
   useEffect(() => {
     if (discardDemoSession) {

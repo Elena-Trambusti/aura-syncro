@@ -94,6 +94,14 @@ export default function CrmPage() {
     enabled: Boolean(selectedId),
   })
 
+  const { data: customerTimeline } = useQuery<{
+    events: Array<{ id: string; kind: string; at: string; title: string; detail?: string; amount?: number; status?: string }>
+  }>({
+    queryKey: tq(tk, 'customers', selectedId, 'timeline'),
+    queryFn: () => api.get(`/customers/${selectedId}/timeline`).then(r => r.data),
+    enabled: Boolean(selectedId),
+  })
+
   const createCustomer = useMutation({
     mutationFn: (data: NewCustomerForm) =>
       api.post('/customers', {
@@ -394,6 +402,7 @@ export default function CrmPage() {
 
       <CustomerSlideOver
         customer={selectedId ? (selectedCustomer ?? null) : null}
+        timelineEvents={customerTimeline?.events}
         onClose={() => { setOpenCustomerEdit(false); setSelectedId(null) }}
         isLoading={detailLoading && Boolean(selectedId)}
         isSaving={updateCustomer.isPending}

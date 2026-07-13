@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { Receipt, ShoppingBag, Sparkles, Users } from 'lucide-react'
+import { Receipt, ShoppingBag, Sparkles, Users, UserCheck, UserX } from 'lucide-react'
 import MobileBottomSheet from '../ui/MobileBottomSheet'
 import { cn, formatCurrency, formatTime } from '../../lib/utils'
 import { findActiveTableOrder } from '../../lib/orderSession'
 import { isTableBillStage } from '../../lib/tableFilters'
 import { TABLE_STATUS_BADGE, type FloorTable, type TableStatus } from './TableFloorPlan'
+import { useAuth } from '../../contexts/AuthContext'
 
 export interface TableDetailData extends FloorTable {
   orders?: Array<{ id: string; status: string; total: number; createdAt: string; items?: Array<{ status: string }> }>
@@ -19,6 +20,8 @@ interface TableDetailSheetProps {
   onGoToPayment?: () => void
   onMarkFree: () => void
   onSeatReservation?: () => void
+  onClaimTable?: () => void
+  onReleaseTable?: () => void
   canCreateOrder?: boolean
   canPayOrder?: boolean
   isPending?: boolean
@@ -32,11 +35,14 @@ export default function TableDetailSheet({
   onGoToPayment,
   onMarkFree,
   onSeatReservation,
+  onClaimTable,
+  onReleaseTable,
   canCreateOrder = true,
   canPayOrder = false,
   isPending = false,
 }: TableDetailSheetProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const activeOrder = findActiveTableOrder(table.orders)
   const isBill = isTableBillStage(table)
   const reservation = table.reservations?.[0] ?? table.upcomingReservation
@@ -119,6 +125,34 @@ export default function TableDetailSheet({
         <p className="text-sm text-fumo">
           {t('tables.mobile.orderSince', { time: formatTime(activeOrder.createdAt) })}
         </p>
+      )}
+
+      {table.servingUserName && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm text-amber-200">
+          {t('tables.servingBy', { name: table.servingUserName })}
+          {table.servingUserId === user?.id && onReleaseTable && (
+            <button
+              type="button"
+              onClick={onReleaseTable}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 py-2 text-sm font-medium text-pietra"
+            >
+              <UserX className="h-4 w-4" />
+              {t('tables.releaseTable')}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!table.servingUserId && onClaimTable && table.status !== 'FREE' && (
+        <button
+          type="button"
+          onClick={onClaimTable}
+          disabled={isPending}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm font-medium text-pietra"
+        >
+          <UserCheck className="h-4 w-4" />
+          {t('tables.claimTable')}
+        </button>
       )}
     </MobileBottomSheet>
   )

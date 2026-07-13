@@ -50,9 +50,43 @@ function blockDemoSocketWrite(socket: Socket): boolean {
   return false
 }
 
+async function verifyPrintAgentToken(
+  restaurantId: string,
+  token: string,
+): Promise<boolean> {
+  if (!restaurantId || !token) return false
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId },
+    select: { printAgentToken: true },
+  })
+  return settings?.printAgentToken != null && settings.printAgentToken === token
+}
+
 export function setupSocketHandlers(io: Server): void {
   io.use(async (socket, next) => {
     const authToken = socket.handshake.auth.token
+    const authPrintToken = socket.handshake.auth.printToken
+    const headerRestaurantId =
+      typeof socket.handshake.headers['x-restaurant-id'] === 'string'
+        ? socket.handshake.headers['x-restaurant-id']
+        : undefined
+
+    // Print Agent: pairing token (non JWT) + header tenant.
+    if (
+      headerRestaurantId
+      && typeof authPrintToken === 'string'
+      && authPrintToken.length > 0
+      && await verifyPrintAgentToken(headerRestaurantId, authPrintToken)
+    ) {
+      socket.data.userId = 'print-agent'
+      socket.data.restaurantId = headerRestaurantId
+      socket.data.role = 'PRINT_AGENT'
+      socket.data.userEmail = 'print-agent@local'
+      socket.data.tokenVersion = 0
+      next()
+      return
+    }
+
     const cookieHeader = typeof socket.handshake.headers.cookie === 'string'
       ? socket.handshake.headers.cookie
       : undefined

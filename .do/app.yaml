@@ -17,10 +17,11 @@ services:
     instance_size_slug: basic-s
     http_port: 8080
     build_command: npm ci && npm run build
+    # migrate deploy anche in start (package.json) — doppia sicurezza se il job pre-deploy fallisce
     run_command: npm start
     health_check:
-      http_path: /api/health
-      initial_delay_seconds: 20
+      http_path: /api/health/ready
+      initial_delay_seconds: 45
       period_seconds: 30
       timeout_seconds: 10
       success_threshold: 1
@@ -87,19 +88,26 @@ services:
       - key: MARKETING_SCHEDULER_MS
         value: "3600000"
 
-# Opzionale: job pre-deploy per allineare lo schema Prisma su Supabase (senza cartella migrations)
-# jobs:
-#   - name: prisma-db-push
-#     kind: PRE_DEPLOY
-#     github:
-#       repo: Elena-Trambusti/aura-syncro
-#       branch: main
-#     source_dir: /backend
-#     run_command: npx prisma db push
-#     envs:
-#       - key: DATABASE_URL
-#         scope: RUN_TIME
-#         type: SECRET
-#       - key: DIRECT_URL
-#         scope: RUN_TIME
-#         type: SECRET
+# Migrazioni Prisma PRIMA di ogni deploy — blocca il rollout se il DB non è allineato
+jobs:
+  - name: prisma-migrate
+    kind: PRE_DEPLOY
+    github:
+      repo: Elena-Trambusti/aura-syncro
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    build_command: npm ci
+    run_command: npx prisma migrate deploy
+    envs:
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+        scope: BUILD_TIME
+      - key: DATABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: DIRECT_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET

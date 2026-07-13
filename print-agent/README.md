@@ -25,6 +25,7 @@ Documentazione progetto: [`../README.md`](../README.md)
 |---|---|
 | `AURA_WS_URL` | URL backend (es. `https://api.aurasyncro.com` o `http://localhost:3001`) |
 | `AURA_RESTAURANT_ID` | ID ristorante (DB o URL dashboard) |
+| `AURA_PRINT_TOKEN` | Token pairing (Impostazioni → Print Agent) |
 | `PRINTER_TYPE` | `NETWORK` o `USB` |
 | `PRINTER_IP` | IP stampante (solo `NETWORK`) |
 | `PRINTER_PORT` | Porta TCP, default `9100` |

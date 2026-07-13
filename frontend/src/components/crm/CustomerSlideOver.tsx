@@ -53,6 +53,7 @@ export interface CustomerEditData {
 
 interface CustomerSlideOverProps {
   customer: CustomerDetail | null
+  timelineEvents?: Array<{ id: string; kind: string; at: string; title: string; detail?: string; amount?: number; status?: string }>
   onClose: () => void
   isLoading?: boolean
   onSave?: (data: CustomerEditData) => void | Promise<void>
@@ -79,7 +80,7 @@ function toEditForm(customer: CustomerDetail): CustomerEditData {
   }
 }
 
-export default function CustomerSlideOver({ customer, onClose, isLoading, onSave, onDelete, isSaving, isDeleting, startInEditMode }: CustomerSlideOverProps) {
+export default function CustomerSlideOver({ customer, timelineEvents, onClose, isLoading, onSave, onDelete, isSaving, isDeleting, startInEditMode }: CustomerSlideOverProps) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<CustomerEditData>({
@@ -391,6 +392,29 @@ export default function CustomerSlideOver({ customer, onClose, isLoading, onSave
                 <p className="text-sm text-fumo italic">&ldquo;{customer.notes}&rdquo;</p>
               </div>
             )}
+
+            <div className="rounded-xl premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-fumo mb-3">
+                {t('crm.timelineTitle')}
+              </p>
+              {(timelineEvents?.length ?? 0) === 0 ? (
+                <p className="text-sm text-fumo">{t('common.noData')}</p>
+              ) : (
+                <ul className="space-y-2 max-h-44 overflow-y-auto">
+                  {timelineEvents!.map(ev => (
+                    <li key={ev.id} className="text-sm border-b border-white/[0.06] pb-2 last:border-0">
+                      <div className="flex justify-between gap-2">
+                        <span className="font-medium text-pietra">{ev.title}</span>
+                        <span className="text-xs text-fumo">{formatDate(ev.at)}</span>
+                      </div>
+                      <p className="text-xs text-fumo mt-0.5">
+                        {ev.kind}{ev.detail ? ` · ${ev.detail}` : ''}{ev.amount != null ? ` · ${formatCurrency(ev.amount)}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div>
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-fumo mb-3">

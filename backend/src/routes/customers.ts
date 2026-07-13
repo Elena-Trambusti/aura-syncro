@@ -112,6 +112,98 @@ customersRouter.get('/', requirePermission('customers.read'), async (req: AuthRe
   res.json(customers.map(c => serializeCustomer(c)))
 })
 
+customersRouter.get('/:id/timeline', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const customer = await prisma.customer.findFirst({
+    where: { id: req.params.id, restaurantId: req.restaurantId! },
+    select: { id: true, name: true },
+  })
+  if (!customer) {
+    res.status(404).json({ error: 'Cliente non trovato' })
+    return
+  }
+
+  const [orders, reservations, loyaltyTx] = await Promise.all([
+    prisma.order.findMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      select: {
+        id: true,
+        status: true,
+        total: true,
+        paymentMethod: true,
+        createdAt: true,
+        paidAt: true,
+        table: { select: { number: true } },
+      },
+    }),
+    prisma.reservation.findMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+      orderBy: { date: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        date: true,
+        covers: true,
+        status: true,
+        guestName: true,
+      },
+    }),
+    prisma.loyaltyTransaction.findMany({
+      where: { customerId: customer.id, restaurantId: req.restaurantId! },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        points: true,
+        type: true,
+        description: true,
+        createdAt: true,
+      },
+    }),
+  ])
+
+  type TimelineEvent = {
+    id: string
+    kind: 'order' | 'reservation' | 'loyalty'
+    at: string
+    title: string
+    detail?: string
+    amount?: number
+    status?: string
+  }
+
+  const events: TimelineEvent[] = [
+    ...orders.map(o => ({
+      id: `order-${o.id}`,
+      kind: 'order' as const,
+      at: (o.paidAt ?? o.createdAt).toISOString(),
+      title: o.table ? `Tavolo ${o.table.number}` : 'Ordine',
+      detail: o.paymentMethod ?? undefined,
+      amount: moneyNumber(o.total),
+      status: o.status,
+    })),
+    ...reservations.map(r => ({
+      id: `res-${r.id}`,
+      kind: 'reservation' as const,
+      at: r.date.toISOString(),
+      title: r.guestName,
+      detail: `${r.covers} coperti`,
+      status: r.status,
+    })),
+    ...loyaltyTx.map(tx => ({
+      id: `loyalty-${tx.id}`,
+      kind: 'loyalty' as const,
+      at: tx.createdAt.toISOString(),
+      title: tx.description ?? tx.type,
+      detail: `${tx.points > 0 ? '+' : ''}${tx.points} pt`,
+      status: tx.type,
+    })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+
+  res.json({ customerId: customer.id, customerName: customer.name, events })
+})
+
 customersRouter.get('/:id', requirePermission('customers.read'), async (req: AuthRequest, res: Response): Promise<void> => {
   const customer = await prisma.customer.findFirst({
     where: { id: req.params.id, restaurantId: req.restaurantId! },

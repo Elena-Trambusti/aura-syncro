@@ -40,7 +40,9 @@ import { cashRouter } from './routes/cash'
 import { AuthRequest, authenticate } from './middleware/auth'
 import { requireTenantContext } from './middleware/tenantContext'
 import { requireDashboardAccess } from './middleware/dashboardAccess'
+import { attachSentryTenantScope } from './middleware/sentryTenant'
 import { requireProPlan } from './middleware/planTier'
+import { prisma } from './lib/prisma'
 import { buildDashboardSummary } from './lib/analyticsSummary'
 import { getTenantCache, setTenantCacheBounded } from './lib/tenantCache'
 import { runAllMarketingJobs } from './lib/marketingSend'
@@ -150,7 +152,7 @@ app.use('/api/public', publicRouter)
 app.use('/api/admin', adminRouter)
 
 // Middleware comune: auth → tenant context → dashboard access
-const apiGuard = [authenticate, requireTenantContext, requireDashboardAccess]
+const apiGuard = [authenticate, requireTenantContext, attachSentryTenantScope, requireDashboardAccess]
 
 app.get('/api/analytics/summary', ...apiGuard, requirePermission('analytics.read'), async (req: AuthRequest, res) => {
   try {
@@ -203,6 +205,24 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
   })
+})
+
+app.get('/api/health/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    res.json({
+      status: 'ready',
+      db: 'ok',
+      timestamp: new Date().toISOString(),
+    })
+  } catch (err) {
+    console.error('[health/ready] DB ping failed:', err)
+    res.status(503).json({
+      status: 'not_ready',
+      db: 'error',
+      timestamp: new Date().toISOString(),
+    })
+  }
 })
 
 // Gestore Errori Sentry (deve essere DOPO le rotte ma PRIMA del gestore errori custom)

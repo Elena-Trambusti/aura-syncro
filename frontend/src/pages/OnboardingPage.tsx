@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useAuth } from '../contexts/AuthContext'
@@ -99,6 +99,24 @@ export default function OnboardingPage() {
     return () => window.clearInterval(interval)
   }, [refreshRestaurant, refetchReadiness, searchParams, restaurant?.hasActiveSubscription])
 
+  const goLive = useMutation({
+    mutationFn: () => api.post('/restaurant/onboarding/go-live'),
+    onSuccess: () => {
+      toast.success(t('onboarding.goLiveSuccess'))
+      void refreshRestaurant()
+      void refetchReadiness()
+    },
+    onError: (err: unknown) => {
+      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code
+      if (code === 'ONBOARDING_NOT_READY') {
+        toast.error(t('onboarding.goLiveNotReady'))
+        void refetchReadiness()
+        return
+      }
+      toast.error(t('onboarding.goLiveError'))
+    },
+  })
+
   const systemDone = (readiness?.checks || []).filter(c => c.ok).length
   const systemTotal = (readiness?.checks || []).length
   const checkLabel = (id: string) => t(`onboarding.systemChecks.${id}`, { defaultValue: id })
@@ -185,10 +203,22 @@ export default function OnboardingPage() {
               ))}
             </ul>
             {readiness?.readyForService && (
-              <p className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-4 text-sm font-medium text-emerald-400 shadow-inner flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                {t('onboarding.systemReady')}
-              </p>
+              <div className="mt-6 space-y-4">
+                <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-4 text-sm font-medium text-emerald-400 shadow-inner flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  {t('onboarding.systemReady')}
+                </p>
+                {!restaurant?.isSetupComplete && (
+                  <button
+                    type="button"
+                    disabled={goLive.isPending}
+                    onClick={() => goLive.mutate()}
+                    className="w-full rounded-xl bg-[#D4AF37] px-5 py-3.5 text-sm font-semibold text-black shadow-lg transition hover:bg-[#c9a227] disabled:opacity-60"
+                  >
+                    {goLive.isPending ? t('common.loading') : t('onboarding.goLiveCta')}
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}

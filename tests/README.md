@@ -20,7 +20,7 @@ Suite di test automatici del monorepo. **Guida completa:** [`../docs/TESTING.md`
 |---|---|
 | `npm run test:vitest` | Tutta la suite Vitest |
 | `npm run test:business` | Solo `tests/business-logic/` |
-| `npm run test:api` | Tenant isolation + ordini + cassa (richiede backend :3001) |
+| `npm run test:api` | Tenant isolation + ordini + cassa + premium ops (richiede backend :3001) |
 | `npm run test:watch` | Vitest in modalità watch |
 | `npm run test:unit` | Unit test legacy in `backend/src/**/*.test.ts` |
 | `npm run test:e2e` | Playwright (`frontend/e2e/`) |
@@ -67,6 +67,8 @@ Credenziali demo: `admin@demo-it.com` / `admin123` (vedi [`../README.md`](../REA
 - **tenant-isolation.test.ts** — isolamento multi-tenant, header `X-Restaurant-Id`
 - **order-api-edge-cases.test.ts** — validazione Zod, idempotency
 - **checkout-cash-api.test.ts** — finalize carta/contanti, sessione cassa
+- **premium-ops-api.test.ts** — health/ready, compliance, go-live, CSV import, table claim, audit log
+- **menu-csv-import.test.ts** — parser CSV menu (puro)
 - **integration-db.test.ts** — solo se `DATABASE_URL` è impostato
 
 ### E2E (`frontend/e2e/`)
@@ -74,6 +76,7 @@ Credenziali demo: `admin@demo-it.com` / `admin123` (vedi [`../README.md`](../REA
 - **order-flow.spec.ts** — login → tavoli → comanda → cucina
 - **edge-cases.spec.ts** — carrello vuoto, triple-click invio
 - **checkout-cash.spec.ts** — pagamento e pagina cassa
+- **premium-ops.spec.ts** — compliance, import CSV, go-live, claim tavolo mobile
 
 ---
 

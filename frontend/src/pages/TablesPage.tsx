@@ -303,6 +303,28 @@ export default function TablesPage() {
     },
   })
 
+  const claimTable = useMutation({
+    mutationFn: (id: string) => api.post(`/tables/${id}/claim`),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      setDetailTable(prev => (prev?.id === res.data.id ? { ...prev, ...res.data } : prev))
+    },
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'tables.claimError'))
+    },
+  })
+
+  const releaseTable = useMutation({
+    mutationFn: (id: string) => api.post(`/tables/${id}/release`),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      setDetailTable(prev => (prev?.id === res.data.id ? { ...prev, ...res.data } : prev))
+    },
+    onError: (err: unknown) => {
+      toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'tables.releaseError'))
+    },
+  })
+
   const transferOrder = useMutation({
     mutationFn: ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
       api.post(`/tables/${sourceId}/transfer`, { targetTableId: targetId }),
@@ -905,9 +927,11 @@ export default function TablesPage() {
           onGoToPayment={handleDetailGoToPayment}
           onMarkFree={handleDetailMarkFree}
           onSeatReservation={handleDetailSeatReservation}
+          onClaimTable={() => detailTable && claimTable.mutate(detailTable.id)}
+          onReleaseTable={() => detailTable && releaseTable.mutate(detailTable.id)}
           canCreateOrder={canCreateOrder}
           canPayOrder={canPayOrder}
-          isPending={seatReservation.isPending || markTableFree.isPending}
+          isPending={seatReservation.isPending || markTableFree.isPending || claimTable.isPending || releaseTable.isPending}
         />
       )}
 

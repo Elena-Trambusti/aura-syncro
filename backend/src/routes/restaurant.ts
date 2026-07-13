@@ -8,6 +8,9 @@ import { requireFullDashboardAccess } from '../middleware/dashboardAccess'
 import { buildFiscalConfig, resolveTaxRegion, type RestaurantSettingsLike } from '../lib/taxEngine'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
 import { computeOnboardingReadiness } from '../lib/onboardingReadiness'
+import { computeComplianceStatus } from '../lib/complianceStatus'
+import { writeAuditLog } from '../lib/auditLog'
+import { randomBytes } from 'crypto'
 import { resolveMaxCoversPerSlot } from '../lib/reservationCapacity'
 import { onboardingRouter } from './onboarding'
 
@@ -18,6 +21,7 @@ const SENSITIVE_SETTINGS_FIELDS = new Set([
   'posTerminalId',
   'posMerchantId',
   'posSetupNotes',
+  'printAgentToken',
 ])
 
 function serializeRestaurantResponse(
@@ -120,6 +124,94 @@ restaurantRouter.get('/pos-status', requireRole('OWNER', 'MANAGER'), async (req:
 restaurantRouter.get('/onboarding-readiness', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const readiness = await computeOnboardingReadiness(req.restaurantId!)
   res.json(readiness)
+})
+
+/** Sblocco automatico dashboard quando tutti i prerequisiti sistema sono soddisfatti. */
+restaurantRouter.post('/onboarding/go-live', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const readiness = await computeOnboardingReadiness(restaurantId)
+  if (!readiness.readyForService) {
+    res.status(409).json({
+      error: 'Prerequisiti go-live non ancora soddisfatti',
+      code: 'ONBOARDING_NOT_READY',
+      readiness,
+    })
+    return
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { isSetupComplete: true },
+  })
+  if (restaurant?.isSetupComplete) {
+    res.json({ success: true, alreadyComplete: true })
+    return
+  }
+
+  const updated = await prisma.restaurant.update({
+    where: { id: restaurantId },
+    data: { isSetupComplete: true },
+    include: { settings: true },
+  })
+
+  writeAuditLog({
+    restaurantId,
+    userId: req.userId,
+    action: 'ONBOARDING_GO_LIVE',
+    entityType: 'Restaurant',
+    entityId: restaurantId,
+    req,
+  })
+
+  res.json({ success: true, restaurant: serializeRestaurantResponse(updated) })
+})
+
+/** Stato conformità fiscale/operativa per chiusura guidata. */
+restaurantRouter.get('/compliance-status', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const status = await computeComplianceStatus(req.restaurantId!)
+  res.json(status)
+})
+
+/** Stato Print Agent (token mascherato). */
+restaurantRouter.get('/print-agent', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId: req.restaurantId! },
+    select: { printAgentToken: true },
+  })
+  const token = settings?.printAgentToken
+  res.json({
+    configured: Boolean(token),
+    tokenPreview: token ? `••••${token.slice(-6)}` : null,
+  })
+})
+
+restaurantRouter.post('/print-agent/regenerate', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const restaurantId = req.restaurantId!
+  const token = randomBytes(24).toString('hex')
+  await prisma.restaurantSettings.upsert({
+    where: { restaurantId },
+    update: { printAgentToken: token },
+    create: { restaurantId, printAgentToken: token },
+  })
+  writeAuditLog({
+    restaurantId,
+    userId: req.userId,
+    action: 'PRINT_AGENT_TOKEN_REGEN',
+    entityType: 'RestaurantSettings',
+    entityId: restaurantId,
+    req,
+  })
+  res.json({ token, message: 'Salva il token nel Print Agent — non verrà mostrato di nuovo.' })
+})
+
+restaurantRouter.get('/audit-log', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200)
+  const rows = await prisma.auditLog.findMany({
+    where: { restaurantId: req.restaurantId! },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  })
+  res.json({ count: rows.length, entries: rows })
 })
 
 restaurantRouter.get('/onboarding-concierge', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {

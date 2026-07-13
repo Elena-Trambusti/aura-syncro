@@ -76,6 +76,14 @@ marketingRouter.post('/', requirePermission('marketing.manage'), async (req: Aut
   const result = schema.safeParse(req.body)
   if (!result.success) { res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() }); return }
 
+  if (result.data.type === 'SMS') {
+    res.status(400).json({
+      error: 'Campagne SMS non disponibili in questa versione. Usa EMAIL.',
+      code: 'SMS_NOT_ENABLED',
+    })
+    return
+  }
+
   const data = result.data
   const campaign = await prisma.campaign.create({
     data: {

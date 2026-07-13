@@ -2,7 +2,7 @@ const DB_NAME = 'aura-syncro-offline'
 const DB_VERSION = 1
 const STORE = 'mutations'
 
-export type OfflineMutationKind = 'CREATE_ORDER' | 'ADD_ORDER_ITEMS'
+export type OfflineMutationKind = 'CREATE_ORDER' | 'ADD_ORDER_ITEMS' | 'FINALIZE_ORDER_CASH'
 
 export interface OrderLinePayload {
   menuItemId: string
@@ -24,12 +24,18 @@ export interface AddOrderItemsPayload {
   items: OrderLinePayload[]
 }
 
+export interface FinalizeOrderCashPayload {
+  orderId: string
+  paymentMethod: 'CASH'
+  tipAmount?: number
+}
+
 export interface OfflineMutation {
   id: string
   kind: OfflineMutationKind
   /** Tenant owner della mutation per evitare replay cross-tenant */
   tenantId?: string
-  payload: CreateOrderPayload | AddOrderItemsPayload
+  payload: CreateOrderPayload | AddOrderItemsPayload | FinalizeOrderCashPayload
   createdAt: number
   retryCount: number
   lastError?: string

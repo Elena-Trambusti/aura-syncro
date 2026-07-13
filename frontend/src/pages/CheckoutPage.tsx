@@ -23,6 +23,7 @@ import {
   isPaymentInProgress,
   resolvePaymentErrorMessage,
 } from '../lib/paymentErrors'
+import { isRetryableNetworkError, submitFinalizeOrderCash } from '../lib/offlineSync'
 import { resolveToastApiError } from '../lib/formatApiError'
 import {
   markTableCleaningAfterPayment,
@@ -348,10 +349,6 @@ export default function CheckoutPage() {
 
   const finalize = useMutation({
     mutationFn: async (splitGuestIndex?: number) => {
-      if (!navigator.onLine) {
-        throw new Error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
-      }
-
       const payload = buildFinalizePayload(splitGuestIndex)
       const idempotencySuffix = splitGuestIndex != null ? `:split:${splitGuestIndex}` : ''
       const headers = finalizeIdempotencyKey
@@ -369,6 +366,22 @@ export default function CheckoutPage() {
             await new Promise(resolve => setTimeout(resolve, 400))
             continue
           }
+
+          // Offline queue: supporta solo incasso contanti intero (no split).
+          if (
+            splitGuestIndex == null
+            && payload?.paymentMethod === 'CASH'
+            && isRetryableNetworkError(err)
+            && typeof orderId === 'string'
+          ) {
+            const queuedResult = await submitFinalizeOrderCash({
+              orderId,
+              paymentMethod: 'CASH',
+              tipAmount: payload.tipAmount ?? 0,
+            })
+            return { offlineQueued: true, queuedResult }
+          }
+
           throw err
         }
       }
@@ -389,7 +402,15 @@ export default function CheckoutPage() {
         previousTables,
       }
     },
-    onSuccess: (result: CheckoutFinalizeResult & { partial?: boolean; remaining?: number; table?: { id: string; number: number; status: string } | null }, _splitGuestIndex, context) => {
+    onSuccess: (result: (CheckoutFinalizeResult & { partial?: boolean; remaining?: number; table?: { id: string; number: number; status: string } | null }) | { offlineQueued: true; queuedResult: 'synced' | 'queued' }, _splitGuestIndex, context) => {
+      if ('offlineQueued' in result && result.offlineQueued) {
+        if (context?.optimistic) {
+          setFinalizeResult(context.previousReceipt ?? null)
+          optimisticReceiptRef.current = null
+        }
+        toast.success(t('offline.queued', { defaultValue: 'Operazione salvata: verrà sincronizzata appena torna la connessione.' }))
+        return
+      }
       if (!result.partial && orderId) {
         if (result.table?.id && result.table.status) {
           patchTableInQueryCache(queryClient, tk, {
@@ -476,7 +497,7 @@ export default function CheckoutPage() {
   const handleFinalizePayment = useCallback(
     (splitGuestIndex?: number) => {
       if (isPaymentBusy || needsCashSession || !orderId) return
-      if (!navigator.onLine) {
+      if (!navigator.onLine && paymentMethod !== 'CASH') {
         toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
         return
       }

@@ -279,6 +279,10 @@ model RestaurantSettings {
    * Layout 2.5D sala: muri, etichette zona, percorsi (JSON versionato v1)
    */
   floorPlanLayout         Json?
+  /**
+   * Token segreto per pairing Print Agent locale (ESC/POS)
+   */
+  printAgentToken         String?
 }
 
 // ===== UTENTI =====
@@ -355,6 +359,10 @@ model Table {
   rotation     Int         @default(0)
   area         String?
   qrCode       String?
+  /** Cameriere che ha preso in carico il tavolo (lock sala) */
+  servingUserId    String?
+  servingUserName  String?
+  servingClaimedAt DateTime?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -1074,4 +1082,21 @@ model SaasElectronicInvoice {
 
   @@index([restaurantId, createdAt])
   @@index([status])
+}
+
+/** Audit trail operazioni sensibili (pagamenti, sconti, rimborsi). */
+model AuditLog {
+  id           String   @id @default(cuid())
+  restaurantId String
+  userId       String?
+  action       String
+  entityType   String?
+  entityId     String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, action])
 }

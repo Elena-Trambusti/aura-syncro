@@ -6,6 +6,7 @@ import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 import { enrichCategoriesWithStock } from '../lib/menuStock'
+import { importMenuFromCsv, loadMenuFoodCostMap } from '../lib/menuCsvImport'
 import { io } from '../index'
 
 export const menuRouter = Router()
@@ -73,7 +74,18 @@ menuRouter.get('/categories', requirePermission('menu.read'), async (req: AuthRe
     orderBy: { sortOrder: 'asc' },
   })
   const enriched = await enrichCategoriesWithStock(categories, tenantId(req))
-  res.json(enriched)
+  const itemIds = enriched.flatMap(c => c.items.map(i => i.id))
+  const foodCostMap = await loadMenuFoodCostMap(tenantId(req), itemIds)
+  const withFoodCost = enriched.map(cat => ({
+    ...cat,
+    items: cat.items.map(item => {
+      const fc = foodCostMap.get(item.id)
+      return fc
+        ? { ...item, ingredientCost: fc.ingredientCost, marginPct: fc.marginPct, foodCostPct: fc.foodCostPct }
+        : item
+    }),
+  }))
+  res.json(withFoodCost)
 })
 
 menuRouter.post('/categories', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
@@ -86,6 +98,16 @@ menuRouter.post('/categories', requirePermission('menu.manage'), async (req: Aut
     data: { ...result.data, restaurantId: tenantId(req) },
   })
   res.status(201).json(category)
+})
+
+menuRouter.post('/import-csv', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+  const parsed = z.object({ csv: z.string().min(10).max(500_000) }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'CSV non valido' })
+    return
+  }
+  const result = await importMenuFromCsv(tenantId(req), parsed.data.csv)
+  res.json(result)
 })
 
 menuRouter.put('/categories/:id', requirePermission('menu.manage'), async (req: AuthRequest, res: Response): Promise<void> => {

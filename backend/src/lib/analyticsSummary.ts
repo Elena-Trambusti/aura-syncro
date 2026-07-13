@@ -127,6 +127,20 @@ export async function buildDashboardSummary(restaurantId: string) {
   const lastMonthFood = sumFoodFromMoneyAgg(lastMonthPartialRevenue)
   const revenueGrowth = lastMonthFood ? ((monthFood - lastMonthFood) / lastMonthFood) * 100 : 0
 
+  const opsInsights: Array<{ id: string; key: string; params?: Record<string, number> }> = []
+  if (lowStockItems > 0) {
+    opsInsights.push({ id: 'low-stock', key: 'dashboard.insights.lowStock', params: { count: lowStockItems } })
+  }
+  if (activeOrders >= 8) {
+    opsInsights.push({ id: 'kitchen-load', key: 'dashboard.insights.kitchenLoad', params: { count: activeOrders } })
+  }
+  if (todayReservations >= 15) {
+    opsInsights.push({ id: 'high-reservations', key: 'dashboard.insights.highReservations', params: { count: todayReservations } })
+  }
+  if (avgTurnoverMinutes > 0 && avgTurnoverMinutes > 90) {
+    opsInsights.push({ id: 'slow-turnover', key: 'dashboard.insights.slowTurnover', params: { minutes: avgTurnoverMinutes } })
+  }
+
   return {
     today: {
       orders: todayOrders,
@@ -143,5 +157,6 @@ export async function buildDashboardSummary(restaurantId: string) {
       revenueGrowth: Math.round(revenueGrowth * 10) / 10,
     },
     totals: { customers: totalCustomers, lowStockAlerts: lowStockItems, avgTurnoverMinutes },
+    opsInsights,
   }
 }

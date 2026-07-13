@@ -34,12 +34,14 @@ import {
   type InventoryForecastItem,
   type PredictiveInsight,
 } from './predictivePayload'
+import { buildSuggestedActions, type SuggestedAction } from './suggestedActions'
 
 export type {
   InventoryForecastItem,
   DishTrendItem,
   PredictiveInsight,
 } from './predictivePayload'
+export type { SuggestedAction } from './suggestedActions'
 
 export interface PredictiveAIResult {
   forecast: AffluenceForecastDay[]
@@ -51,6 +53,7 @@ export interface PredictiveAIResult {
   inventoryForecast: InventoryForecastItem[]
   dishTrends: DishTrendItem[]
   insights: PredictiveInsight[]
+  suggestedActions: SuggestedAction[]
   hasRecipeLinks: boolean
 }
 
@@ -288,6 +291,11 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     inventoryForecast,
     dishTrends: dishTrendsPayload,
   })
+  const suggestedActions = buildSuggestedActions({
+    alerts: result.alerts,
+    inventoryForecast,
+    dishTrends: dishTrendsPayload,
+  })
 
   return {
     forecast: result.forecast,
@@ -299,6 +307,7 @@ export async function runPredictiveAnalysis(restaurantId: string): Promise<Predi
     inventoryForecast,
     dishTrends: dishTrendsPayload,
     insights,
+    suggestedActions,
     hasRecipeLinks,
   }
 }

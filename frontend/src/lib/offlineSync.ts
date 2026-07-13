@@ -5,6 +5,7 @@ import { api } from './api'
 import {
   type AddOrderItemsPayload,
   type CreateOrderPayload,
+  type FinalizeOrderCashPayload,
   type OfflineMutation,
   type OrderLinePayload,
   createMutationId,
@@ -127,8 +128,22 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
     return
   }
 
-  const payload = mutation.payload as AddOrderItemsPayload
-  await postOrderItemsBatch(payload.orderId, payload.items, mutation.id)
+  if (mutation.kind === 'ADD_ORDER_ITEMS') {
+    const payload = mutation.payload as AddOrderItemsPayload
+    await postOrderItemsBatch(payload.orderId, payload.items, mutation.id)
+    return
+  }
+
+  const payload = mutation.payload as FinalizeOrderCashPayload
+  await api.post(
+    '/payments/finalize',
+    {
+      orderId: payload.orderId,
+      paymentMethod: payload.paymentMethod,
+      tipAmount: payload.tipAmount ?? 0,
+    },
+    idempotencyHeader(mutation.id),
+  )
 }
 
 async function executeMutationPartial(mutation: OfflineMutation): Promise<'done' | 'partial' | 'failed'> {
@@ -296,6 +311,18 @@ export async function submitAddOrderItems(
   return tryOrQueue({
     id: createMutationId(),
     kind: 'ADD_ORDER_ITEMS',
+    payload,
+    label: options?.label,
+  })
+}
+
+export async function submitFinalizeOrderCash(
+  payload: FinalizeOrderCashPayload,
+  options?: { label?: string },
+): Promise<SubmitResult> {
+  return tryOrQueue({
+    id: createMutationId(),
+    kind: 'FINALIZE_ORDER_CASH',
     payload,
     label: options?.label,
   })

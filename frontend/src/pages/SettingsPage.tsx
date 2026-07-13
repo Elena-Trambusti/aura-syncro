@@ -6,8 +6,8 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { defaultTaxRateForRegion, normalizeTaxRateForRegion } from '../lib/fiscalRegime'
-import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send, ShieldCheck, Printer } from 'lucide-react'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
@@ -17,6 +17,7 @@ import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
 import { useInstantMutation } from '../hooks/useInstantMutation'
 import AuraButton from '../components/ui/AuraButton'
+import { useRole } from '../hooks/useRole'
 
 interface RestaurantSettings {
   countryCode?: CountryCode
@@ -123,6 +124,39 @@ export default function SettingsPage() {
   const { data: restaurantData, isError } = useQuery<RestaurantData>({
     queryKey: tq(tk, 'restaurant'),
     queryFn: () => api.get('/restaurant').then(r => r.data),
+  })
+
+  const { canAccessAdminNav } = useRole()
+
+  const { data: compliance } = useQuery<{
+    score: number
+    readyForFiscalClose: boolean
+    checks: Array<{ id: string; ok: boolean; severity: string }>
+  }>({
+    queryKey: tq(tk, 'compliance-status'),
+    queryFn: () => api.get('/restaurant/compliance-status').then(r => r.data),
+    enabled: canAccessAdminNav,
+  })
+
+  const { data: printAgent, refetch: refetchPrintAgent } = useQuery<{
+    configured: boolean
+    tokenPreview: string | null
+  }>({
+    queryKey: tq(tk, 'print-agent'),
+    queryFn: () => api.get('/restaurant/print-agent').then(r => r.data),
+    enabled: canAccessAdminNav,
+  })
+
+  const regeneratePrintToken = useInstantMutation({
+    mutationFn: () => api.post('/restaurant/print-agent/regenerate'),
+    onSuccess: (res) => {
+      void refetchPrintAgent()
+      if (res.data?.token) {
+        navigator.clipboard.writeText(res.data.token).catch(() => {})
+        toast.success(t('settings.printAgentTokenCopied'))
+      }
+    },
+    onError: () => toast.error(t('settings.printAgentTokenError')),
   })
 
   const [form, setForm] = useState<SettingsForm>({
@@ -302,6 +336,39 @@ export default function SettingsPage() {
         </div>
         <p className="text-xs text-fumo mt-4">{t('settings.saveHint')}</p>
       </div>
+
+      {canAccessAdminNav && compliance && (
+        <div className="premium-card p-6">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-pietra mb-1 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-aura-gold" />
+                {t('settings.complianceTitle')}
+              </h2>
+              <p className="text-sm text-fumo">{t('settings.complianceDesc')}</p>
+            </div>
+            <span className="text-2xl font-bold tabular-nums text-aura-gold">{compliance.score}%</span>
+          </div>
+          <ul className="space-y-2 mb-4">
+            {compliance.checks.map(check => (
+              <li key={check.id} className="flex items-center justify-between text-sm">
+                <span className={check.ok ? 'text-fumo' : 'text-pietra font-medium'}>
+                  {t(`settings.complianceChecks.${check.id}`)}
+                </span>
+                <span className={check.ok ? 'text-emerald-400' : 'text-amber-400'}>
+                  {check.ok ? t('common.ok') : t('common.pending')}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/dashboard/cash"
+            className="inline-flex items-center gap-2 text-sm font-medium text-aura-gold hover:underline"
+          >
+            {t('settings.complianceCashLink')}
+          </Link>
+        </div>
+      )}
 
       <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-1">{t('settings.billingTitle')}</h2>
@@ -613,6 +680,29 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {canAccessAdminNav && (
+        <div className="premium-card p-6">
+          <h2 className="text-base font-semibold text-pietra mb-1 flex items-center gap-2">
+            <Printer className="h-5 w-5 text-aura-gold" />
+            {t('settings.printAgentTitle')}
+          </h2>
+          <p className="text-sm text-fumo mb-4">{t('settings.printAgentDesc')}</p>
+          <p className="text-sm text-fumo mb-3">
+            {printAgent?.configured
+              ? t('settings.printAgentConfigured', { preview: printAgent.tokenPreview ?? '' })
+              : t('settings.printAgentNotConfigured')}
+          </p>
+          <button
+            type="button"
+            onClick={() => regeneratePrintToken.mutate()}
+            disabled={regeneratePrintToken.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-aura-gold hover:bg-aura-gold-light text-navy rounded-xl text-sm font-semibold"
+          >
+            {t('settings.printAgentRegenerate')}
+          </button>
+        </div>
+      )}
 
       <div className="premium-card p-6">
         <h2 className="text-base font-semibold text-pietra mb-3">{t('settings.accountInfo')}</h2>

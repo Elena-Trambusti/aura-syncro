@@ -17,6 +17,8 @@
     "none": "Ninguno",
     "yes": "Sí",
     "no": "No",
+    "ok": "OK",
+    "pending": "Pendiente",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "phone": "Teléfono",
@@ -238,7 +240,14 @@
     "kitchenPreparing": "En preparación",
     "openKitchen": "Abrir pantalla cocina",
     "quickNav": "Acceso rápido",
-    "secondaryMetrics": "Métricas secundarias"
+    "secondaryMetrics": "Métricas secundarias",
+    "insightsTitle": "Insights operativos",
+    "insights": {
+      "lowStock": "{{count}} productos por debajo del stock mínimo — revisa inventario.",
+      "kitchenLoad": "{{count}} pedidos activos en cocina — considera refuerzos.",
+      "highReservations": "{{count}} reservas hoy — prepara turnos y mise en place.",
+      "slowTurnover": "Rotación media de mesa {{minutes}} min — optimiza el servicio."
+    }
   },
   "tables": {
     "title": "Mesas y TPV",
@@ -248,6 +257,11 @@
     "reserved": "Reservadas",
     "cleaning": "Limpieza",
     "markFree": "Marcar Libre",
+    "claimTable": "Tomar mesa",
+    "releaseTable": "Liberar mesa",
+    "servingBy": "Asignada a {{name}}",
+    "claimError": "No se pudo tomar la mesa",
+    "releaseError": "No se pudo liberar la mesa",
     "confirmCleaningTitle": "Restablecer Mesa",
     "confirmCleaningDescription": "¿Confirmas la limpieza de la mesa {{number}}?",
     "confirmCleaningConfirm": "Confirmar limpieza",
@@ -340,6 +354,10 @@
     "title": "Gestión del Menú",
     "subtitle": "{{count}} platos en {{categories}} categorías",
     "newDish": "Nuevo Plato",
+    "importCsv": "Importar CSV",
+    "csvImportDone": "Importados {{created}} platos ({{skipped}} omitidos)",
+    "csvImportError": "Error al importar CSV",
+    "foodCostPct": "Food cost {{pct}}%",
     "editDish": "Editar Plato",
     "category": "Categoría",
     "price": "Precio (€)",
@@ -407,6 +425,27 @@
     "slug": "Slug (URL)",
     "database": "Base de datos",
     "appVersion": "Versión App",
+    "complianceTitle": "Cumplimiento fiscal y operativo",
+    "complianceDesc": "Checklist guiada para cierre diario e informes.",
+    "complianceCashLink": "Abrir caja y cerrar turno →",
+    "complianceChecks": {
+      "taxId": "IVA / NIF configurado",
+      "legalName": "Razón social",
+      "fiscalRate": "Tipo impositivo válido",
+      "subscription": "Suscripción activa",
+      "pos": "POS configurado",
+      "cashSession": "Caja abierta",
+      "todaySales": "Pedidos cobrados hoy",
+      "integrityChain": "Cadena de integridad fiscal",
+      "menu": "Menú operativo"
+    },
+    "printAgentTitle": "Print Agent (impresión cocina)",
+    "printAgentDesc": "Token de emparejamiento para el daemon ESC/POS local en tu LAN.",
+    "printAgentConfigured": "Configurado: {{preview}}",
+    "printAgentNotConfigured": "No hay token generado.",
+    "printAgentRegenerate": "Generar / regenerar token",
+    "printAgentTokenCopied": "Token copiado — pégalo en el Print Agent.",
+    "printAgentTokenError": "No se pudo generar el token.",
     "fiscalTitle": "Fiscalidad y régimen",
     "fiscalDesc": "País, tipo impositivo e identificador fiscal del restaurante",
     "country": "País",
@@ -513,6 +552,7 @@
     "created": "Cliente creado con éxito",
     "updated": "Cliente actualizado",
     "saveError": "Error al guardar",
+    "timelineTitle": "Timeline del cliente",
     "firstNameRequired": "El nombre es obligatorio",
     "noCustomers": "No se encontraron clientes",
     "neverVisited": "Nunca",
@@ -1098,6 +1138,12 @@
         "body": "Total de {{total}} cubiertos previstos en los próximos 7 días."
       }
     },
+    "suggestedActionsTitle": "Acciones recomendadas",
+    "suggestedActions": {
+      "reviewAlert": "Revisar alerta crítica en AI predictiva",
+      "reorderStock": "Reordenar {{itemName}} (qty sugerida {{qty}})",
+      "reviewDish": "Revisar plato {{dishName}} ({{changePct}}%)"
+    },
     "alertsTitle": "Alertas Inteligentes",
     "alertsSubtitle": "Sugerencias operativas del motor predictivo",
     "refresh": "Actualizar",
@@ -1161,6 +1207,7 @@
     "bannerSyncing": "Sincronizando…",
     "bannerPending": "{{count}} pedido(s) pendiente(s) de envío",
     "retryNow": "Reintentar ahora",
+    "queued": "Guardado — se sincronizará cuando vuelva la conexión",
     "orderQueued": "Pedido guardado — se enviará cuando vuelva la conexión"
   },
   "orderModal": {
@@ -1340,6 +1387,10 @@
     "systemChecklistTitle": "Verificación automática de go-live",
     "systemProgressLabel": "{{done}} de {{total}} controles del sistema superados",
     "systemReady": "Configuración técnica lista para el servicio. El equipo concierge completará menú y formación.",
+    "goLiveCta": "Activar dashboard operativa",
+    "goLiveSuccess": "Dashboard desbloqueada — ¡buen servicio!",
+    "goLiveNotReady": "Completa todos los controles antes del go-live.",
+    "goLiveError": "Go-live falló. Reintenta o contacta soporte.",
     "fillForm": "Rellenar el formulario",
     "bookCall": "Reservar la llamada",
     "systemChecks": {

@@ -53,6 +53,23 @@ export function bootstrapSentryIfConsented(): void {
   void initSentry()
 }
 
+export function syncSentryTenantContext(input: {
+  userId?: string | null
+  restaurantId?: string | null
+  role?: string | null
+}): void {
+  void initSentry().then(mod => {
+    if (!mod) return
+    if (input.restaurantId) mod.setTag('restaurant_id', input.restaurantId)
+    if (input.userId) {
+      mod.setUser({
+        id: input.userId,
+        segment: input.role ?? undefined,
+      })
+    }
+  })
+}
+
 if (typeof window !== 'undefined') {
   bootstrapSentryIfConsented()
   window.addEventListener('aura-cookie-consent-change', () => {

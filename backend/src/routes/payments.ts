@@ -27,6 +27,7 @@ import { paidRevenueOrderWhere } from '../lib/analyticsFilters'
 import { loadTenantTimeRanges } from '../lib/analyticsSummary'
 import { buildMonthRangeInTimezone, calendarDateInTimezone } from '../lib/dates'
 import { resolveRevenueAmount } from '../lib/fiscalAmounts'
+import { writeAuditLog } from '../lib/auditLog'
 
 export const paymentsRouter = Router()
 
@@ -325,6 +326,15 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       void saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, responseBody)
         .catch(err => console.error('[payments] idempotency save failed', err))
     }
+    writeAuditLog({
+      restaurantId: req.restaurantId!,
+      userId: req.userId,
+      action: 'PAYMENT_FINALIZE',
+      entityType: 'Order',
+      entityId: orderId,
+      metadata: { paymentMethod, tipAmount },
+      req,
+    })
     res.json(responseBody)
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
@@ -431,6 +441,15 @@ paymentsRouter.post(
         reason: parsed.data.reason,
         userId: req.userId,
         cashSessionId,
+      })
+      writeAuditLog({
+        restaurantId,
+        userId: req.userId,
+        action: 'PAYMENT_REFUND',
+        entityType: 'Order',
+        entityId: orderId,
+        metadata: { refundAmount, reason: parsed.data.reason },
+        req,
       })
       res.json({ success: true, refundAmount })
     } catch (err) {
@@ -584,6 +603,15 @@ paymentsRouter.post('/apply-discount', authenticate, requireDashboardAccess, req
     const order = await applyDiscountToOrder(parsed.data.orderId, req.restaurantId!, {
       discountCode: parsed.data.discountCode,
       applyLoyalty: parsed.data.applyLoyalty,
+    })
+    writeAuditLog({
+      restaurantId: req.restaurantId!,
+      userId: req.userId,
+      action: 'DISCOUNT_APPLY',
+      entityType: 'Order',
+      entityId: parsed.data.orderId,
+      metadata: { discountCode: parsed.data.discountCode },
+      req,
     })
     res.json({ order })
   } catch (err) {

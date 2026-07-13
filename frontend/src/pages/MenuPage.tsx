@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -8,7 +8,7 @@ import { useRole } from '../hooks/useRole'
 import { useDemoMode } from '../hooks/useDemoMode'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
-import { Plus, Edit2, Trash2, BookOpen, Package } from 'lucide-react'
+import { Plus, Edit2, Trash2, BookOpen, Package, Upload } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { formatApiError, resolveToastApiError } from '../lib/formatApiError'
 import GlassModal from '../components/ui/GlassModal'
@@ -31,6 +31,7 @@ interface MenuItem {
   id: string; name: string; description?: string; price: number
   available: boolean; soldOut?: boolean; orderable?: boolean; featured: boolean; allergens?: string
   preparationTime?: number; calories?: number
+  ingredientCost?: number; foodCostPct?: number | null; marginPct?: number | null
   category: { id: string; name: string }
 }
 
@@ -210,6 +211,19 @@ export default function MenuPage() {
     },
   })
 
+  const csvInputRef = useRef<HTMLInputElement>(null)
+  const importCsv = useInstantMutation({
+    mutationFn: (csv: string) => api.post('/menu/import-csv', { csv }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'menu') })
+      toast.success(t('menu.csvImportDone', {
+        created: res.data.created,
+        skipped: res.data.skipped,
+      }))
+    },
+    onError: (err: unknown) => toast.error(resolveToastApiError(t, err, 'menu.csvImportError')),
+  })
+
   const createCategory = useInstantMutation({
     mutationFn: (name: string) => api.post('/menu/categories', { name }),
     onSuccess: () => {
@@ -254,11 +268,39 @@ export default function MenuPage() {
           title={t('menu.title')}
           subtitle={t('menu.subtitle', { count: allItems.length, categories: categories.length })}
           actions={canManageMenu ? (
-            <button onClick={() => setShowForm(true)}
-              className={`flex items-center justify-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm w-full sm:w-auto shrink-0`}>
-              <Plus className="w-4 h-4" />
-              {t('menu.newDish')}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <input
+                ref={csvInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    const text = String(reader.result ?? '')
+                    if (text.trim()) importCsv.mutate(text)
+                  }
+                  reader.readAsText(file)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => csvInputRef.current?.click()}
+                disabled={importCsv.isPending}
+                className={`flex items-center justify-center gap-2 ${ui.chipInactive} px-4 py-2.5 text-sm`}
+              >
+                <Upload className="w-4 h-4" />
+                {t('menu.importCsv')}
+              </button>
+              <button onClick={() => setShowForm(true)}
+                className={`flex items-center justify-center gap-2 ${ui.btnPrimary} px-4 py-2.5 text-sm`}>
+                <Plus className="w-4 h-4" />
+                {t('menu.newDish')}
+              </button>
+            </div>
           ) : undefined}
         />
         <div className={ui.filterRow}>
@@ -343,6 +385,9 @@ export default function MenuPage() {
                 </td>
                 <td className="px-4 py-4 align-top">
                   <span className="text-[15px] font-bold text-amber-500">{formatCurrency(item.price)}</span>
+                  {item.foodCostPct != null && item.foodCostPct > 0 && (
+                    <p className="text-xs text-fumo mt-1">{t('menu.foodCostPct', { pct: item.foodCostPct })}</p>
+                  )}
                 </td>
                 <td className="px-4 py-4 align-top text-sm text-fumo">
                   {item.preparationTime ? `${item.preparationTime} ${t('common.minutes')}` : '-'}

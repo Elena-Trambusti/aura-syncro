@@ -36,7 +36,7 @@ aura-syncro/
 ├── frontend/          # React 19 + Vite + Tailwind + React Query + i18next
 │   ├── src/pages/     # Dashboard, Tavoli, CRM, Billing, Report Fiscal…
 │   ├── src/lib/       # fiscalPdf, fiscalRegime, standaloneApp, nativeSafeArea
-│   ├── e2e/           # Playwright (flussi ordini, cassa, edge cases)
+│   ├── e2e/           # Playwright (ordini, cassa, premium ops, edge cases)
 │   └── docs/          # android-premium-qa-matrix.md
 ├── print-agent/       # Daemon locale ESC/POS per stampa termica da PWA cloud
 ├── tests/             # Vitest — business logic, tenant isolation, API edge cases
@@ -51,8 +51,15 @@ aura-syncro/
 | Componente | Piattaforma | Note |
 |---|---|---|
 | Frontend | **Vercel** | Proxy `/api` e Socket.IO verso backend DO (`frontend/vercel.json`) |
-| Backend | **DigitalOcean App Platform** | `.do/app.yaml`, region `fra`, health `/api/health` |
+| Backend | **DigitalOcean App Platform** | `.do/app.yaml`, readiness `/api/health/ready`, job `prisma-migrate` PRE_DEPLOY |
 | Database | **PostgreSQL** | `DATABASE_URL` + `DIRECT_URL` (pooler + direct per migrations) |
+
+**Checklist deploy backend (ordine obbligatorio):**
+
+1. Push su `main` → DigitalOcean esegue job `prisma-migrate` (PRE_DEPLOY) poi avvia l'API
+2. `npm start` esegue anche `prisma migrate deploy` all'avvio container (doppia sicurezza)
+3. Verifica: `npm run verify:production --prefix backend`
+4. Se login fallisce con `printAgentToken` → migrazioni non applicate; controllare log job `prisma-migrate` su DO
 
 ---
 
@@ -237,7 +244,28 @@ CI (`.github/workflows/ci-tests.yml`): Vitest + typecheck backend/frontend; job 
 
 Il modulo `print-agent/` è un daemon Node che collega la PWA cloud a stampanti ESC/POS via WebSocket sulla rete locale del ristorante.
 
+**Pairing:** in Impostazioni → Print Agent, genera il token e inseriscilo in `AURA_PRINT_TOKEN` (vedi `.env.example`).
+
 Vedi [`print-agent/README.md`](./print-agent/README.md) per installazione e configurazione.
+
+---
+
+## Operazioni Premium (audit, go-live, compliance)
+
+| Endpoint | Ruolo | Descrizione |
+|---|---|---|
+| `GET /api/health/ready` | Pubblico | Readiness probe — ping DB PostgreSQL |
+| `GET /api/restaurant/onboarding-readiness` | OWNER/MANAGER | Checklist automatica prerequisiti servizio |
+| `POST /api/restaurant/onboarding/go-live` | OWNER | Sblocco self-service dashboard operativa |
+| `GET /api/restaurant/compliance-status` | OWNER/MANAGER | Score conformità fiscale/operativa |
+| `GET/POST /api/restaurant/print-agent` | OWNER/MANAGER | Token pairing Print Agent |
+| `GET /api/restaurant/audit-log` | OWNER | Trail audit pagamenti, sconti, tavoli, go-live |
+| `POST /api/menu/import-csv` | menu.manage | Import bulk menu da CSV |
+| `POST /api/tables/:id/claim` | tables.status | Lock tavolo per cameriere |
+| `POST /api/tables/:id/release` | tables.status | Release lock tavolo |
+| `GET /api/customers/:id/timeline` | CRM | Timeline visite e ordini cliente |
+
+**Migrazione:** `npx prisma migrate deploy` in `backend/` applica `20250713200000_premium_ops` (AuditLog, serving fields, printAgentToken).
 
 ---
 
@@ -287,10 +315,14 @@ Script root utili: `npm run db:seed`, `npm run db:migrate`, `npm run db:studio`.
 ## API principali
 
 ```
+GET    /api/health                        # liveness
+GET    /api/health/ready                  # readiness (DB ping)
 POST   /api/auth/login | /api/auth/register
 GET    /api/public/menu/:slug           # menu QR (consultazione)
 POST   /api/public/reservations         # prenotazioni + caparra
 GET    /api/tables
+POST   /api/tables/:id/claim            # lock cameriere
+POST   /api/tables/:id/release          # release lock
 GET    /api/orders
 GET    /api/cash                        # cassa, chiusure, split checkout
 GET    /api/staff/shifts
@@ -300,6 +332,11 @@ POST   /api/webhooks/stripe
 GET    /api/reports/fiscal              # report fiscale multi-regione
 GET    /api/invoices                    # fatturazione elettronica (IT)
 GET    /api/ai/predictive               # AI predittiva
+POST   /api/menu/import-csv             # import bulk menu
+GET    /api/restaurant/compliance-status
+POST   /api/restaurant/onboarding/go-live
+GET    /api/restaurant/audit-log        # OWNER
+GET    /api/customers/:id/timeline      # CRM timeline
 POST   /api/admin/setup-complete        # sblocco concierge (ADMIN_API_KEY)
 POST   /api/push/subscribe              # Web Push
 ```
