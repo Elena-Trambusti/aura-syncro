@@ -15,18 +15,26 @@ const MASKABLE_SET = new Set(MASKABLE_SIZES)
 
 const iconSrc = (path) => `${path}${ICON_V}`
 
+const shortcutIcon = {
+  src: iconSrc('/pwa/maskable-192.png'),
+  sizes: '192x192',
+  type: 'image/png',
+}
+
 const manifest = {
   id: '/',
   name: 'Aura Syncro',
   short_name: 'Aura Syncro',
   description: 'Gestionale ristoranti SaaS — POS, ordini e cucina in tempo reale',
-  start_url: '/',
+  start_url: '/login?pwa=1',
   scope: '/',
   display: 'standalone',
+  display_override: ['standalone', 'minimal-ui'],
   orientation: 'any',
   theme_color: '#0B0E14',
   background_color: '#C9A227',
   lang: 'it',
+  dir: 'ltr',
   categories: ['business', 'food'],
   icons: [
     ...STANDARD_SIZES.filter((size) => !MASKABLE_SET.has(size)).map((size) => ({
@@ -35,20 +43,32 @@ const manifest = {
       type: 'image/png',
       purpose: 'any',
     })),
-    ...MASKABLE_SIZES.flatMap((size) => [
-      {
-        src: iconSrc(`/pwa/maskable-${size}.png`),
-        sizes: `${size}x${size}`,
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: iconSrc(`/pwa/maskable-${size}.png`),
-        sizes: `${size}x${size}`,
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-    ]),
+    ...MASKABLE_SIZES.map((size) => ({
+      src: iconSrc(`/pwa/icon-${size}.png`),
+      sizes: `${size}x${size}`,
+      type: 'image/png',
+      purpose: 'any',
+    })),
+    ...MASKABLE_SIZES.map((size) => ({
+      src: iconSrc(`/pwa/maskable-${size}.png`),
+      sizes: `${size}x${size}`,
+      type: 'image/png',
+      purpose: 'maskable',
+    })),
+  ],
+  shortcuts: [
+    {
+      name: 'Accedi',
+      short_name: 'Login',
+      url: '/login?pwa=1',
+      icons: [shortcutIcon],
+    },
+    {
+      name: 'Ordini',
+      short_name: 'Ordini',
+      url: '/ordini',
+      icons: [shortcutIcon],
+    },
   ],
 }
 

@@ -24,8 +24,8 @@ export default function PwaRegistrar() {
 
   useEffect(() => {
     if (!import.meta.env.PROD) return
-    // Nell'APK il Service Worker causa schermo nero (HTML/JS disallineati dopo deploy).
-    if (isInstalledAppShell()) return
+
+    const isShell = isInstalledAppShell()
 
     const checkForUpdates = () => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) return
@@ -45,11 +45,13 @@ export default function PwaRegistrar() {
 
     const runRegister = () => {
       applyUpdateRef.current = registerSW({
-        immediate: true,
+        immediate: isShell,
         onRegistered(registration) {
           registrationRef.current = registration
           console.info('[Aura Syncro PWA] Service Worker registrato:', registration?.scope)
-          window.setTimeout(checkForUpdates, INITIAL_UPDATE_DELAY_MS)
+          if (!isShell) {
+            window.setTimeout(checkForUpdates, INITIAL_UPDATE_DELAY_MS)
+          }
         },
         onRegisterError(error) {
           console.error('[Aura Syncro PWA] Errore registrazione Service Worker:', error)
@@ -76,6 +78,14 @@ export default function PwaRegistrar() {
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
+
+    // TWA/APK: registra subito (offline + requisito PWABuilder). Browser: differisci per il first paint.
+    if (isShell) {
+      runRegister()
+      return () => {
+        document.removeEventListener('visibilitychange', onVisibilityChange)
+      }
+    }
 
     if (typeof window.requestIdleCallback === 'function') {
       const idleId = window.requestIdleCallback(runRegister, { timeout: 5000 })

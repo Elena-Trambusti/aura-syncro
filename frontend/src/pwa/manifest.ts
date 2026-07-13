@@ -11,6 +11,12 @@ const MASKABLE_SET = new Set<number>(MASKABLE_SIZES)
 
 const iconSrc = (path: string) => `${path}?v=${BRAND_LOGO_VERSION}`
 
+const shortcutIcon = {
+  src: iconSrc('/pwa/maskable-192.png'),
+  sizes: '192x192',
+  type: 'image/png',
+} as const
+
 export const pwaManifest = {
   id: '/',
   name: 'Aura Syncro',
@@ -20,14 +26,23 @@ export const pwaManifest = {
   start_url: PWA_ROUTES.start,
   scope: '/',
   display: 'standalone' as const,
+  display_override: ['standalone', 'minimal-ui'] as Array<'standalone' | 'minimal-ui'>,
   /** Portrait su telefono; tablet può ruotare in landscape per POS */
   orientation: 'any' as const,
   theme_color: PWA.themeColor,
   background_color: PWA.backgroundColor,
   lang: 'it',
+  dir: 'ltr' as const,
   categories: ['business', 'food'],
   icons: [
     ...STANDARD_SIZES.filter(size => !MASKABLE_SET.has(size)).map(size => ({
+      src: iconSrc(`/pwa/icon-${size}.png`),
+      sizes: `${size}x${size}`,
+      type: 'image/png',
+      purpose: 'any',
+    })),
+    // Icone safe-zone richieste da Play Store / PWABuilder (192 + 512)
+    ...MASKABLE_SIZES.map(size => ({
       src: iconSrc(`/pwa/icon-${size}.png`),
       sizes: `${size}x${size}`,
       type: 'image/png',
@@ -38,15 +53,23 @@ export const pwaManifest = {
         src: iconSrc(`/pwa/maskable-${size}.png`),
         sizes: `${size}x${size}`,
         type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: iconSrc(`/pwa/maskable-${size}.png`),
-        sizes: `${size}x${size}`,
-        type: 'image/png',
         purpose: 'maskable',
       },
     ]),
+  ],
+  shortcuts: [
+    {
+      name: 'Accedi',
+      short_name: 'Login',
+      url: PWA_ROUTES.start,
+      icons: [shortcutIcon],
+    },
+    {
+      name: 'Ordini',
+      short_name: 'Ordini',
+      url: PWA_ROUTES.orders,
+      icons: [shortcutIcon],
+    },
   ],
 }
 

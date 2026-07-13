@@ -22,11 +22,11 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import StandaloneRecoveryBar from './components/layout/StandaloneRecoveryBar'
+import PwaRegistrar from './components/PwaRegistrar'
 
 const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazyRoute(() => import('./pages/ResetPasswordPage'))
 const RegisterPage = lazyRoute(() => import('./pages/RegisterPage'))
-const PwaRegistrar = lazy(() => import('./components/PwaRegistrar'))
 const DeferredCookieBanner = lazy(() => import('./components/landing/DeferredCookieBanner'))
 const PricingPage = lazyRoute(() => import('./pages/PricingPage'))
 const PrivacyPage = lazyRoute(() => import('./pages/PrivacyPage'))
@@ -178,8 +178,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PwaRegistrar />
         <Suspense fallback={null}>
-          <PwaRegistrar />
           <DeferredCookieBanner />
         </Suspense>
         <StandaloneRecoveryBar />

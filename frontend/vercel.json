@@ -32,7 +32,7 @@
       "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io/:path*"
     },
     {
-      "source": "/((?!api/|socket\\.io/|assets/|pwa/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
+      "source": "/((?!api/|socket\\.io/|assets/|pwa/|\\.well-known/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
       "destination": "/index.html"
     }
   ],
@@ -166,6 +166,14 @@
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
         { "key": "CDN-Cache-Control", "value": "public, max-age=0, must-revalidate" },
         { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" },
+        { "key": "CDN-Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
       ]
     }
   ]
