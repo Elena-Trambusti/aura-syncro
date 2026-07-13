@@ -1,31 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isInstalledAppShell, isStandaloneApp } from '../lib/standaloneApp'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-function isStandaloneMode(): boolean {
-  if (typeof window === 'undefined') return false
-  return window.matchMedia('(display-mode: standalone)').matches
-    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-}
-
 export function usePwaInstall() {
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
   const [canInstall, setCanInstall] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(isStandaloneMode)
+  const [isStandalone, setIsStandalone] = useState(() => isStandaloneApp() || isInstalledAppShell())
 
   useEffect(() => {
-    setIsStandalone(isStandaloneMode())
+    const embedded = isStandaloneApp() || isInstalledAppShell()
+    setIsStandalone(embedded)
+    if (embedded) {
+      try {
+        localStorage.setItem('pwa-install-hint-dismissed', '1')
+      } catch {
+        /* ignore */
+      }
+    }
 
     const onBeforeInstall = (event: Event) => {
+      if (isStandaloneApp() || isInstalledAppShell()) return
       event.preventDefault()
       deferredRef.current = event as BeforeInstallPromptEvent
       setCanInstall(true)
     }
 
-    const onDisplayMode = () => setIsStandalone(isStandaloneMode())
+    const onDisplayMode = () => {
+      setIsStandalone(isStandaloneApp() || isInstalledAppShell())
+    }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     window.matchMedia('(display-mode: standalone)').addEventListener('change', onDisplayMode)

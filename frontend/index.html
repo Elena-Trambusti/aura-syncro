@@ -124,7 +124,8 @@
             || window.matchMedia('(display-mode: minimal-ui)').matches
             || window.navigator.standalone === true
             || document.referrer.indexOf('android-app://') === 0
-            || location.search.indexOf('pwa=') !== -1;
+            || location.search.indexOf('pwa=') !== -1
+            || /; wv\)/i.test(navigator.userAgent);
           try {
             if (sessionStorage.getItem('aura-twa-active') === '1') standalone = true;
             if (localStorage.getItem('aura-installed-app') === '1') standalone = true;

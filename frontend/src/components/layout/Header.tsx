@@ -25,7 +25,7 @@ export default function Header() {
     : ''
 
   return (
-    <header className={cn('aura-topbar pwa-header flex h-14 shrink-0 items-center gap-2 px-3 sm:h-[4.25rem] sm:gap-3 sm:px-5', sidebarOpen && 'max-lg:z-30')}>
+    <header className={cn('aura-topbar pwa-header flex shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-5', sidebarOpen && 'max-lg:z-30')}>
       <button
         type="button"
         onClick={() => {

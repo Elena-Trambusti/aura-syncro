@@ -1382,6 +1382,24 @@
   .aura-topbar {
     @apply relative z-40 shrink-0 border-b border-white/[0.06] bg-navy-mid/90 backdrop-blur-xl;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.18);
+    padding-top: env(safe-area-inset-top, 0px);
+    min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .pwa-header,
+    .aura-topbar {
+      min-height: calc(4.25rem + env(safe-area-inset-top, 0px));
+    }
+  }
+
+  /* WebView/TWA: safe-area spesso 0 — evita sovrapposizione con orologio di sistema */
+  @media (max-width: 1023px) {
+    html.pwa-standalone .pwa-header,
+    html.pwa-standalone .aura-topbar {
+      padding-top: max(24px, env(safe-area-inset-top, 0px));
+      min-height: calc(3.5rem + max(24px, env(safe-area-inset-top, 0px)));
+    }
   }
 
   .aura-topbar-search {

@@ -59,8 +59,15 @@ function hasInstalledFlag(): boolean {
   }
 }
 
+function isAndroidWebView(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  // WebView Android (TWA wrapper custom, APK con WebView, ecc.)
+  return /; wv\)/i.test(ua) || /\bwv\b/i.test(ua)
+}
+
 /**
- * Shell embedded senza browser chrome (PWA/APK/TWA).
+ * Shell embedded senza browser chrome (PWA/APK/TWA/WebView).
  * Include flag sessione TWA: il referrer android-app:// sparisce dopo la prima navigazione.
  */
 export function isStandaloneApp(): boolean {
@@ -72,6 +79,7 @@ export function isStandaloneApp(): boolean {
   }
   if (hasTwaSession()) return true
   if (hasPwaQueryFlag()) return true
+  if (isAndroidWebView()) return true
   return false
 }
 
