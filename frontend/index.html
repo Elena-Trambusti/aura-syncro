@@ -154,7 +154,9 @@
         var appShell = isAppShell();
         if (appShell) {
           try { localStorage.setItem('aura-installed-app', '1'); } catch (e) {}
-          document.documentElement.classList.add('pwa-standalone');
+          document.documentElement.classList.add('pwa-standalone', 'aura-native-shell');
+          document.documentElement.style.setProperty('--safe-top', '28px');
+          document.documentElement.style.setProperty('--safe-bottom', '48px');
           document.getElementById('static-landing-fcp')?.remove();
 
           var p = (location.pathname.replace(/\/$/, '') || '/');

@@ -1926,7 +1926,7 @@
     "tableNumberHint": "Con il numero tavolo nel QR, il cliente vede l’esperienza «sono già seduto» (senza link prenotazione). Lascia vuoto per menu generico + prenotazione.",
     "slugMissing": "Slug del ristorante mancante. Configuralo in Impostazioni per generare i QR.",
     "goToSettings": "Vai alle Impostazioni",
-    "previewOpenFailed": "Impossibile aprire l'anteprima qui. Link copiato: incollalo nel browser."
+    "previewOpenFailed": "Impossibile aprire l'anteprima. Link copiato negli appunti."
   },
   "publicBooking": {
     "badge": "Prenotazione tavolo",

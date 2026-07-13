@@ -2,13 +2,34 @@ import i18n from '../i18n'
 import { toast } from '@/lib/toast'
 import { isStandaloneApp } from './standaloneApp'
 
+function sameOriginPath(url: string): string | null {
+  try {
+    const target = new URL(url, window.location.origin)
+    if (target.origin !== window.location.origin) return null
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch {
+    return null
+  }
+}
+
 /**
  * Apre menu/prenotazioni pubblici.
- * Nell'APK/PWA non usa window.open: su Android spesso sostituisce l'app senza tasto indietro.
+ * In APK/TWA: navigazione in-app (stesso WebView) + pulsante "Torna all'app" sulle pagine pubbliche.
  */
 export function openPublicPreview(url: string): boolean {
+  const internalPath = sameOriginPath(url)
+  if (internalPath) {
+    window.location.assign(internalPath)
+    return true
+  }
+
   if (isStandaloneApp()) {
-    return false
+    try {
+      window.location.assign(url)
+      return true
+    } catch {
+      return false
+    }
   }
 
   const popup = window.open(url, '_blank', 'noopener,noreferrer')
@@ -31,7 +52,7 @@ export function openPublicPreview(url: string): boolean {
   return true
 }
 
-/** Apre l'anteprima; nell'APK copia il link (unico modo affidabile). */
+/** Apre l'anteprima; se non possibile copia il link negli appunti. */
 export function openPublicPreviewOrNotify(url: string): void {
   if (openPublicPreview(url)) return
 

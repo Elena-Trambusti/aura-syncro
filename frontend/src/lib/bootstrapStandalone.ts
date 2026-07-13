@@ -1,5 +1,6 @@
 import { api } from './api'
 import { isStandaloneApp, markInstalledAppShell } from './standaloneApp'
+import { applyNativeSafeAreaVars } from './nativeSafeArea'
 
 /** Segna la shell; il redirect marketing → login è in index.html + LandingRoute (no reload qui). */
 export function bootstrapStandaloneApp(): void {
@@ -7,7 +8,12 @@ export function bootstrapStandaloneApp(): void {
   if (!isStandaloneApp()) return
 
   markInstalledAppShell()
-  document.documentElement.classList.add('pwa-standalone')
+  const root = document.documentElement
+  root.classList.add('pwa-standalone', 'aura-native-shell')
+  applyNativeSafeAreaVars()
+
+  window.addEventListener('resize', applyNativeSafeAreaVars, { passive: true })
+  window.visualViewport?.addEventListener('resize', applyNativeSafeAreaVars, { passive: true })
 }
 
 /** Ripristino d'emergenza quando l'APK resta bloccato (cache SW / sessione corrotta). */

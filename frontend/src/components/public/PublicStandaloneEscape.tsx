@@ -17,7 +17,7 @@ export default function PublicStandaloneEscape() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-start p-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-start p-3 pt-[var(--safe-top)]">
       <button
         type="button"
         onClick={handleBack}

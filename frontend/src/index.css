@@ -317,7 +317,8 @@
 
   /* WebView/TWA Android: env(safe-area-*) spesso 0 — fallback per barra stato e navigazione */
   @media (max-width: 1023px) {
-    html.pwa-standalone {
+    html.pwa-standalone,
+    html.aura-native-shell {
       --safe-top: max(28px, env(safe-area-inset-top, 0px));
       --safe-bottom: max(48px, env(safe-area-inset-bottom, 0px));
     }
@@ -1447,7 +1448,9 @@
   /* WebView/TWA: safe-area spesso 0 — evita sovrapposizione con orologio di sistema */
   @media (max-width: 1023px) {
     html.pwa-standalone .pwa-header,
-    html.pwa-standalone .aura-topbar {
+    html.pwa-standalone .aura-topbar,
+    html.aura-native-shell .pwa-header,
+    html.aura-native-shell .aura-topbar {
       padding-top: var(--safe-top);
       min-height: calc(3.5rem + var(--safe-top));
     }
