@@ -64,7 +64,14 @@ export default function ReceiptPreviewModal({
   if (!row) return null
 
   return (
-    <AuraDialog onClose={onClose} maxWidth="md" hideClose a11yTitle={t('checkout.receiptTitle')} className="flex max-h-[90vh] flex-col overflow-hidden p-0">
+    <AuraDialog
+      onClose={onClose}
+      maxWidth="md"
+      variant="bottomSheet"
+      hideClose
+      a11yTitle={t('checkout.receiptTitle')}
+      className="flex max-h-[min(85dvh,calc(100dvh-var(--safe-top)-var(--safe-bottom)))] flex-col overflow-hidden rounded-t-2xl p-0 sm:max-w-md"
+    >
       <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -122,22 +129,22 @@ export default function ReceiptPreviewModal({
           )}
         </div>
 
-      <AuraDialogFooter className="mt-0 flex gap-2 border-t border-white/[0.08] p-4 sm:flex-row">
-        <button
-          type="button"
-          onClick={onPrint}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3 text-sm font-semibold text-fumo hover:bg-white/[0.05]"
-        >
-          <Printer className="h-4 w-4" />
-          {t('checkout.simulatePrint')}
-        </button>
+      <AuraDialogFooter className="mt-0 flex flex-col gap-2 border-t border-white/[0.08] p-4 sm:flex-row">
         <button
           type="button"
           onClick={onEmail}
-          className="saas-btn-primary flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm"
+          className="saas-btn-primary flex flex-1 items-center justify-center gap-2 rounded-xl py-3.5 text-sm min-h-[48px]"
         >
           <Mail className="h-4 w-4" />
           {t('checkout.simulateEmail')}
+        </button>
+        <button
+          type="button"
+          onClick={onPrint}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3.5 text-sm font-semibold text-fumo hover:bg-white/[0.05] min-h-[48px]"
+        >
+          <Printer className="h-4 w-4" />
+          {t('checkout.simulatePrint')}
         </button>
       </AuraDialogFooter>
     </AuraDialog>

@@ -66,7 +66,7 @@ export function AuraDialog({
             'aura-dialog-content aura-dialog-content--bottom-sheet',
             'w-full max-w-none',
             ui.glassModal,
-            'rounded-t-2xl rounded-b-none p-6',
+            'rounded-t-2xl rounded-b-none p-0 sm:rounded-2xl sm:p-6',
             className,
           )
       : variant === 'sheet'

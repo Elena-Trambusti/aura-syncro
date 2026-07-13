@@ -824,16 +824,19 @@
   }
 
   .aura-dialog-content:not(.aura-dialog-content--fullscreen):not(.aura-dialog-content--bottom-sheet) {
-    @apply max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto;
+    max-height: min(90dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom)));
+    @apply overflow-y-auto;
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
+    padding-bottom: max(1rem, var(--safe-bottom));
     animation: aura-dialog-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Bottom sheet mobile — full width, ancorato in basso (no translateX che rompe su WebView) */
+  /* Bottom sheet mobile — full width, ancorato sopra la barra di navigazione sistema */
   .aura-dialog-content--bottom-sheet {
-    @apply max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto;
+    max-height: min(85dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom)));
+    @apply overflow-y-auto;
     inset-inline: 0;
     bottom: 0;
     top: auto;
@@ -843,7 +846,7 @@
     max-width: 100%;
     margin: 0;
     transform: none;
-    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    padding-bottom: max(1rem, var(--safe-bottom));
     animation: aura-bottom-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -921,6 +924,13 @@
 
   .aura-dialog-footer {
     @apply mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end;
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (max-width: 639px) {
+    .aura-dialog-content .aura-dialog-footer {
+      padding-bottom: 0;
+    }
   }
 
   .landing-demo-modal.aura-dialog-content {
