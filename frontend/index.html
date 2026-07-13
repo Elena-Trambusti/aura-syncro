@@ -63,7 +63,7 @@
       html{-webkit-text-size-adjust:100%;background:#0B0E14}
       body{margin:0;min-height:100dvh;background:#0B0E14;color:#E8DFC7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
       #root{min-height:100dvh;background:#0B0E14;position:relative;z-index:1}
-      #static-landing-fcp{position:fixed;inset:0;z-index:0;background:#020202;pointer-events:none}
+      #static-landing-fcp{position:fixed;inset:0;z-index:-1;background:#020202;pointer-events:none}
       #static-landing-fcp .fcp-nav{height:calc(3.25rem + env(safe-area-inset-top,0px));border-bottom:1px solid rgba(212,175,55,0.12)}
       #static-landing-fcp .fcp-hero{padding:calc(5.5rem + env(safe-area-inset-top,0px)) 1rem 6rem;max-width:72rem;margin:0 auto}
       #static-landing-fcp .fcp-badge{height:2.75rem;width:14rem;border-radius:9999px;background:rgba(255,255,255,0.04);margin-bottom:2rem}
@@ -91,7 +91,6 @@
       }
       #pwa-boot-shell .boot-btn-primary{background:#C9A227;color:#0B0E14;border-color:#C9A227}
       #pwa-boot-shell .boot-btn-secondary{background:#12151C;color:#E8DFC7}
-      html.pwa-standalone #pwa-boot-shell{display:flex}
     </style>
   </head>
   <body>
@@ -168,7 +167,13 @@
           }
         } else {
           var path = (location.pathname.replace(/\/$/, '') || '/');
-          if (!['/', '/it', '/es', '/es-cn'].includes(path)) {
+          if (['/', '/it', '/es', '/es-cn'].indexOf(path) !== -1) {
+            var removeFcp = function () {
+              document.getElementById('static-landing-fcp')?.remove();
+            };
+            removeFcp();
+            document.addEventListener('DOMContentLoaded', removeFcp);
+          } else {
             document.getElementById('static-landing-fcp')?.remove();
           }
         }

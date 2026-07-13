@@ -1280,6 +1280,44 @@
     background-image: none !important;
   }
 
+  /* Scroll documento: overflow-x hidden su root/body blocca lo scroll verticale (CSS overflow spec). */
+  html.is-landing {
+    height: auto;
+    min-height: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+  }
+
+  html.is-landing body {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  #root.is-landing {
+    position: relative;
+    z-index: 1;
+    height: auto !important;
+    min-height: 100dvh;
+    max-height: none !important;
+    overflow: visible !important;
+    overscroll-behavior: auto;
+  }
+
+  .landing-page {
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .landing-page main {
+    position: relative;
+    z-index: 2;
+  }
+
   .premium-sidebar {
     @apply relative flex shrink-0 flex-col border-r border-[#D4AF37]/20 backdrop-blur-2xl;
     background-color: #0d0d11;

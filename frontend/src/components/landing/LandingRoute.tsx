@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { applyLocale, normalizeLocaleCode } from '../../i18n/bootstrap'
 import { useAuth } from '../../contexts/AuthContext'
 import { isDemoUserEmail } from '../../lib/demoAccounts'
-import { isInstalledAppShell } from '../../lib/standaloneApp'
+import { isStandaloneApp } from '../../lib/standaloneApp'
 import { PWA_ROUTES } from '../../lib/pwaRoutes'
 
 export default function LandingRoute({ children, forceLang }: { children: React.ReactNode, forceLang?: string }) {
@@ -23,8 +23,8 @@ export default function LandingRoute({ children, forceLang }: { children: React.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // APK/TWA: mai mostrare la landing marketing — redirect client-side (no reload).
-  if (isInstalledAppShell()) {
+  // APK/TWA/WebView: redirect al login. In Chrome normale la landing resta visibile anche se l'app è stata installata in passato.
+  if (isStandaloneApp()) {
     return <Navigate to={PWA_ROUTES.start} replace />
   }
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageMeta } from '../lib/usePageMeta'
@@ -31,6 +31,10 @@ export default function LandingPage() {
     return injectLandingStructuredData(i18n.language, metaTitle, metaDescription, canonicalPath)
   }, [i18n.language, metaTitle, metaDescription, canonicalPath])
 
+  useLayoutEffect(() => {
+    document.getElementById('static-landing-fcp')?.remove()
+  }, [])
+
   useEffect(() => {
     document.getElementById('static-landing-fcp')?.remove()
   }, [])
@@ -38,15 +42,17 @@ export default function LandingPage() {
   useEffect(() => {
     const root = document.getElementById('root')
     document.documentElement.classList.add('is-landing')
+    document.body.classList.add('is-landing')
     root?.classList.add('is-landing')
     return () => {
       document.documentElement.classList.remove('is-landing')
+      document.body.classList.remove('is-landing')
       root?.classList.remove('is-landing')
     }
   }, [])
 
   return (
-    <div lang={i18n.language} className="landing-page relative flex min-h-[100dvh] flex-col overflow-x-hidden lux-text selection:bg-aura-gold/30">
+    <div lang={i18n.language} className="landing-page relative flex min-h-[100dvh] flex-col lux-text selection:bg-aura-gold/30">
       <div className="aura-marble-bg--landing" aria-hidden>
         <picture>
           <source media="(max-width: 767px)" srcSet={LANDING_MARBLE.mobile} type="image/webp" />
@@ -68,7 +74,7 @@ export default function LandingPage() {
 
       <LandingNav />
       <LuxuryGoldGradientDefs />
-      <main className="relative z-10 flex-1">
+      <main className="relative z-10 w-full">
         <LandingHero />
         <LandingBelowFold />
       </main>

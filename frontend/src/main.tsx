@@ -18,6 +18,8 @@ if (!rootEl) {
   throw new Error('#root missing')
 }
 
+hidePwaBootShell()
+
 const root = createRoot(rootEl)
 
 bootstrapI18nSync()
