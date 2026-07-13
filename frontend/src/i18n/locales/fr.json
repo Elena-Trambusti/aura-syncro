@@ -1610,5 +1610,15 @@
       "contact": "Contact",
       "rights": "© {{year}} {{brand}}. Tous droits réservés."
     }
+  },
+  "legal": {
+    "registerAccept": "Je déclare avoir lu et accepté les <1>Conditions d'utilisation</1>, la <2>Politique de confidentialité</2>, la <3>Politique cookies</3> et le <4>DPA</4> pour le traitement des données de mes clients. Version des documents : {{version}}.",
+    "cookieBanner": {
+      "title": "Gestion des cookies",
+      "description": "Nous utilisons des cookies techniques nécessaires. Avec votre consentement, nous activons aussi des statistiques agrégées (Vercel) et la surveillance des erreurs (Sentry). Aucun traceur publicitaire.",
+      "policyLink": "Politique cookies",
+      "acceptAll": "Tout accepter",
+      "necessaryOnly": "Nécessaires uniquement"
+    }
   }
 }

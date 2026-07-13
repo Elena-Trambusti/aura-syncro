@@ -1649,5 +1649,15 @@
       "contact": "Contacto",
       "rights": "© {{year}} {{brand}}. Todos los derechos reservados."
     }
+  },
+  "legal": {
+    "registerAccept": "Declaro haber leído y aceptado los <1>Términos de Servicio</1>, la <2>Política de Privacidad</2>, la <3>Política de Cookies</3> y el <4>DPA</4> para el tratamiento de los datos de mis clientes. Versión documentos: {{version}}.",
+    "cookieBanner": {
+      "title": "Gestión de cookies",
+      "description": "Usamos cookies técnicas necesarias. Con tu consentimiento activamos analíticas agregadas (Vercel) y monitorización de errores (Sentry). Sin rastreadores publicitarios.",
+      "policyLink": "Política de Cookies",
+      "acceptAll": "Aceptar todas",
+      "necessaryOnly": "Solo necesarias"
+    }
   }
 }

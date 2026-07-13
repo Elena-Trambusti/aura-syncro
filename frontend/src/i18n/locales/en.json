@@ -2050,6 +2050,16 @@
       "rights": "© {{year}} {{brand}}. All rights reserved."
     }
   },
+  "legal": {
+    "registerAccept": "I declare that I have read and accept the <1>Terms of Service</1>, <2>Privacy Policy</2>, <3>Cookie Policy</3> and <4>DPA</4> for processing my customers' data. Document version: {{version}}.",
+    "cookieBanner": {
+      "title": "Cookie settings",
+      "description": "We use strictly necessary cookies. With your consent we also enable aggregated analytics (Vercel) and error monitoring (Sentry). No advertising trackers.",
+      "policyLink": "Cookie Policy",
+      "acceptAll": "Accept all",
+      "necessaryOnly": "Necessary only"
+    }
+  },
   "publicMeta": {
     "pricing": {
       "title": "Aura Syncro Pricing | Restaurant cloud software",

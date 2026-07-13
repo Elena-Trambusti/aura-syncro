@@ -294,6 +294,13 @@ model User {
   phone        String?
   active       Boolean    @default(true)
   tokenVersion Int        @default(0)
+  /** Accettazione Termini / DPA in registrazione */
+  termsAcceptedAt      DateTime?
+  termsVersion         String?
+  dpaAcceptedAt        DateTime?
+  dpaVersion           String?
+  legalAcceptIp        String?
+  legalAcceptUserAgent String?    @db.VarChar(512)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

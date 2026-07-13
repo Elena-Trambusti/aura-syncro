@@ -23,6 +23,7 @@ import {
   authRegisterLimiter,
   authResetPasswordLimiter,
 } from '../middleware/rateLimit'
+import { CURRENT_LEGAL_VERSION, isAcceptedLegalVersion } from '../config/legal'
 
 export const authRouter = Router()
 
@@ -42,7 +43,19 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   countryCode: z.nativeEnum(CountryCode).default('IT'),
   taxRegion: z.nativeEnum(TaxRegion).optional(),
+  acceptedTerms: z.literal(true, {
+    errorMap: () => ({ message: 'Accettazione Termini, Privacy, Cookie Policy e DPA obbligatoria' }),
+  }),
+  acceptedTermsVersion: z.string().min(1),
 })
+
+function clientIp(req: Request): string | undefined {
+  const forwarded = req.headers['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0]?.trim()
+  }
+  return req.socket.remoteAddress ?? undefined
+}
 
 async function findUserWithRestaurant(userId: string, restaurantId: string) {
   return prisma.user.findUnique({
@@ -97,7 +110,28 @@ authRouter.post('/register', authRegisterLimiter, asyncHandler(async (req: Reque
     res.status(400).json({ error: 'Dati non validi', details: result.error.flatten() })
     return
   }
-  const { restaurantName, name, email, password, phone, countryCode, taxRegion } = result.data
+  const { restaurantName, name, email, password, phone, countryCode, taxRegion, acceptedTermsVersion } = result.data
+
+  if (!isAcceptedLegalVersion(acceptedTermsVersion)) {
+    res.status(400).json({
+      error: 'Versione documenti legali non valida. Ricarica la pagina e riprova.',
+      code: 'LEGAL_VERSION_OUTDATED',
+      expectedVersion: CURRENT_LEGAL_VERSION,
+    })
+    return
+  }
+
+  const legalAcceptedAt = new Date()
+  const legalMeta = {
+    termsAcceptedAt: legalAcceptedAt,
+    termsVersion: acceptedTermsVersion,
+    dpaAcceptedAt: legalAcceptedAt,
+    dpaVersion: acceptedTermsVersion,
+    legalAcceptIp: clientIp(req),
+    legalAcceptUserAgent: typeof req.headers['user-agent'] === 'string'
+      ? req.headers['user-agent'].slice(0, 512)
+      : undefined,
+  }
 
   const slug = restaurantName.toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -127,6 +161,7 @@ authRouter.post('/register', authRegisterLimiter, asyncHandler(async (req: Reque
               password: hashedPassword,
               role: 'OWNER',
               phone,
+              ...legalMeta,
             },
           },
         },

@@ -2170,6 +2170,16 @@
       "rights": "© {{year}} {{brand}}. Tutti i diritti riservati."
     }
   },
+  "legal": {
+    "registerAccept": "Dichiaro di aver letto e accettato i <1>Termini di Servizio</1>, la <2>Privacy Policy</2>, la <3>Cookie Policy</3> e il <4>DPA</4> per la gestione dei dati dei miei clienti. Versione documenti: {{version}}.",
+    "cookieBanner": {
+      "title": "Gestione cookie",
+      "description": "Utilizziamo cookie tecnici necessari al funzionamento. Con il tuo consenso attiviamo anche statistiche aggregate (Vercel) e monitoraggio errori (Sentry). Nessun tracciamento pubblicitario.",
+      "policyLink": "Cookie Policy",
+      "acceptAll": "Accetta tutti",
+      "necessaryOnly": "Solo necessari"
+    }
+  },
   "publicMeta": {
     "pricing": {
       "title": "Prezzi Aura Syncro | Software gestionale ristoranti",

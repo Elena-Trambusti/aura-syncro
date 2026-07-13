@@ -1,8 +1,9 @@
 /**
- * Sentry — inizializzazione differita per non bloccare il first paint.
+ * Sentry — inizializzazione differita e solo con consenso cookie «tutti».
  */
 import type * as SentryTypes from '@sentry/react'
 import { resolveApiBaseUrl } from './lib/backendUrl'
+import { hasAnalyticsConsent } from './lib/cookieConsent'
 import { redactSensitiveFields } from './lib/sensitiveFields'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
@@ -11,7 +12,7 @@ let sentryModule: typeof SentryTypes | null = null
 let initPromise: Promise<typeof SentryTypes | null> | null = null
 
 function initSentry(): Promise<typeof SentryTypes | null> {
-  if (!dsn || !import.meta.env.PROD) return Promise.resolve(null)
+  if (!dsn || !import.meta.env.PROD || !hasAnalyticsConsent()) return Promise.resolve(null)
   if (sentryModule) return Promise.resolve(sentryModule)
   if (initPromise) return initPromise
 
@@ -46,13 +47,17 @@ function initSentry(): Promise<typeof SentryTypes | null> {
   return initPromise
 }
 
-if (typeof window !== 'undefined' && dsn && import.meta.env.PROD) {
-  const schedule = () => void initSentry()
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(schedule, { timeout: 4000 })
-  } else {
-    setTimeout(schedule, 2000)
-  }
+/** Chiamare dopo consenso analytics o al bootstrap se già presente. */
+export function bootstrapSentryIfConsented(): void {
+  if (!hasAnalyticsConsent()) return
+  void initSentry()
+}
+
+if (typeof window !== 'undefined') {
+  bootstrapSentryIfConsented()
+  window.addEventListener('aura-cookie-consent-change', () => {
+    if (hasAnalyticsConsent()) bootstrapSentryIfConsented()
+  })
 } else if (import.meta.env.DEV && !dsn) {
   console.warn('[Sentry] VITE_SENTRY_DSN mancante in frontend/.env')
 }

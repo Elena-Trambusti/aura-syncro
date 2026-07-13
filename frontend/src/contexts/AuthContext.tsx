@@ -59,6 +59,8 @@ export interface RegisterData {
   phone?: string
   countryCode?: CountryCode
   taxRegion?: TaxRegion
+  acceptedTerms: true
+  acceptedTermsVersion: string
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)

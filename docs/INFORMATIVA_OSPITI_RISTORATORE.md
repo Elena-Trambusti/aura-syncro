@@ -32,6 +32,7 @@ Nome, cognome, email, telefono, dettagli ordine/prenotazione, allergeni dichiara
 
 ### 4. Responsabile tecnologico
 [Nome Ristorante] si avvale della piattaforma **Aura Syncro** quale Responsabile ex art. 28 GDPR.  
+I suggerimenti statistici della piattaforma usano algoritmi matematici interni, senza API esterne di intelligenza artificiale.  
 DPA: https://aurasyncro.com/dpa
 
 ### 5. Conservazione

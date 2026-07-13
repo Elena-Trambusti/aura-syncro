@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { countryCodeFromTaxRegion, type TaxRegion } from '../lib/fiscalRegime'
 import { BRAND } from '../lib/brand'
 import { ui } from '../lib/ui'
+import { LEGAL_DOCUMENT_VERSION } from '../config/legal'
 import BrandLogo from '../components/brand/BrandLogo'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { toast } from '@/lib/toast'
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const { t } = useTranslation()
   const { register } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [legalAccepted, setLegalAccepted] = useState(false)
   const [form, setForm] = useState({
     restaurantName: '',
     name: '',
@@ -25,11 +27,17 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!legalAccepted) {
+      toast.error(t('errors.validation', { defaultValue: 'Completa i campi obbligatori' }))
+      return
+    }
     setLoading(true)
     try {
       await register({
         ...form,
         countryCode: countryCodeFromTaxRegion(form.taxRegion),
+        acceptedTerms: true,
+        acceptedTermsVersion: LEGAL_DOCUMENT_VERSION,
       })
       toast.success(t('auth.welcome'))
     } catch (err: unknown) {
@@ -44,6 +52,8 @@ export default function RegisterPage() {
   const onFiscalLocationChange = (taxRegion: TaxRegion) => {
     setForm(f => ({ ...f, taxRegion }))
   }
+
+  const legalLinkClass = 'text-aura-gold hover:underline'
 
   return (
     <div className="min-h-screen aura-auth-shell flex items-center justify-center p-4 relative">
@@ -95,19 +105,30 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex items-start gap-3 pt-2 pb-1">
-              <input 
-                type="checkbox" 
-                id="legalAccept" 
-                required 
+              <input
+                type="checkbox"
+                id="legalAccept"
+                checked={legalAccepted}
+                onChange={e => setLegalAccepted(e.target.checked)}
+                required
                 className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border border-white/20 bg-black/50 text-aura-gold focus:ring-1 focus:ring-aura-gold focus:ring-offset-0 focus:ring-offset-transparent"
               />
               <label htmlFor="legalAccept" className="text-xs text-slate-400 leading-relaxed cursor-pointer select-none">
-                Dichiaro di aver letto e accettato i <Link to="/termini" className="text-aura-gold hover:underline" target="_blank">Termini di Servizio</Link>, la <Link to="/privacy" className="text-aura-gold hover:underline" target="_blank">Privacy Policy</Link>, la <Link to="/cookie" className="text-aura-gold hover:underline" target="_blank">Cookie Policy</Link> e il <Link to="/dpa" className="text-aura-gold hover:underline" target="_blank">DPA</Link> per la gestione dei dati dei miei clienti.
+                <Trans
+                  i18nKey="legal.registerAccept"
+                  values={{ version: LEGAL_DOCUMENT_VERSION }}
+                  components={{
+                    1: <Link to="/termini" className={legalLinkClass} target="_blank" rel="noopener noreferrer" />,
+                    2: <Link to="/privacy" className={legalLinkClass} target="_blank" rel="noopener noreferrer" />,
+                    3: <Link to="/cookie" className={legalLinkClass} target="_blank" rel="noopener noreferrer" />,
+                    4: <Link to="/dpa" className={legalLinkClass} target="_blank" rel="noopener noreferrer" />,
+                  }}
+                />
               </label>
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !legalAccepted}
               className={`w-full py-3 mt-2 ${ui.btnPrimary} disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               {loading ? t('auth.registering') : t('auth.createRestaurant')}

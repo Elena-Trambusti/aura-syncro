@@ -1610,5 +1610,15 @@
       "contact": "Kontakt",
       "rights": "© {{year}} {{brand}}. Alle Rechte vorbehalten."
     }
+  },
+  "legal": {
+    "registerAccept": "Ich erkläre, die <1>Nutzungsbedingungen</1>, die <2>Datenschutzerklärung</2>, die <3>Cookie-Richtlinie</3> und den <4>DPA</4> zur Verarbeitung meiner Kundendaten gelesen und akzeptiert zu haben. Dokumentversion: {{version}}.",
+    "cookieBanner": {
+      "title": "Cookie-Einstellungen",
+      "description": "Wir verwenden technisch notwendige Cookies. Mit Ihrer Einwilligung aktivieren wir außerdem aggregierte Statistiken (Vercel) und Fehlerüberwachung (Sentry). Keine Werbe-Tracker.",
+      "policyLink": "Cookie-Richtlinie",
+      "acceptAll": "Alle akzeptieren",
+      "necessaryOnly": "Nur notwendige"
+    }
   }
 }

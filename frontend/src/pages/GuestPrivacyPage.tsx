@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LegalDocumentShell, { LegalSection } from '../components/legal/LegalDocumentShell'
-import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
+import { LEGAL_ENTITY, LEGAL_URLS, LEGAL_VERSIONS } from '../config/legal'
 import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 /**
  * Informativa per commensali/ospiti — il Titolare è il Ristorante, non Aura Syncro.
- * Il ristoratore può linkare questa pagina dal menu QR o dalla pagina prenotazioni.
  */
 export default function GuestPrivacyPage() {
   const { t } = useTranslation()
@@ -15,17 +14,17 @@ export default function GuestPrivacyPage() {
   return (
     <LegalDocumentShell
       title="Informativa privacy per gli ospiti"
-      subtitle="Informazione ai sensi dell'art. 13 GDPR — dati raccolti tramite menu digitale e prenotazioni"
+      subtitle={`Versione ${LEGAL_VERSIONS.guestPrivacy} — Informazione ai sensi dell'art. 13 GDPR — dati raccolti tramite menu digitale e prenotazioni`}
     >
       <LegalSection title="1. Chi tratta i tuoi dati">
         <p>
           Quando ordini o prenoti presso un ristorante che utilizza <strong>Aura Syncro</strong>, i tuoi dati personali
-          sono trattati dal <strong>Ristorante</strong> (es. titolare dell'esercizio) quale <strong>Titolare del trattamento</strong>.
+          sono trattati dal <strong>Ristorante</strong> (es. titolare dell&apos;esercizio) quale <strong>Titolare del trattamento</strong>.
         </p>
         <p className="text-slate-400 mt-2">
           <strong>{LEGAL_ENTITY.ownerName}</strong> ({LEGAL_ENTITY.tradeName}) agisce solo come{' '}
           <strong>Responsabile del trattamento</strong> (fornitore tecnologico della piattaforma), su istruzioni del Ristorante.
-          Per esercitare i diritti privacy (accesso, cancellazione, ecc.) contatta principalmente il Ristorante dove hai mangiato/prenotato.
+          Per esercitare i diritti privacy contatta principalmente il Ristorante dove hai mangiato/prenotato.
         </p>
       </LegalSection>
 
@@ -49,15 +48,22 @@ export default function GuestPrivacyPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="4. Conservazione">
+      <LegalSection title="4. Statistiche interne (nessuna AI esterna verso di te)">
         <p className="text-slate-400">
-          I tempi di conservazione sono determinati dal Ristorante titolare, nel rispetto della legge.
-          In generale, i dati operativi restano per la durata del rapporto commerciale con il Ristorante;
-          Aura Syncro li conserva sulla piattaforma per il periodo contrattuale con il Ristorante e fino a 30 giorni dopo la cessazione del servizio.
+          Il Ristorante può utilizzare statistiche aggregate sui propri dati tramite Aura Syncro.
+          I calcoli predittivi sono eseguiti con algoritmi interni e <strong>non comportano decisioni automatizzate</strong> con effetti legali
+          nei tuoi confronti come ospite (art. 22 GDPR).
         </p>
       </LegalSection>
 
-      <LegalSection title="5. I tuoi diritti">
+      <LegalSection title="5. Conservazione">
+        <p className="text-slate-400">
+          I tempi di conservazione sono determinati dal Ristorante titolare, nel rispetto della legge.
+          Aura Syncro conserva i dati sulla piattaforma per il periodo contrattuale con il Ristorante e fino a 30 giorni dopo la cessazione del servizio.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. I tuoi diritti">
         <p>
           Puoi chiedere al <strong>Ristorante</strong> accesso, rettifica, cancellazione, limitazione, portabilità e opposizione
           al trattamento dei tuoi dati. Puoi inoltre proporre reclamo al{' '}
@@ -70,10 +76,10 @@ export default function GuestPrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Per i Ristoratori (Titolari)">
+      <LegalSection title="7. Per i Ristoratori (Titolari)">
         <p>
           Se sei titolare di un ristorante, devi integrare questa informativa con i tuoi dati (ragione sociale, contatti, finalità specifiche)
-          e mostrarla agli ospiti (link nel menu QR, sito, locale). Template completo in{' '}
+          e mostrarla agli ospiti (link nel menu QR, sito, locale). Template in{' '}
           <code className="text-aura-gold">docs/INFORMATIVA_OSPITI_RISTORATORE.md</code>.
           Vedi anche il <Link to={LEGAL_URLS.dpa} className="text-aura-gold hover:underline">DPA</Link>.
         </p>
