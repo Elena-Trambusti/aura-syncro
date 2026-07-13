@@ -62,7 +62,18 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key === 'aura-syncro-cache-v1' || key === 'aura-nav-offline-v1')
+            .map((key) => caches.delete(key)),
+        ),
+      ),
+    ]),
+  )
 })
 
 interface PushPayload {

@@ -94,7 +94,11 @@ async function initApi(): Promise<AxiosInstance> {
 
         const path = window.location.pathname
         if (!isPublicAppRoute(path)) {
-          window.location.href = '/login'
+          const loginUrl = new URL('/login', window.location.origin)
+          if (new URLSearchParams(window.location.search).has('pwa')) {
+            loginUrl.searchParams.set('pwa', '1')
+          }
+          window.location.href = loginUrl.pathname + loginUrl.search
         }
       } else if (err.response?.status === 403 && err.response?.data?.code === 'DEMO_READ_ONLY') {
         toast.warning(err.response.data.error || i18n.t('demo.apiForbidden'), {

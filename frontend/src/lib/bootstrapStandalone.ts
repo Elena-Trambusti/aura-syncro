@@ -1,19 +1,12 @@
 import { api } from './api'
 import { detectInstalledAppShell } from './standaloneApp'
 
-const MARKETING_PATHS = new Set(['/', '/it', '/es', '/es-cn'])
-
-/** Segna la shell e reindirizza la landing marketing → login nell'APK/PWA. */
+/** Segna la shell; il redirect marketing → login è in index.html + LandingRoute (no reload qui). */
 export function bootstrapStandaloneApp(): void {
   if (typeof window === 'undefined') return
   if (!detectInstalledAppShell()) return
 
   document.documentElement.classList.add('pwa-standalone')
-
-  const path = window.location.pathname.replace(/\/$/, '') || '/'
-  if (MARKETING_PATHS.has(path)) {
-    window.location.replace('/login?pwa=1')
-  }
 }
 
 /** Ripristino d'emergenza quando l'APK resta bloccato (cache SW / sessione corrotta). */

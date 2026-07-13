@@ -1,4 +1,6 @@
 const INSTALLED_FLAG_KEY = 'aura-installed-app'
+/** Sessione TWA attiva (referrer android-app:// valido solo alla prima navigazione). */
+const TWA_SESSION_KEY = 'aura-twa-active'
 
 function hasPwaQueryFlag(): boolean {
   if (typeof window === 'undefined') return false
@@ -8,6 +10,24 @@ function hasPwaQueryFlag(): boolean {
 function isAndroidAppReferrer(): boolean {
   if (typeof document === 'undefined') return false
   return document.referrer.startsWith('android-app://')
+}
+
+function markTwaSession(): void {
+  if (typeof sessionStorage === 'undefined') return
+  try {
+    sessionStorage.setItem(TWA_SESSION_KEY, '1')
+  } catch {
+    /* storage disabilitato */
+  }
+}
+
+function hasTwaSession(): boolean {
+  if (typeof sessionStorage === 'undefined') return false
+  try {
+    return sessionStorage.getItem(TWA_SESSION_KEY) === '1'
+  } catch {
+    return false
+  }
 }
 
 function hasDisplayModeShell(): boolean {
@@ -41,12 +61,16 @@ function hasInstalledFlag(): boolean {
 
 /**
  * Shell embedded senza browser chrome (PWA/APK/TWA).
- * Non usa il solo flag persistente — evita falsi positivi in Chrome normale.
+ * Include flag sessione TWA: il referrer android-app:// sparisce dopo la prima navigazione.
  */
 export function isStandaloneApp(): boolean {
   if (typeof window === 'undefined') return false
   if (hasDisplayModeShell()) return true
-  if (isAndroidAppReferrer()) return true
+  if (isAndroidAppReferrer()) {
+    markTwaSession()
+    return true
+  }
+  if (hasTwaSession()) return true
   if (hasPwaQueryFlag()) return true
   return false
 }

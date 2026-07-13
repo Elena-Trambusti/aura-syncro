@@ -126,8 +126,12 @@
             || document.referrer.indexOf('android-app://') === 0
             || location.search.indexOf('pwa=') !== -1;
           try {
+            if (sessionStorage.getItem('aura-twa-active') === '1') standalone = true;
             if (localStorage.getItem('aura-installed-app') === '1') standalone = true;
           } catch (e) {}
+          if (document.referrer.indexOf('android-app://') === 0) {
+            try { sessionStorage.setItem('aura-twa-active', '1'); } catch (e) {}
+          }
           return standalone;
         }
 
@@ -154,7 +158,12 @@
 
           var p = (location.pathname.replace(/\/$/, '') || '/');
           if (['/', '/it', '/es', '/es-cn'].indexOf(p) !== -1) {
-            location.replace('/login?pwa=1');
+            var lastRedirect = 0;
+            try { lastRedirect = parseInt(sessionStorage.getItem('aura-pwa-redirect-ts') || '0', 10); } catch (e) {}
+            if (Date.now() - lastRedirect > 1500) {
+              try { sessionStorage.setItem('aura-pwa-redirect-ts', String(Date.now())); } catch (e) {}
+              location.replace('/login?pwa=1');
+            }
           }
         } else {
           var path = (location.pathname.replace(/\/$/, '') || '/');

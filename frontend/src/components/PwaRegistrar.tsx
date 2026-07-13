@@ -45,7 +45,8 @@ export default function PwaRegistrar() {
 
     const runRegister = () => {
       applyUpdateRef.current = registerSW({
-        immediate: isShell,
+        // immediate:true in TWA causava reload a raffica dopo il riattivamento del SW.
+        immediate: false,
         onRegistered(registration) {
           registrationRef.current = registration
           console.info('[Aura Syncro PWA] Service Worker registrato:', registration?.scope)
