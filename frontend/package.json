@@ -8,9 +8,10 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "node scripts/write-manifest.mjs && vite",
-    "build": "node scripts/prepare-brand-logo.mjs && node scripts/generate-pwa-icons.mjs && node scripts/optimize-landing-images.mjs && tsc -b && vite build",
+    "dev": "node scripts/write-manifest.mjs && node scripts/generate-pwa-screenshots.mjs && vite",
+    "build": "node scripts/prepare-brand-logo.mjs && node scripts/generate-pwa-icons.mjs && node scripts/generate-pwa-screenshots.mjs && node scripts/optimize-landing-images.mjs && tsc -b && vite build",
     "generate-pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate-pwa-screenshots": "node scripts/generate-pwa-screenshots.mjs",
     "prepare-brand-logo": "node scripts/prepare-brand-logo.mjs",
     "optimize-images": "node scripts/optimize-landing-images.mjs",
     "lint": "eslint .",

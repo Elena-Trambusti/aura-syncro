@@ -109,20 +109,24 @@
   ],
   "screenshots": [
     {
-      "src": "/og-image.jpg?v=19",
-      "sizes": "1200x630",
+      "src": "/screenshots/desktop-wide.jpg?v=19",
+      "sizes": "1920x1080",
       "type": "image/jpeg",
       "form_factor": "wide",
       "label": "Aura Syncro — gestionale cloud per ristoranti"
     },
     {
-      "src": "/pwa/maskable-512.png?v=19",
-      "sizes": "512x512",
+      "src": "/screenshots/mobile-portrait.png?v=19",
+      "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Aura Syncro — app mobile"
+      "label": "Aura Syncro — app mobile POS"
     }
   ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
   "prefer_related_applications": false,
   "related_applications": []
 }

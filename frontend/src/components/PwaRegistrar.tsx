@@ -3,6 +3,7 @@ import { toast } from '@/lib/toast'
 import { registerSW } from 'virtual:pwa-register'
 import i18n from '../i18n'
 import { isInstalledAppShell } from '../lib/standaloneApp'
+import { registerPwaPeriodicSync } from '../lib/pwaPeriodicSync'
 
 /** Minimo intervallo tra due controlli aggiornamento SW (evita reload/toast a raffica dopo deploy). */
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -13,8 +14,8 @@ const UPDATE_PROMPT_COOLDOWN_MS = 12 * 60 * 60 * 1000
 const UPDATE_PROMPT_KEY = 'pwa-update-prompt-ts'
 
 /**
- * Registra il Service Worker in produzione.
- * Differito con requestIdleCallback per non penalizzare il first paint (landing / SEO).
+ * Aggiornamenti SW e Periodic Sync.
+ * La registrazione base avviene in index.html + vite injectRegister (PWABuilder).
  */
 export default function PwaRegistrar() {
   const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined)
@@ -43,45 +44,53 @@ export default function PwaRegistrar() {
       }
     }
 
-    const runRegister = () => {
-      applyUpdateRef.current = registerSW({
-        // immediate:true in TWA causava reload a raffica dopo il riattivamento del SW.
-        immediate: false,
-        onRegistered(registration) {
-          registrationRef.current = registration
-          console.info('[Aura Syncro PWA] Service Worker registrato:', registration?.scope)
-          if (!isShell) {
-            window.setTimeout(checkForUpdates, INITIAL_UPDATE_DELAY_MS)
-          }
-        },
-        onRegisterError(error) {
-          console.error('[Aura Syncro PWA] Errore registrazione Service Worker:', error)
-        },
-        onNeedRefresh() {
-          if (updatePromptShownRef.current) return
-          const lastPromptTs = Number(localStorage.getItem(UPDATE_PROMPT_KEY) ?? '0')
-          const now = Date.now()
-          if (now - lastPromptTs < UPDATE_PROMPT_COOLDOWN_MS) return
-          updatePromptShownRef.current = true
-          localStorage.setItem(UPDATE_PROMPT_KEY, String(now))
-          toast.message(i18n.t('pwa.updateAvailable'), {
-            id: 'pwa-update',
-            duration: Infinity,
-            action: {
-              label: i18n.t('pwa.updateRefresh'),
-              onClick: () => {
-                void applyUpdateRef.current?.(true)
-              },
+    const onRegistered = (registration?: ServiceWorkerRegistration) => {
+      registrationRef.current = registration
+      if (registration) {
+        console.info('[Aura Syncro PWA] Service Worker registrato:', registration.scope)
+        void registerPwaPeriodicSync(registration)
+      }
+      if (!isShell) {
+        window.setTimeout(checkForUpdates, INITIAL_UPDATE_DELAY_MS)
+      }
+    }
+
+    const registerOptions = {
+      immediate: false,
+      onRegistered,
+      onRegisterError(error: unknown) {
+        console.error('[Aura Syncro PWA] Errore registrazione Service Worker:', error)
+      },
+      onNeedRefresh() {
+        if (updatePromptShownRef.current) return
+        const lastPromptTs = Number(localStorage.getItem(UPDATE_PROMPT_KEY) ?? '0')
+        const now = Date.now()
+        if (now - lastPromptTs < UPDATE_PROMPT_COOLDOWN_MS) return
+        updatePromptShownRef.current = true
+        localStorage.setItem(UPDATE_PROMPT_KEY, String(now))
+        toast.message(i18n.t('pwa.updateAvailable'), {
+          id: 'pwa-update',
+          duration: Infinity,
+          action: {
+            label: i18n.t('pwa.updateRefresh'),
+            onClick: () => {
+              void applyUpdateRef.current?.(true)
             },
-          })
-        },
-      })
+          },
+        })
+      },
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
 
-    // Registra subito: PWABuilder e Lighthouse non attendono requestIdleCallback.
-    runRegister()
+    void (async () => {
+      const existing = await navigator.serviceWorker.getRegistration()
+      if (existing?.active) {
+        onRegistered(existing)
+        return
+      }
+      applyUpdateRef.current = registerSW(registerOptions)
+    })()
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange)

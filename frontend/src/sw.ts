@@ -2,11 +2,13 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { NetworkOnly } from 'workbox-strategies'
-import { BackgroundSyncPlugin } from 'workbox-background-sync'
+import { BackgroundSyncPlugin, Queue } from 'workbox-background-sync'
 
 declare let self: ServiceWorkerGlobalScope
 
 const ORDERS_PATH = '/ordini'
+const OFFLINE_QUEUE_NAME = 'aura-offline-queue'
+const PERIODIC_SYNC_TAG = 'aura-content-refresh'
 
 /** Non precachare index.html: dopo un deploy i bundle hanno hash nuovi e la shell HTML stale causa pagina bianca. */
 const precacheManifest = self.__WB_MANIFEST.filter(entry => {
@@ -39,8 +41,11 @@ registerRoute(
 )
 
 /** Background Sync per richieste API POST/PATCH di creazione/aggiornamento ordini */
-const bgSyncPlugin = new BackgroundSyncPlugin('aura-offline-queue', {
-  maxRetentionTime: 24 * 60, // Ritenta per un massimo di 24 ore
+const orderOfflineQueue = new Queue(OFFLINE_QUEUE_NAME, {
+  maxRetentionTime: 24 * 60,
+})
+const bgSyncPlugin = new BackgroundSyncPlugin(OFFLINE_QUEUE_NAME, {
+  maxRetentionTime: 24 * 60,
 })
 
 registerRoute(
@@ -49,6 +54,39 @@ registerRoute(
     plugins: [bgSyncPlugin],
   }),
 )
+
+/** Background Sync esplicito — allineato a Workbox queue (PWABuilder + retry ordini offline) */
+self.addEventListener('sync', (event: Event) => {
+  const syncEvent = event as SyncEvent
+  const tag = syncEvent.tag
+  if (tag === OFFLINE_QUEUE_NAME || tag.startsWith('workbox-background-sync')) {
+    syncEvent.waitUntil(orderOfflineQueue.replayRequests())
+  }
+})
+
+/** Periodic Sync — refresh manifest e shell navigazione in cache */
+self.addEventListener('periodicsync', (event: Event) => {
+  const periodicEvent = event as Event & { tag: string; waitUntil: (p: Promise<void>) => void }
+  if (periodicEvent.tag !== PERIODIC_SYNC_TAG) return
+  periodicEvent.waitUntil(
+    (async () => {
+      const manifestRes = await fetch('/manifest.json', { cache: 'no-store' })
+      if (manifestRes.ok) {
+        const cache = await caches.open('aura-manifest-v1')
+        await cache.put('/manifest.json', manifestRes)
+      }
+      try {
+        const navRes = await fetch('/login?pwa=1', { cache: 'no-store' })
+        if (navRes.ok) {
+          const navCache = await caches.open('aura-nav-offline-v2')
+          await navCache.put('/login?pwa=1', navRes)
+        }
+      } catch {
+        /* offline */
+      }
+    })(),
+  )
+})
 
 /** autoUpdate: attiva subito il nuovo worker senza chiedere conferma */
 self.addEventListener('install', () => {

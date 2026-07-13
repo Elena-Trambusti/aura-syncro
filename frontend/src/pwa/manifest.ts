@@ -73,22 +73,26 @@ export const pwaManifest = {
   ],
   screenshots: [
     {
-      src: iconSrc('/og-image.jpg'),
-      sizes: '1200x630',
+      src: iconSrc('/screenshots/desktop-wide.jpg'),
+      sizes: '1920x1080',
       type: 'image/jpeg',
       form_factor: 'wide' as const,
       label: 'Aura Syncro — gestionale cloud per ristoranti',
     },
     {
-      src: iconSrc('/pwa/maskable-512.png'),
-      sizes: '512x512',
+      src: iconSrc('/screenshots/mobile-portrait.png'),
+      sizes: '1080x1920',
       type: 'image/png',
       form_factor: 'narrow' as const,
-      label: 'Aura Syncro — app mobile',
+      label: 'Aura Syncro — app mobile POS',
     },
   ],
+  launch_handler: {
+    client_mode: 'navigate-existing' as const,
+  },
+  handle_links: 'preferred' as const,
   prefer_related_applications: false,
-  related_applications: [],
+  related_applications: [] as { platform: string; url: string; id?: string }[],
 }
 
 export const pwaIncludeAssets = [
@@ -104,4 +108,6 @@ export const pwaIncludeAssets = [
   'pwa/android/ic_launcher_xxhdpi.png',
   'pwa/android/ic_launcher_xxxhdpi.png',
   'og-image.jpg',
+  'screenshots/mobile-portrait.png',
+  'screenshots/desktop-wide.jpg',
 ]

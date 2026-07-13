@@ -72,20 +72,24 @@ const manifest = {
   ],
   screenshots: [
     {
-      src: iconSrc('/og-image.jpg'),
-      sizes: '1200x630',
+      src: iconSrc('/screenshots/desktop-wide.jpg'),
+      sizes: '1920x1080',
       type: 'image/jpeg',
       form_factor: 'wide',
       label: 'Aura Syncro — gestionale cloud per ristoranti',
     },
     {
-      src: iconSrc('/pwa/maskable-512.png'),
-      sizes: '512x512',
+      src: iconSrc('/screenshots/mobile-portrait.png'),
+      sizes: '1080x1920',
       type: 'image/png',
       form_factor: 'narrow',
-      label: 'Aura Syncro — app mobile',
+      label: 'Aura Syncro — app mobile POS',
     },
   ],
+  launch_handler: {
+    client_mode: 'navigate-existing',
+  },
+  handle_links: 'preferred',
   prefer_related_applications: false,
   related_applications: [],
 }
