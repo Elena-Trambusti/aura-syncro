@@ -6,10 +6,10 @@ interface ExecutivePageShellProps {
   className?: string
 }
 
-/** Wrapper pagina dashboard — spacing, mobile-first (senza animazione entrata per evitare flash) */
+/** Wrapper pagina dashboard — spacing per sezione (stili nativi mobile via DashboardLayout) */
 export default function ExecutivePageShell({ children, className }: ExecutivePageShellProps) {
   return (
-    <div className={cn('pwa-mobile-page', className)}>
+    <div className={cn('space-y-4 sm:space-y-6', className)}>
       {children}
     </div>
   )

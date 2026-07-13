@@ -408,9 +408,9 @@ export default function KitchenDisplayPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-navy text-pietra">
+    <div className="pwa-mobile-page flex min-h-[100dvh] flex-col bg-navy text-pietra pb-[var(--safe-bottom)]">
       <header
-        className={`shrink-0 border-b border-white/[0.08] px-4 py-3 transition-colors sm:px-6 ${
+        className={`pwa-header shrink-0 border-b border-white/[0.08] px-4 py-3 transition-colors sm:px-6 ${
           newOrderAlert ? 'bg-aura-gold/20' : 'bg-navy-elevated/90 backdrop-blur-md'
         }`}
       >

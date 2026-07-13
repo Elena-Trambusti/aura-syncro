@@ -9,7 +9,7 @@ export const ui = {
   panel: 'border-b border-white/[0.06] bg-navy-mid',
   modalOverlay: 'saas-overlay flex items-end sm:items-center justify-center p-0 sm:p-4',
   modal:
-    'aura-glass aura-glass--modal w-full max-w-lg max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] overflow-y-auto rounded-t-2xl sm:rounded-2xl mx-auto p-4 sm:p-6',
+    'aura-glass aura-glass--modal w-full max-w-lg max-h-[min(90dvh,calc(100dvh-var(--safe-top)-var(--safe-bottom)))] overflow-y-auto rounded-t-2xl sm:rounded-2xl mx-auto p-4 sm:p-6',
   modalTitle: 'text-lg font-bold text-pietra mb-5',
   label: 'block text-sm font-medium text-fumo mb-1.5',
   input:

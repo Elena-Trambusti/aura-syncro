@@ -87,8 +87,8 @@ export default function DashboardLayout() {
         <Sidebar />
         <div className="dashboard-main flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden !bg-transparent !bg-none">
           <Header />
-          <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-[max(5.5rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6 lg:p-8 lg:pb-8">
-            <div className="dashboard-top-alerts pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col-reverse gap-2 px-3 sm:px-6 lg:hidden">
+          <main className="pwa-main-scroll relative z-0 flex-1 overflow-y-auto overflow-x-hidden p-2.5 pb-[max(calc(var(--safe-bottom,0px)+4rem),4.75rem)] sm:p-6 sm:pb-6 lg:p-8 lg:pb-8">
+            <div className="dashboard-top-alerts pointer-events-none fixed inset-x-0 z-40 flex flex-col-reverse gap-2 px-3 sm:px-6 lg:hidden" style={{ bottom: 'max(0.75rem, var(--safe-bottom, 0px))' }}>
               <div className="pointer-events-auto">
                 <PwaInstallHint />
               </div>
@@ -109,7 +109,7 @@ export default function DashboardLayout() {
                 </div>
               )}
             >
-              <div key={location.pathname}>
+              <div key={location.pathname} className="pwa-mobile-page pwa-kpi-compact min-h-0">
                 <Outlet />
               </div>
             </Suspense>

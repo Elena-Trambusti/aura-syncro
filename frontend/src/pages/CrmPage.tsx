@@ -209,9 +209,9 @@ export default function CrmPage() {
           <button
             type="button"
             onClick={() => { setForm(emptyForm()); setShowCreateModal(true) }}
-            className="flex items-center gap-2 bg-aura-gold hover:bg-aura-gold text-navy font-semibold px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-aura-gold-light sm:w-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="h-4 w-4" />
             {t('crm.newCustomer')}
           </button>
         ) : undefined}
@@ -219,7 +219,7 @@ export default function CrmPage() {
 
       {(customersError || statsError) && <QueryErrorBanner />}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="pwa-kpi-compact grid grid-cols-3 gap-2 sm:gap-4">
         {statBlocks.map(s => (
           <KpiStatCard
             key={s.label}
@@ -231,7 +231,7 @@ export default function CrmPage() {
         ))}
       </div>
 
-      <div className="relative max-w-md">
+      <div className="relative w-full sm:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fumo" />
         <input
           value={search}
@@ -247,8 +247,63 @@ export default function CrmPage() {
       <div className={`${ui.cardSm} overflow-hidden`}>
         {customersLoading && customers.length === 0 ? (
           <PageSkeleton variant="table" count={8} />
+        ) : customers.length === 0 ? (
+          <div className="px-4 py-8">
+            <EmptyState
+              icon={Users}
+              title={debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
+            />
+          </div>
         ) : (
-        <div className={ui.tableWrap}>
+          <>
+            <div className="space-y-2 p-3 lg:hidden">
+              {customers.map(customer => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  onClick={() => { setOpenCustomerEdit(false); setSelectedId(customer.id) }}
+                  className={cn(
+                    'pwa-crm-card',
+                    selectedId === customer.id && 'border-aura-gold/35 bg-aura-gold/[0.06]',
+                  )}
+                >
+                  <div className="pwa-crm-card__row">
+                    <div className="min-w-0 text-left">
+                      <p className="truncate text-sm font-semibold text-pietra">{customerDisplayName(customer)}</p>
+                      <p className="truncate text-xs text-fumo">{customer.email || customer.phone || '—'}</p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-pietra">
+                      {formatCurrency(customer.totalSpent)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-1">
+                      {customer.tags.slice(0, 2).map(tag => (
+                        <span
+                          key={tag}
+                          className={cn(
+                            'inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                            tagBadgeClass(tag),
+                          )}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {customer.tags.length === 0 && isVipCustomer(customer) && (
+                        <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium', tagBadgeClass('VIP'))}>
+                          VIP
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-fumo">
+                      {t('crm.table.visits')}: {customer.totalVisits}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className={cn(ui.tableWrap, 'hidden lg:block')}>
           <table className="w-full max-w-full">
             <thead>
               <tr className={ui.tableHeadBg}>
@@ -263,17 +318,7 @@ export default function CrmPage() {
               </tr>
             </thead>
             <tbody>
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8">
-                    <EmptyState
-                      icon={Users}
-                      title={debouncedSearch ? t('crm.noResults', { defaultValue: 'Nessun cliente trovato' }) : t('crm.empty', { defaultValue: 'Nessun cliente ancora' })}
-                    />
-                  </td>
-                </tr>
-              ) : (
-              customers.map(customer => (
+              {customers.map(customer => (
                 <tr
                   key={customer.id}
                   onClick={() => { setOpenCustomerEdit(false); setSelectedId(customer.id) }}
@@ -338,11 +383,11 @@ export default function CrmPage() {
                     )}
                   </td>
                 </tr>
-              ))
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
+            </div>
+          </>
         )}
       </div>
 

@@ -315,6 +315,14 @@
     --aura-surface-card: linear-gradient(165deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 40%, transparent 100%);
   }
 
+  /* WebView/TWA Android: env(safe-area-*) spesso 0 — fallback per barra stato e navigazione */
+  @media (max-width: 1023px) {
+    html.pwa-standalone {
+      --safe-top: max(28px, env(safe-area-inset-top, 0px));
+      --safe-bottom: max(48px, env(safe-area-inset-bottom, 0px));
+    }
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -1344,12 +1352,17 @@
       z-index: 70;
       height: 100dvh;
       max-height: 100dvh;
-      padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
       overflow-y: auto;
       overflow-x: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+    }
+
+    html.pwa-standalone .premium-sidebar {
+      height: calc(100dvh - var(--safe-bottom));
+      max-height: calc(100dvh - var(--safe-bottom));
     }
   }
 
@@ -1420,14 +1433,14 @@
   .aura-topbar {
     @apply relative z-40 shrink-0 border-b border-white/[0.06] bg-navy-mid/90 backdrop-blur-xl;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.18);
-    padding-top: env(safe-area-inset-top, 0px);
-    min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+    padding-top: var(--safe-top);
+    min-height: calc(3.5rem + var(--safe-top));
   }
 
   @media (min-width: 640px) {
     .pwa-header,
     .aura-topbar {
-      min-height: calc(4.25rem + env(safe-area-inset-top, 0px));
+      min-height: calc(4.25rem + var(--safe-top));
     }
   }
 
@@ -1435,8 +1448,8 @@
   @media (max-width: 1023px) {
     html.pwa-standalone .pwa-header,
     html.pwa-standalone .aura-topbar {
-      padding-top: max(24px, env(safe-area-inset-top, 0px));
-      min-height: calc(3.5rem + max(24px, env(safe-area-inset-top, 0px)));
+      padding-top: var(--safe-top);
+      min-height: calc(3.5rem + var(--safe-top));
     }
   }
 
@@ -2354,6 +2367,16 @@
     @apply text-xl sm:text-2xl lg:text-3xl font-display font-semibold text-pietra tracking-tight;
   }
 
+  @media (max-width: 1023px) {
+    .aura-page-title {
+      @apply text-lg leading-tight sm:text-2xl;
+    }
+
+    .aura-page-subtitle {
+      @apply text-xs sm:text-sm;
+    }
+  }
+
   .aura-page-subtitle {
     @apply text-sm text-fumo mt-1;
   }
@@ -2363,7 +2386,7 @@
   }
 
   .aura-executive-header {
-    @apply relative flex flex-wrap items-start justify-between gap-4 pb-2;
+    @apply relative flex flex-col gap-3 pb-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4;
   }
 
   .aura-executive-header::after {
@@ -2558,8 +2581,15 @@
   }
 
   .pwa-app-shell {
-    @apply flex box-border h-dvh max-h-dvh w-full min-h-0 max-w-full flex-row overflow-hidden overflow-x-hidden text-pietra bg-transparent;
+    @apply flex box-border w-full min-h-0 max-w-full flex-row overflow-hidden overflow-x-hidden text-pietra bg-transparent;
+    height: 100dvh;
+    max-height: 100dvh;
     overscroll-behavior: none;
+  }
+
+  html.pwa-standalone .pwa-app-shell {
+    height: calc(100dvh - var(--safe-bottom));
+    max-height: calc(100dvh - var(--safe-bottom));
   }
 
   .pwa-main-scroll {
@@ -2570,7 +2600,172 @@
   }
 
   .pwa-mobile-page {
-    @apply w-full max-w-full space-y-5 sm:space-y-7;
+    @apply w-full max-w-full space-y-4 sm:space-y-7;
+  }
+
+  .pwa-kpi-compact .aura-stat-card {
+    @apply rounded-xl p-3 sm:rounded-2xl sm:p-5;
+  }
+
+  .pwa-kpi-compact .aura-stat-card__value {
+    @apply mt-1 text-lg sm:mt-2 sm:text-3xl;
+  }
+
+  .pwa-kpi-compact .aura-kpi-label {
+    @apply text-[8px] sm:text-[9px];
+  }
+
+  .pwa-crm-card {
+    @apply flex w-full flex-col gap-2 rounded-xl border border-white/[0.08] bg-navy-elevated p-3.5 text-left transition-colors active:bg-white/[0.03];
+  }
+
+  .pwa-crm-card__row {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  /* ── Esperienza nativa mobile — tutte le pagine dashboard (ExecutivePageShell) ── */
+  @media (max-width: 1023px) {
+    .pwa-topbar-mobile {
+      @apply gap-1 px-2.5;
+    }
+
+    .pwa-topbar-mobile .aura-topbar-cluster {
+      @apply gap-0.5 p-0.5;
+    }
+
+    .pwa-topbar-mobile .premium-topbar-btn--icon {
+      @apply size-8;
+    }
+
+    .pwa-topbar-mobile .premium-avatar {
+      @apply h-8 w-8 text-[11px];
+    }
+
+    .pwa-topbar-mobile .aura-topbar-profile {
+      @apply gap-1.5;
+    }
+
+    /* KPI a griglia: 3 colonne compatte se contengono stat card */
+    .pwa-mobile-page .grid:has(.aura-stat-card) {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 0.5rem !important;
+    }
+
+    /* KpiCard dashboard — meno padding e numeri più piccoli */
+    .pwa-mobile-page .aura-kpi {
+      @apply p-3.5 sm:p-5;
+    }
+
+    .pwa-mobile-page .aura-kpi--hero {
+      @apply p-3.5;
+    }
+
+    .pwa-mobile-page .aura-kpi-value--hero {
+      @apply text-xl leading-none sm:text-4xl;
+    }
+
+    .pwa-mobile-page .aura-kpi-value--standard,
+    .pwa-mobile-page .aura-kpi--compact .aura-kpi-value {
+      @apply text-xl sm:text-3xl;
+    }
+
+    .pwa-mobile-page .aura-kpi-icon {
+      @apply right-2 top-2 h-6 w-6 sm:right-4 sm:top-4 sm:h-8 sm:w-8;
+    }
+
+    .pwa-mobile-page .aura-kpi-sparkline {
+      @apply h-8 sm:h-14;
+    }
+
+    /* Card e moduli — meno aria sprecata */
+    .pwa-mobile-page .premium-card {
+      @apply p-3.5 sm:p-5;
+    }
+
+    .pwa-mobile-page .aura-module-frame {
+      @apply rounded-xl p-3.5 sm:rounded-2xl sm:p-6;
+    }
+
+    .pwa-mobile-page .aura-dashboard-bento {
+      @apply gap-3;
+    }
+
+    /* Tabelle: scroll orizzontale con hint, celle compatte */
+    .pwa-mobile-page .aura-table-wrap {
+      @apply relative -mx-0.5 px-0.5;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    .pwa-mobile-page .aura-table-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 1.25rem;
+      pointer-events: none;
+      background: linear-gradient(to left, rgba(10, 10, 14, 0.95), transparent);
+    }
+
+    .pwa-mobile-page .aura-table-wrap table {
+      min-width: 34rem;
+    }
+
+    .pwa-mobile-page .aura-table-wrap th {
+      @apply px-3 py-2 text-[10px];
+    }
+
+    .pwa-mobile-page .aura-table-wrap td {
+      @apply px-3 py-2.5 text-xs;
+    }
+
+    /* Filtri, tab, bottoni secondari */
+    .pwa-mobile-page .aura-filter-row {
+      @apply gap-1.5;
+    }
+
+    .pwa-mobile-page .aura-filter-pill {
+      @apply px-2.5 py-1.5 text-xs;
+    }
+
+    .pwa-mobile-page .aura-tab-active,
+    .pwa-mobile-page .aura-tab-inactive {
+      @apply px-3 py-1.5 text-xs;
+    }
+
+    .pwa-mobile-page .aura-btn-ghost {
+      @apply px-3 py-2 text-xs;
+    }
+
+    /* Header pagina: azioni a tutta larghezza, meno gap */
+    .pwa-mobile-page .aura-executive-header {
+      @apply gap-2.5 pb-3;
+    }
+
+    .pwa-mobile-page .aura-executive-header > div:last-child {
+      @apply w-full;
+    }
+
+    .pwa-mobile-page .aura-executive-header > div:last-child button,
+    .pwa-mobile-page .aura-executive-header > div:last-child a {
+      @apply w-full justify-center;
+    }
+
+    /* Form e input touch-friendly */
+    .pwa-mobile-page .saas-input,
+    .pwa-mobile-page select.saas-input {
+      @apply min-h-[44px] py-2.5 text-base sm:text-sm;
+    }
+
+    .pwa-mobile-page .saas-btn-primary {
+      @apply min-h-[44px];
+    }
+
+    /* Grafici: altezza ridotta su telefono */
+    .pwa-mobile-page .recharts-responsive-container {
+      min-height: 200px !important;
+    }
   }
 
   .pwa-stat-grid {
