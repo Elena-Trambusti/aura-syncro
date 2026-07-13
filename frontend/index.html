@@ -144,17 +144,6 @@
           document.documentElement.classList.add('pwa-standalone');
           document.getElementById('static-landing-fcp')?.remove();
 
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-              regs.forEach(function (r) { r.unregister(); });
-            });
-          }
-          if ('caches' in window) {
-            caches.keys().then(function (keys) {
-              keys.forEach(function (k) { caches.delete(k); });
-            });
-          }
-
           var p = (location.pathname.replace(/\/$/, '') || '/');
           if (['/', '/it', '/es', '/es-cn'].indexOf(p) !== -1) {
             location.replace('/login?pwa=1');
