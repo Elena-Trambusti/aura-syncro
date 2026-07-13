@@ -9,6 +9,40 @@ declare let self: ServiceWorkerGlobalScope
 const ORDERS_PATH = '/ordini'
 const OFFLINE_QUEUE_NAME = 'aura-offline-queue'
 const PERIODIC_SYNC_TAG = 'aura-content-refresh'
+const NAV_CACHE = 'aura-nav-offline-v2'
+
+function offlineShellResponse(): Response {
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0E14" />
+  <title>Aura Syncro — offline</title>
+  <style>
+    *{box-sizing:border-box;margin:0}
+    body{min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#0B0E14;color:#E8DFC7;font-family:system-ui,sans-serif;padding:1.5rem;text-align:center}
+    .card{max-width:22rem;display:flex;flex-direction:column;gap:1rem;align-items:center}
+    h1{font-size:1.125rem;font-weight:700;color:#F5ECD8}
+    p{font-size:.875rem;color:#A89B7A;line-height:1.5}
+    button{font:inherit;cursor:pointer;border:0;border-radius:.75rem;padding:.75rem 1rem;font-weight:600;background:#C9A227;color:#0B0E14}
+    button.secondary{background:#12151C;color:#E8DFC7;border:1px solid rgba(255,255,255,.12)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Connessione assente</h1>
+    <p>Non riusciamo a raggiungere il server. Verifica Wi‑Fi o dati mobili e riprova.</p>
+    <button type="button" onclick="location.replace('/login?pwa=1')">Riprova</button>
+    <button type="button" class="secondary" onclick="location.reload()">Ricarica</button>
+  </div>
+</body>
+</html>`
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  })
+}
 
 /** Non precachare index.html: dopo un deploy i bundle hanno hash nuovi e la shell HTML stale causa pagina bianca. */
 const precacheManifest = self.__WB_MANIFEST.filter(entry => {
@@ -19,23 +53,27 @@ const precacheManifest = self.__WB_MANIFEST.filter(entry => {
 precacheAndRoute(precacheManifest)
 cleanupOutdatedCaches()
 
-/** Shell HTML: sempre rete quando online; cache solo se offline (evita HTML stale → schermo nero). */
+/** Shell HTML: rete con timeout; offline → cache o pagina di recupero (mai Response.error). */
 registerRoute(
   new NavigationRoute(async ({ request }) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12_000)
     try {
-      const response = await fetch(request)
+      const response = await fetch(request, { signal: controller.signal })
+      clearTimeout(timeoutId)
       if (response.ok) {
-        const cache = await caches.open('aura-nav-offline-v2')
+        const cache = await caches.open(NAV_CACHE)
         void cache.put(request, response.clone())
       }
       return response
     } catch {
-      const cache = await caches.open('aura-nav-offline-v2')
+      clearTimeout(timeoutId)
+      const cache = await caches.open(NAV_CACHE)
       const cached = await cache.match(request)
       if (cached) return cached
       const fallback = await cache.match('/index.html')
       if (fallback) return fallback
-      return Response.error()
+      return offlineShellResponse()
     }
   }),
 )
@@ -78,7 +116,7 @@ self.addEventListener('periodicsync', (event: Event) => {
       try {
         const navRes = await fetch('/login?pwa=1', { cache: 'no-store' })
         if (navRes.ok) {
-          const navCache = await caches.open('aura-nav-offline-v2')
+          const navCache = await caches.open(NAV_CACHE)
           await navCache.put('/login?pwa=1', navRes)
         }
       } catch {
@@ -101,16 +139,13 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      caches.keys().then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key === 'aura-syncro-cache-v1' || key === 'aura-nav-offline-v1')
-            .map((key) => caches.delete(key)),
-        ),
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key === 'aura-syncro-cache-v1' || key === 'aura-nav-offline-v1')
+          .map((key) => caches.delete(key)),
       ),
-    ]),
+    ),
   )
 })
 

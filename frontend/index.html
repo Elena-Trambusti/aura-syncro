@@ -188,9 +188,11 @@
     </script>
     <div id="root"></div>
     <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
-      }
+      window.addEventListener('load', function () {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+        }
+      });
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

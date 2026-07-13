@@ -63,7 +63,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      injectRegister: 'inline',
+      injectRegister: false,
       manifestFilename: 'manifest.json',
       includeAssets: pwaIncludeAssets,
       manifest: pwaManifest,
