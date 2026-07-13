@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2, CheckCircle2, XCircle, X, ExternalLink } from 'lucide-react'
+import { Loader2, Check, Minus, CheckCircle2, XCircle, ExternalLink, Sparkles } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
 import { formatCurrency, cn } from '../lib/utils'
@@ -12,6 +12,12 @@ import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import ExecutivePageShell from '../components/layout/ExecutivePageShell'
 import ExecutivePageHeader from '../components/layout/ExecutivePageHeader'
+import AuraIcon from '../components/ui/AuraIcon'
+import {
+  LUXURY_CARD_CLASS,
+  LUXURY_CTA_CLASS,
+  LuxuryCardHoverLine,
+} from '../components/landing/landingLuxury'
 
 const PLAN_IDS = ['STARTER', 'PREMIUM'] as const
 type PlanId = typeof PLAN_IDS[number]
@@ -101,10 +107,10 @@ export default function BillingPage() {
       />
 
       {hasSubscription && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-            <p className="text-sm font-medium text-emerald-900">
+            <p className="text-sm font-medium text-emerald-200">
               {t('billing.activePlanLabel', {
                 plan: t(`billing.plans.${activePlanId.toLowerCase()}.name`),
                 defaultValue: 'Abbonamento attivo: {{plan}}',
@@ -116,7 +122,7 @@ export default function BillingPage() {
               type="button"
               onClick={() => void openBillingPortal()}
               disabled={openingPortal}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-600/30 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-navy-surface/60 px-4 py-2 text-sm font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/10 disabled:opacity-60"
             >
               {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
               {t('billing.openPortal', { defaultValue: 'Gestisci abbonamento' })}
@@ -128,7 +134,7 @@ export default function BillingPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-800"
+          className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
         >
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
@@ -136,47 +142,59 @@ export default function BillingPage() {
       )}
 
       {!hasSubscription && (
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-10">
           {PLAN_IDS.map(planId => {
             const isPro = planId === 'PREMIUM'
             const prices = PLAN_PRICES[planId]
             const features = planFeatures(planId)
             const missingFeatures = planMissing(planId)
             return (
-              <div
+              <article
                 key={planId}
                 className={cn(
-                  'relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition-all',
-                  isPro
-                    ? 'scale-[1.01] border-amber-200 shadow-md'
-                    : 'border-slate-200 text-slate-900',
+                  LUXURY_CARD_CLASS,
+                  'p-8 sm:p-9',
+                  isPro && '!overflow-visible ring-1 ring-[#D4AF37]/25',
                 )}
               >
-                <h3 className="text-lg font-bold text-slate-900">
+                {isPro ? (
+                  <span className="absolute -top-3.5 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#D4AF37]/35 bg-[#0f0c08] px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#E8C872] shadow-[0_0_24px_rgba(212,175,55,0.2)]">
+                    <AuraIcon icon={Sparkles} size="sm" className="text-[#E8C872]" />
+                    {t('landing.pricing.pro.badge', { defaultValue: 'Consigliato' })}
+                  </span>
+                ) : null}
+
+                <h3 className="font-display text-2xl font-medium tracking-tight text-[#F0E6D2]">
                   {t(`billing.plans.${planId.toLowerCase()}.name`)}
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-2 text-sm font-light leading-relaxed text-[#F0E6D2]/70">
                   {t(`billing.plans.${planId.toLowerCase()}.tagline`)}
                 </p>
-                <div className="mt-6">
-                  <p className="text-3xl font-extrabold text-slate-900">
+
+                <div className="mt-8 border-b border-[#D4AF37]/10 pb-8">
+                  <p className="lux-heading font-display text-3xl font-medium tracking-tight sm:text-4xl">
                     {formatCurrency(prices.price)}
-                    <span className="text-base font-medium">{t('billing.perMonth')}</span>
+                    <span className="text-base font-medium text-[#F0E6D2]/80">{t('billing.perMonth')}</span>
                   </p>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-2 text-sm font-light text-[#F0E6D2]/65">
                     + {formatCurrency(prices.setup)} {t('billing.setupOnce', { defaultValue: 'setup una tantum' })}
                   </p>
                 </div>
-                <ul className="mt-8 flex-1 space-y-3">
+
+                <ul className="mt-8 flex-1 space-y-3.5">
                   {features.map(line => (
-                    <li key={line} className="flex items-start gap-2 text-sm text-slate-700">
-                      <CheckCircle2 className={cn('mt-0.5 h-4 w-4 shrink-0', isPro ? 'text-amber-500' : 'text-emerald-500')} />
+                    <li key={line} className="flex items-start gap-3 text-sm font-light text-[#F0E6D2]">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#D4AF37]/25 bg-black/40">
+                        <AuraIcon icon={Check} size="sm" weight="display" className="text-[#E8C872]" />
+                      </span>
                       <span>{line}</span>
                     </li>
                   ))}
                   {missingFeatures.map(line => (
-                    <li key={line} className="flex items-start gap-2 text-sm text-slate-400 line-through">
-                      <X className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
+                    <li key={line} className="flex items-start gap-3 text-sm font-light text-[#F0E6D2]/35">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#F0E6D2]/10 bg-black/20">
+                        <AuraIcon icon={Minus} size="sm" weight="display" className="text-[#F0E6D2]/30" />
+                      </span>
                       <span>{line}</span>
                     </li>
                   ))}
@@ -187,10 +205,10 @@ export default function BillingPage() {
                   onClick={() => handleActivatePlan(planId)}
                   disabled={loadingPlan !== null}
                   className={cn(
-                    'mt-8 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all',
+                    'mt-8 flex w-full items-center justify-center gap-2 transition-all',
                     isPro
-                      ? 'bg-amber-500 text-white hover:bg-amber-600'
-                      : 'border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100',
+                      ? LUXURY_CTA_CLASS
+                      : 'aura-btn-ghost py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#F0E6D2]',
                     loadingPlan !== null && 'cursor-not-allowed opacity-60',
                   )}
                 >
@@ -206,7 +224,9 @@ export default function BillingPage() {
                     })
                   )}
                 </button>
-              </div>
+
+                <LuxuryCardHoverLine />
+              </article>
             )
           })}
         </div>
