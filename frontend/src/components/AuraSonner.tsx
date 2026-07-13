@@ -29,7 +29,7 @@ export default function AuraSonner() {
         closeButton
         visibleToasts={4}
         gap={10}
-        offset={{ top: 'calc(0.75rem + env(safe-area-inset-top, 0px))', right: '0.75rem' }}
+        offset={{ top: 'var(--safe-top-pad)', right: 'max(0.75rem, env(safe-area-inset-right, 0px))' }}
         toastOptions={{
           unstyled: true,
           duration: 3200,

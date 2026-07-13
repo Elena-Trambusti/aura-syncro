@@ -145,7 +145,7 @@ export default function Sidebar() {
         )}
         aria-label={t('common.mainMenu')}
       >
-        <div className="relative shrink-0 border-b border-[#D4AF37]/10 lg:px-6 lg:pb-6 lg:pt-8">
+        <div className="premium-sidebar__header relative shrink-0 border-b border-[#D4AF37]/10 lg:px-6 lg:pb-6 lg:pt-8">
           <div className="mb-4 hidden w-full items-center justify-center lg:flex">
             <Link to="/" className="inline-block transition-transform hover:scale-105 hover:opacity-80 active:scale-95" aria-label="Torna alla Home">
               <BrandLogo size="md" showName layout="horizontal" />
@@ -168,7 +168,7 @@ export default function Sidebar() {
             </p>
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-6 lg:hidden">
+          <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-4 lg:hidden">
             <p
               className="min-w-0 flex-1 truncate pr-2 font-display text-[1.125rem] font-semibold leading-snug tracking-wide text-[#F7E7CE]"
               style={{ textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}
@@ -289,7 +289,7 @@ export default function Sidebar() {
           })()}
         </div>
 
-        <div className="border-t border-white/[0.06] p-4">
+        <div className="premium-sidebar__footer border-t border-white/[0.06] p-4">
           {user && (
             <div className="aura-sidebar-user aura-interactive-lift">
               <div className="premium-avatar premium-avatar--lg">

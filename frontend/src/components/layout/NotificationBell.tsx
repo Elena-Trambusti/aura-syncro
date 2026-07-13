@@ -55,10 +55,10 @@ export default function NotificationBell() {
     if (!btn) return
     const rect = btn.getBoundingClientRect()
     const vv = window.visualViewport
-    const safeTop = Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--safe-top'),
+    const safeTopPad = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--safe-top-pad'),
     ) || 0
-    const top = Math.max((vv?.offsetTop ?? 0) + rect.bottom + 8, safeTop + 52)
+    const top = Math.max((vv?.offsetTop ?? 0) + rect.bottom + 8, safeTopPad)
 
     if (getViewportWidth() < MOBILE_BREAKPOINT) {
       setPanelPos({ mode: 'mobile', top })
