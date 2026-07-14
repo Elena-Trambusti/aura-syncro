@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { LEGAL_ENTITY } from '../../config/legal'
+import { LEGAL_ENTITY, formatLegalAddress } from '../../config/legal'
 
 type Props = {
   title: string
@@ -20,7 +20,7 @@ export default function LegalDocumentShell({ title, subtitle, children }: Props)
         <div className="space-y-8 text-sm text-slate-300 leading-relaxed">{children}</div>
         <div className="border-t border-white/10 pt-6 text-xs text-slate-500 space-y-2">
           <p>
-            {LEGAL_ENTITY.ownerName} · P.IVA {LEGAL_ENTITY.vatNumber} · {LEGAL_ENTITY.addressLine}
+            {LEGAL_ENTITY.ownerName} · P.IVA {LEGAL_ENTITY.vatNumber} · {formatLegalAddress()}
           </p>
           <nav className="flex flex-wrap gap-x-4 gap-y-1">
             <Link to="/privacy" className="text-aura-gold hover:underline">Privacy</Link>

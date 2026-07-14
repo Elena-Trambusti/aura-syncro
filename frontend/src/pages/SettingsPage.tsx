@@ -1,3 +1,4 @@
+import type { AxiosResponse } from 'axios'
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -135,7 +136,7 @@ export default function SettingsPage() {
   }>({
     queryKey: tq(tk, 'compliance-status'),
     queryFn: () => api.get('/restaurant/compliance-status').then(r => r.data),
-    enabled: canAccessAdminNav,
+    enabled: canAccessAdminNav(),
   })
 
   const { data: printAgent, refetch: refetchPrintAgent } = useQuery<{
@@ -144,11 +145,11 @@ export default function SettingsPage() {
   }>({
     queryKey: tq(tk, 'print-agent'),
     queryFn: () => api.get('/restaurant/print-agent').then(r => r.data),
-    enabled: canAccessAdminNav,
+    enabled: canAccessAdminNav(),
   })
 
-  const regeneratePrintToken = useInstantMutation({
-    mutationFn: () => api.post('/restaurant/print-agent/regenerate'),
+  const regeneratePrintToken = useInstantMutation<AxiosResponse<{ token?: string }>, unknown, void>({
+    mutationFn: () => api.post<{ token?: string }>('/restaurant/print-agent/regenerate'),
     onSuccess: (res) => {
       void refetchPrintAgent()
       if (res.data?.token) {
@@ -337,7 +338,7 @@ export default function SettingsPage() {
         <p className="text-xs text-fumo mt-4">{t('settings.saveHint')}</p>
       </div>
 
-      {canAccessAdminNav && compliance && (
+      {canAccessAdminNav() && compliance && (
         <div className="premium-card p-6">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
@@ -681,7 +682,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {canAccessAdminNav && (
+      {canAccessAdminNav() && (
         <div className="premium-card p-6">
           <h2 className="text-base font-semibold text-pietra mb-1 flex items-center gap-2">
             <Printer className="h-5 w-5 text-aura-gold" />

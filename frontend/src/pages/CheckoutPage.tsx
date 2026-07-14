@@ -377,7 +377,7 @@ export default function CheckoutPage() {
             const queuedResult = await submitFinalizeOrderCash({
               orderId,
               paymentMethod: 'CASH',
-              tipAmount: payload.tipAmount ?? 0,
+              tipAmount: parsedTip,
             })
             return { offlineQueued: true, queuedResult }
           }
@@ -411,18 +411,25 @@ export default function CheckoutPage() {
         toast.success(t('offline.queued', { defaultValue: 'Operazione salvata: verrà sincronizzata appena torna la connessione.' }))
         return
       }
-      if (!result.partial && orderId) {
-        if (result.table?.id && result.table.status) {
+
+      const paid = result as CheckoutFinalizeResult & {
+        partial?: boolean
+        remaining?: number
+        table?: { id: string; number: number; status: string } | null
+      }
+
+      if (!paid.partial && orderId) {
+        if (paid.table?.id && paid.table.status) {
           patchTableInQueryCache(queryClient, tk, {
-            id: result.table.id,
-            status: result.table.status as TableStatus,
-            number: result.table.number,
+            id: paid.table.id,
+            status: paid.table.status as TableStatus,
+            number: paid.table.number,
             orders: [],
           })
         } else if (shouldReleaseTableOnFinalize(splitUsesIncrementalCash, _splitGuestIndex)) {
           markTableCleaningAfterPayment(queryClient, tk, orderId)
         }
-      } else if (result.partial) {
+      } else if (paid.partial) {
         void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'active' })
       }
 
@@ -431,20 +438,20 @@ export default function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
 
-      if (result.partial) {
+      if (paid.partial) {
         if (context?.optimistic) {
           setFinalizeResult(context.previousReceipt ?? null)
           optimisticReceiptRef.current = null
         }
         void refetch()
-        toast.success(t('checkout.splitPartialSuccess', { remaining: formatCurrency(result.remaining ?? 0) }))
+        toast.success(t('checkout.splitPartialSuccess', { remaining: formatCurrency(paid.remaining ?? 0) }))
         return
       }
 
-      setFinalizeResult(result)
+      setFinalizeResult(paid)
       optimisticReceiptRef.current = null
       toast.success(
-        (result as CheckoutFinalizeResult & { alreadyPaid?: boolean }).alreadyPaid
+        (paid as CheckoutFinalizeResult & { alreadyPaid?: boolean }).alreadyPaid
           ? t('checkout.alreadyPaid', { defaultValue: 'Pagamento già registrato' })
           : t('checkout.paymentSuccess'),
       )

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Mail, MapPin, Phone, Send } from 'lucide-react'
-import { LEGAL_ENTITY, LEGAL_URLS } from '../config/legal'
+import { LEGAL_ENTITY, LEGAL_URLS, formatLegalAddress } from '../config/legal'
 import { usePublicPageMeta } from '../lib/publicPageMeta'
 
 export default function ContactPage() {
@@ -66,9 +66,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">Sede</p>
-                    <p className="text-sm text-slate-400 mt-1">{LEGAL_ENTITY.addressLine}</p>
+                    <p className="text-sm text-slate-400 mt-1">{formatLegalAddress()}</p>
                     <p className="text-sm text-slate-400">P.IVA {LEGAL_ENTITY.vatNumber}</p>
-                    <p className="text-sm text-slate-400">PEC: {LEGAL_ENTITY.pec}</p>
+                    {LEGAL_ENTITY.pec && (
+                      <p className="text-sm text-slate-400">PEC: {LEGAL_ENTITY.pec}</p>
+                    )}
                   </div>
                 </div>
               </div>
