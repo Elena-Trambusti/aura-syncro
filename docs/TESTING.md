@@ -162,6 +162,7 @@ npm run test:e2e:report --prefix frontend
 | `API_BASE_URL` | Default `http://localhost:3001` |
 | `PLAYWRIGHT_BASE_URL` | Default locale `http://localhost:5173` |
 | `SKIP_API_TESTS=1` | Salta test HTTP (solo schema puri) |
+| `VERIFY_PRODUCTION_STRICT=1` | `verify:production` fallisce anche su endpoint premium non deployati |
 
 ---
 

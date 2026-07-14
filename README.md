@@ -58,8 +58,9 @@ aura-syncro/
 
 1. Push su `main` → DigitalOcean esegue job `prisma-migrate` (PRE_DEPLOY) poi avvia l'API
 2. `npm start` esegue anche `prisma migrate deploy` all'avvio container (doppia sicurezza)
-3. Verifica: `npm run verify:production --prefix backend`
-4. Se login fallisce con `printAgentToken` → migrazioni non applicate; controllare log job `prisma-migrate` su DO
+3. Verifica: `npm run verify:production` (critici: health + login)
+4. Dopo deploy completo: `VERIFY_PRODUCTION_STRICT=1 npm run verify:production --prefix backend` (tutti gli endpoint)
+5. Se login fallisce con `printAgentToken` → migrazioni non applicate; controllare log job `prisma-migrate` su DO
 
 ---
 
@@ -236,7 +237,19 @@ npm run test:e2e
 npm run test:all
 ```
 
-CI (`.github/workflows/ci-tests.yml`): Vitest + typecheck backend/frontend; job separato Playwright smoke su produzione.
+CI (`.github/workflows/ci-tests.yml`) — su ogni PR:
+
+- Vitest + unit backend + typecheck backend/frontend
+- Playwright smoke su produzione (`aurasyncro.com`)
+- Playwright E2E autenticato (PostgreSQL + seed demo in CI)
+- Su push `main`: `production-health` (`npm run verify:production`)
+
+Verifica manuale post-deploy (tutti gli endpoint):
+
+```powershell
+$env:VERIFY_PRODUCTION_STRICT="1"
+npm run verify:production
+```
 
 ---
 

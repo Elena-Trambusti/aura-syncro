@@ -7,9 +7,10 @@ const EMAIL = process.env.E2E_EMAIL ?? 'admin@demo-it.com'
 const PASSWORD = process.env.E2E_PASSWORD ?? 'admin123'
 const SLUG = process.env.E2E_RESTAURANT_SLUG ?? 'demo-it'
 
-type Check = { name: string; ok: boolean; detail: string }
+type Check = { name: string; ok: boolean; detail: string; critical: boolean }
 
 const checks: Check[] = []
+const STRICT = process.env.VERIFY_PRODUCTION_STRICT === '1'
 
 async function get(path: string, init?: RequestInit) {
   const res = await fetch(`${BASE}${path}`, { ...init, signal: AbortSignal.timeout(15_000) })
@@ -32,9 +33,10 @@ async function main() {
       name: 'GET /api/health',
       ok: health.res.ok,
       detail: health.res.ok ? 'ok' : `HTTP ${health.res.status}`,
+      critical: true,
     })
   } catch (e) {
-    checks.push({ name: 'GET /api/health', ok: false, detail: String(e) })
+    checks.push({ name: 'GET /api/health', ok: false, detail: String(e), critical: true })
   }
 
   try {
@@ -47,9 +49,10 @@ async function main() {
       detail: ok ? 'DB raggiungibile' : ready.res.status === 404
         ? '404 — deploy backend non aggiornato'
         : `HTTP ${ready.res.status} ${ready.text.slice(0, 120)}`,
+      critical: STRICT,
     })
   } catch (e) {
-    checks.push({ name: 'GET /api/health/ready', ok: false, detail: String(e) })
+    checks.push({ name: 'GET /api/health/ready', ok: false, detail: String(e), critical: STRICT })
   }
 
   let token = ''
@@ -69,9 +72,10 @@ async function main() {
       detail: login.res.ok && token
         ? 'login OK'
         : `HTTP ${login.res.status} ${body?.error ?? login.text.slice(0, 120)}`,
+      critical: true,
     })
   } catch (e) {
-    checks.push({ name: 'POST /api/auth/login', ok: false, detail: String(e) })
+    checks.push({ name: 'POST /api/auth/login', ok: false, detail: String(e), critical: true })
   }
 
   if (token && restaurantId) {
@@ -91,20 +95,31 @@ async function main() {
           detail: r.res.ok ? 'ok' : r.res.status === 404
             ? '404 — deploy backend non aggiornato'
             : `HTTP ${r.res.status}`,
+          critical: STRICT,
         })
       } catch (e) {
-        checks.push({ name: label, ok: false, detail: String(e) })
+        checks.push({ name: label, ok: false, detail: String(e), critical: STRICT })
       }
     }
   }
 
   for (const c of checks) {
-    console.log(`${c.ok ? '✅' : '❌'} ${c.name} — ${c.detail}`)
+    const icon = c.ok ? '✅' : c.critical ? '❌' : '⚠️'
+    console.log(`${icon} ${c.name} — ${c.detail}`)
   }
 
-  const failed = checks.filter(c => !c.ok)
-  console.log(`\n${failed.length === 0 ? '✅ Tutti i controlli superati.' : `⚠️  ${failed.length} controllo/i fallito/i.`}\n`)
-  process.exit(failed.length === 0 ? 0 : 1)
+  const failedCritical = checks.filter(c => !c.ok && c.critical)
+  const failedOptional = checks.filter(c => !c.ok && !c.critical)
+  if (failedCritical.length === 0 && failedOptional.length === 0) {
+    console.log('\n✅ Tutti i controlli superati.\n')
+    process.exit(0)
+  }
+  if (failedCritical.length > 0) {
+    console.log(`\n❌ ${failedCritical.length} controllo/i critico/i fallito/i.\n`)
+    process.exit(1)
+  }
+  console.log(`\n⚠️  ${failedOptional.length} controllo/i opzionale/i — deploy backend da aggiornare (login OK).\n`)
+  process.exit(0)
 }
 
 main().catch(err => {

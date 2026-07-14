@@ -1,5 +1,10 @@
 /** Dati legali pubblici Aura Syncro — allineati a contratto v2.0 e fiscal config. */
 
+function legalEnv(key: keyof ImportMetaEnv): string {
+  const value = import.meta.env[key]
+  return typeof value === 'string' ? value.trim() : ''
+}
+
 export const LEGAL_VERSIONS = {
   privacy: '2026-07-13',
   terms: '2026-07-13',
@@ -15,15 +20,15 @@ export const LEGAL_ENTITY = {
   ownerName: 'Elena Trambusti',
   tradeName: 'Aura Syncro',
   vatNumber: '02101860498',
-  /** Via e numero civico — completare quando disponibile */
-  streetAddress: '',
+  /** Via e numero civico — impostare VITE_LEGAL_STREET_ADDRESS su Vercel se disponibile */
+  streetAddress: legalEnv('VITE_LEGAL_STREET_ADDRESS'),
   city: 'Livorno',
   province: 'LI',
-  zipCode: '',
+  zipCode: legalEnv('VITE_LEGAL_ZIP_CODE'),
   country: 'Italia',
   email: 'elenatrambusti2024@gmail.com',
-  /** PEC certificata — se null, in informativa si indica solo l'email */
-  pec: null as string | null,
+  /** PEC — impostare VITE_LEGAL_PEC su Vercel; se assente si usa solo email */
+  pec: legalEnv('VITE_LEGAL_PEC') || null,
   supportHours: 'lun–ven, 9:00–18:00 (CET)',
   competentCourt: 'Foro di Livorno',
   /** Punto di contatto DSA (art. 11) — stesso canale supporto B2B */
