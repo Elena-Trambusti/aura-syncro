@@ -2641,6 +2641,53 @@
     max-height: 100dvh;
   }
 
+  /* Pagine guest (menu QR, prenotazioni) — stessa safe-area della dashboard */
+  .public-guest-chrome {
+    padding-top: calc(var(--safe-top) + 0.5rem);
+  }
+
+  .public-guest-page__body {
+    padding-top: calc(var(--safe-top-pad) + 1.75rem);
+    padding-bottom: max(7rem, var(--safe-bottom-pad));
+  }
+
+  @media (min-width: 640px) {
+    .public-guest-page__body {
+      padding-top: 6rem;
+      padding-bottom: 2rem;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    html.pwa-standalone .public-guest-page__body,
+    html.aura-native-shell .public-guest-page__body {
+      padding-top: calc(var(--safe-top-pad) + 0.75rem);
+    }
+
+    html.pwa-standalone .public-guest-hero,
+    html.aura-native-shell .public-guest-hero {
+      margin-bottom: 1.5rem;
+    }
+
+    html.pwa-standalone .public-guest-hero__logo,
+    html.aura-native-shell .public-guest-hero__logo {
+      height: 3.5rem;
+      width: 3.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    html.pwa-standalone .public-guest-hero__badge,
+    html.aura-native-shell .public-guest-hero__badge {
+      margin-bottom: 0.5rem;
+    }
+
+    html.pwa-standalone .public-guest-hero__title,
+    html.aura-native-shell .public-guest-hero__title {
+      font-size: 1.75rem;
+      line-height: 2.1rem;
+    }
+  }
+
   .pwa-mobile-page {
     @apply w-full max-w-full space-y-4 sm:space-y-7;
   }

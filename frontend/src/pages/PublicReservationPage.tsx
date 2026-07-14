@@ -180,26 +180,26 @@ export default function PublicReservationPage() {
       }}
     >
       <PublicStandaloneEscape />
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top,0px))]">
+      <div className="public-guest-chrome pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-end p-3 sm:p-4">
         <div className="pointer-events-auto">
           <PublicLanguageSwitcher />
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-start px-3 py-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] sm:justify-center sm:px-6 sm:py-16 sm:pb-0">
+      <div className="public-guest-page__body flex flex-1 flex-col items-center justify-start px-3 sm:justify-center sm:px-6">
         
-        <div className="text-center flex flex-col items-center mb-10">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-aura-gold/40 bg-navy-surface/90 shadow-[0_0_40px_rgba(212,175,55,0.3)] backdrop-blur-xl mb-6">
+        <div className="public-guest-hero text-center flex flex-col items-center mb-10">
+          <div className="public-guest-hero__logo flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-aura-gold/40 bg-navy-surface/90 shadow-[0_0_40px_rgba(212,175,55,0.3)] backdrop-blur-xl mb-6">
             {data.restaurant.logo ? (
               <img src={data.restaurant.logo} alt={data.restaurant.name} className="h-full w-full object-cover" />
             ) : (
               <AuraIcon icon={UtensilsCrossed} size="hero" weight="display" className="text-aura-gold" />
             )}
           </div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-aura-gold mb-3">
+          <p className="public-guest-hero__badge text-[11px] font-bold uppercase tracking-[0.3em] text-aura-gold mb-3">
             {t('publicBooking.badge')}
           </p>
-          <h1 className="text-4xl sm:text-5xl font-display font-bold tracking-tight text-white drop-shadow-2xl">
+          <h1 className="public-guest-hero__title text-4xl sm:text-5xl font-display font-bold tracking-tight text-white drop-shadow-2xl">
             {data.restaurant.name}
           </h1>
         </div>

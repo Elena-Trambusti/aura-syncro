@@ -169,7 +169,7 @@ export default function Sidebar() {
             </p>
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-4 lg:hidden">
+          <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-1 lg:hidden">
             <p
               className="min-w-0 flex-1 truncate pr-2 font-display text-[1.125rem] font-semibold leading-snug tracking-wide text-[#F7E7CE]"
               style={{ textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}
