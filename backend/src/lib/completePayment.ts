@@ -247,6 +247,32 @@ export async function completeOrderPayment(input: {
         amount: chargedAmount,
         error: message,
       })
+
+      // Se l'ordine è già PAID (side-effects falliti dopo finalize), allinea lo storno fiscale/CRM.
+      const paidOrphan = await prisma.order.findFirst({
+        where: {
+          id: input.finalize.orderId,
+          restaurantId: input.finalize.restaurantId,
+          status: 'PAID',
+          refundedAt: null,
+        },
+        select: { id: true, total: true },
+      })
+      if (paidOrphan) {
+        try {
+          const { markOrderRefunded } = await import('./orderRefund')
+          await markOrderRefunded(
+            paidOrphan.id,
+            input.finalize.restaurantId,
+            chargedAmount > 0 ? chargedAmount : moneyNumber(paidOrphan.total),
+          )
+        } catch (markErr) {
+          console.error('[payment] Failed to mark orphan PAID order as refunded', {
+            orderId: input.finalize.orderId,
+            error: markErr instanceof Error ? markErr.message : markErr,
+          })
+        }
+      }
     }
     await releaseIdempotencyLock(input.finalize.restaurantId, lockKey)
     throw err

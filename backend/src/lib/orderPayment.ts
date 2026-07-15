@@ -169,10 +169,17 @@ export async function finalizeOrderPayment(
     }
 
     const lock = await tx.order.updateMany({
-      where: { id: order.id, status: { not: 'PAID' } },
+      where: { id: order.id, status: { notIn: ['PAID', 'CANCELLED'] } },
       data: { status: 'PAID' },
     })
-    if (lock.count === 0) throw new Error('ORDER_ALREADY_PAID')
+    if (lock.count === 0) {
+      const current = await tx.order.findFirst({
+        where: { id: order.id },
+        select: { status: true },
+      })
+      if (current?.status === 'CANCELLED') throw new Error('ORDER_CANCELLED')
+      throw new Error('ORDER_ALREADY_PAID')
+    }
 
     const chainLink = await appendFiscalChainLink(tx, input.restaurantId, {
       orderId: order.id,

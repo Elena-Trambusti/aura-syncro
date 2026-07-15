@@ -128,18 +128,24 @@ export default function GuestCartDrawer({
       toast.error(t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' }))
       return
     }
+    if (loading) return
+    setLoading('table')
     const clientRequestId = createClientRequestId()
-    flushSync(() => {
-      setOrderSuccess(true)
-      onClearCart()
-      toast.success(t('publicMenu.orderSuccess'))
-    })
     try {
-      await api.post('/public/orders', basePayload, { headers: { 'X-Idempotency-Key': clientRequestId } })
+      await api.post('/public/orders', {
+        ...basePayload,
+        clientRequestId,
+      }, { headers: { 'X-Idempotency-Key': clientRequestId } })
+      flushSync(() => {
+        setOrderSuccess(true)
+        onClearCart()
+      })
+      toast.success(t('publicMenu.orderSuccess'))
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string; code?: string } } })?.response?.data
-      setOrderSuccess(false)
       toast.error(resolvePublicOrderErrorMessage(t, data))
+    } finally {
+      setLoading(null)
     }
   }
 

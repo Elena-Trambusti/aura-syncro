@@ -116,6 +116,10 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
       throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
     }
+  } else if (tableNumber != null) {
+    if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
+      throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
+    }
   }
 
   const idemKey = clientRequestId ? `guest-order:${clientRequestId}` : null

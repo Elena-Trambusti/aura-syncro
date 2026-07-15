@@ -311,9 +311,14 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     orderTotalForCheckout = totals.total
   }
 
+  // Dopo il primo incasso split, tip e totale checkout sono congelati sull'ordine.
+  const tipForCheckout = moneyNumber(refreshedOrder.collectedAmount) > 0
+    ? moneyNumber(refreshedOrder.tipAmount)
+    : Math.max(0, tipAmount)
+
   let splitBreakdown
   if (paymentMethod === 'SPLIT' && split) {
-    const totalWithTip = orderTotalForCheckout + Math.max(0, tipAmount)
+    const totalWithTip = orderTotalForCheckout + tipForCheckout
     splitBreakdown = computeSplitBreakdown(
       refreshedOrder.items
         .filter(i => i.status !== 'CANCELLED')
@@ -343,7 +348,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
         return
       }
 
-      const checkoutTotal = orderTotalForCheckout + Math.max(0, tipAmount)
+      const checkoutTotal = orderTotalForCheckout + tipForCheckout
       const partial = await recordSplitGuestPayment({
         orderId,
         restaurantId: req.restaurantId!,
@@ -379,7 +384,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       finalize: {
         orderId,
         restaurantId: req.restaurantId!,
-        tipAmount,
+        tipAmount: tipForCheckout,
         tipWaiterId: validatedTipWaiterId,
         paymentMethod: settlementMethod,
         executorUserId: req.userId,
@@ -434,8 +439,13 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       res.status(400).json({ error: 'Ordine annullato', code })
       return
     }
-    if (code === 'GUEST_ALREADY_PAID' || code === 'SPLIT_AMOUNT_MISMATCH') {
-      res.status(409).json({ error: 'Incasso split non valido o già registrato', code })
+    if (code === 'GUEST_ALREADY_PAID' || code === 'SPLIT_AMOUNT_MISMATCH' || code === 'SPLIT_CONFIG_CHANGED') {
+      res.status(409).json({
+        error: code === 'SPLIT_CONFIG_CHANGED'
+          ? 'Configurazione split modificata dopo il primo incasso'
+          : 'Incasso split non valido o già registrato',
+        code,
+      })
       return
     }
     if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {

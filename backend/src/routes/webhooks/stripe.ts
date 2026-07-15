@@ -11,6 +11,7 @@ import { handleStripeInvoicePaid } from '../../lib/stripeInvoiceWebhook'
 import {
   claimStripeWebhookEvent,
   reclaimFailedStripeWebhookEvent,
+  reclaimStaleProcessingStripeWebhookEvent,
   markStripeWebhookFailed,
   markStripeWebhookSucceeded,
 } from '../../lib/stripeWebhookIdempotency'
@@ -170,6 +171,14 @@ stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): 
         return
       }
       console.info('[stripe-webhook] Re-elaborazione evento fallito:', event.id)
+    } else if (claim.status === 'processing') {
+      const reclaimed = await reclaimStaleProcessingStripeWebhookEvent(event.id)
+      if (!reclaimed) {
+        console.info('[stripe-webhook] Evento ancora in elaborazione:', event.id)
+        res.status(200).json({ received: true, duplicate: true, status: 'processing' })
+        return
+      }
+      console.info('[stripe-webhook] Re-claim processing stantio:', event.id)
     } else {
       console.info('[stripe-webhook] Evento duplicato ignorato:', event.id, claim.status)
       res.status(200).json({ received: true, duplicate: true, status: claim.status })

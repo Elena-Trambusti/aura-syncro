@@ -99,16 +99,18 @@ export default function PublicReservationPage() {
         covers,
         ...combineDateAndTime(form.date, form.time),
         notes: form.notes.trim() || undefined,
+        clientRequestId: idempotencyKey,
       }, { headers: { 'X-Idempotency-Key': idempotencyKey } })
       return res.data
     },
     onInstant: () => {
+      // Non mostrare successo prima della conferma API — evita falso positivo su rete instabile
+    },
+    onSuccess: result => {
       flushSync(() => {
         setSubmitted(true)
       })
       toast.success(t('publicBooking.success'))
-    },
-    onSuccess: result => {
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl
       }

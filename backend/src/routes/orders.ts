@@ -484,6 +484,20 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
 
   try {
     await runOrderTransaction(async tx => {
+      if (targetStatus === 'CANCELLED' && order.status !== 'PAID') {
+        const openClaim = await tx.order.updateMany({
+          where: {
+            id: req.params.orderId,
+            restaurantId: req.restaurantId!,
+            status: { notIn: ['PAID', 'CANCELLED'] },
+          },
+          data: { updatedAt: new Date() },
+        })
+        if (openClaim.count === 0) {
+          throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+        }
+      }
+
       if (splitReady) {
       const units = readyUnits ?? 1
       await tx.orderItem.update({
@@ -527,8 +541,12 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
     if (targetStatus === 'CANCELLED' && order.status !== 'PAID' && precomputedTotals) {
       const foodRevenue = precomputedTotals.subtotal + precomputedTotals.tax
       const allCancelled = precomputedTotals.total === 0
-      await tx.order.updateMany({
-        where: { id: req.params.orderId },
+      const totalsLock = await tx.order.updateMany({
+        where: {
+          id: req.params.orderId,
+          restaurantId: req.restaurantId!,
+          status: { notIn: ['PAID', 'CANCELLED'] },
+        },
         data: {
           subtotal: toMoney(precomputedTotals.subtotal),
           tax: toMoney(precomputedTotals.tax),
@@ -538,10 +556,17 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
           ...(allCancelled ? { discount: 0 } : {}),
         },
       })
+      if (totalsLock.count === 0) {
+        throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+      }
     }
   })
   } catch (err) {
     const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+    if (code === 'ORDER_CLOSED') {
+      res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+      return
+    }
     if (code === 'ITEM_STATUS_CONFLICT') {
       res.status(409).json({ error: 'Stato piatto modificato da un altro utente', code })
       return
@@ -889,6 +914,17 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
   let createdItems
   try {
     const txResult = await runOrderTransaction(async tx => {
+      const openClaim = await tx.order.updateMany({
+        where: {
+          ...scopedWhere(req, req.params.id),
+          status: { notIn: ['PAID', 'CANCELLED'] },
+        },
+        data: { updatedAt: new Date() },
+      })
+      if (openClaim.count === 0) {
+        throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+      }
+
       await assertOrderStockInTransaction(
         tx,
         tenantId(req),
@@ -927,8 +963,11 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
         newItems.push(newItem)
       }
 
-      await tx.order.updateMany({
-        where: scopedWhere(req, req.params.id),
+      const totalsLock = await tx.order.updateMany({
+        where: {
+          ...scopedWhere(req, req.params.id),
+          status: { notIn: ['PAID', 'CANCELLED'] },
+        },
         data: {
           subtotal: toMoney(totals.subtotal),
           tax: toMoney(totals.tax),
@@ -937,6 +976,9 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
           revenueAmount: toMoney(totals.total),
         },
       })
+      if (totalsLock.count === 0) {
+        throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+      }
 
       await deductInventoryForOrder(tx, req.params.id, tenantId(req))
 
@@ -944,6 +986,11 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
     })
     createdItems = txResult.createdItems
   } catch (e) {
+    if ((e as { code?: string }).code === 'ORDER_CLOSED') {
+      await releaseBatchLock()
+      res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+      return
+    }
     if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
       await releaseBatchLock()
       res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })
@@ -1101,6 +1148,17 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
   let createdItem
   try {
     const txResult = await runOrderTransaction(async tx => {
+      const openClaim = await tx.order.updateMany({
+        where: {
+          ...scopedWhere(req, req.params.id),
+          status: { notIn: ['PAID', 'CANCELLED'] },
+        },
+        data: { updatedAt: new Date() },
+      })
+      if (openClaim.count === 0) {
+        throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+      }
+
       const newItem = await tx.orderItem.create({
         data: {
           orderId: req.params.id,
@@ -1126,8 +1184,11 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
       })
       const totals = await computeTaxForOrderItems(tenantId(req), allLines)
 
-      await tx.order.updateMany({
-        where: scopedWhere(req, req.params.id),
+      const totalsLock = await tx.order.updateMany({
+        where: {
+          ...scopedWhere(req, req.params.id),
+          status: { notIn: ['PAID', 'CANCELLED'] },
+        },
         data: {
           subtotal: toMoney(totals.subtotal),
           tax: toMoney(totals.tax),
@@ -1136,6 +1197,9 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
           revenueAmount: toMoney(totals.total),
         },
       })
+      if (totalsLock.count === 0) {
+        throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+      }
       
       await deductInventoryForOrder(tx, req.params.id, tenantId(req))
       
@@ -1143,6 +1207,11 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     })
     createdItem = txResult.createdItem
   } catch (e) {
+    if ((e as { code?: string }).code === 'ORDER_CLOSED') {
+      await releaseItemsLock()
+      res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+      return
+    }
     if ((e as { code?: string }).code === 'INSUFFICIENT_STOCK') {
       await releaseItemsLock()
       res.status(409).json({ error: 'Piatto esaurito — ingredienti insufficienti', code: 'MENU_ITEM_SOLD_OUT' })

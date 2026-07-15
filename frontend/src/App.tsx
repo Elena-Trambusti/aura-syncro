@@ -122,7 +122,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardAccessGate>
-              <RequirePermission permissions={['orders.read']}>
+              <RequirePermission permissions={['orders.kitchen_status', 'orders.items']}>
                 <KitchenDisplayPage />
               </RequirePermission>
             </DashboardAccessGate>

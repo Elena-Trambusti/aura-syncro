@@ -10,7 +10,7 @@ import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { signOrderReceiptToken } from './paymentReceiptToken'
 import { deductInventoryForOrder } from './inventoryDeduction'
-import { occupyTableIfAvailable } from './orderSession'
+import { occupyTableForSessionOrder } from './orderSession'
 import { runOrderTransaction } from './prismaTransactions'
 import {
   acquireIdempotencyLock,
@@ -82,6 +82,11 @@ export async function createGuestStripeCheckout(
     if (!tableNumber) {
       throw new PublicOrderError('Numero tavolo obbligatorio per ordini in sala', 400, 'TABLE_NUMBER_REQUIRED')
     }
+    if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
+      throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
+    }
+  } else if (tableNumber != null) {
+    // TAKEAWAY non può occupare un tavolo senza token QR (anti-abuse)
     if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
       throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
     }
@@ -210,7 +215,10 @@ export async function createGuestStripeCheckout(
     // so if Stripe session creation fails below we must cancel the order.
     await deductInventoryForOrder(tx, created.id, restaurantId)
     if (tableId) {
-      await occupyTableIfAvailable(tx, tableId, restaurantId)
+      const occupied = await occupyTableForSessionOrder(tx, tableId, restaurantId, created.id)
+      if (!occupied) {
+        throw new PublicOrderError('Tavolo non disponibile', 409, 'TABLE_UNAVAILABLE')
+      }
     }
     return created
   })

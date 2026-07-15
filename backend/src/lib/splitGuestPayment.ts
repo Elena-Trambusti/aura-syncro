@@ -62,6 +62,7 @@ export async function recordSplitGuestPayment(
         id: true,
         status: true,
         total: true,
+        tipAmount: true,
         collectedAmount: true,
         splitPaidGuestIndexes: true,
       },
@@ -82,12 +83,30 @@ export async function recordSplitGuestPayment(
       ledgerTotal,
       order.splitPaidGuestIndexes,
     )
+
+    // Congela tip + quote: i guest già pagati devono ricostruire collectedAmount
+    if (order.splitPaidGuestIndexes.length > 0) {
+      const impliedCollected = ledgerTotal - getRemainingTotal(ledger)
+      if (Math.abs(impliedCollected - moneyNumber(order.collectedAmount)) > 0.009) {
+        throw new Error('SPLIT_CONFIG_CHANGED')
+      }
+      const frozenTip = moneyNumber(order.tipAmount)
+      const expectedCheckout = moneyNumber(order.total) + frozenTip
+      if (Math.abs(expectedCheckout - ledgerTotal) > 0.009) {
+        throw new Error('SPLIT_CONFIG_CHANGED')
+      }
+    }
+
     ledger = applyGuestSplitPayment(ledger, input.guestIndex, input.amount)
 
     const newCollected = getRemainingTotal(ledger) === 0
       ? ledgerTotal
       : moneyNumber(order.collectedAmount) + input.amount
     const paidGuests = [...new Set([...order.splitPaidGuestIndexes, input.guestIndex])].sort((a, b) => a - b)
+
+    const tipToPersist = order.splitPaidGuestIndexes.length === 0
+      ? Math.max(0, ledgerTotal - moneyNumber(order.total))
+      : moneyNumber(order.tipAmount)
 
     const updated = await tx.order.updateMany({
       where: {
@@ -99,6 +118,7 @@ export async function recordSplitGuestPayment(
       data: {
         collectedAmount: toMoney(newCollected),
         splitPaidGuestIndexes: paidGuests,
+        tipAmount: toMoney(tipToPersist),
       },
     })
     if (updated.count === 0) {

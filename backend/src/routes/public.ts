@@ -11,6 +11,12 @@ import { requiresDeposit } from '../lib/reservationRules'
 import { resolveMaxCoversPerSlot } from '../lib/reservationCapacity'
 import { parseLocalDateTimeInTimezone } from '../lib/romeDate'
 import { enrichCategoriesWithStock } from '../lib/menuStock'
+import {
+  acquireIdempotencyLock,
+  getIdempotentResponse,
+  releaseIdempotencyLock,
+  saveIdempotentResponse,
+} from '../lib/apiIdempotency'
 
 export const publicRouter = Router()
 
@@ -113,6 +119,7 @@ const publicReservationSchema = z.object({
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   localTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   notes: z.string().optional(),
+  clientRequestId: z.string().min(8).max(128).optional(),
 }).refine(
   data => data.date || (data.localDate && data.localTime),
   { message: 'Data e ora obbligatorie' },
@@ -135,7 +142,33 @@ publicRouter.post('/reservations', publicReservationLimiter, async (req: Request
     return
   }
 
+  const idemKey = parsed.data.clientRequestId
+    ? `public-reservation:${parsed.data.clientRequestId}`
+    : (typeof req.headers['x-idempotency-key'] === 'string' && req.headers['x-idempotency-key'].trim().length >= 8
+      ? `public-reservation:${req.headers['x-idempotency-key'].trim().slice(0, 128)}`
+      : null)
+  let idempotencyLocked = false
+  if (idemKey) {
+    const cached = await getIdempotentResponse(restaurant.id, idemKey, 'PUBLIC_RESERVATION')
+    if (cached && cached.statusCode === 201) {
+      res.status(201).json(cached.responseBody)
+      return
+    }
+    const locked = await acquireIdempotencyLock(restaurant.id, idemKey, 'PUBLIC_RESERVATION')
+    if (!locked) {
+      const raced = await getIdempotentResponse(restaurant.id, idemKey, 'PUBLIC_RESERVATION')
+      if (raced?.statusCode === 201) {
+        res.status(201).json(raced.responseBody)
+        return
+      }
+      res.status(409).json({ error: 'Prenotazione già in elaborazione', code: 'RESERVATION_IN_PROGRESS' })
+      return
+    }
+    idempotencyLocked = true
+  }
+
   if (requiresDeposit(restaurant.settings) && !STRIPE_ENABLED) {
+    if (idempotencyLocked && idemKey) await releaseIdempotencyLock(restaurant.id, idemKey)
     res.status(503).json({
       error: 'Prenotazione con caparra non disponibile: pagamenti non configurati.',
       code: 'DEPOSIT_UNAVAILABLE',
@@ -168,13 +201,19 @@ publicRouter.post('/reservations', publicReservationLimiter, async (req: Request
       checkoutUrl = session.checkoutUrl
     }
 
-    res.status(201).json({
+    const body = {
       reservationId: reservation.id,
       status: reservation.status,
       depositRequired,
       checkoutUrl,
-    })
+    }
+    if (idemKey) {
+      await saveIdempotentResponse(restaurant.id, idemKey, 'PUBLIC_RESERVATION', 201, body)
+      idempotencyLocked = false
+    }
+    res.status(201).json(body)
   } catch (err) {
+    if (idempotencyLocked && idemKey) await releaseIdempotencyLock(restaurant.id, idemKey)
     if (err instanceof ReservationValidationError) {
       res.status(409).json({ error: err.message, code: err.code })
       return

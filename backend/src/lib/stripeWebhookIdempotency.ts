@@ -60,6 +60,30 @@ export async function reclaimFailedStripeWebhookEvent(stripeEventId: string): Pr
   return updated.count > 0
 }
 
+/** Lease su claim bloccati in `processing` (crash mid-handler). Default 5 minuti. */
+const STALE_PROCESSING_MS = 5 * 60 * 1000
+
+export async function reclaimStaleProcessingStripeWebhookEvent(
+  stripeEventId: string,
+  staleMs = STALE_PROCESSING_MS,
+): Promise<boolean> {
+  const staleBefore = new Date(Date.now() - staleMs)
+  const updated = await prisma.stripeWebhookEvent.updateMany({
+    where: {
+      stripeEventId,
+      status: 'processing',
+      createdAt: { lt: staleBefore },
+    },
+    data: {
+      status: 'processing',
+      errorMessage: null,
+      processedAt: null,
+      createdAt: new Date(),
+    },
+  })
+  return updated.count > 0
+}
+
 export async function markStripeWebhookSucceeded(stripeEventId: string): Promise<void> {
   await prisma.stripeWebhookEvent.update({
     where: { stripeEventId },
