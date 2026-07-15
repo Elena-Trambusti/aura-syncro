@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -73,19 +73,25 @@ export default function PublicReservationPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
+  const clientRequestIdRef = useRef<string | null>(null)
+
   const bookMutation = useInstantMutation<
     { reservationId: string; status: string; depositRequired: boolean; checkoutUrl?: string },
     unknown,
     void
   >({
+    actionKey: () => 'public-booking-submit',
     mutationFn: async () => {
       const covers = Number.parseInt(form.covers, 10)
       if (!Number.isFinite(covers) || covers < 1 || covers > maxCovers) {
         throw new Error(t('publicBooking.coversInvalid', { max: maxCovers }))
       }
-      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `booking_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
+      if (!clientRequestIdRef.current) {
+        clientRequestIdRef.current = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `booking_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
+      }
+      const idempotencyKey = clientRequestIdRef.current
       const res = await api.post<{
         reservationId: string
         status: string
@@ -103,10 +109,8 @@ export default function PublicReservationPage() {
       }, { headers: { 'X-Idempotency-Key': idempotencyKey } })
       return res.data
     },
-    onInstant: () => {
-      // Non mostrare successo prima della conferma API — evita falso positivo su rete instabile
-    },
     onSuccess: result => {
+      clientRequestIdRef.current = null
       flushSync(() => {
         setSubmitted(true)
       })
@@ -116,6 +120,7 @@ export default function PublicReservationPage() {
       }
     },
     onError: (err: unknown) => {
+      clientRequestIdRef.current = null
       setSubmitted(false)
       const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       const localMsg = err instanceof Error ? err.message : undefined
@@ -356,9 +361,10 @@ export default function PublicReservationPage() {
               <AuraButton
                 type="submit"
                 instant
-                className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-aura-gold to-amber-400 py-4 text-sm font-extrabold uppercase tracking-[0.15em] text-navy shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-all hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:scale-[1.01] active:scale-[0.99]"
+                disabled={bookMutation.isPending}
+                className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-aura-gold to-amber-400 py-4 text-sm font-extrabold uppercase tracking-[0.15em] text-navy shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-all hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none"
               >
-                {t('publicBooking.submit')}
+                {bookMutation.isPending ? t('common.loading', { defaultValue: 'Invio…' }) : t('publicBooking.submit')}
               </AuraButton>
             </div>
 

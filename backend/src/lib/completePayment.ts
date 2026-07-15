@@ -284,11 +284,23 @@ export async function completeGuestStripePayment(
   orderId: string,
   paymentIntentId?: string | null,
   stripeAmountTotalCents?: number | null,
+  checkoutSessionId?: string | null,
 ) {
   const order = await prisma.order.findUnique({ where: { id: orderId } })
   if (!order) return null
 
   if (order.status === 'PAID') return null
+
+  if (checkoutSessionId) {
+    if (!order.stripeSessionId || order.stripeSessionId !== checkoutSessionId) {
+      console.warn('[guest-stripe] Session ID mismatch — ignore', {
+        orderId,
+        expected: order.stripeSessionId,
+        got: checkoutSessionId,
+      })
+      return null
+    }
+  }
 
   if (order.status === 'CANCELLED') {
     if (paymentIntentId && STRIPE_ENABLED) {

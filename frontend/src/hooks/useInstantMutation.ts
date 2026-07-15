@@ -31,8 +31,17 @@ export type UseInstantMutationOptions<TData, TError, TVariables, TSnapshot> = Om
   invalidateKeys?: readonly QueryKey[]
 }
 
+class DuplicateActionError extends Error {
+  readonly code = 'DUPLICATE_ACTION'
+  constructor() {
+    super('DUPLICATE_ACTION')
+    this.name = 'DuplicateActionError'
+  }
+}
+
 /**
  * Wrapper React Query con dedup in-flight, optimistic UI e rollback automatico.
+ * Se `actionKey` è già in volo, `onMutate` throws → `mutationFn` NON viene eseguita.
  */
 export function useInstantMutation<TData, TError, TVariables, TSnapshot = unknown>(
   options: UseInstantMutationOptions<TData, TError, TVariables, TSnapshot>,
@@ -53,7 +62,7 @@ export function useInstantMutation<TData, TError, TVariables, TSnapshot = unknow
     onMutate: async variables => {
       const key = actionKey?.(variables)
       if (key && inFlightRef.current.has(key)) {
-        return { skipped: true as const, actionKey: key }
+        throw new DuplicateActionError()
       }
       if (key) inFlightRef.current.add(key)
 
@@ -63,7 +72,10 @@ export function useInstantMutation<TData, TError, TVariables, TSnapshot = unknow
       return { previous, actionKey: key }
     },
     onError: (error, variables, context, mutation) => {
-      if (!context?.skipped && context?.previous !== undefined && onRollback) {
+      if (error instanceof DuplicateActionError || (error as { code?: string })?.code === 'DUPLICATE_ACTION') {
+        return
+      }
+      if (context?.previous !== undefined && onRollback) {
         onRollback(context.previous, variables)
       }
       onError?.(error, variables, context, mutation)

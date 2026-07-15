@@ -19,6 +19,8 @@ import {
   releaseTableFromReservation,
 } from '../lib/reservationTableSync'
 
+import { runOrderTransaction } from '../lib/prismaTransactions'
+
 export const reservationsRouter = Router()
 
 const reservationListQuerySchema = z.object({
@@ -227,34 +229,39 @@ reservationsRouter.put('/:id', requirePermission('reservations.manage'), async (
   const nextCovers = result.data.covers ?? existing.covers
   const nextDuration = result.data.duration ?? existing.duration
 
-  if (result.data.date || result.data.covers || result.data.duration) {
-    try {
-      await validateReservationSlot(tenantId(req), {
-        date: nextDate,
-        covers: nextCovers,
-        duration: nextDuration,
-        tableId: existing.tableId,
-        excludeReservationId: req.params.id,
-      })
-    } catch (err) {
-      if (err instanceof ReservationValidationError) {
-        res.status(409).json({ error: err.message, code: err.code })
-        return
+  try {
+    await runOrderTransaction(async tx => {
+      if (result.data.date || result.data.covers || result.data.duration) {
+        await validateReservationSlot(tenantId(req), {
+          date: nextDate,
+          covers: nextCovers,
+          duration: nextDuration,
+          tableId: existing.tableId,
+          excludeReservationId: req.params.id,
+        }, tx)
       }
-      throw err
-    }
-  }
 
-  const updated = await prisma.reservation.updateMany({
-    where: scopedWhere(req, req.params.id),
-    data: {
-      ...result.data,
-      ...(result.data.date ? { date: new Date(result.data.date) } : {}),
-    },
-  })
-  if (updated.count === 0) {
-    tenantNotFound(res, 'Prenotazione non trovata')
-    return
+      const updated = await tx.reservation.updateMany({
+        where: scopedWhere(req, req.params.id),
+        data: {
+          ...result.data,
+          ...(result.data.date ? { date: new Date(result.data.date) } : {}),
+        },
+      })
+      if (updated.count === 0) {
+        throw Object.assign(new Error('NOT_FOUND'), { code: 'NOT_FOUND' })
+      }
+    })
+  } catch (err) {
+    if (err instanceof ReservationValidationError) {
+      res.status(409).json({ error: err.message, code: err.code })
+      return
+    }
+    if ((err as { code?: string })?.code === 'NOT_FOUND') {
+      tenantNotFound(res, 'Prenotazione non trovata')
+      return
+    }
+    throw err
   }
 
   const reservation = await prisma.reservation.findFirst({

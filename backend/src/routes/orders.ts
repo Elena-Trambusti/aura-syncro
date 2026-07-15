@@ -710,26 +710,43 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
       select: { id: true }
     })
 
-    await runOrderTransaction(async tx => {
-      await tx.orderItem.updateMany({
-        where: { orderId: req.params.id },
-        data: { status: 'CANCELLED' }
+    try {
+      await runOrderTransaction(async tx => {
+        const claim = await tx.order.updateMany({
+          where: {
+            id: req.params.id,
+            restaurantId: req.restaurantId!,
+            status: { notIn: ['PAID', 'CANCELLED'] },
+          },
+          data: {
+            status: 'CANCELLED',
+            subtotal: 0,
+            tax: 0,
+            total: 0,
+            revenueAmount: 0,
+            discount: 0,
+          },
+        })
+        if (claim.count === 0) {
+          throw Object.assign(new Error('ORDER_CLOSED'), { code: 'ORDER_CLOSED' })
+        }
+
+        await tx.orderItem.updateMany({
+          where: { orderId: req.params.id },
+          data: { status: 'CANCELLED' },
+        })
+        for (const item of items) {
+          await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
+        }
       })
-      for (const item of items) {
-        await restoreInventoryForOrderItem(tx, item.id, req.restaurantId!)
+    } catch (err) {
+      const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+      if (code === 'ORDER_CLOSED') {
+        res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+        return
       }
-      await tx.order.update({
-        where: { id: req.params.id },
-        data: {
-          status: 'CANCELLED',
-          subtotal: 0,
-          tax: 0,
-          total: 0,
-          revenueAmount: 0,
-          discount: 0,
-        },
-      })
-    })
+      throw err
+    }
   }
 
   if (status !== 'CANCELLED') {

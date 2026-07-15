@@ -59,6 +59,7 @@ export async function handleCheckoutSessionCompleted(
         orderId,
         paymentIntentId,
         session.amount_total ?? null,
+        session.id,
       )
       if (completed?.updatedOrder) {
         console.info('[stripe-webhook] Ordine guest pagato', orderId)

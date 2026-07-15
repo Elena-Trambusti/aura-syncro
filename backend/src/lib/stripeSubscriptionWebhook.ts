@@ -170,12 +170,36 @@ export async function syncRestaurantSubscriptionStatus(
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
-    select: { settings: { select: { id: true } } },
+    select: {
+      settings: {
+        select: {
+          id: true,
+          stripeSubscriptionId: true,
+          hasActiveSubscription: true,
+        },
+      },
+    },
   })
 
   if (!restaurant) {
     console.warn('[stripe-webhook] Ristorante non trovato per subscription:', restaurantId)
     return null
+  }
+
+  const currentSubId = restaurant.settings?.stripeSubscriptionId ?? null
+  // Evento stantio su una subscription diversa da quella attuale: non degradare il tenant.
+  if (currentSubId && currentSubId !== subscription.id && !hasActiveSubscription) {
+    console.info('[stripe-webhook] Ignora evento subscription non corrente:', {
+      restaurantId,
+      eventSub: subscription.id,
+      currentSub: currentSubId,
+      status: subscription.status,
+    })
+    return {
+      restaurantId,
+      hasActiveSubscription: restaurant.settings?.hasActiveSubscription ?? false,
+      status: subscription.status,
+    }
   }
 
   const data = {

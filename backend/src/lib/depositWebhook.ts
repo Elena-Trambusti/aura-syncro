@@ -42,6 +42,19 @@ export async function markReservationDepositPaid(
     return null
   }
 
+  if (
+    reservation.depositStripeSessionId
+    && session.id
+    && reservation.depositStripeSessionId !== session.id
+  ) {
+    console.warn('[deposit-webhook] Session ID mismatch — ignore', {
+      reservationId,
+      expected: reservation.depositStripeSessionId,
+      got: session.id,
+    })
+    return null
+  }
+
   if (fundsCaptured && reservation.depositPaid) {
     return {
       reservationId: reservation.id,

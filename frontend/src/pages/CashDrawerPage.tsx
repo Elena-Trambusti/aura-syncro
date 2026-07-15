@@ -72,6 +72,7 @@ export default function CashDrawerPage() {
   })
 
   const openSession = useInstantMutation<{ data: CashSession }, unknown, void>({
+    actionKey: () => 'cash-open',
     mutationFn: () => api.post('/cash/session/open', { openingBalance: amount }),
     onInstant: () => {
       setShowOpenModal(false)
@@ -91,6 +92,7 @@ export default function CashDrawerPage() {
   })
 
   const closeSession = useInstantMutation<{ data: { difference: number } }, unknown, void>({
+    actionKey: () => 'cash-close',
     mutationFn: () => api.post('/cash/session/close', { closingBalance: amount }),
     onInstant: () => {
       setShowCloseModal(false)
@@ -111,6 +113,7 @@ export default function CashDrawerPage() {
   })
 
   const addTx = useInstantMutation<unknown, unknown, void>({
+    actionKey: () => `cash-tx-${txType}`,
     mutationFn: () => api.post('/cash/transactions', { type: txType, amount, reason }),
     onInstant: () => {
       const tempTx: CashTx = {
@@ -238,7 +241,7 @@ export default function CashDrawerPage() {
           <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseCashAmountInput(e.target.value))} className={ui.input + ' mb-6 w-full p-3 text-center text-xl'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowOpenModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" onClick={() => openSession.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3 active:scale-[0.98]'}>{t('common.confirm')}</button>
+            <button type="button" disabled={openSession.isPending} onClick={() => openSession.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3 active:scale-[0.98] disabled:opacity-60'}>{t('common.confirm')}</button>
           </div>
         </GlassModal>
       )}
@@ -254,7 +257,7 @@ export default function CashDrawerPage() {
           <input type="text" value={reason} onChange={e => setReason(e.target.value)} className={ui.input + ' mb-6 w-full p-3'} placeholder="Motivazione (es. Pagamento fornitore)" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowTxModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" disabled={amount <= 0 || !reason} onClick={() => addTx.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3'}>{t('common.confirm')}</button>
+            <button type="button" disabled={amount <= 0 || !reason || addTx.isPending} onClick={() => addTx.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3 disabled:opacity-60'}>{t('common.confirm')}</button>
           </div>
         </GlassModal>
       )}
@@ -266,7 +269,7 @@ export default function CashDrawerPage() {
           <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseCashAmountInput(e.target.value))} className={ui.input + ' mb-6 w-full p-4 text-center text-3xl font-black'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowCloseModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
-            <button type="button" onClick={() => closeSession.mutate(undefined)} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>
+            <button type="button" disabled={closeSession.isPending} onClick={() => closeSession.mutate(undefined)} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-60">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>
           </div>
         </GlassModal>
       )}

@@ -353,25 +353,27 @@ customersRouter.put('/:id', requirePermission('customers.manage'), async (req: A
   const lastName = result.data.lastName ?? current.lastName
   const name = result.data.name ?? (buildCustomerName(firstName, lastName) || current.name)
 
+  const data: Record<string, unknown> = {
+    firstName,
+    lastName,
+    name,
+  }
+  if (result.data.email !== undefined) data.email = result.data.email
+  if (result.data.phone !== undefined) data.phone = result.data.phone
+  if (result.data.notes !== undefined) data.notes = result.data.notes
+  if (result.data.allergens !== undefined) data.allergens = result.data.allergens
+  if (result.data.tags !== undefined) data.tags = result.data.tags
+  if (result.data.taxId !== undefined) data.taxId = result.data.taxId
+  if (result.data.fiscalCode !== undefined) data.fiscalCode = result.data.fiscalCode
+  if (result.data.sdiRecipientCode !== undefined) data.sdiRecipientCode = result.data.sdiRecipientCode
+  if (result.data.pec !== undefined) data.pec = result.data.pec
+  if (result.data.birthDate !== undefined) {
+    data.birthdate = result.data.birthDate ? parseBirthDateInput(result.data.birthDate) : null
+  }
+
   const updated = await prisma.customer.updateMany({
     where: scopedWhere(req, req.params.id),
-    data: {
-      firstName,
-      lastName,
-      name,
-      email: result.data.email,
-      phone: result.data.phone,
-      notes: result.data.notes,
-      allergens: result.data.allergens,
-      tags: result.data.tags,
-      taxId: result.data.taxId,
-      fiscalCode: result.data.fiscalCode,
-      sdiRecipientCode: result.data.sdiRecipientCode,
-      pec: result.data.pec,
-      ...(result.data.birthDate !== undefined
-        ? { birthdate: result.data.birthDate ? parseBirthDateInput(result.data.birthDate) : null }
-        : {}),
-    },
+    data,
   })
   if (updated.count === 0) {
     tenantNotFound(res, 'Cliente non trovato')
