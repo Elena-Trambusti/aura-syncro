@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import styles from './hardware-settings.module.css';
 
 interface PaymentConfirmDialogProps {
@@ -13,28 +14,31 @@ export function PaymentConfirmDialog({
   amountEuro,
   onConfirm,
 }: PaymentConfirmDialogProps) {
+  const { t } = useTranslation();
+
   if (!open) return null;
 
-  const amountLabel =
-    amountEuro !== undefined ? ` (${amountEuro.toFixed(2)} EUR)` : '';
+  const amountSuffix =
+    amountEuro !== undefined
+      ? t('checkout.paymentConfirmAmount', { amount: amountEuro.toFixed(2) })
+      : '';
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
       <div className={styles.dialog}>
-        <h2 className={styles.dialogTitle}>Conferma pagamento</h2>
+        <h2 className={styles.dialogTitle}>{t('checkout.paymentConfirmTitle')}</h2>
         <p className={styles.dialogText}>
-          Ordine <strong>{orderId}</strong>
-          {amountLabel}. Il pagamento sul POS esterno è andato a buon fine?
+          {t('checkout.paymentConfirmBody', { orderId, amount: amountSuffix })}
         </p>
         <div className={styles.dialogActions}>
           <button type="button" className={styles.btn} onClick={() => onConfirm('cancelled')}>
-            Annullato
+            {t('checkout.paymentConfirmCancelled')}
           </button>
           <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={() => onConfirm('error')}>
-            Errore
+            {t('checkout.paymentConfirmError')}
           </button>
           <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => onConfirm('ok')}>
-            Pagato
+            {t('checkout.paymentConfirmPaid')}
           </button>
         </div>
       </div>

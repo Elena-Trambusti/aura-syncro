@@ -24,6 +24,8 @@ import {
 import {
   shouldUseNativePos,
   storePendingNativeCheckout,
+  readPendingNativeCheckout,
+  clearPendingNativeCheckout,
 } from '../lib/hardware/native-pos-checkout'
 import {
   isPaymentAlreadyPaid,
@@ -254,6 +256,9 @@ export default function CheckoutPage() {
   }, [order, paymentMethod, grandTotal])
 
   const splitUsesIncrementalCash = paymentMethod === 'SPLIT' && splitSettlement === 'CASH'
+  const usesNativePosFlow =
+    shouldUseNativePos(posStatus?.mode)
+    && usesCardSettlement(paymentMethod, splitSettlement)
   const unpaidSplitGuest = paymentMethod === 'SPLIT'
     ? nextUnpaidSplitGuest(guestCount, order?.splitPaidGuestIndexes)
     : null
@@ -516,9 +521,7 @@ export default function CheckoutPage() {
         return
       }
 
-      const usesNativePos =
-        shouldUseNativePos(posStatus?.mode)
-        && usesCardSettlement(paymentMethod, splitSettlement)
+      const usesNativePos = usesNativePosFlow
 
       if (usesNativePos) {
         const payload = buildFinalizePayload(splitGuestIndex)
@@ -540,6 +543,7 @@ export default function CheckoutPage() {
           orderId,
         )
         if (!posResult.ok) {
+          clearPendingNativeCheckout()
           setPayingTarget(null)
           toast.error(posResult.error ?? t('checkout.paymentError', { defaultValue: 'Impossibile aprire il POS' }))
         }
@@ -572,6 +576,7 @@ export default function CheckoutPage() {
       orderId,
       paymentMethod,
       posStatus?.mode,
+      usesNativePosFlow,
       queryClient,
       splitPreview,
       splitSettlement,
@@ -579,6 +584,14 @@ export default function CheckoutPage() {
       tk,
     ],
   )
+
+  useEffect(() => {
+    if (!orderId || !usesNativePosFlow) return
+    const pending = readPendingNativeCheckout(orderId)
+    if (pending) {
+      setPayingTarget(pending.splitGuestIndex ?? 'main')
+    }
+  }, [orderId, usesNativePosFlow])
 
   useEffect(() => {
     const onNativeFinalized = (event: Event) => {
@@ -596,15 +609,22 @@ export default function CheckoutPage() {
 
     const onNativeFailed = () => {
       setPayingTarget(null)
+      toast.error(t('checkout.paymentError', { defaultValue: 'Errore registrazione pagamento' }))
+    }
+
+    const onNativeCancelled = () => {
+      setPayingTarget(null)
     }
 
     window.addEventListener('aura-native-checkout-finalized', onNativeFinalized)
     window.addEventListener('aura-native-checkout-failed', onNativeFailed)
+    window.addEventListener('aura-native-checkout-cancelled', onNativeCancelled)
     return () => {
       window.removeEventListener('aura-native-checkout-finalized', onNativeFinalized)
       window.removeEventListener('aura-native-checkout-failed', onNativeFailed)
+      window.removeEventListener('aura-native-checkout-cancelled', onNativeCancelled)
     }
-  }, [orderId, queryClient, tk])
+  }, [orderId, queryClient, t, tk])
 
   const assignItem = (itemId: string, guestIndex: number) => {
     setItemAssignments(prev => ({ ...prev, [itemId]: guestIndex }))
@@ -732,6 +752,13 @@ export default function CheckoutPage() {
         {posStatus?.usesExternalFiscalDevice && paymentMethod === 'CARD' && (
           <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
             {t('checkout.posExternalDevice', { provider: posStatus.providerLabel ?? t('checkout.posExternalGeneric') })}
+          </div>
+        )}
+
+        {isPaymentBusy && usesNativePosFlow && (
+          <div className="flex items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+            <span>{t('checkout.posNativeWaiting')}</span>
           </div>
         )}
 

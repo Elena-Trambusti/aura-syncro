@@ -43,11 +43,21 @@ export function clearPendingNativeCheckout(): void {
   }
 }
 
+export function abortPendingNativeCheckout(orderId?: string): void {
+  const pending = orderId ? readPendingNativeCheckout(orderId) : null
+  clearPendingNativeCheckout()
+  window.dispatchEvent(
+    new CustomEvent('aura-native-checkout-cancelled', {
+      detail: { orderId: orderId ?? pending?.orderId ?? null },
+    }),
+  )
+}
+
 export async function completePendingNativeCheckout(
   result: PaymentResult,
 ): Promise<unknown | null> {
   if (result.status !== 'ok' || !result.orderId) {
-    clearPendingNativeCheckout()
+    abortPendingNativeCheckout(result.orderId)
     return null
   }
 
@@ -76,4 +86,18 @@ export async function completePendingNativeCheckout(
     )
     throw error
   }
+}
+
+export type NativePaymentOutcome = 'finalized' | 'cancelled' | 'ignored'
+
+/** Esito pagamento POS nativo → finalize backend o reset UI checkout. */
+export async function handleNativePaymentResult(
+  result: PaymentResult,
+): Promise<NativePaymentOutcome> {
+  if (result.status === 'ok') {
+    const data = await completePendingNativeCheckout(result)
+    return data ? 'finalized' : 'ignored'
+  }
+  abortPendingNativeCheckout(result.orderId)
+  return 'cancelled'
 }
