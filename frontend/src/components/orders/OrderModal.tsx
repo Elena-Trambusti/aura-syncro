@@ -306,16 +306,22 @@ export default function OrderModal({
     addToCart(item, [], [])
   }
 
-  const addToCart = (item: MenuItem, modifiers: string[], modifierNames: string[]) => {
+  const addToCart = (
+    item: MenuItem,
+    modifiers: string[],
+    modifierNames: string[],
+    courseOverride?: number,
+  ) => {
     if (isOptimisticOrder) {
       toast.error(t('orderModal.optimisticOrderPending', {
         defaultValue: 'Attendi la sincronizzazione dell\'ordine prima di aggiungere altri piatti.',
       }))
       return
     }
+    const course = courseOverride ?? selectedCourse
     setCart(prev => {
       const modifierKey = modifiers.slice().sort().join(',')
-      const existing = prev.find(c => c.menuItemId === item.id && c.course === selectedCourse && (c.modifiers || []).slice().sort().join(',') === modifierKey)
+      const existing = prev.find(c => c.menuItemId === item.id && c.course === course && (c.modifiers || []).slice().sort().join(',') === modifierKey)
       return existing
         ? prev.map(c => c === existing ? { ...c, quantity: c.quantity + 1 } : c)
         : [...prev, { 
@@ -324,7 +330,7 @@ export default function OrderModal({
             basePrice: moneyNumber(item.price),
             price: addMoney(item.price, modifiers.length > 0 ? getModifiersPrice(item, modifiers) : 0), 
             quantity: 1, 
-            course: selectedCourse,
+            course,
             modifiers,
             modifierNames
           }]
@@ -640,10 +646,12 @@ export default function OrderModal({
                 <button
                   type="button"
                   onClick={() => {
-                    const temp = selectedCourse;
-                    setSelectedCourse(item.course);
-                    addToCart({ id: item.menuItemId, name: item.name, price: item.basePrice, available: true, category: { name: '' } }, item.modifiers || [], item.modifierNames || []);
-                    setSelectedCourse(temp);
+                    addToCart(
+                      { id: item.menuItemId, name: item.name, price: item.basePrice, available: true, category: { name: '' } },
+                      item.modifiers || [],
+                      item.modifierNames || [],
+                      item.course,
+                    )
                   }}
                   aria-label="+"
                 >

@@ -159,17 +159,32 @@ cashRouter.post('/transactions', requirePermission('orders.pay'), async (req: Au
     return
   }
 
-  const tx = await prisma.cashTransaction.create({
-    data: {
-      sessionId: session.id,
-      userId: req.userId!,
-      type: result.data.type,
-      amount: toMoney(result.data.amount),
-      reason: result.data.reason,
-    },
-  })
-  
-  res.status(201).json(tx)
+  try {
+    const tx = await prisma.$transaction(async (db) => {
+      const open = await db.cashRegisterSession.findFirst({
+        where: { id: session.id, restaurantId: tenantId(req), status: 'OPEN' },
+      })
+      if (!open) {
+        throw Object.assign(new Error('CASH_SESSION_CLOSED'), { code: 'CASH_SESSION_CLOSED' })
+      }
+      return db.cashTransaction.create({
+        data: {
+          sessionId: open.id,
+          userId: req.userId!,
+          type: result.data.type,
+          amount: toMoney(result.data.amount),
+          reason: result.data.reason,
+        },
+      })
+    })
+    res.status(201).json(tx)
+  } catch (err) {
+    if ((err as { code?: string })?.code === 'CASH_SESSION_CLOSED') {
+      res.status(409).json({ error: 'Sessione cassa già chiusa', code: 'CASH_SESSION_CLOSED' })
+      return
+    }
+    throw err
+  }
 })
 
 // GET /cash/transactions - List transactions of current session

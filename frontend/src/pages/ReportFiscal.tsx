@@ -166,7 +166,12 @@ function ReportFiscalContent() {
   }, [t, taxRegion, tenantQueryKey])
 
   const fmtDate = (d: string | Date) =>
-    new Intl.DateTimeFormat(fiscalLocale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(d))
+    new Intl.DateTimeFormat(fiscalLocale, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: tenantTz,
+    }).format(new Date(d))
 
   const hasExportData = Boolean(data && !isLoading && data.rows.length > 0)
 
@@ -185,7 +190,12 @@ function ReportFiscalContent() {
     const map = new Map<string, DailyFiscalPoint>()
     for (const row of data.rows) {
       const key = row.fecha
-        ? new Date(row.fecha).toISOString().slice(0, 10)
+        ? new Intl.DateTimeFormat('en-CA', {
+            timeZone: tenantTz,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date(row.fecha))
         : 'unknown'
       const cur = map.get(key) ?? { date: key, revenue: 0, tax: 0, tips: 0, total: 0 }
       cur.revenue += row.revenueAmount
@@ -197,7 +207,7 @@ function ReportFiscalContent() {
     return [...map.values()]
       .filter(p => p.date !== 'unknown')
       .sort((a, b) => a.date.localeCompare(b.date))
-  }, [data?.rows])
+  }, [data?.rows, tenantTz])
 
   const vatChartData = useMemo(
     () => (vatBreakdown?.breakdown ?? []).map(row => ({
@@ -266,6 +276,7 @@ function ReportFiscalContent() {
           })),
         },
         buildFiscalPdfLabels(t, taxRegion, activeRegime.defaultLocale, taxRate),
+        { timeZone: tenantTz },
       )
       toast.success(t('reportFiscal.pdfGenerated'))
     } catch (error) {

@@ -41,10 +41,10 @@ const invoiceSchema = z.object({
   clienteSdiCode: z.string().optional(),
   clientePec: z.string().optional(),
   items: z.array(z.object({
-    description: z.string(),
-    quantity: z.number(),
-    unitPrice: z.number(),
-    taxRate: z.number(),
+    description: z.string().min(1),
+    quantity: z.number().positive().finite(),
+    unitPrice: z.number().positive().finite(),
+    taxRate: z.number().min(0).max(100),
   })).optional(),
 })
 
@@ -102,15 +102,18 @@ router.post('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): 
         })
         return
       }
-      const taxRate = order.taxRateApplied ?? defaultTaxRate
+      const defaultRate = order.taxRateApplied ?? defaultTaxRate
       invoiceItems = order.items.filter(item => item.status !== 'CANCELLED').map(item => {
         const modifierTotal = item.modifiers.reduce((s, m) => s + moneyNumber(m.price), 0)
         const lineGross = (moneyNumber(item.unitPrice) + modifierTotal) * item.quantity
+        const lineTaxRate = item.menuItem.taxRate != null
+          ? moneyNumber(item.menuItem.taxRate)
+          : defaultRate
         return {
           description: item.menuItem.name,
           quantity: item.quantity,
           unitPrice: roundMoney(lineGross / item.quantity),
-          taxRate,
+          taxRate: lineTaxRate,
         }
       })
       if (invoiceItems.length === 0) {
@@ -192,28 +195,53 @@ router.post('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): 
       items: mappedItems,
     })
 
-    // Aruba fuori dalla TX DB: evita lock lunghi e orfani SDI senza riga invoice.
+    // Claim atomico prima di Aruba: evita doppia submission SDI su retry concurrente.
+    let claimed
+    try {
+      claimed = await prisma.invoice.create({
+        data: {
+          restaurantId,
+          orderId: data.orderId,
+          documentNumber: allocated.documentNumber,
+          prefix: allocated.prefix,
+          fiscalYear: allocated.fiscalYear,
+          sequence: allocated.sequence,
+          clientePiva: data.clientePiva,
+          clienteCodiceFiscale: data.clienteCodiceFiscale,
+          clienteSdiCode: data.clienteSdiCode,
+          clientePec: data.clientePec,
+          clienteRagioneSociale: data.clienteRagioneSociale,
+          clienteIndirizzo: data.clienteIndirizzo,
+          importoTotale: totalGross,
+          statoSdi: 'pending',
+          xmlBlob: xml,
+        },
+      })
+    } catch (createErr: unknown) {
+      if (
+        createErr != null
+        && typeof createErr === 'object'
+        && 'code' in createErr
+        && (createErr as { code: string }).code === 'P2002'
+      ) {
+        res.status(409).json({
+          error: 'Fattura già emessa o in elaborazione per questo ordine',
+          code: 'DUPLICATE_INVOICE',
+        })
+        return
+      }
+      throw createErr
+    }
+
     const arubaRes = await ArubaInvoiceService.submit(xml)
     const statoSdi = arubaRes.success ? 'sent' : 'failed'
 
-    const created = await prisma.invoice.create({
+    const created = await prisma.invoice.update({
+      where: { id: claimed.id },
       data: {
-        restaurantId,
-        orderId: data.orderId,
-        documentNumber: allocated.documentNumber,
-        prefix: allocated.prefix,
-        fiscalYear: allocated.fiscalYear,
-        sequence: allocated.sequence,
-        clientePiva: data.clientePiva,
-        clienteCodiceFiscale: data.clienteCodiceFiscale,
-        clienteSdiCode: data.clienteSdiCode,
-        clientePec: data.clientePec,
-        clienteRagioneSociale: data.clienteRagioneSociale,
-        clienteIndirizzo: data.clienteIndirizzo,
-        importoTotale: totalGross,
         statoSdi,
-        xmlBlob: xml,
         arubaUploadId: arubaRes.uploadFileName,
+        xmlBlob: xml,
       },
     })
 

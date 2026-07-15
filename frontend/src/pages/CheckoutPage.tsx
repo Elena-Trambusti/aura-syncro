@@ -690,7 +690,7 @@ export default function CheckoutPage() {
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
-      if (orderId) {
+      if (orderId && !paid.partial) {
         markTableCleaningAfterPayment(queryClient, tk, orderId)
       }
     }

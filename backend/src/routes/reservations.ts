@@ -403,7 +403,16 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
       where: { restaurantId: tenantId(req) },
     })
 
-    const penaltyAmount = moneyNumber(settings?.depositAmount || 10) * reservation.covers
+    const penaltyPerCover = moneyNumber(settings?.depositAmount)
+    if (!(penaltyPerCover > 0)) {
+      await releaseNoShowLock()
+      res.status(400).json({
+        error: 'Importo caparra/penale non configurato o non valido',
+        code: 'DEPOSIT_AMOUNT_INVALID',
+      })
+      return
+    }
+    const penaltyAmount = penaltyPerCover * reservation.covers
 
     const penaltyCents = Math.round(penaltyAmount * 100)
 

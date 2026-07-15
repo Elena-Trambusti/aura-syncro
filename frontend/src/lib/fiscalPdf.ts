@@ -31,28 +31,41 @@ export interface FiscalReportData {
 const fmtEur = (n: number, locale: string) =>
   new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(n)
 
-const toDateStr = (d: string | Date, locale: string) => {
-  const iso = typeof d === 'string' ? d : new Date(d).toISOString()
-  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso))
+const toDateStr = (d: string | Date, locale: string, timeZone?: string) => {
+  const date = typeof d === 'string' || d instanceof Date ? new Date(d) : new Date()
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  }).format(date)
 }
 
-const fmtPeriod = (start: string, end: string, locale: string) => {
-  const s = toDateStr(start, locale)
-  const e = toDateStr(end, locale)
+const fmtPeriod = (start: string, end: string, locale: string, timeZone?: string) => {
+  const s = toDateStr(start, locale, timeZone)
+  const e = toDateStr(end, locale, timeZone)
   return s === e ? s : `${s} — ${e}`
 }
 
-const fileDate = (start: string) => {
+const fileDate = (start: string, timeZone?: string) => {
+  if (timeZone) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(start))
+  }
   const iso = typeof start === 'string' ? start : new Date(start).toISOString()
   return iso.slice(0, 10)
 }
 
-export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabels): void {
+export function generateFiscalPdf(
+  data: FiscalReportData,
+  labels: FiscalPdfLabels,
+  options?: { timeZone?: string },
+): void {
   if (!data.rows.length) {
     throw new Error(labels.noDataExport)
   }
 
   const { locale } = labels
+  const timeZone = options?.timeZone
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
@@ -70,13 +83,17 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
     doc.text(`${labels.address}: ${restaurant.address}`, 14, metaY)
     metaY += 5
   }
-  doc.text(`${labels.period}: ${fmtPeriod(period.start, period.end, locale)}`, 14, metaY)
+  doc.text(`${labels.period}: ${fmtPeriod(period.start, period.end, locale, timeZone)}`, 14, metaY)
   if (labels.taxRateLine) {
     metaY += 5
     doc.text(labels.taxRateLine, 14, metaY)
   }
   doc.text(
-    `${labels.generated}: ${new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(new Date())}`,
+    `${labels.generated}: ${new Intl.DateTimeFormat(locale, {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      ...(timeZone ? { timeZone } : {}),
+    }).format(new Date())}`,
     pageW - 14,
     26,
     { align: 'right' },
@@ -87,7 +104,7 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
     head: [labels.headers],
     body: rows.map(r => {
       const base = [
-        r.fecha ? toDateStr(r.fecha, locale) : '—',
+        r.fecha ? toDateStr(r.fecha, locale, timeZone) : '—',
         r.orderId.slice(-6).toUpperCase(),
         fmtEur(r.baseImponible, locale),
         fmtEur(r.tax, locale),
@@ -165,5 +182,5 @@ export function generateFiscalPdf(data: FiscalReportData, labels: FiscalPdfLabel
   const disclaimerLines = doc.splitTextToSize(labels.legalDisclaimer, pageW - 28)
   doc.text(disclaimerLines, pageW / 2, pageH - 6, { align: 'center' })
 
-  doc.save(`${labels.filenamePrefix}-${fileDate(period.start)}.pdf`)
+  doc.save(`${labels.filenamePrefix}-${fileDate(period.start, timeZone)}.pdf`)
 }
