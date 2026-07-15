@@ -1,5 +1,6 @@
 const MIN_TOP_PX = 28
-const MIN_BOTTOM_PX = 48
+/** Barra navigazione gesture Android (48dp) + margine per evitare overlap col profilo utente */
+const MIN_BOTTOM_PX = 56
 
 function measureEnvInset(edge: 'top' | 'bottom'): number {
   if (typeof document === 'undefined') return 0

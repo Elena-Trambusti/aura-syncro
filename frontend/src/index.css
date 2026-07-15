@@ -323,7 +323,7 @@
     html.pwa-standalone,
     html.aura-native-shell {
       --safe-top: max(28px, env(safe-area-inset-top, 0px));
-      --safe-bottom: max(48px, env(safe-area-inset-bottom, 0px));
+      --safe-bottom: max(56px, env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -1372,12 +1372,12 @@
   @media (max-width: 1023px) {
     .premium-sidebar {
       z-index: 70;
-      height: 100dvh;
-      max-height: 100dvh;
-      overflow-y: auto;
-      overflow-x: hidden;
+      top: 0;
+      bottom: var(--safe-bottom);
+      height: auto;
+      max-height: none;
+      overflow: hidden;
       overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
     }
 
     .premium-sidebar__header {
@@ -1385,7 +1385,9 @@
     }
 
     .premium-sidebar__footer {
-      padding-bottom: var(--safe-bottom-pad);
+      margin-top: auto;
+      flex-shrink: 0;
+      padding-bottom: max(1.25rem, var(--safe-bottom-pad));
     }
   }
 
@@ -2637,8 +2639,8 @@
 
   html.pwa-standalone .public-guest-scroll,
   html.aura-native-shell .public-guest-scroll {
-    height: 100dvh;
-    max-height: 100dvh;
+    height: calc(100dvh - var(--safe-bottom));
+    max-height: calc(100dvh - var(--safe-bottom));
   }
 
   /* Pagine guest (menu QR, prenotazioni) — stessa safe-area della dashboard */
@@ -2648,7 +2650,11 @@
 
   .public-guest-page__body {
     padding-top: calc(var(--safe-top-pad) + 1.75rem);
-    padding-bottom: max(7rem, var(--safe-bottom-pad));
+    padding-bottom: max(7rem, calc(var(--safe-bottom-pad) + 5rem));
+  }
+
+  .guest-cart-bar {
+    padding-bottom: max(1rem, var(--safe-bottom-pad));
   }
 
   @media (min-width: 640px) {

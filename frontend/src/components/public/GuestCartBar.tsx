@@ -14,7 +14,7 @@ export default function GuestCartBar({ itemCount, total, onOpen }: GuestCartBarP
   if (itemCount === 0) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+    <div className="guest-cart-bar fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white px-4 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-lg items-center gap-3">
         <button
           type="button"

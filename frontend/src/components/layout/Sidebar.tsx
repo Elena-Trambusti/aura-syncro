@@ -198,7 +198,7 @@ export default function Sidebar() {
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 max-lg:pt-4 lg:py-4 lg:min-h-0">
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 max-lg:min-h-0 max-lg:pt-4 max-lg:[-webkit-overflow-scrolling:touch] lg:py-4 lg:min-h-0">
           <p className="aura-nav-section max-lg:mt-1">{t('nav.operations', { defaultValue: 'Operatività' })}</p>
           <ul className="space-y-0.5">
             {visibleNavItems.map(item => {
@@ -248,7 +248,7 @@ export default function Sidebar() {
           </ul>
         </nav>
 
-        <div className="border-t border-white/[0.06] px-3 py-3">
+        <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">
           {(() => {
             const locked = isPreviewMode
             const FeatureIcon = kitchenLink.icon
