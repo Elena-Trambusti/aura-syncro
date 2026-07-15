@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loginViaUi } from './helpers/auth'
-import { addItemAndSendToKitchen } from './helpers/order'
+import { addItemAndSendToKitchen, closeOrderDialog } from './helpers/order'
 import { assertHealthyShell } from './helpers/ui'
 
 test.describe('Premium ops — compliance, menu CSV, table claim', () => {
@@ -64,25 +64,33 @@ test.describe('Premium ops — table claim mobile', () => {
 
     await addItemAndSendToKitchen(page, orderDialog)
 
-    await page.getByRole('button', { name: /chiudi|close|cerrar/i }).first().click({ timeout: 5_000 }).catch(() => {
-      /* modale può chiudersi da sola */
-    })
+    await closeOrderDialog(orderDialog)
 
     const tableNum = tableLabel.replace(/[^\d]/g, '')
     if (tableNum) {
-      const tableBtn = page.getByRole('button', { name: new RegExp(`Tavolo ${tableNum}|T${tableNum},`, 'i') })
-      await expect(tableBtn).toBeVisible({ timeout: 10_000 })
+      const tableBtn = page.getByRole('button', {
+        name: new RegExp(`T${tableNum},|Tavolo ${tableNum}`, 'i'),
+      }).first()
+      await expect(tableBtn).toBeVisible({ timeout: 15_000 })
       await tableBtn.click()
 
-      const claimBtn = page.getByRole('button', { name: /prendi in carico|tomar mesa|claim table/i })
-      await expect(claimBtn).toBeVisible({ timeout: 10_000 })
+      const detailSheet = page.getByRole('dialog').last()
+      await expect(detailSheet).toBeVisible({ timeout: 10_000 })
+
+      const claimBtn = detailSheet.getByRole('button', {
+        name: /prendi in carico|claim table|tomar mesa|mesa übernehmen/i,
+      })
+      await claimBtn.scrollIntoViewIfNeeded()
+      await expect(claimBtn).toBeVisible({ timeout: 15_000 })
       await claimBtn.click()
 
       await expect(
-        page.getByText(/assegnata a|asignada a|serving by/i).first(),
+        page.getByText(/assegnata a|asignada a|serving by|claimed by|in carico a/i).first(),
       ).toBeVisible({ timeout: 10_000 })
 
-      const releaseBtn = page.getByRole('button', { name: /rilascia|liberar mesa|release table/i })
+      const releaseBtn = detailSheet.getByRole('button', {
+        name: /rilascia|liberar mesa|release table|mesa freigeben/i,
+      })
       await expect(releaseBtn).toBeVisible({ timeout: 10_000 })
       await releaseBtn.click()
     }

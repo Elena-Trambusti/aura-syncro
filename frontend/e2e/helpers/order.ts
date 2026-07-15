@@ -41,6 +41,12 @@ export async function openOrderCartTab(orderDialog: Locator) {
   }
 }
 
+/** Chiude il modale comanda fullscreen (mobile). */
+export async function closeOrderDialog(orderDialog: Locator) {
+  await orderDialog.getByRole('button', { name: /chiudi|close|cerrar|schließen|fermer/i }).click()
+  await expect(orderDialog).toBeHidden({ timeout: 15_000 })
+}
+
 /** Aggiunge un piatto e invia la comanda in cucina. */
 export async function addItemAndSendToKitchen(page: Page, orderDialog: Locator) {
   await addFirstPricedMenuItem(orderDialog)
