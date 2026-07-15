@@ -19,6 +19,7 @@ const finalizeSchema = z.object({
   discountCode: z.string().optional(),
   applyLoyaltyDiscount: z.boolean().optional().default(true),
   splitGuestIndex: z.number().int().min(0).optional(),
+  nativePosConfirmed: z.boolean().optional().default(false),
 })
 
 const cashOpenSchema = z.object({

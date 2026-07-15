@@ -1,5 +1,5 @@
 import type { AxiosResponse } from 'axios'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
@@ -159,6 +159,34 @@ export default function SettingsPage() {
     },
     onError: () => toast.error(t('settings.printAgentTokenError')),
   })
+
+  const { data: posIntegrationStatus } = useQuery<{
+    mode: string
+    providerLabel?: string | null
+    configured: boolean
+    usesExternalFiscalDevice: boolean
+  }>({
+    queryKey: tq(tk, 'pos-status'),
+    queryFn: () => api.get('/restaurant/pos-status').then(r => r.data),
+    enabled: canAccessAdminNav(),
+  })
+
+  const posIntegrationLabel = useMemo(() => {
+    if (!posIntegrationStatus) return null
+    switch (posIntegrationStatus.mode) {
+      case 'SIMULATION':
+        return t('settings.posStatusSimulation')
+      case 'STRIPE_TERMINAL':
+        return t('settings.posStatusStripe')
+      case 'EXTERNAL':
+        return t('settings.posStatusExternal', {
+          provider: posIntegrationStatus.providerLabel ?? t('checkout.posExternalGeneric'),
+        })
+      case 'PENDING_SETUP':
+      default:
+        return t('settings.posStatusPending')
+    }
+  }, [posIntegrationStatus, t])
 
   const [form, setForm] = useState<SettingsForm>({
     name: '',
@@ -623,6 +651,20 @@ export default function SettingsPage() {
             className="w-full px-4 py-2.5 saas-input"
           />
         </div>
+      </div>
+
+      <div className="premium-card p-6">
+        <h2 className="text-base font-semibold text-pietra mb-3">{t('settings.posTitle')}</h2>
+        <p className="text-sm text-fumo mb-4">{t('settings.posDesc')}</p>
+        {posIntegrationLabel && (
+          <p className="mb-4 rounded-lg border border-white/[0.08] bg-navy-surface px-4 py-3 text-sm text-pietra">
+            {posIntegrationLabel}
+          </p>
+        )}
+        {posIntegrationStatus?.usesExternalFiscalDevice && (
+          <p className="mb-4 text-xs text-fumo">{t('settings.posLegalNote')}</p>
+        )}
+        <p className="text-xs text-fumo">{t('settings.hardwareIntegrationNote')}</p>
       </div>
 
       <div className="premium-card p-6">

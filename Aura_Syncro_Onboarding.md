@@ -234,14 +234,23 @@ Con `EXTERNAL` la **ricevuta fiscale legale** esce dal loro hardware; Aura tracc
 - [ ] **Cucina:** tablet/monitor → login CHEF → `/kitchen` (Kitchen Display).
 - [ ] Test rotazione schermo e luminosità sempre attiva.
 
-### 3.3 Print Agent (se previsto)
+### 3.3 Stampa cucina — due percorsi (scegliere uno o entrambi)
+
+**A — Tablet Android Aura Syncro Mobile (consigliato in sala)**
+- [ ] Installare l'app wrapper sul tablet cassa/cameriere.
+- [ ] Impostazioni → **Hardware tablet**: pairing stampante Bluetooth/Wi‑Fi ESC/POS.
+- [ ] Invio comanda → stampa cucina **locale** dal tablet (non richiede PC in LAN).
+
+**B — Print Agent su PC (opzionale, legacy LAN)**
 - [ ] Installazione Node.js + `print-agent` su PC cassa.
 - [ ] Auto-start (PM2 o servizio Windows).
-- [ ] Stampa prova comanda bar + cucina.
+- [ ] Stampa prova comanda bar + cucina via Socket.IO.
 
 ### 3.4 POS fisico
+- [ ] Admin: `POST /api/admin/pos-config` con `mode: EXTERNAL` (o altra modalità concordata).
+- [ ] Tablet: Impostazioni → **Hardware tablet** → app POS installata + deep link (se supportato).
 - [ ] Se `STRIPE_TERMINAL`: pairing dal backoffice Stripe.
-- [ ] Se `EXTERNAL`: briefing cassiere — incasso carta sul terminale fisico, poi conferma in Aura.
+- [ ] Se `EXTERNAL`: incasso carta **solo dal tablet Android** → app POS → conferma in Aura; il browser desktop non può chiudere conti carta.
 - [ ] Cassetto contanti: kick-out via stampante ESC/POS se cablato.
 
 ### 3.5 QR fisici

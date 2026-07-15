@@ -26,6 +26,8 @@ export function downloadCSV(filename: string, headers: string[], rows: (string |
 }
 
 import { EscPosPrinter } from './escpos'
+import { isAndroidTablet } from './hardware/aura-bridge'
+import { printCustomerReceiptNative } from './hardware/print-service'
 
 /**
  * Stampa scontrino: tenta su Web Serial API (USB ESC/POS) 
@@ -47,6 +49,16 @@ export async function printReceipt(order: {
   const locale = options?.locale ?? 'it-IT'
   const taxLabel = options?.taxLabel ?? 'Tax'
   const tipLabel = options?.tipLabel ?? 'Mancia'
+
+  if (isAndroidTablet()) {
+    const nativeResult = await printCustomerReceiptNative(order, restaurantName, {
+      taxLabel,
+      tipLabel,
+      locale,
+    })
+    if (nativeResult.ok) return
+  }
+
   const formatEur = (n: unknown) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(moneyNumber(n))
   const formatDt = (d: string) => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
 

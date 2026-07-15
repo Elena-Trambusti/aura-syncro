@@ -193,19 +193,17 @@ export default function OrderModal({
 
     setIsSubmitting(true)
     const sendPromise = (async () => {
-      let result: 'synced' | 'queued'
       if (activeOrder) {
-        result = await submitAddOrderItems(
+        const result = await submitAddOrderItems(
           { orderId: activeOrder.id, items: lineItems },
           { label: tableLabel },
         )
-      } else {
-        result = await submitCreateOrder(
-          { tableId: table.id, type: 'DINE_IN', items: lineItems, customerId: prefillCustomerId ?? undefined },
-          { label: tableLabel },
-        )
+        return { ...result, orderId: result.orderId ?? activeOrder.id }
       }
-      return result
+      return submitCreateOrder(
+        { tableId: table.id, type: 'DINE_IN', items: lineItems, customerId: prefillCustomerId ?? undefined },
+        { label: tableLabel },
+      )
     })()
 
     flushSync(() => {
@@ -218,25 +216,33 @@ export default function OrderModal({
       }
     })
 
-    if (addingToExisting) {
-      toast.success(t('orderModal.dishAdded'))
-    } else {
-      toast.success(t('orderModal.orderSent'))
-    }
-
-    if (isAndroidTablet() && printSnapshot.length > 0) {
-      void printKitchenOrder(
-        activeOrder?.id ?? `table-${table.id}-${Date.now()}`,
-        tableLabel,
-        printSnapshot,
-      )
-    }
-
     void sendPromise
-      .then((result) => {
+      .then(async (submitResult) => {
         invalidateOrderQueries()
-        if (result === 'queued') {
+        if (submitResult.result === 'queued') {
           toast.success(t('offline.orderQueued', { defaultValue: 'Comanda salvata — invio appena torna la connessione' }))
+          return
+        }
+
+        if (addingToExisting) {
+          toast.success(t('orderModal.dishAdded'))
+        } else {
+          toast.success(t('orderModal.orderSent'))
+        }
+
+        if (isAndroidTablet() && printSnapshot.length > 0 && submitResult.orderId) {
+          const printResult = await printKitchenOrder(
+            submitResult.orderId,
+            tableLabel,
+            printSnapshot,
+          )
+          if (!printResult.ok) {
+            toast.error(
+              t('orderModal.kitchenPrintFailed', {
+                defaultValue: 'Comanda inviata ma stampa cucina non riuscita. Verifica la stampante in Impostazioni → Hardware.',
+              }),
+            )
+          }
         }
       })
       .catch(err => {

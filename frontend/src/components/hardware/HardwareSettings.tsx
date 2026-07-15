@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './hardware-settings.module.css';
 import { useAuraHardware } from '@/hooks/useAuraHardware';
 import { createPrinterId } from '@/lib/hardware/printer-config';
 
 export function HardwareSettings() {
+  const { t } = useTranslation();
   const {
     loading,
     isAndroid,
@@ -26,7 +28,7 @@ export function HardwareSettings() {
     openBluetoothSettings,
   } = useAuraHardware();
 
-  const [printerLabel, setPrinterLabel] = useState('Cucina');
+  const [printerLabel, setPrinterLabel] = useState(t('settings.hardwareDefaultPrinterName'));
   const [printerType, setPrinterType] = useState<'bluetooth' | 'wifi'>('bluetooth');
   const [printerAddress, setPrinterAddress] = useState('');
   const [selectedScan, setSelectedScan] = useState('');
@@ -48,18 +50,15 @@ export function HardwareSettings() {
   }, [config.pos]);
 
   if (loading) {
-    return <div className={styles.hw}>Caricamento impostazioni hardware...</div>;
+    return <div className={styles.hw}>{t('settings.hardwareLoading')}</div>;
   }
 
   if (!isAndroid) {
     return (
       <div className={styles.hw}>
         <div className={`${styles.banner} ${styles.bannerWarn}`}>
-          <strong>Modalità browser</strong>
-          <p className={styles.sectionHint}>
-            Stampanti e POS fisici si configurano dall&apos;app Android Aura Syncro Mobile sul tablet del
-            ristorante.
-          </p>
+          <strong>{t('settings.hardwareBrowserMode')}</strong>
+          <p className={styles.sectionHint}>{t('settings.hardwareBrowserHint')}</p>
         </div>
       </div>
     );
@@ -76,7 +75,7 @@ export function HardwareSettings() {
     await savePrinter(
       {
         id: createPrinterId(printerLabel),
-        label: printerLabel.trim() || 'Stampante',
+        label: printerLabel.trim() || t('settings.hardwareDefaultPrinterName'),
         type: printerType,
         address,
       },
@@ -96,10 +95,8 @@ export function HardwareSettings() {
   return (
     <div className={styles.hw}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Hardware ristorante</h1>
-        <p className={styles.subtitle}>
-          Configura stampanti e POS al momento: ogni locale può usare marche diverse.
-        </p>
+        <h1 className={styles.title}>{t('settings.hardwarePageTitle')}</h1>
+        <p className={styles.subtitle}>{t('settings.hardwarePageSubtitle')}</p>
       </header>
 
       {message && (
@@ -110,35 +107,39 @@ export function HardwareSettings() {
       )}
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Permessi</h2>
-        <p className={styles.sectionHint}>
-          Necessari per Bluetooth. Wi-Fi/LAN usa la rete locale del tablet.
-        </p>
+        <h2 className={styles.sectionTitle}>{t('settings.hardwarePermissionsTitle')}</h2>
+        <p className={styles.sectionHint}>{t('settings.hardwarePermissionsHint')}</p>
         <div className={styles.row}>
           <button type="button" className={styles.btn} onClick={() => requestPermissions()}>
-            Richiedi permessi
+            {t('settings.hardwareRequestPermissions')}
           </button>
           <button type="button" className={styles.btn} onClick={() => openBluetoothSettings()}>
-            Impostazioni Bluetooth
+            {t('settings.hardwareBluetoothSettings')}
           </button>
           <span className={styles.chip}>
-            Permessi: {permissionsGranted ? 'OK' : 'Mancanti'}
+            {t('settings.hardwarePermissionsStatus', {
+              status: permissionsGranted
+                ? t('settings.hardwareStatusOk')
+                : t('settings.hardwareStatusMissing'),
+            })}
           </span>
           <span className={styles.chip}>
-            Bluetooth: {bluetoothEnabled ? 'Attivo' : 'Spento'}
+            {t('settings.hardwareBluetoothStatus', {
+              status: bluetoothEnabled
+                ? t('settings.hardwareStatusOn')
+                : t('settings.hardwareStatusOff'),
+            })}
           </span>
         </div>
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Stampanti ESC/POS</h2>
-        <p className={styles.sectionHint}>
-          Bluetooth: scansiona e seleziona. Wi-Fi: inserisci IP e porta (default 9100).
-        </p>
+        <h2 className={styles.sectionTitle}>{t('settings.hardwarePrintersTitle')}</h2>
+        <p className={styles.sectionHint}>{t('settings.hardwarePrintersHint')}</p>
 
         <div className={styles.row}>
           <button type="button" className={styles.btn} onClick={() => scanPrinters()}>
-            Scansiona Bluetooth
+            {t('settings.hardwareScanBluetooth')}
           </button>
         </div>
 
@@ -153,7 +154,7 @@ export function HardwareSettings() {
                   setSelectedScan(item.address);
                   setPrinterType('bluetooth');
                   setPrinterAddress(item.address);
-                  if (!printerLabel || printerLabel === 'Cucina') {
+                  if (!printerLabel || printerLabel === t('settings.hardwareDefaultPrinterName')) {
                     setPrinterLabel(item.name);
                   }
                 }}
@@ -166,39 +167,41 @@ export function HardwareSettings() {
 
         <div className={styles.row}>
           <label className={styles.field}>
-            <span className={styles.label}>Nome</span>
+            <span className={styles.label}>{t('settings.hardwarePrinterName')}</span>
             <input
               className={styles.input}
               value={printerLabel}
               onChange={(e) => setPrinterLabel(e.target.value)}
-              placeholder="Cucina, Bar..."
+              placeholder={t('settings.hardwarePrinterNamePlaceholder')}
             />
           </label>
           <label className={styles.field}>
-            <span className={styles.label}>Tipo</span>
+            <span className={styles.label}>{t('settings.hardwarePrinterType')}</span>
             <select
               className={styles.select}
               value={printerType}
               onChange={(e) => setPrinterType(e.target.value as 'bluetooth' | 'wifi')}
             >
-              <option value="bluetooth">Bluetooth</option>
-              <option value="wifi">Wi-Fi / LAN</option>
+              <option value="bluetooth">{t('settings.hardwarePrinterBluetooth')}</option>
+              <option value="wifi">{t('settings.hardwarePrinterWifi')}</option>
             </select>
           </label>
           <label className={styles.field}>
-            <span className={styles.label}>Indirizzo</span>
+            <span className={styles.label}>{t('settings.hardwarePrinterAddress')}</span>
             <input
               className={styles.input}
               value={printerAddress}
               onChange={(e) => setPrinterAddress(e.target.value)}
-              placeholder={printerType === 'wifi' ? '192.168.1.50:9100' : 'MAC Bluetooth'}
+              placeholder={printerType === 'wifi'
+                ? t('settings.hardwarePrinterAddressWifi')
+                : t('settings.hardwarePrinterAddressBt')}
             />
           </label>
         </div>
 
         <div className={styles.row}>
           <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSavePrinter}>
-            Salva stampante
+            {t('settings.hardwareSavePrinter')}
           </button>
           <button
             type="button"
@@ -207,13 +210,13 @@ export function HardwareSettings() {
               testConnection(printerType, printerAddress.trim(), printerLabel.trim())
             }
           >
-            Test connessione
+            {t('settings.hardwareTestConnection')}
           </button>
         </div>
 
         <div className={styles.list} style={{ marginTop: 16 }}>
           {config.printers.length === 0 && (
-            <p className={styles.empty}>Nessuna stampante configurata.</p>
+            <p className={styles.empty}>{t('settings.hardwareNoPrinters')}</p>
           )}
           {config.printers.map((printer) => (
             <article key={printer.id} className={styles.card}>
@@ -221,7 +224,9 @@ export function HardwareSettings() {
                 <div>
                   <h3 className={styles.cardTitle}>
                     {printer.label}
-                    {config.defaultPrinterId === printer.id ? ' · predefinita' : ''}
+                    {config.defaultPrinterId === printer.id
+                      ? ` · ${t('settings.hardwareDefaultBadge')}`
+                      : ''}
                   </h3>
                   <p className={styles.cardMeta}>
                     {printer.type} — {printer.address}
@@ -230,17 +235,17 @@ export function HardwareSettings() {
               </div>
               <div className={styles.cardActions}>
                 <button type="button" className={styles.btn} onClick={() => testPrinter(printer.id)}>
-                  Test stampa
+                  {t('settings.hardwareTestPrint')}
                 </button>
                 <button type="button" className={styles.btn} onClick={() => markDefaultPrinter(printer.id)}>
-                  Predefinita
+                  {t('settings.hardwareSetDefault')}
                 </button>
                 <button
                   type="button"
                   className={`${styles.btn} ${styles.btnDanger}`}
                   onClick={() => deletePrinter(printer.id)}
                 >
-                  Elimina
+                  {t('settings.hardwareDelete')}
                 </button>
               </div>
             </article>
@@ -249,23 +254,21 @@ export function HardwareSettings() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>App POS</h2>
-        <p className={styles.sectionHint}>
-          Scegli qualsiasi app di pagamento installata. Il deep link è opzionale: senza, confermi manualmente al ritorno.
-        </p>
+        <h2 className={styles.sectionTitle}>{t('settings.hardwarePosTitle')}</h2>
+        <p className={styles.sectionHint}>{t('settings.hardwarePosHint')}</p>
 
         <div className={styles.row}>
           <label className={styles.field}>
-            <span className={styles.label}>Cerca app</span>
+            <span className={styles.label}>{t('settings.hardwareSearchApps')}</span>
             <input
               className={styles.input}
               value={posQuery}
               onChange={(e) => setPosQuery(e.target.value)}
-              placeholder="sumup, nexi, pay..."
+              placeholder={t('settings.hardwareSearchAppsPlaceholder')}
             />
           </label>
           <button type="button" className={styles.btn} onClick={() => loadPosApps(posQuery)}>
-            Cerca
+            {t('settings.hardwareSearch')}
           </button>
         </div>
 
@@ -289,41 +292,41 @@ export function HardwareSettings() {
 
         <div className={styles.row}>
           <label className={styles.field}>
-            <span className={styles.label}>Package Android</span>
+            <span className={styles.label}>{t('settings.hardwarePackageName')}</span>
             <input
               className={styles.input}
               value={posPackage}
               onChange={(e) => setPosPackage(e.target.value)}
-              placeholder="com.esempio.pos"
+              placeholder={t('settings.hardwarePackageNamePlaceholder')}
             />
           </label>
           <label className={styles.field}>
-            <span className={styles.label}>Etichetta</span>
+            <span className={styles.label}>{t('settings.hardwarePosLabel')}</span>
             <input
               className={styles.input}
               value={posLabel}
               onChange={(e) => setPosLabel(e.target.value)}
-              placeholder="Nome mostrato in cassa"
+              placeholder={t('settings.hardwarePosLabelPlaceholder')}
             />
           </label>
         </div>
 
         <label className={styles.field}>
-          <span className={styles.label}>Deep link template (opzionale)</span>
+          <span className={styles.label}>{t('settings.hardwareDeepLink')}</span>
           <textarea
             className={styles.textarea}
             value={deepLinkTemplate}
             onChange={(e) => setDeepLinkTemplate(e.target.value)}
-            placeholder="scheme://pay?amount={{amount}}&currency={{currency}}&callback={{callback}}"
+            placeholder={t('settings.hardwareDeepLinkPlaceholder')}
           />
         </label>
 
         <div className={styles.row}>
           <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSavePos}>
-            Salva POS
+            {t('settings.hardwareSavePos')}
           </button>
           <button type="button" className={styles.btn} onClick={() => savePos(null)}>
-            Rimuovi POS
+            {t('settings.hardwareRemovePos')}
           </button>
         </div>
       </section>

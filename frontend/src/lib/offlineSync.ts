@@ -17,6 +17,11 @@ import {
 
 export type SubmitResult = 'synced' | 'queued'
 
+export interface SubmitOrderResult {
+  result: SubmitResult
+  orderId?: string
+}
+
 const listeners = new Set<() => void>()
 let flushing = false
 let flushTimer: ReturnType<typeof setInterval> | null = null
@@ -104,12 +109,12 @@ async function postOrderItemsBatch(orderId: string, items: OrderLinePayload[], m
   )
 }
 
-async function executeMutation(mutation: OfflineMutation): Promise<void> {
+async function executeMutation(mutation: OfflineMutation): Promise<{ orderId?: string }> {
   const idempotencyHeader = (key: string) => ({ headers: { 'X-Idempotency-Key': key } })
 
   if (mutation.kind === 'CREATE_ORDER') {
     const payload = mutation.payload as CreateOrderPayload
-    await api.post(
+    const res = await api.post<{ id: string }>(
       '/orders',
       {
         tableId: payload.tableId,
@@ -125,13 +130,13 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
       },
       idempotencyHeader(mutation.id),
     )
-    return
+    return { orderId: res.data?.id }
   }
 
   if (mutation.kind === 'ADD_ORDER_ITEMS') {
     const payload = mutation.payload as AddOrderItemsPayload
     await postOrderItemsBatch(payload.orderId, payload.items, mutation.id)
-    return
+    return { orderId: payload.orderId }
   }
 
   const payload = mutation.payload as FinalizeOrderCashPayload
@@ -144,6 +149,7 @@ async function executeMutation(mutation: OfflineMutation): Promise<void> {
     },
     idempotencyHeader(mutation.id),
   )
+  return {}
 }
 
 async function executeMutationPartial(mutation: OfflineMutation): Promise<'done' | 'partial' | 'failed'> {
@@ -265,18 +271,18 @@ export function initOfflineSync(onSynced?: () => void): () => void {
 
 async function tryOrQueue(
   mutation: Omit<OfflineMutation, 'createdAt' | 'retryCount'>,
-): Promise<SubmitResult> {
+): Promise<SubmitOrderResult> {
   const tenantId = typeof localStorage !== 'undefined'
     ? localStorage.getItem(TENANT_STORAGE_KEY) ?? undefined
     : undefined
   try {
-    await executeMutation({
+    const meta = await executeMutation({
       ...mutation,
       tenantId,
       createdAt: Date.now(),
       retryCount: 0,
     })
-    return 'synced'
+    return { result: 'synced', orderId: meta.orderId }
   } catch (err) {
     if (!isRetryableNetworkError(err)) throw err
 
@@ -288,14 +294,14 @@ async function tryOrQueue(
     })
     notifyListeners()
     void flushOfflineQueue()
-    return 'queued'
+    return { result: 'queued' }
   }
 }
 
 export async function submitCreateOrder(
   payload: CreateOrderPayload,
   options?: { label?: string },
-): Promise<SubmitResult> {
+): Promise<SubmitOrderResult> {
   return tryOrQueue({
     id: createMutationId(),
     kind: 'CREATE_ORDER',
@@ -307,7 +313,7 @@ export async function submitCreateOrder(
 export async function submitAddOrderItems(
   payload: AddOrderItemsPayload,
   options?: { label?: string },
-): Promise<SubmitResult> {
+): Promise<SubmitOrderResult> {
   return tryOrQueue({
     id: createMutationId(),
     kind: 'ADD_ORDER_ITEMS',
@@ -319,7 +325,7 @@ export async function submitAddOrderItems(
 export async function submitFinalizeOrderCash(
   payload: FinalizeOrderCashPayload,
   options?: { label?: string },
-): Promise<SubmitResult> {
+): Promise<SubmitOrderResult> {
   return tryOrQueue({
     id: createMutationId(),
     kind: 'FINALIZE_ORDER_CASH',

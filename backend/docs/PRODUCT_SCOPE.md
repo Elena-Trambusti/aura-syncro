@@ -44,9 +44,9 @@ X-Admin-Key: <ADMIN_API_KEY>
 | `PENDING_SETUP` | Default post-pagamento | ❌ Non ancora — simulazione |
 | `SIMULATION` | Demo / formazione | ❌ Solo test |
 | `STRIPE_TERMINAL` | Stripe Terminal collegato | ✅ Via Stripe (se configurato) |
-| `EXTERNAL` | Registratore di cassa del ristorante | ✅ **Dal loro POS** — Aura registra il gestionale |
+| `EXTERNAL` | Registratore di cassa del ristorante | ✅ **Dal loro POS** — Aura registra il gestionale (solo tablet Android) |
 
-Con `EXTERNAL`, Aura **non simula** l'addebito carta: registra che l'incasso è avvenuto sul terminale del cliente. La ricevuta fiscale legale è responsabilità del loro hardware certificato.
+Con `EXTERNAL`, l'incasso carta avviene sull'app POS configurata sul **tablet Aura Syncro Mobile**; il browser desktop non può chiudere conti carta. Admin attiva la modalità via `POST /api/admin/pos-config`; il cameriere configura app POS e stampante in Impostazioni → Hardware tablet.
 
 ## Checklist concierge post-pagamento
 

@@ -278,7 +278,7 @@ Vedi [`print-agent/README.md`](./print-agent/README.md) per installazione e conf
 | `POST /api/tables/:id/release` | tables.status | Release lock tavolo |
 | `GET /api/customers/:id/timeline` | CRM | Timeline visite e ordini cliente |
 
-**Migrazione:** `npx prisma migrate deploy` in `backend/` applica `20250713200000_premium_ops` (AuditLog, serving fields, printAgentToken).
+**Migrazione:** `npx prisma migrate deploy` in `backend/` applica la baseline `20250620000000_init`. Su DB produzione già popolato, `scripts/ensure-baseline-migration.ts` segna la baseline come applicata senza rieseguire SQL.
 
 ---
 

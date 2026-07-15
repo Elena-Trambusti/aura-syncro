@@ -18,7 +18,13 @@ async function handlePaymentConfirmed(result: PaymentResult) {
       toast.error(
         i18n.t('checkout.posNativeCancelled', { defaultValue: 'Pagamento POS annullato o non riuscito' }),
       );
+      return;
     }
+    toast.error(
+      i18n.t('checkout.nativePosPendingLost', {
+        defaultValue: 'Pagamento POS confermato ma impossibile registrare il conto. Riapri il checkout e contatta il supporto se persiste.',
+      }),
+    );
   } catch {
     toast.error(
       i18n.t('checkout.paymentError', { defaultValue: 'Errore registrazione pagamento' }),

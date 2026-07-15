@@ -27,6 +27,7 @@ import {
   readPendingNativeCheckout,
   clearPendingNativeCheckout,
 } from '../lib/hardware/native-pos-checkout'
+import { isAndroidTablet } from '../lib/hardware/aura-bridge'
 import {
   isPaymentAlreadyPaid,
   isPaymentInProgress,
@@ -259,6 +260,10 @@ export default function CheckoutPage() {
   const usesNativePosFlow =
     shouldUseNativePos(posStatus?.mode)
     && usesCardSettlement(paymentMethod, splitSettlement)
+  const externalPosWebBlocked =
+    posStatus?.mode === 'EXTERNAL'
+    && usesCardSettlement(paymentMethod, splitSettlement)
+    && !isAndroidTablet()
   const unpaidSplitGuest = paymentMethod === 'SPLIT'
     ? nextUnpaidSplitGuest(guestCount, order?.splitPaidGuestIndexes)
     : null
@@ -516,6 +521,10 @@ export default function CheckoutPage() {
   const handleFinalizePayment = useCallback(
     async (splitGuestIndex?: number) => {
       if (isPaymentBusy || needsCashSession || !orderId) return
+      if (externalPosWebBlocked) {
+        toast.error(t('checkout.externalPosWebBlocked'))
+        return
+      }
       if (!navigator.onLine && paymentMethod !== 'CASH') {
         toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
         return
@@ -568,6 +577,7 @@ export default function CheckoutPage() {
       buildOptimisticFinalizeResult,
       canOptimisticallyComplete,
       buildFinalizePayload,
+      externalPosWebBlocked,
       finalize,
       finalizeIdempotencyKey,
       grandTotal,
@@ -595,10 +605,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const onNativeFinalized = (event: Event) => {
-      const paid = (event as CustomEvent<CheckoutFinalizeResult>).detail
+      const detail = (event as CustomEvent<CheckoutFinalizeResult & { recovered?: boolean }>).detail
+      const paid = detail
       setPayingTarget(null)
       setFinalizeResult(paid)
       optimisticReceiptRef.current = null
+      if (detail.recovered) {
+        toast(t('checkout.nativePosRecoveryWarning'), { duration: 6000 })
+      }
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       void queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
@@ -742,6 +756,12 @@ export default function CheckoutPage() {
             </p>
           </div>
         </div>
+
+        {externalPosWebBlocked && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {t('checkout.externalPosWebBlocked')}
+          </div>
+        )}
 
         {posStatus?.mode === 'PENDING_SETUP' && paymentMethod === 'CARD' && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
@@ -1021,7 +1041,7 @@ export default function CheckoutPage() {
                             <button
                               type="button"
                               onClick={() => handleFinalizePayment(g.index)}
-                              disabled={isPaymentBusy || needsCashSession}
+                              disabled={isPaymentBusy || needsCashSession || externalPosWebBlocked}
                               className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:pointer-events-none"
                             >
                               {payingTarget === g.index ? (
@@ -1084,7 +1104,7 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={() => handleFinalizePayment()}
-              disabled={isPaymentBusy || needsCashSession}
+              disabled={isPaymentBusy || needsCashSession || externalPosWebBlocked}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60 disabled:pointer-events-none"
             >
               {payingTarget === 'main' ? <Loader2 className="h-5 w-5 animate-spin" /> : null}

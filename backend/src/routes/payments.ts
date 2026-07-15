@@ -20,6 +20,7 @@ import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
 import { GUEST_ORDERING_DISABLED, isGuestOrderingEnabled } from '../lib/guestOrderingPolicy'
 import { applyDiscountToOrder, resolveCampaignDiscount, resolveLoyaltyDiscount, resolveDiscountForOrder, validateOrderDiscountOptions } from '../lib/orderDiscount'
 import { loadRestaurantPosConfig, serializePosStatusForCheckout } from '../lib/posIntegration'
+import { assertExternalPosNativeConfirmed } from '../lib/posFinalizeGuard'
 import { resolveFrontendOrigin } from '../lib/frontendOrigin'
 import { verifyDepositReceiptToken, verifyOrderReceiptToken } from '../lib/paymentReceiptToken'
 import { moneyNumber, sumFoodFromMoneyAgg } from '../lib/money'
@@ -60,6 +61,8 @@ const finalizeSchema = z.object({
   applyLoyaltyDiscount: z.boolean().optional().default(true),
   /** Quota split da incassare in questo step (0-based). Omesso = chiusura intero conto. */
   splitGuestIndex: z.number().int().min(0).optional(),
+  /** true solo dal flusso POS nativo Android dopo conferma sul terminale */
+  nativePosConfirmed: z.boolean().optional().default(false),
 })
 
 async function loadOrderForCheckout(orderId: string, restaurantId: string) {
@@ -130,7 +133,20 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     return
   }
 
-  const { orderId, tipAmount, tipWaiterId, paymentMethod, splitSettlement, split, simulateEmail, stripePaymentIntentId, discountCode, applyLoyaltyDiscount, splitGuestIndex } = parsed.data
+  const {
+    orderId,
+    tipAmount,
+    tipWaiterId,
+    paymentMethod,
+    splitSettlement,
+    split,
+    simulateEmail,
+    stripePaymentIntentId,
+    discountCode,
+    applyLoyaltyDiscount,
+    splitGuestIndex,
+    nativePosConfirmed,
+  } = parsed.data
   const idempotencyKey = readIdempotencyKey(req)
   if (idempotencyKey && req.restaurantId) {
     const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize')
@@ -206,6 +222,17 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   const settlementMethod = paymentMethod === 'SPLIT'
     ? (splitSettlement ?? 'CARD')
     : paymentMethod
+
+  const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
+  const externalPosGuard = assertExternalPosNativeConfirmed(
+    posConfig.mode,
+    settlementMethod as 'CARD' | 'CASH',
+    nativePosConfirmed,
+  )
+  if (!externalPosGuard.ok) {
+    res.status(409).json({ error: externalPosGuard.error, code: externalPosGuard.code })
+    return
+  }
 
   let validatedTipWaiterId: string | undefined
   try {

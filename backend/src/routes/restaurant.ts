@@ -18,7 +18,6 @@ const SENSITIVE_SETTINGS_FIELDS = new Set([
   'stripeCustomerId',
   'stripeSubscriptionId',
   'stripeProSubscriptionId',
-  'posTerminalId',
   'posMerchantId',
   'posSetupNotes',
   'printAgentToken',
@@ -78,6 +77,8 @@ const settingsSchema = z.object({
   legalCity: z.preprocess(emptyToNull, z.string().max(100).nullable().optional()),
   legalZip: z.preprocess(emptyToNull, z.string().max(12).nullable().optional()),
   legalProvince: z.preprocess(emptyToNull, z.string().max(4).nullable().optional()),
+  posProviderLabel: z.preprocess(emptyToNull, z.string().max(120).nullable().optional()),
+  posTerminalId: z.preprocess(emptyToNull, z.string().max(120).nullable().optional()),
   onboardingConcierge: z.object({
     menu: z.boolean().optional(),
     call: z.boolean().optional(),
