@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "npx prisma generate && npx tsc",
-    "start": "npx prisma migrate deploy && node dist/index.js",
+    "start": "tsx scripts/ensure-baseline-migration.ts && npx prisma migrate deploy && node dist/index.js",
     "db:generate": "npx prisma generate",
-    "db:migrate": "npx prisma migrate deploy",
+    "db:migrate": "tsx scripts/ensure-baseline-migration.ts && npx prisma migrate deploy",
     "db:push": "npx prisma db push",
     "db:seed": "tsx src/seed.ts",
     "db:seed-tenant": "tsx src/seed-tenant.ts",
