@@ -61,6 +61,7 @@ aura-syncro/
 3. Verifica: `npm run verify:production` (critici: health + login)
 4. Dopo deploy completo: `VERIFY_PRODUCTION_STRICT=1 npm run verify:production --prefix backend` (tutti gli endpoint)
 5. Se login fallisce con `printAgentToken` → migrazioni non applicate; controllare log job `prisma-migrate` su DO
+6. Il job esegue `npm run db:migrate` (`scripts/migrate-production.mjs`) — richiede **`DIRECT_URL`** (porta 5432, non pooler 6543). Se il deploy fallisce, verificare env vars e log **Deploy** (non Build) del job `prisma-migrate`.
 
 ---
 

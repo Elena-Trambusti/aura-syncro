@@ -125,9 +125,7 @@ jobs:
       - name: Prepare database (migrate + seed demo)
         working-directory: backend
         run: |
-          npx prisma generate
-          npx tsx scripts/ensure-baseline-migration.ts
-          npx prisma migrate deploy
+          npm run db:migrate
           npm run db:seed
 
       - name: Install Playwright Chromium

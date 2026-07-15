@@ -99,12 +99,15 @@ jobs:
     source_dir: backend
     environment_slug: node-js
     instance_size_slug: basic-xxs
-    build_command: npm ci
-    run_command: npx prisma generate && npx tsx scripts/ensure-baseline-migration.ts && npx prisma migrate deploy
+    build_command: npm ci && npx prisma generate
+    run_command: npm run db:migrate
     envs:
       - key: NPM_CONFIG_PRODUCTION
         value: "false"
         scope: BUILD_TIME
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
       - key: DATABASE_URL
         scope: RUN_AND_BUILD_TIME
         type: SECRET

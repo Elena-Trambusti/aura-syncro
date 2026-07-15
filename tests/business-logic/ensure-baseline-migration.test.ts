@@ -2,30 +2,31 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-/**
- * Test statico: lo script baseline deve gestire schema esistente con tabella migrazioni vuota
- * (caso tipico produzione DO post-squash).
- */
-describe('ensure-baseline-migration script', () => {
-  const scriptPath = join(
-    process.cwd(),
-    'backend/scripts/ensure-baseline-migration.ts',
-  )
+/** Test statico sul runner migrazioni produzione (DigitalOcean PRE_DEPLOY). */
+describe('migrate-production.mjs', () => {
+  const scriptPath = join(process.cwd(), 'backend/scripts/migrate-production.mjs')
   const source = readFileSync(scriptPath, 'utf8')
 
-  it('non esce subito quando _prisma_migrations è vuota se Restaurant esiste', () => {
-    expect(source).toContain('schemaLikelyExists')
-    expect(source).not.toMatch(/if \(rows\.length === 0\) return/)
+  it('usa DIRECT_URL per le operazioni di migrazione', () => {
+    expect(source).toContain('DIRECT_URL')
+    expect(source).toContain('migrationDatabaseUrl')
   })
 
-  it('registra INIT_MIGRATION quando lo schema esiste ma la baseline no', () => {
-    expect(source).toContain('20250620000000_init')
+  it('rileva schema esistente via pg_catalog (Restaurant/User/Order)', () => {
+    expect(source).toContain('pg_catalog.pg_class')
+    expect(source).toContain('Restaurant')
+  })
+
+  it('baseline + retry migrate deploy su schema legacy', () => {
     expect(source).toContain('migrate resolve --applied')
-    expect(source).toContain('schemaLikelyExists')
-    expect(source).toMatch(/rows\.length > 0/)
+    expect(source).toContain('migrate deploy fallito')
   })
 
-  it('verifica DATABASE_URL prima di connettersi', () => {
-    expect(source).toContain('DATABASE_URL mancante')
+  it('entrypoint npm run db:migrate senza tsx', () => {
+    const pkg = JSON.parse(
+      readFileSync(join(process.cwd(), 'backend/package.json'), 'utf8'),
+    )
+    expect(pkg.scripts['db:migrate']).toContain('migrate-production.mjs')
+    expect(pkg.scripts['db:migrate']).not.toContain('tsx')
   })
 })

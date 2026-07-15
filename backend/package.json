@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "npx prisma generate && npx tsc",
-    "start": "tsx scripts/ensure-baseline-migration.ts && npx prisma migrate deploy && node dist/index.js",
+    "start": "node scripts/migrate-production.mjs && node dist/index.js",
     "db:generate": "npx prisma generate",
-    "db:migrate": "tsx scripts/ensure-baseline-migration.ts && npx prisma migrate deploy",
+    "db:migrate": "node scripts/migrate-production.mjs",
     "db:push": "npx prisma db push",
     "db:seed": "tsx src/seed.ts",
     "db:seed-tenant": "tsx src/seed-tenant.ts",
@@ -48,7 +48,8 @@
     "socket.io": "^4.8.1",
     "stripe": "^22.0.1",
     "web-push": "^3.6.7",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "prisma": "^6.6.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -60,7 +61,6 @@
     "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.5",
     "@types/web-push": "^3.6.4",
-    "prisma": "^6.6.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   }
