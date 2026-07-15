@@ -426,6 +426,13 @@ ordersRouter.patch('/:orderId/items/:itemId/status', requirePermission('orders.k
     res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
     return
   }
+  if (order.stripeSessionId && targetStatus === 'CANCELLED') {
+    res.status(409).json({
+      error: 'Ordine con checkout Stripe in corso: non modificabile',
+      code: 'STRIPE_CHECKOUT_LOCKED',
+    })
+    return
+  }
   if (order.status === 'PAID') {
     if (targetStatus === 'CANCELLED') {
       res.status(400).json({ error: 'Non è possibile annullare piatti su ordine già pagato', code: 'ORDER_PAID' })
@@ -611,6 +618,14 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
     && !(existingOrder.status === 'PAID' && status === 'SERVED')
   ) {
     res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    return
+  }
+
+  if (status === 'CANCELLED' && existingOrder.stripeSessionId) {
+    res.status(409).json({
+      error: 'Ordine con checkout Stripe in corso: non modificabile',
+      code: 'STRIPE_CHECKOUT_LOCKED',
+    })
     return
   }
 

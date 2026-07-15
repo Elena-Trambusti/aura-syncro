@@ -42,6 +42,13 @@ export function toLocalDateInput(date = new Date()): string {
   return `${y}-${m}-${d}`
 }
 
+/** YYYY-MM-DDTHH:mm in local timezone for `datetime-local` inputs (never toISOString). */
+export function toLocalDatetimeLocalInput(date = new Date()): string {
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${toLocalDateInput(date)}T${h}:${min}`
+}
+
 /** YYYY-MM-DD resolved in a specific IANA timezone. */
 export function toDateInputInTimezone(timeZone: string, date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date)

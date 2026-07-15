@@ -179,11 +179,13 @@ marketingRouter.post('/:id/send', campaignSendLimiter, requirePermission('market
     const result = await sendCampaignEmails(tenantId(req), campaign, recipients)
     sent = result.sent
     failed = result.failed
-  } catch (err) {
     await prisma.campaign.updateMany({
       where: scopedWhere(req, req.params.id),
-      data: { status: campaign.status, sentAt: null, recipientCount: 0 },
+      data: { recipientCount: sent },
     })
+  } catch (err) {
+    // Non ripristinare DRAFT se alcune email potrebbero già essere partite.
+    console.error('[marketing] Errore invio campagna dopo claim SENT', req.params.id, err)
     throw err
   }
 

@@ -68,34 +68,58 @@ inventoryRouter.patch('/:id/quantity', requirePermission('inventory.manage'), as
   }
   const { delta, operation } = parsed.data
 
-  const current = await prisma.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
-  if (!current) {
-    tenantNotFound(res, 'Prodotto non trovato')
-    return
-  }
-
-  const newQuantity = operation === 'set' ? delta : current.quantity + delta
-  const quantityAfter = Math.max(0, newQuantity)
-
   const updated = await prisma.$transaction(async tx => {
-    const result = await tx.inventoryItem.updateMany({
-      where: scopedWhere(req, req.params.id),
-      data: { quantity: quantityAfter },
-    })
-    if (result.count === 0) return null
+    const current = await tx.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
+    if (!current) return null
+
+    let quantityAfter: number
+    if (operation === 'set') {
+      quantityAfter = Math.max(0, delta)
+      const result = await tx.inventoryItem.updateMany({
+        where: { ...scopedWhere(req, req.params.id), quantity: current.quantity },
+        data: { quantity: quantityAfter },
+      })
+      if (result.count === 0) {
+        // Race: ri-leggi e forza set
+        await tx.inventoryItem.updateMany({
+          where: scopedWhere(req, req.params.id),
+          data: { quantity: quantityAfter },
+        })
+      }
+    } else {
+      // atomic increment via raw-style: clamp at 0 after add
+      const tentative = current.quantity + delta
+      quantityAfter = Math.max(0, tentative)
+      const result = await tx.inventoryItem.updateMany({
+        where: { ...scopedWhere(req, req.params.id), quantity: current.quantity },
+        data: { quantity: quantityAfter },
+      })
+      if (result.count === 0) {
+        const fresh = await tx.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
+        if (!fresh) return null
+        quantityAfter = Math.max(0, fresh.quantity + delta)
+        await tx.inventoryItem.updateMany({
+          where: scopedWhere(req, req.params.id),
+          data: { quantity: quantityAfter },
+        })
+      }
+    }
+
+    const afterRow = await tx.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
+    if (!afterRow) return null
 
     await tx.inventoryAdjustment.create({
       data: {
         restaurantId: tenantId(req),
         inventoryItemId: req.params.id,
         userId: req.userId ?? null,
-        delta: quantityAfter - current.quantity,
+        delta: afterRow.quantity - current.quantity,
         quantityBefore: current.quantity,
-        quantityAfter,
+        quantityAfter: afterRow.quantity,
         reason: operation === 'set' ? 'manual_set' : 'manual_adjust',
       },
     })
-    return tx.inventoryItem.findFirst({ where: scopedWhere(req, req.params.id) })
+    return afterRow
   })
 
   if (!updated) {

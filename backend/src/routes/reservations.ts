@@ -3,7 +3,7 @@ import { ReservationStatus } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { stripe, STRIPE_APPLICATION_FEE_PCT } from '../lib/stripe'
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest, requireRole } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
 import { ReservationValidationError, requiresDeposit, validateReservationSlot } from '../lib/reservationRules'
@@ -329,7 +329,7 @@ reservationsRouter.patch('/:id/status', requirePermission('reservations.manage')
   res.json(reservation)
 })
 
-reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
+reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.manage'), requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const reservation = await prisma.reservation.findFirst({
     where: scopedWhere(req, req.params.id),
     include: { restaurant: { select: { name: true } } },

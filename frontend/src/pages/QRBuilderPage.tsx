@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import AuraQrCanvas from '../components/qr/AuraQrCanvas'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, useTenantQueryKey } from '../contexts/AuthContext'
 import { api } from '../lib/api'
+import { tq } from '../lib/queryKeys'
 import { Download, ExternalLink, Copy, BookOpen, CalendarDays } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { cn } from '../lib/utils'
@@ -24,6 +25,7 @@ type QrMode = 'menu' | 'booking'
 export default function QRBuilderPage() {
   const { t } = useTranslation()
   const { restaurant, isLoading } = useAuth()
+  const tk = useTenantQueryKey()
   const exportCanvasRef = useRef<HTMLCanvasElement>(null)
   const [mode, setMode] = useState<QrMode>('menu')
   const [tableNumber, setTableNumber] = useState('')
@@ -35,7 +37,7 @@ export default function QRBuilderPage() {
   const hasValidTable = Number.isFinite(parsedTable) && parsedTable > 0
 
   const { data: qrTokenData } = useQuery({
-    queryKey: ['table-qr-token', parsedTable],
+    queryKey: tq(tk, 'table-qr-token', parsedTable),
     queryFn: () => api.get(`/tables/${parsedTable}/qr-token`).then(r => r.data as { token: string }),
     enabled: hasValidTable,
     staleTime: 60 * 60 * 1000,

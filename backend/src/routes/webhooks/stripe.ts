@@ -10,6 +10,7 @@ import { syncRestaurantSubscriptionStatus } from '../../lib/stripeSubscriptionWe
 import { handleStripeInvoicePaid } from '../../lib/stripeInvoiceWebhook'
 import {
   claimStripeWebhookEvent,
+  reclaimFailedStripeWebhookEvent,
   markStripeWebhookFailed,
   markStripeWebhookSucceeded,
 } from '../../lib/stripeWebhookIdempotency'
@@ -162,10 +163,12 @@ stripeWebhookRouter.post('/', asyncHandler(async (req: Request, res: Response): 
 
   if (claim.duplicate) {
     if (claim.status === 'failed') {
-      await prisma.stripeWebhookEvent.update({
-        where: { stripeEventId: event.id },
-        data: { status: 'processing' },
-      })
+      const reclaimed = await reclaimFailedStripeWebhookEvent(event.id)
+      if (!reclaimed) {
+        console.info('[stripe-webhook] Re-claim fallito (già in elaborazione):', event.id)
+        res.status(200).json({ received: true, duplicate: true, status: 'processing' })
+        return
+      }
       console.info('[stripe-webhook] Re-elaborazione evento fallito:', event.id)
     } else {
       console.info('[stripe-webhook] Evento duplicato ignorato:', event.id, claim.status)

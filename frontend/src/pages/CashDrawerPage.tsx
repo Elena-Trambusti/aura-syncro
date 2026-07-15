@@ -3,8 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { formatTime } from '../lib/utils'
+import { moneyNumber } from '../lib/money'
 import { useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
+
+/** Parse cash amount from input; empty → 0; accepts comma decimal separator. */
+function parseCashAmountInput(raw: string): number {
+  const trimmed = raw.trim()
+  if (trimmed === '') return 0
+  return moneyNumber(trimmed.replace(',', '.'))
+}
 import { Wallet, Plus, Lock, Unlock } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { resolveToastApiError } from '../lib/formatApiError'
@@ -227,7 +235,7 @@ export default function CashDrawerPage() {
         <GlassModal onClose={() => setShowOpenModal(false)} maxWidth="sm">
           <h3 className="mb-4 text-xl font-bold text-pietra">{t('cashDrawer.openTitle', { defaultValue: 'Apri Cassa' })}</h3>
           <p className="mb-4 text-sm text-fumo">{t('cashDrawer.openHint', { defaultValue: 'Inserisci il fondo cassa iniziale (resto) attualmente presente nel cassetto.' })}</p>
-          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-3 text-center text-xl'} placeholder="0.00" />
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseCashAmountInput(e.target.value))} className={ui.input + ' mb-6 w-full p-3 text-center text-xl'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowOpenModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
             <button type="button" onClick={() => openSession.mutate(undefined)} className={ui.btnPrimary + ' flex-1 py-3 active:scale-[0.98]'}>{t('common.confirm')}</button>
@@ -242,7 +250,7 @@ export default function CashDrawerPage() {
             <button type="button" onClick={() => setTxType('PAYOUT')} className={`flex-1 rounded-lg py-2 text-sm font-bold ${txType === 'PAYOUT' ? 'bg-red-500/20 text-red-400' : 'text-fumo'}`}>Prelievo (-)</button>
             <button type="button" onClick={() => setTxType('PAYIN')} className={`flex-1 rounded-lg py-2 text-sm font-bold ${txType === 'PAYIN' ? 'bg-emerald-500/20 text-emerald-400' : 'text-fumo'}`}>Versamento (+)</button>
           </div>
-          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-4 w-full p-3 text-center text-xl'} placeholder="Importo €" />
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseCashAmountInput(e.target.value))} className={ui.input + ' mb-4 w-full p-3 text-center text-xl'} placeholder="Importo €" />
           <input type="text" value={reason} onChange={e => setReason(e.target.value)} className={ui.input + ' mb-6 w-full p-3'} placeholder="Motivazione (es. Pagamento fornitore)" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowTxModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
@@ -255,7 +263,7 @@ export default function CashDrawerPage() {
         <GlassModal onClose={() => setShowCloseModal(false)} maxWidth="sm" className="border-rose-500/20">
           <h3 className="mb-2 text-xl font-bold text-pietra">{t('cashDrawer.closeTitle', { defaultValue: 'Chiusura alla Cieca' })}</h3>
           <p className="mb-6 text-sm text-fumo">{t('cashDrawer.closeHint', { defaultValue: "Conta tutti i soldi fisici nel cassetto e inserisci l'importo totale. Il sistema calcolerà le differenze." })}</p>
-          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={ui.input + ' mb-6 w-full p-4 text-center text-3xl font-black'} placeholder="0.00" />
+          <input type="number" step="0.01" value={amount || ''} onChange={e => setAmount(parseCashAmountInput(e.target.value))} className={ui.input + ' mb-6 w-full p-4 text-center text-3xl font-black'} placeholder="0.00" />
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowCloseModal(false)} className={ui.chipInactive + ' flex-1 rounded-xl py-3'}>{t('common.cancel')}</button>
             <button type="button" onClick={() => closeSession.mutate(undefined)} className="flex-1 rounded-xl bg-red-600 py-3 font-bold text-white hover:bg-red-700">{t('cashDrawer.closeAction', { defaultValue: 'Chiudi Cassa' })}</button>

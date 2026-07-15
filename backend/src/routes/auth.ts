@@ -290,10 +290,13 @@ authRouter.post('/forgot-password', authForgotPasswordLimiter, asyncHandler(asyn
     return
   }
 
-  const users = await prisma.user.findMany({ where: { email: parsed.data.email, active: true } })
+  const users = await prisma.user.findMany({
+    where: { email: parsed.data.email, active: true },
+    select: { id: true, email: true, tokenVersion: true },
+  })
   for (const user of users) {
     const resetToken = jwt.sign(
-      { userId: user.id, purpose: 'password-reset' },
+      { userId: user.id, purpose: 'password-reset', tv: user.tokenVersion },
       process.env.JWT_SECRET!,
       { expiresIn: '1h' },
     )
@@ -322,27 +325,36 @@ authRouter.post('/reset-password', authResetPasswordLimiter, asyncHandler(async 
     const payload = jwt.verify(parsed.data.token, process.env.JWT_SECRET!) as {
       userId: string
       purpose?: string
+      tv?: number
     }
-    if (payload.purpose !== 'password-reset') {
+    if (payload.purpose !== 'password-reset' || typeof payload.tv !== 'number') {
       res.status(400).json({ error: 'Token non valido' })
       return
     }
     const hashed = await bcrypt.hash(parsed.data.password, 12)
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, active: true },
+      select: { id: true, active: true, tokenVersion: true },
     })
     if (!user?.active) {
       res.status(400).json({ error: 'Account non attivo', code: 'ACCOUNT_INACTIVE' })
       return
     }
-    await prisma.user.update({
-      where: { id: payload.userId },
+    if (user.tokenVersion !== payload.tv) {
+      res.status(400).json({ error: 'Token già usato o non valido', code: 'RESET_TOKEN_USED' })
+      return
+    }
+    const updated = await prisma.user.updateMany({
+      where: { id: payload.userId, tokenVersion: payload.tv, active: true },
       data: {
         password: hashed,
         tokenVersion: { increment: 1 },
       },
     })
+    if (updated.count === 0) {
+      res.status(400).json({ error: 'Token già usato o non valido', code: 'RESET_TOKEN_USED' })
+      return
+    }
     res.json({ success: true, message: 'Password aggiornata' })
   } catch {
     res.status(400).json({ error: 'Token scaduto o non valido' })

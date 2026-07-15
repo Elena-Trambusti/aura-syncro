@@ -262,8 +262,9 @@ export async function completeGuestStripePayment(
   const order = await prisma.order.findUnique({ where: { id: orderId } })
   if (!order) return null
 
+  if (order.status === 'PAID') return null
+
   if (order.status === 'CANCELLED') {
-    // Pagamento arrivato dopo abandoned cancel → rimborsa subito, non riaprire l'ordine.
     if (paymentIntentId && STRIPE_ENABLED) {
       await stripe.refunds.create({
         payment_intent: paymentIntentId,
@@ -284,9 +285,22 @@ export async function completeGuestStripePayment(
     return null
   }
 
-  if (order.status === 'PAID') return null
+  const autoRefund = async (reason: string) => {
+    if (!paymentIntentId || !STRIPE_ENABLED) return
+    await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reason: 'requested_by_customer',
+      metadata: { orderId, restaurantId: order.restaurantId, reason },
+    }).catch(refundErr => {
+      console.error('[guest-stripe] Auto-refund fallito', {
+        orderId,
+        paymentIntentId,
+        reason,
+        error: refundErr instanceof Error ? refundErr.message : refundErr,
+      })
+    })
+  }
 
-  // Sempre validare importo: se manca dal caller, recupera dal PaymentIntent Stripe.
   let amountCents = stripeAmountTotalCents ?? null
   if (amountCents == null && paymentIntentId && STRIPE_ENABLED) {
     try {
@@ -296,19 +310,23 @@ export async function completeGuestStripePayment(
         : pi.amount
     } catch (err) {
       console.error('[guest-stripe] Impossibile leggere importo PaymentIntent', paymentIntentId, err)
+      await autoRefund('guest_pi_amount_unreadable')
+      await cancelAbandonedGuestOrder(orderId).catch(() => {})
       throw new Error('STRIPE_AMOUNT_MISMATCH')
     }
   }
   if (amountCents == null) {
+    await autoRefund('guest_pi_amount_missing')
+    await cancelAbandonedGuestOrder(orderId).catch(() => {})
     throw new Error('STRIPE_AMOUNT_MISMATCH')
   }
 
   const expectedCents = Math.round(moneyNumber(order.total) * 100)
-  if (amountCents < expectedCents) {
-    throw new Error('STRIPE_AMOUNT_MISMATCH')
-  }
-  if (amountCents > expectedCents + 1) {
-    throw new Error('STRIPE_AMOUNT_OVERPAY')
+  if (amountCents < expectedCents || amountCents > expectedCents + 1) {
+    const code = amountCents < expectedCents ? 'STRIPE_AMOUNT_MISMATCH' : 'STRIPE_AMOUNT_OVERPAY'
+    await autoRefund(`guest_${code.toLowerCase()}`)
+    await cancelAbandonedGuestOrder(orderId).catch(() => {})
+    throw new Error(code)
   }
 
   try {
@@ -323,23 +341,12 @@ export async function completeGuestStripePayment(
       stripePaymentIntentId: paymentIntentId ?? undefined,
     })
   } catch (err) {
-    if (paymentIntentId && STRIPE_ENABLED) {
-      await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        reason: 'requested_by_customer',
-        metadata: {
-          orderId,
-          restaurantId: order.restaurantId,
-          reason: 'guest_finalize_failed_auto_refund',
-        },
-      }).catch(refundErr => {
-        console.error('[guest-stripe] Auto-refund fallito dopo errore finalize', {
-          orderId,
-          paymentIntentId,
-          error: refundErr instanceof Error ? refundErr.message : refundErr,
-        })
-      })
+    const code = err instanceof Error ? err.message : 'UNKNOWN'
+    // Non rimborsare se l'ordine è già chiuso o un altro worker sta finalizzando.
+    if (code === 'ORDER_ALREADY_PAID' || code === 'PAYMENT_IN_PROGRESS') {
+      return null
     }
+    await autoRefund('guest_finalize_failed_auto_refund')
     await cancelAbandonedGuestOrder(orderId).catch(cancelErr => {
       console.error('[guest-stripe] Cancellazione ordine guest fallita', {
         orderId,

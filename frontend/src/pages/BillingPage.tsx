@@ -31,7 +31,7 @@ const PLAN_PRICES: Record<PlanId, { price: number; setup: number }> = {
 export default function BillingPage() {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { restaurant } = useAuth()
+  const { restaurant, refreshRestaurant } = useAuth()
   const tk = useTenantQueryKey()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [openingPortal, setOpeningPortal] = useState(false)
@@ -49,14 +49,16 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      toast.success(t('billing.checkoutSuccess'))
+      void refreshRestaurant().finally(() => {
+        toast.success(t('billing.checkoutSuccess'))
+      })
       setSearchParams({}, { replace: true })
     }
     if (searchParams.get('canceled') === 'true') {
       toast(t('billing.checkoutCanceled'), { icon: 'ℹ️' })
       setSearchParams({}, { replace: true })
     }
-  }, [searchParams, setSearchParams, t])
+  }, [searchParams, setSearchParams, t, refreshRestaurant])
 
   const handleActivatePlan = async (planId: string) => {
     setLoadingPlan(planId)

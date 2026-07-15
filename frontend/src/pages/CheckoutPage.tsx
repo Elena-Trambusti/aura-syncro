@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { formatCurrency, cn, ORDER_STATUS_LABELS } from '../lib/utils'
-import { addMoney, lineGrossMoney, moneyNumber } from '../lib/money'
+import { addMoney, fromCents, lineGrossMoney, moneyNumber, splitEqualCents, toCents } from '../lib/money'
 import { useAuth, useFiscalRegime, useTenantQueryKey } from '../contexts/AuthContext'
 import { tq } from '../lib/queryKeys'
 import { tRegime } from '../lib/fiscalRegime'
@@ -112,6 +112,23 @@ export default function CheckoutPage() {
   const [guestCount, setGuestCount] = useState(2)
   const [itemAssignments, setItemAssignments] = useState<Record<string, number>>({})
   const [wantsTip, setWantsTip] = useState(false)
+
+  // Clamp assignments when guestCount shrinks so no guestIndex >= guestCount
+  useEffect(() => {
+    setItemAssignments(prev => {
+      let changed = false
+      const next: Record<string, number> = {}
+      for (const [id, gi] of Object.entries(prev)) {
+        if (gi >= guestCount) {
+          next[id] = Math.max(0, guestCount - 1)
+          changed = true
+        } else {
+          next[id] = gi
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [guestCount])
   const [tipAmount, setTipAmount] = useState('')
   const [tipWaiterId, setTipWaiterId] = useState('')
   const [receiptEmail, setReceiptEmail] = useState('')
@@ -200,9 +217,13 @@ export default function CheckoutPage() {
     mutationFn: () => api.post(`/payments/orders/${orderId}/refund`),
     onSuccess: () => {
       void refetch()
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'orders') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'customers') })
       queryClient.invalidateQueries({ queryKey: tq(tk, 'analytics') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'reports') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+      queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
       toast.success(t('checkout.refundSuccess'))
     },
     onError: (err: { response?: { data?: { error?: string; code?: string } } }) => {
@@ -254,13 +275,13 @@ export default function CheckoutPage() {
       items: [] as OrderItem[],
     }))
 
+    const grandCents = toCents(grandTotal)
+
     if (splitMode === 'equal') {
-      const share = grandTotal / guestCount
+      const shares = splitEqualCents(grandCents, guestCount)
       return guests.map((g, i) => ({
         ...g,
-        total: i === guestCount - 1
-          ? Math.round((grandTotal - share * (guestCount - 1)) * 100) / 100
-          : Math.round(share * 100) / 100,
+        total: fromCents(shares[i] ?? 0),
         items: activeItems,
       }))
     }
@@ -272,13 +293,20 @@ export default function CheckoutPage() {
       guests[idx].total += lineGross(item)
     }
 
-    const foodTotal = activeItems.reduce((s, it) => s + lineGross(it), 0)
-    return guests.map(g => ({
-      ...g,
-      total: foodTotal > 0
-        ? Math.round((g.total / foodTotal) * grandTotal * 100) / 100
-        : grandTotal / guestCount,
-    }))
+    const foodCents = activeItems.reduce((s, it) => s + toCents(lineGross(it)), 0)
+    const mapped = guests.map(g => {
+      const guestFoodCents = toCents(g.total)
+      const shareCents = foodCents > 0
+        ? Math.round((guestFoodCents / foodCents) * grandCents)
+        : Math.floor(grandCents / guestCount)
+      return { ...g, total: fromCents(shareCents) }
+    })
+    // Match backend: last guest absorbs rounding residual so shares sum to grandTotal
+    if (mapped.length > 0) {
+      const sumOthersCents = mapped.slice(0, -1).reduce((s, g) => s + toCents(g.total), 0)
+      mapped[mapped.length - 1].total = fromCents(grandCents - sumOthersCents)
+    }
+    return mapped
   }, [paymentMethod, order, guestCount, splitMode, itemAssignments, activeItems, grandTotal, t])
 
   const splitProgress = useMemo(() => {

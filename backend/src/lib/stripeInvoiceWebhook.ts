@@ -162,6 +162,12 @@ export async function handleStripeInvoicePaid(
     return { processed: true, stripeInvoiceId: invoice.id, status: 'skipped_duplicate' }
   }
 
+  // Evita doppia submission Aruba se un altro worker sta già processando.
+  if (existing?.status === 'pending') {
+    console.info('[stripe-invoice] Fattura già in elaborazione:', invoice.id)
+    return { processed: true, stripeInvoiceId: invoice.id, status: 'skipped_duplicate' }
+  }
+
   const customerId = typeof invoice.customer === 'string'
     ? invoice.customer
     : invoice.customer?.id

@@ -52,6 +52,14 @@ export async function claimStripeWebhookEvent(
   }
 }
 
+export async function reclaimFailedStripeWebhookEvent(stripeEventId: string): Promise<boolean> {
+  const updated = await prisma.stripeWebhookEvent.updateMany({
+    where: { stripeEventId, status: 'failed' },
+    data: { status: 'processing', errorMessage: null, processedAt: null },
+  })
+  return updated.count > 0
+}
+
 export async function markStripeWebhookSucceeded(stripeEventId: string): Promise<void> {
   await prisma.stripeWebhookEvent.update({
     where: { stripeEventId },

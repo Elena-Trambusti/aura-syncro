@@ -12,27 +12,37 @@ export async function submitInvoiceToArubaBackground(invoiceId: string): Promise
     include: { restaurant: { include: { settings: true } } },
   })
   if (!invoice) return
-  if (invoice.arubaUploadId || invoice.statoSdi === 'sent') return
+  if (invoice.arubaUploadId || invoice.statoSdi === 'sent' || invoice.statoSdi === 'refunded') return
 
   const fiscal = buildFiscalConfig(invoice.restaurant.settings)
   if (fiscal.countryCode !== 'IT') return
 
   if (!ArubaInvoiceService.isConfigured()) {
-    await prisma.invoice.update({
-      where: { id: invoiceId },
+    await prisma.invoice.updateMany({
+      where: { id: invoiceId, arubaUploadId: null, statoSdi: { notIn: ['sent', 'refunded'] } },
       data: { statoSdi: 'local_only' },
     })
     return
   }
 
   if (!invoice.xmlBlob) {
-    // Corrispettivo POS (prefisso CORR): archivio locale, nessun XML SDI B2B.
-    await prisma.invoice.update({
-      where: { id: invoiceId },
+    await prisma.invoice.updateMany({
+      where: { id: invoiceId, arubaUploadId: null, statoSdi: { notIn: ['sent', 'refunded'] } },
       data: { statoSdi: 'local_only' },
     })
     return
   }
+
+  // Claim atomico: evita doppio upload concorrente.
+  const claimed = await prisma.invoice.updateMany({
+    where: {
+      id: invoiceId,
+      arubaUploadId: null,
+      statoSdi: { notIn: ['sent', 'refunded', 'submitting'] },
+    },
+    data: { statoSdi: 'submitting' },
+  })
+  if (claimed.count === 0) return
 
   const arubaResult = await ArubaInvoiceService.submit(invoice.xmlBlob)
   await prisma.invoice.update({

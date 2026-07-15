@@ -209,11 +209,17 @@ export async function processScheduledCampaigns(): Promise<number> {
 
   let processed = 0
   for (const campaign of due) {
+    const claimed = await prisma.campaign.updateMany({
+      where: { id: campaign.id, status: 'SCHEDULED' },
+      data: { status: 'SENT', sentAt: new Date() },
+    })
+    if (claimed.count === 0) continue
+
     const recipients = await getTargetCustomers(campaign.restaurantId, campaign.targetFilter ?? null)
     const { sent } = await sendCampaignEmails(campaign.restaurantId, campaign, recipients)
     await prisma.campaign.update({
       where: { id: campaign.id },
-      data: { status: 'SENT', sentAt: new Date(), recipientCount: sent },
+      data: { recipientCount: sent },
     })
     processed += 1
   }

@@ -10,6 +10,7 @@ import { resolvePrimaryFrontendUrl } from './frontendUrl'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { signOrderReceiptToken } from './paymentReceiptToken'
 import { deductInventoryForOrder } from './inventoryDeduction'
+import { occupyTableIfAvailable } from './orderSession'
 import { runOrderTransaction } from './prismaTransactions'
 import {
   acquireIdempotencyLock,
@@ -87,6 +88,13 @@ export async function createGuestStripeCheckout(
   }
 
   const connectAccountId = restaurant.settings.stripeConnectAccountId
+  if (!connectAccountId) {
+    throw new PublicOrderError(
+      'Pagamenti online non configurati: collega Stripe Connect',
+      503,
+      'STRIPE_CONNECT_REQUIRED',
+    )
+  }
   const idemKey = clientRequestId ? `guest-checkout:${clientRequestId}` : null
   let idempotencyLocked = false
 
@@ -201,6 +209,9 @@ export async function createGuestStripeCheckout(
     // For Stripe guest checkout the inventory is deducted here too,
     // so if Stripe session creation fails below we must cancel the order.
     await deductInventoryForOrder(tx, created.id, restaurantId)
+    if (tableId) {
+      await occupyTableIfAvailable(tx, tableId, restaurantId)
+    }
     return created
   })
 
@@ -249,6 +260,10 @@ export async function createGuestStripeCheckout(
           application_fee_amount: Math.round(orderTotal * STRIPE_APPLICATION_FEE_PCT * 100),
           transfer_data: {
             destination: connectAccountId,
+          },
+          metadata: {
+            orderId: order.id,
+            restaurantId,
           },
         }
       } : {})

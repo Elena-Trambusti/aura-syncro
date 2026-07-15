@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 import { resolveRevenueAmount } from './fiscalAmounts'
 import { earnLoyaltyPointsForOrder } from './loyaltyHelpers'
 import { moneyNumber } from './money'
+import { runOrderTransaction } from './prismaTransactions'
 
 type DbClient = Prisma.TransactionClient | typeof prisma
 
@@ -27,22 +28,33 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
 
   const customerId = orderFull.customerId
   const order = orderFull
-
-  const crmMarker = await prisma.loyaltyTransaction.findFirst({
-    where: { orderId: order.id, restaurantId, type: 'ADJUSTMENT' },
-    select: { id: true },
-  })
-
-  const earnedMarker = await prisma.loyaltyTransaction.findFirst({
-    where: { orderId: order.id, type: 'EARNED' },
-    select: { id: true },
-  })
-
   const revenue = resolveRevenueAmount(order)
   const paidAt = order.paidAt ?? new Date()
 
-  if (!crmMarker) {
-    await prisma.customer.updateMany({
+  await runOrderTransaction(async tx => {
+    const crmMarker = await tx.loyaltyTransaction.findFirst({
+      where: { orderId: order.id, restaurantId, type: 'ADJUSTMENT' },
+      select: { id: true },
+    })
+    if (crmMarker) return
+
+    try {
+      await tx.loyaltyTransaction.create({
+        data: {
+          customerId,
+          restaurantId,
+          type: 'ADJUSTMENT',
+          points: 0,
+          orderId: order.id,
+          description: `CRM visita ordine ${order.id.slice(-6)}`,
+        },
+      })
+    } catch {
+      // Race: un altro worker ha creato il marker.
+      return
+    }
+
+    await tx.customer.updateMany({
       where: { id: customerId, restaurantId },
       data: {
         totalVisits: { increment: 1 },
@@ -50,24 +62,12 @@ export async function applyPostPaymentEffects(orderId: string, restaurantId: str
         lastVisit: paidAt,
       },
     })
-    await prisma.loyaltyTransaction.create({
-      data: {
-        customerId,
-        restaurantId,
-        type: 'ADJUSTMENT',
-        points: 0,
-        orderId: order.id,
-        description: `CRM visita ordine ${order.id.slice(-6)}`,
-      },
-    })
-  } else if (!earnedMarker) {
-    // Idempotenza: marker esiste ma earn non ancora eseguito (retry).
-  }
+  })
 
   await earnLoyaltyPointsForOrder(customerId, restaurantId, revenue, order.id)
 }
 
-/** Storna CRM e fedeltà dopo rimborso ordine PAID. */
+/** Storna CRM e fedeltà dopo rimborso ordine PAID. Solo se marker CRM/punti esistono. */
 export async function reversePostPaymentEffects(
   orderId: string,
   restaurantId: string,
@@ -99,21 +99,26 @@ export async function reversePostPaymentEffects(
     select: { id: true },
   })
 
+  if (!crmMarker && !earned) {
+    return { customerId, loyaltyPoints: 0 }
+  }
+
   const customer = await db.customer.findFirst({
     where: { id: customerId, restaurantId },
     select: { totalSpent: true, totalVisits: true, loyaltyPoints: true },
   })
   if (!customer) return null
 
-  const spentDecrement = Math.min(moneyNumber(customer.totalSpent), revenue)
-  const visitsDecrement =
-    crmMarker || spentDecrement > 0 ? Math.min(moneyNumber(customer.totalVisits), 1) : 0
+  const spentDecrement = crmMarker
+    ? Math.min(moneyNumber(customer.totalSpent), revenue)
+    : 0
+  const visitsDecrement = crmMarker ? Math.min(moneyNumber(customer.totalVisits), 1) : 0
   const pointsDecrement = earned ? Math.min(customer.loyaltyPoints, earned.points) : 0
 
   await db.customer.updateMany({
     where: { id: customerId, restaurantId },
     data: {
-      totalSpent: { decrement: spentDecrement },
+      ...(spentDecrement > 0 ? { totalSpent: { decrement: spentDecrement } } : {}),
       ...(visitsDecrement > 0 ? { totalVisits: { decrement: visitsDecrement } } : {}),
       ...(pointsDecrement > 0 ? { loyaltyPoints: { decrement: pointsDecrement } } : {}),
     },
@@ -125,6 +130,7 @@ export async function reversePostPaymentEffects(
       restaurantId,
       status: 'PAID',
       refundedAt: null,
+      id: { not: orderId },
     },
     orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
     select: { paidAt: true, createdAt: true },

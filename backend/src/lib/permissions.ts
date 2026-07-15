@@ -82,6 +82,7 @@ const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<Permission>> = {
     'orders.read',
     'orders.items',
     'orders.kitchen_status',
+    'orders.status',
     'menu.read',
     'menu.availability',
     'inventory.read',

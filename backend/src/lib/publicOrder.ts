@@ -4,7 +4,12 @@ import { computeTaxFromGrossLines } from './orderTax'
 import { resolveOrCreateCustomer } from './customerResolver'
 import { assertMenuItemOrderable, assertOrderStockInTransaction } from './menuStock'
 import { deductInventoryForOrder } from './inventoryDeduction'
-import { acquireIdempotencyLock, getIdempotentResponse, saveIdempotentResponse } from './apiIdempotency'
+import {
+  acquireIdempotencyLock,
+  getIdempotentResponse,
+  releaseIdempotencyLock,
+  saveIdempotentResponse,
+} from './apiIdempotency'
 import { occupyTableIfAvailable } from './orderSession'
 import { verifyTableToken } from './tableToken'
 import { runOrderTransaction } from './prismaTransactions'
@@ -113,25 +118,14 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     }
   }
 
-  if (clientRequestId) {
-    const idemKey = `guest-order:${clientRequestId}`
-    const cached = await getIdempotentResponse(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
-    if (cached && cached.statusCode === 201) {
-      const body = cached.responseBody as {
-        order: Awaited<ReturnType<typeof prisma.order.findFirst>>
-        restaurantId: string
-        tableNumber?: number
-        total: number
-      }
-      if (body?.order) {
-        return { order: body.order, restaurantId: body.restaurantId, tableNumber: body.tableNumber, total: body.total }
-      }
-    }
-    const locked = await acquireIdempotencyLock(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
-    if (!locked) {
-      const retry = await getIdempotentResponse(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
-      if (retry?.statusCode === 201) {
-        const body = retry.responseBody as {
+  const idemKey = clientRequestId ? `guest-order:${clientRequestId}` : null
+  let idempotencyLocked = false
+
+  try {
+    if (idemKey) {
+      const cached = await getIdempotentResponse(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
+      if (cached && cached.statusCode === 201) {
+        const body = cached.responseBody as {
           order: Awaited<ReturnType<typeof prisma.order.findFirst>>
           restaurantId: string
           tableNumber?: number
@@ -141,97 +135,117 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
           return { order: body.order, restaurantId: body.restaurantId, tableNumber: body.tableNumber, total: body.total }
         }
       }
-      throw new PublicOrderError('Ordine già in elaborazione', 409, 'ORDER_IN_PROGRESS')
-    }
-  }
-
-  const itemsWithPrice = await resolveGuestItemsWithStock(restaurantId, items)
-
-  let tableId: string | undefined
-  if (tableNumber) {
-    const table = await prisma.table.findUnique({
-      where: { restaurantId_number: { restaurantId, number: tableNumber } },
-    })
-    if (!table) {
-      throw new PublicOrderError('Tavolo non trovato', 404, 'TABLE_NOT_FOUND')
-    }
-    tableId = table.id
-  }
-
-  const grossTotal = itemsWithPrice.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-  const { subtotal, tax, total, taxRateApplied } = await computeTaxFromGrossLines(
-    restaurantId,
-    itemsWithPrice.map(item => ({
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      taxRate: item.menuTaxRate,
-    })),
-  )
-
-  const customerId = await resolveOrCreateCustomer(restaurantId, {
-    email: guestEmail,
-    phone: guestPhone,
-    name: guestName,
-  })
-
-  const order = await runOrderTransaction(async tx => {
-    if (tableId) {
-      const ok = await occupyTableIfAvailable(tx, tableId, restaurantId)
-      if (!ok) {
-        throw new PublicOrderError('Tavolo non disponibile', 409, 'TABLE_UNAVAILABLE')
+      const locked = await acquireIdempotencyLock(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
+      if (!locked) {
+        const retry = await getIdempotentResponse(restaurantId, idemKey, 'PUBLIC_GUEST_ORDER')
+        if (retry?.statusCode === 201) {
+          const body = retry.responseBody as {
+            order: Awaited<ReturnType<typeof prisma.order.findFirst>>
+            restaurantId: string
+            tableNumber?: number
+            total: number
+          }
+          if (body?.order) {
+            return { order: body.order, restaurantId: body.restaurantId, tableNumber: body.tableNumber, total: body.total }
+          }
+        }
+        throw new PublicOrderError('Ordine già in elaborazione', 409, 'ORDER_IN_PROGRESS')
       }
+      idempotencyLocked = true
     }
 
-    await assertOrderStockInTransaction(
-      tx,
+    const itemsWithPrice = await resolveGuestItemsWithStock(restaurantId, items)
+
+    let tableId: string | undefined
+    if (tableNumber) {
+      const table = await prisma.table.findUnique({
+        where: { restaurantId_number: { restaurantId, number: tableNumber } },
+      })
+      if (!table) {
+        throw new PublicOrderError('Tavolo non trovato', 404, 'TABLE_NOT_FOUND')
+      }
+      tableId = table.id
+    }
+
+    const { subtotal, tax, total, taxRateApplied } = await computeTaxFromGrossLines(
       restaurantId,
-      itemsWithPrice.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+      itemsWithPrice.map(item => ({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.menuTaxRate,
+      })),
     )
 
-    const created = await tx.order.create({
-      data: {
-        restaurantId,
-        tableId,
-        customerId,
-        subtotal,
-        tax,
-        total,
-        taxRateApplied,
-        revenueAmount: total,
-        tipAmount: 0,
-        type: orderData.type,
-        notes: orderData.notes,
-        status: 'PENDING',
-        items: {
-          create: itemsWithPrice.map(item => ({
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            notes: item.notes,
-            modifiers: item.selectedOptions.length
-              ? { create: item.selectedOptions.map(o => ({ optionId: o.optionId, name: o.name, price: o.price })) }
-              : undefined,
-          })),
-        },
-      },
-      include: {
-        table: true,
-        items: { include: { menuItem: true } },
-      },
+    const customerId = await resolveOrCreateCustomer(restaurantId, {
+      email: guestEmail,
+      phone: guestPhone,
+      name: guestName,
     })
-    await deductInventoryForOrder(tx, created.id, restaurantId)
-    return created
-  })
 
-  const result = { order, restaurantId, tableNumber, total }
-  if (clientRequestId) {
-    await saveIdempotentResponse(
-      restaurantId,
-      `guest-order:${clientRequestId}`,
-      'PUBLIC_GUEST_ORDER',
-      201,
-      result,
-    )
+    const order = await runOrderTransaction(async tx => {
+      if (tableId) {
+        const ok = await occupyTableIfAvailable(tx, tableId, restaurantId)
+        if (!ok) {
+          throw new PublicOrderError('Tavolo non disponibile', 409, 'TABLE_UNAVAILABLE')
+        }
+      }
+
+      await assertOrderStockInTransaction(
+        tx,
+        restaurantId,
+        itemsWithPrice.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+      )
+
+      const created = await tx.order.create({
+        data: {
+          restaurantId,
+          tableId,
+          customerId,
+          subtotal,
+          tax,
+          total,
+          taxRateApplied,
+          revenueAmount: total,
+          tipAmount: 0,
+          type: orderData.type,
+          notes: orderData.notes,
+          status: 'PENDING',
+          items: {
+            create: itemsWithPrice.map(item => ({
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              notes: item.notes,
+              modifiers: item.selectedOptions.length
+                ? { create: item.selectedOptions.map(o => ({ optionId: o.optionId, name: o.name, price: o.price })) }
+                : undefined,
+            })),
+          },
+        },
+        include: {
+          table: true,
+          items: { include: { menuItem: true } },
+        },
+      })
+      await deductInventoryForOrder(tx, created.id, restaurantId)
+      return created
+    })
+
+    const result = { order, restaurantId, tableNumber, total }
+    if (idemKey) {
+      await saveIdempotentResponse(
+        restaurantId,
+        idemKey,
+        'PUBLIC_GUEST_ORDER',
+        201,
+        result,
+      )
+      idempotencyLocked = false
+    }
+    return result
+  } finally {
+    if (idempotencyLocked && idemKey) {
+      await releaseIdempotencyLock(restaurantId, idemKey)
+    }
   }
-  return result
 }

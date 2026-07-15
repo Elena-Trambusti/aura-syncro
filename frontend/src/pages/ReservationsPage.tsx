@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { formatTime, getReservationStatusLabel, toDateInputInTimezone, dateInputOffsetInTimezone } from '../lib/utils'
+import { formatTime, getReservationStatusLabel, toDateInputInTimezone, dateInputOffsetInTimezone, toLocalDatetimeLocalInput } from '../lib/utils'
 import {
   Plus, Users, Phone, CalendarDays, XCircle, CheckCircle2, ListOrdered,
   CreditCard, Copy, ExternalLink, UserCheck, LogOut, Link2, ChevronDown,
@@ -68,9 +68,10 @@ function ReservationForm({
   const { t } = useTranslation()
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(20, 0, 0, 0)
   const [form, setForm] = useState({
     guestName: '', guestPhone: '', guestEmail: '',
-    covers: 2, date: tomorrow.toISOString().slice(0, 16),
+    covers: 2, date: toLocalDatetimeLocalInput(tomorrow),
     notes: '',
   })
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }))
