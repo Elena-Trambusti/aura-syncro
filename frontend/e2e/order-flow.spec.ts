@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loginViaUi } from './helpers/auth'
-import { addItemAndSendToKitchen } from './helpers/order'
+import { addItemAndSendToKitchen, getOrderDialog } from './helpers/order'
 import { assertHealthyShell } from './helpers/ui'
 
 test.describe('Flusso principale — login → tavoli → comanda', () => {
@@ -22,7 +22,7 @@ test.describe('Flusso principale — login → tavoli → comanda', () => {
     const tableLabel = (await freeTable.getAttribute('aria-label')) ?? ''
     await freeTable.click()
 
-    const orderDialog = page.getByRole('dialog')
+    const orderDialog = getOrderDialog(page)
     await expect(orderDialog).toBeVisible({ timeout: 15_000 })
 
     const menuItem = orderDialog.getByRole('button').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()

@@ -1,5 +1,12 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
+/** Modale comanda fullscreen — esclude cookie banner e bottom sheet tavolo. */
+export function getOrderDialog(page: Page) {
+  return page.getByRole('dialog').filter({
+    has: page.getByRole('heading', { name: /tavolo|table|mesa|tisch/i }),
+  })
+}
+
 /** Apre il tab Menu nel modale comanda (layout mobile a tab). */
 export async function openOrderMenuTab(orderDialog: Locator) {
   const menuTab = orderDialog.getByRole('button', { name: /^menu$|^menú$|^menù$/i })

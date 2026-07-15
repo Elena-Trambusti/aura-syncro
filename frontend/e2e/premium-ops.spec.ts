@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loginViaUi } from './helpers/auth'
-import { addItemAndSendToKitchen, closeOrderDialog } from './helpers/order'
+import { addItemAndSendToKitchen, closeOrderDialog, getOrderDialog } from './helpers/order'
 import { assertHealthyShell } from './helpers/ui'
 
 test.describe('Premium ops — compliance, menu CSV, table claim', () => {
@@ -59,7 +59,7 @@ test.describe('Premium ops — table claim mobile', () => {
     await expect(newOrderBtn).toBeVisible({ timeout: 10_000 })
     await newOrderBtn.click()
 
-    const orderDialog = page.getByRole('dialog')
+    const orderDialog = getOrderDialog(page)
     await expect(orderDialog).toBeVisible({ timeout: 15_000 })
 
     await addItemAndSendToKitchen(page, orderDialog)

@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { dismissCookieBannerIfVisible } from './ui'
 
 /** Credenziali seed CI — vedi backend/src/seed.ts (E2E_OWNER_EMAIL). */
 export const E2E_OWNER_EMAIL = 'owner@e2e.aurasyncro.test'
@@ -40,4 +41,5 @@ export async function loginViaUi(page: Page, creds: E2ECredentials = getE2ECrede
   await expect(page).toHaveURL(/\/(dashboard|tavoli|dashboard\/onboarding)/, { timeout: 30_000 })
   await expect(page.locator('#root')).toBeVisible()
   await expect(page.locator('body')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)')
+  await dismissCookieBannerIfVisible(page)
 }
