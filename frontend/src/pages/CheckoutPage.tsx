@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from 'react'
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -18,6 +18,13 @@ import {
   ArrowLeft, CreditCard, Banknote, Users, Loader2, Receipt, RotateCcw,
 } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import {
+  payWithConfiguredPos,
+} from '../lib/hardware/pos-service'
+import {
+  shouldUseNativePos,
+  storePendingNativeCheckout,
+} from '../lib/hardware/native-pos-checkout'
 import {
   isPaymentAlreadyPaid,
   isPaymentInProgress,
@@ -502,10 +509,40 @@ export default function CheckoutPage() {
   })
 
   const handleFinalizePayment = useCallback(
-    (splitGuestIndex?: number) => {
+    async (splitGuestIndex?: number) => {
       if (isPaymentBusy || needsCashSession || !orderId) return
       if (!navigator.onLine && paymentMethod !== 'CASH') {
         toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
+        return
+      }
+
+      const usesNativePos =
+        shouldUseNativePos(posStatus?.mode)
+        && usesCardSettlement(paymentMethod, splitSettlement)
+
+      if (usesNativePos) {
+        const payload = buildFinalizePayload(splitGuestIndex)
+        storePendingNativeCheckout({
+          orderId,
+          payload,
+          splitGuestIndex,
+          amountEuro: splitGuestIndex != null && splitPreview
+            ? splitPreview[splitGuestIndex]?.total ?? grandTotal
+            : grandTotal,
+          idempotencyKey: finalizeIdempotencyKey,
+        })
+
+        setPayingTarget(splitGuestIndex ?? 'main')
+        const posResult = await payWithConfiguredPos(
+          splitGuestIndex != null && splitPreview
+            ? splitPreview[splitGuestIndex]?.total ?? grandTotal
+            : grandTotal,
+          orderId,
+        )
+        if (!posResult.ok) {
+          setPayingTarget(null)
+          toast.error(posResult.error ?? t('checkout.paymentError', { defaultValue: 'Impossibile aprire il POS' }))
+        }
         return
       }
 
@@ -526,15 +563,48 @@ export default function CheckoutPage() {
     [
       buildOptimisticFinalizeResult,
       canOptimisticallyComplete,
+      buildFinalizePayload,
       finalize,
+      finalizeIdempotencyKey,
+      grandTotal,
       isPaymentBusy,
       needsCashSession,
       orderId,
+      paymentMethod,
+      posStatus?.mode,
       queryClient,
+      splitPreview,
+      splitSettlement,
       t,
       tk,
     ],
   )
+
+  useEffect(() => {
+    const onNativeFinalized = (event: Event) => {
+      const paid = (event as CustomEvent<CheckoutFinalizeResult>).detail
+      setPayingTarget(null)
+      setFinalizeResult(paid)
+      optimisticReceiptRef.current = null
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'orders'), refetchType: 'active' })
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'cash', 'current') })
+      if (orderId) {
+        markTableCleaningAfterPayment(queryClient, tk, orderId)
+      }
+    }
+
+    const onNativeFailed = () => {
+      setPayingTarget(null)
+    }
+
+    window.addEventListener('aura-native-checkout-finalized', onNativeFinalized)
+    window.addEventListener('aura-native-checkout-failed', onNativeFailed)
+    return () => {
+      window.removeEventListener('aura-native-checkout-finalized', onNativeFinalized)
+      window.removeEventListener('aura-native-checkout-failed', onNativeFailed)
+    }
+  }, [orderId, queryClient, tk])
 
   const assignItem = (itemId: string, guestIndex: number) => {
     setItemAssignments(prev => ({ ...prev, [itemId]: guestIndex }))

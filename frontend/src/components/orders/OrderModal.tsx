@@ -23,6 +23,8 @@ import {
   restoreTablesCache,
   snapshotTablesCache,
 } from '../../lib/tableQueryCache'
+import { isAndroidTablet } from '../../lib/hardware/aura-bridge'
+import { printKitchenOrder } from '../../lib/hardware/print-service'
 
 interface MenuModifierOption { id: string; name: string; price: number }
 interface MenuModifierGroup { id: string; name: string; isRequired: boolean; multiSelect: boolean; minOptions: number; maxOptions: number | null; options: MenuModifierOption[] }
@@ -167,6 +169,11 @@ export default function OrderModal({
     const tableLabel = `T${table.number}`
     const addingToExisting = Boolean(activeOrder)
     const cartGross = cart.reduce((sum, line) => addMoney(sum, lineGrossMoney(line.quantity, line.price)), 0)
+    const printSnapshot = cart.map(line => ({
+      name: line.name,
+      qty: line.quantity,
+      price: line.price,
+    }))
     let tablesSnapshot = snapshotTablesCache(queryClient, tk)
 
     if (addingToExisting && activeOrder) {
@@ -215,6 +222,14 @@ export default function OrderModal({
       toast.success(t('orderModal.dishAdded'))
     } else {
       toast.success(t('orderModal.orderSent'))
+    }
+
+    if (isAndroidTablet() && printSnapshot.length > 0) {
+      void printKitchenOrder(
+        activeOrder?.id ?? `table-${table.id}-${Date.now()}`,
+        tableLabel,
+        printSnapshot,
+      )
     }
 
     void sendPromise

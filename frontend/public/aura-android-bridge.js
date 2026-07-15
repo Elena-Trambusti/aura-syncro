@@ -1,6 +1,6 @@
 /**
  * Aura Syncro - Bridge per app Android
- * Copia in public/aura-android-bridge.js nel progetto Next.js
+ * Copia in public/aura-android-bridge.js nel gestionale React + Vite
  */
 (function (global) {
   function parseBridgeCall(raw) {

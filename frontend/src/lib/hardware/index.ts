@@ -5,3 +5,4 @@ export * from './print-service';
 export * from './pos-service';
 export * from './native-client';
 export * from './escpos-builder';
+export * from './native-pos-checkout';

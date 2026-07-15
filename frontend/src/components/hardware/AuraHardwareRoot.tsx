@@ -1,16 +1,23 @@
 import type { ReactNode } from 'react';
 import { AuraHardwareProvider } from '@/components/hardware/AuraHardwareProvider';
 import type { PaymentResult } from '@/lib/hardware/aura-bridge';
+import { completePendingNativeCheckout } from '@/lib/hardware/native-pos-checkout';
+import { toast } from '@/lib/toast';
+import i18n from '@/i18n';
 
 async function handlePaymentConfirmed(result: PaymentResult) {
   if (result.status !== 'ok') return;
-  // Collega al tuo backend ordini:
-  // await fetch(`/api/orders/${result.orderId}/pay`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(result),
-  // });
-  console.log('Pagamento confermato', result);
+
+  try {
+    await completePendingNativeCheckout(result);
+    toast.success(
+      i18n.t('checkout.paymentSuccess', { defaultValue: 'Pagamento registrato' }),
+    );
+  } catch {
+    toast.error(
+      i18n.t('checkout.paymentError', { defaultValue: 'Errore registrazione pagamento' }),
+    );
+  }
 }
 
 export function AuraHardwareRoot({ children }: { children: ReactNode }) {
