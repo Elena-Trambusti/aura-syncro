@@ -607,6 +607,14 @@ ordersRouter.patch('/:id/status', requirePermission('orders.status'), async (req
     return
   }
 
+  if (status === 'CANCELLED' && moneyNumber(existingOrder.collectedAmount) > 0) {
+    res.status(409).json({
+      error: 'Incasso split già iniziato: annulla prima i partial o completa il pagamento',
+      code: 'SPLIT_PAYMENT_IN_PROGRESS',
+    })
+    return
+  }
+
   if (status === 'PAID') {
     res.status(400).json({
       error: 'Usa POST /api/payments/finalize per incassare l\'ordine',
@@ -758,7 +766,15 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
   }
   if (['PAID', 'CANCELLED'].includes(order.status)) {
     await releaseBatchLock()
-    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+    return
+  }
+  if (moneyNumber(order.collectedAmount) > 0) {
+    await releaseBatchLock()
+    res.status(409).json({
+      error: 'Incasso split già iniziato: non è possibile modificare i piatti',
+      code: 'SPLIT_PAYMENT_IN_PROGRESS',
+    })
     return
   }
 
@@ -984,7 +1000,15 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
   }
   if (['PAID', 'CANCELLED'].includes(order.status)) {
     await releaseItemsLock()
-    res.status(400).json({ error: 'Ordine chiuso, non modificabile' })
+    res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
+    return
+  }
+  if (moneyNumber(order.collectedAmount) > 0) {
+    await releaseItemsLock()
+    res.status(409).json({
+      error: 'Incasso split già iniziato: non è possibile modificare i piatti',
+      code: 'SPLIT_PAYMENT_IN_PROGRESS',
+    })
     return
   }
 

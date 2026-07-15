@@ -237,7 +237,7 @@ export async function finalizeOrderPayment(
     return { paidOrder: paid, updatedTable: tableUpdate }
   })
 
-  const fiscalRow = buildFiscalTransactionRow(paidOrder, paidAt)
+  const fiscalRow = buildFiscalTransactionRow(paidOrder, paidAt, paidOrder.taxRateApplied)
 
   return {
     revenueAmount: split.revenueAmount,

@@ -163,11 +163,8 @@ async function main() {
     throw new Error('Baseline migration assente nel container — rebuild necessario')
   }
 
-  if (!existsSync(join(process.cwd(), 'node_modules/.prisma/client'))) {
-    run('npx prisma generate')
-  } else {
-    logStep('Prisma Client già generato — skip generate')
-  }
+  // Sempre generate: directory presente ≠ client allineato allo schema (CI/deploy).
+  run('npx prisma generate')
 
   const statusBefore = runCapture('npx prisma migrate status || true')
   logStep(`migrate status (before):\n${statusBefore}`)

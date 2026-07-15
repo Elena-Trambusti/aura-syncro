@@ -97,10 +97,12 @@ export function buildFiscalTransactionRow(order: {
   paymentMethod?: string | null
   fiscalIntegrityHash?: string | null
   fiscalPrevHash?: string | null
-}, paidAt: Date): FiscalTransactionRow {
+}, paidAt: Date, fallbackTaxRate?: number | null): FiscalTransactionRow {
   const revenueAmount = roundMoney(resolveRevenueAmount(order))
   const tipAmount = roundMoney(resolveTipAmount(order.tipAmount))
-  const taxRate = order.taxRateApplied ?? 10
+  const taxRate = order.taxRateApplied != null && order.taxRateApplied > 0
+    ? order.taxRateApplied
+    : (fallbackTaxRate != null && fallbackTaxRate > 0 ? fallbackTaxRate : 10)
   const foodGross = roundMoney(moneyNumber(order.subtotal) + moneyNumber(order.tax))
   const discount = moneyNumber(order.discount)
   const useRevenueSplit = discount > 0 || Math.abs(foodGross - revenueAmount) > 0.02
@@ -115,7 +117,7 @@ export function buildFiscalTransactionRow(order: {
     orderId: order.id,
     baseImponible,
     tax,
-    taxRateApplied: order.taxRateApplied ?? null,
+    taxRateApplied: order.taxRateApplied ?? (fallbackTaxRate ?? null),
     revenueAmount,
     tipAmount,
     total: roundMoney(resolveOrderTotal(order)),

@@ -109,7 +109,7 @@ async function postOrderItemsBatch(orderId: string, items: OrderLinePayload[], m
   )
 }
 
-async function executeMutation(mutation: OfflineMutation): Promise<{ orderId?: string }> {
+async function executeMutation(mutation: OfflineMutation): Promise<{ orderId?: string; kitchenPrint?: CreateOrderPayload['kitchenPrint'] }> {
   const idempotencyHeader = (key: string) => ({ headers: { 'X-Idempotency-Key': key } })
 
   if (mutation.kind === 'CREATE_ORDER') {
@@ -130,33 +130,64 @@ async function executeMutation(mutation: OfflineMutation): Promise<{ orderId?: s
       },
       idempotencyHeader(mutation.id),
     )
-    return { orderId: res.data?.id }
+    return { orderId: res.data?.id, kitchenPrint: payload.kitchenPrint }
   }
 
   if (mutation.kind === 'ADD_ORDER_ITEMS') {
     const payload = mutation.payload as AddOrderItemsPayload
     await postOrderItemsBatch(payload.orderId, payload.items, mutation.id)
-    return { orderId: payload.orderId }
+    return { orderId: payload.orderId, kitchenPrint: payload.kitchenPrint }
   }
 
   const payload = mutation.payload as FinalizeOrderCashPayload
-  await api.post(
-    '/payments/finalize',
-    {
-      orderId: payload.orderId,
-      paymentMethod: payload.paymentMethod,
-      tipAmount: payload.tipAmount ?? 0,
-    },
-    idempotencyHeader(mutation.id),
-  )
-  return {}
+  const key = payload.idempotencyKey?.trim() || mutation.id
+  try {
+    await api.post(
+      '/payments/finalize',
+      {
+        orderId: payload.orderId,
+        paymentMethod: payload.paymentMethod,
+        tipAmount: payload.tipAmount ?? 0,
+        tipWaiterId: payload.tipWaiterId,
+        discountCode: payload.discountCode,
+        applyLoyaltyDiscount: payload.applyLoyaltyDiscount,
+      },
+      idempotencyHeader(key),
+    )
+  } catch (err) {
+    const ax = err as AxiosError<{ code?: string }>
+    if (ax.response?.data?.code === 'ORDER_ALREADY_PAID') {
+      return { orderId: payload.orderId }
+    }
+    throw err
+  }
+  return { orderId: payload.orderId }
 }
 
 async function executeMutationPartial(mutation: OfflineMutation): Promise<'done' | 'partial' | 'failed'> {
   try {
-    await executeMutation(mutation)
+    const result = await executeMutation(mutation)
+    if (result.orderId && result.kitchenPrint?.items?.length) {
+      try {
+        const { printKitchenOrder } = await import('./hardware/print-service')
+        const { isAndroidTablet } = await import('./hardware/aura-bridge')
+        if (isAndroidTablet()) {
+          await printKitchenOrder(
+            result.orderId,
+            result.kitchenPrint.tableLabel,
+            result.kitchenPrint.items,
+          )
+        }
+      } catch {
+        /* print best-effort after sync */
+      }
+    }
   } catch (err) {
     if (isLikelyIdempotencyDuplicate(err)) {
+      return 'done'
+    }
+    const ax = err as AxiosError<{ code?: string }>
+    if (ax.response?.data?.code === 'ORDER_ALREADY_PAID') {
       return 'done'
     }
     throw err

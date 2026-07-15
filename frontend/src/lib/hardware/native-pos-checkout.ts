@@ -1,10 +1,11 @@
+import { get, set, del } from 'idb-keyval'
 import { api } from '../api'
-import { moneyNumber } from '../money'
 import type { PaymentResult } from './aura-bridge'
 import { isAndroidTablet } from './aura-bridge'
 
 const SESSION_KEY = 'aura-native-pos-checkout'
 const LOCAL_KEY = 'aura-native-pos-checkout-backup'
+const IDB_KEY = 'aura-native-pos-checkout'
 
 export interface PendingNativeCheckout {
   orderId: string
@@ -30,6 +31,9 @@ function writePendingStorage(data: PendingNativeCheckout): void {
   } catch {
     /* ignore */
   }
+  void set(IDB_KEY, data).catch(() => {
+    /* ignore */
+  })
 }
 
 function readPendingFromStorage(orderId: string): PendingNativeCheckout | null {
@@ -51,6 +55,20 @@ function readPendingFromStorage(orderId: string): PendingNativeCheckout | null {
   return null
 }
 
+async function readPendingFromIdb(orderId: string): Promise<PendingNativeCheckout | null> {
+  try {
+    const data = await get<PendingNativeCheckout>(IDB_KEY)
+    if (data?.orderId === orderId && data.payload && typeof data.payload === 'object') {
+      // Ripristina nelle storage sync per letture successive.
+      writePendingStorage(data)
+      return data
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
 function clearPendingStorage(): void {
   try {
     sessionStorage.removeItem(SESSION_KEY)
@@ -62,6 +80,9 @@ function clearPendingStorage(): void {
   } catch {
     /* ignore */
   }
+  void del(IDB_KEY).catch(() => {
+    /* ignore */
+  })
 }
 
 export function storePendingNativeCheckout(data: PendingNativeCheckout): void {
@@ -92,31 +113,30 @@ export function abortPendingNativeCheckout(orderId?: string): void {
   )
 }
 
-/** Ricostruisce payload minimo se sessionStorage/localStorage persi dopo pagamento POS. */
+/**
+ * Recupero sicuro: non inventa tip/importo.
+ * Se manca il payload salvato, restituisce null (attach failure toast).
+ * Tentativo IndexedDB solo per payload completo già persistito.
+ */
 export async function recoverPendingNativeCheckout(
   orderId: string,
 ): Promise<PendingNativeCheckout | null> {
-  try {
-    const { data } = await api.get<{
-      order: { status: string; total: number }
-    }>(`/payments/checkout/${orderId}`)
-    const order = data.order
-    if (order.status === 'PAID') return null
-
-    return {
-      orderId,
-      payload: {
-        orderId,
-        paymentMethod: 'CARD',
-        tipAmount: 0,
-        nativePosConfirmed: true,
-      },
-      amountEuro: moneyNumber(order.total),
-      idempotencyKey: `checkout-finalize:${orderId}`,
-    }
-  } catch {
-    return null
+  const fromSync = readPendingFromStorage(orderId)
+  if (fromSync?.payload && typeof fromSync.payload === 'object') {
+    return fromSync
   }
+
+  const fromIdb = await readPendingFromIdb(orderId)
+  if (fromIdb) return fromIdb
+
+  // Nessun payload completo: non finalizzare con dati inventati.
+  try {
+    const { data } = await api.get<{ order: { status: string } }>(`/payments/checkout/${orderId}`)
+    if (data.order.status === 'PAID') return null
+  } catch {
+    /* ignore */
+  }
+  return null
 }
 
 export async function completePendingNativeCheckout(
@@ -133,10 +153,12 @@ export async function completePendingNativeCheckout(
 
   if (!pending) {
     pending = await recoverPendingNativeCheckout(result.orderId)
-    recovered = Boolean(pending)
+    recovered = Boolean(pending) && (options?.recovered ?? true)
   }
 
-  if (!pending) return null
+  if (!pending?.payload || typeof pending.payload !== 'object') {
+    return null
+  }
 
   const suffix =
     pending.splitGuestIndex != null ? `:split:${pending.splitGuestIndex}` : ''

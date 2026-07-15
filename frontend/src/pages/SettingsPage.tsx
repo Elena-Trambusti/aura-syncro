@@ -40,7 +40,7 @@ interface RestaurantSettings {
   posProviderLabel?: string | null
   posTerminalId?: string | null
   laborHourlyRate?: number | null
-  telegramChatId?: string | null
+  hasTelegramAlerts?: boolean
 }
 
 interface RestaurantData {
@@ -127,7 +127,7 @@ export default function SettingsPage() {
     queryFn: () => api.get('/restaurant').then(r => r.data),
   })
 
-  const { canAccessAdminNav } = useRole()
+  const { canAccessAdminNav, isOwner } = useRole()
 
   const { data: compliance } = useQuery<{
     score: number
@@ -169,6 +169,13 @@ export default function SettingsPage() {
     queryKey: tq(tk, 'pos-status'),
     queryFn: () => api.get('/restaurant/pos-status').then(r => r.data),
     enabled: canAccessAdminNav(),
+  })
+
+  const { data: telegramLink } = useQuery<{ deepLink: string }>({
+    queryKey: tq(tk, 'telegram-link'),
+    queryFn: () => api.get('/restaurant/telegram-link').then(r => r.data),
+    enabled: isOwner,
+    retry: false,
   })
 
   const posIntegrationLabel = useMemo(() => {
@@ -706,19 +713,25 @@ export default function SettingsPage() {
       </div>
 
       <div className="premium-card p-6">
-        <h2 className="text-base font-semibold text-pietra mb-2">Notifiche AI su Telegram</h2>
-        <p className="text-sm text-fumo mb-4">Collega il tuo account Telegram per ricevere in tempo reale gli alert predittivi e i consigli sui riordini direttamente sul tuo smartphone.</p>
+        <h2 className="text-base font-semibold text-pietra mb-2">{t('settings.telegramTitle')}</h2>
+        <p className="text-sm text-fumo mb-4">{t('settings.telegramDesc')}</p>
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => window.open(`https://t.me/AuraSyncroBot?start=${restaurantData?.id}`, '_blank')}
-              className="flex items-center gap-2 px-4 py-2 bg-[#2AABEE] hover:bg-[#229ED9] text-white rounded-xl text-sm font-semibold transition-colors">
+            <button
+              type="button"
+              disabled={!telegramLink?.deepLink}
+              onClick={() => {
+                if (telegramLink?.deepLink) window.open(telegramLink.deepLink, '_blank', 'noopener,noreferrer')
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-[#2AABEE] hover:bg-[#229ED9] text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Send className="w-4 h-4" />
-              Collega Telegram
+              {t('settings.telegramConnect')}
             </button>
           </div>
-          {restaurantData?.settings?.telegramChatId && (
+          {restaurantData?.settings?.hasTelegramAlerts && (
             <p className="text-xs text-green-400/90 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-              ✅ Telegram è già collegato! Riceverai le notifiche AI su questo account.
+              {t('settings.telegramConnected')}
             </p>
           )}
         </div>

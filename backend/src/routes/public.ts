@@ -279,6 +279,22 @@ publicRouter.post('/checkout', publicCheckoutLimiter, async (req: Request, res: 
 
 /** POST /api/public/telegram-webhook — Webhook ufficiale Telegram per registrare i Chat ID */
 publicRouter.post('/telegram-webhook', async (req: Request, res: Response): Promise<void> => {
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(503).json({ error: 'Telegram webhook not configured' })
+      return
+    }
+    console.warn('[Telegram Webhook] TELEGRAM_WEBHOOK_SECRET unset — skipping secret bind in non-production')
+  } else {
+    const { verifyTelegramWebhookSecret } = await import('../lib/telegramBot')
+    const header = req.header('x-telegram-bot-api-secret-token') ?? undefined
+    if (!verifyTelegramWebhookSecret(header)) {
+      res.sendStatus(401)
+      return
+    }
+  }
+
   // Telegram invia i messaggi nel body: req.body.message
   const message = req.body?.message
   if (!message || !message.text) {
@@ -287,32 +303,38 @@ publicRouter.post('/telegram-webhook', async (req: Request, res: Response): Prom
   }
 
   const chatId = message.chat.id
-  const text = message.text.trim()
+  const text = String(message.text).trim()
 
-  // Quando un utente clicca il link t.me/AuraSyncroBot?start=RISTORANTE_ABC123
-  // Telegram invia il messaggio: "/start RISTORANTE_ABC123"
+  // Deep link: t.me/Bot?start=<restaurantId>_<pairToken>
+  // Telegram invia: "/start <restaurantId>_<pairToken>"
   if (text.startsWith('/start ')) {
-    const restaurantId = text.split(' ')[1]
+    const payload = text.slice('/start '.length).trim()
+    const sep = payload.lastIndexOf('_')
+    const restaurantId = sep > 0 ? payload.slice(0, sep) : ''
+    const pairToken = sep > 0 ? payload.slice(sep + 1) : ''
 
-    if (restaurantId) {
+    if (restaurantId && pairToken) {
       try {
+        const { verifyTelegramPairToken, sendTelegramMessage } = await import('../lib/telegramBot')
+        if (!verifyTelegramPairToken(restaurantId, pairToken)) {
+          res.sendStatus(200)
+          return
+        }
+
         const restaurant = await prisma.restaurant.findUnique({
           where: { id: restaurantId },
         })
 
         if (restaurant) {
-          // Salva l'ID della chat per questo tenant
           await prisma.restaurantSettings.upsert({
             where: { restaurantId: restaurant.id },
             update: { telegramChatId: String(chatId) },
             create: { restaurantId: restaurant.id, telegramChatId: String(chatId) },
           })
 
-          // Importiamo dinamicamente sendTelegramMessage per evitare cicli
-          const { sendTelegramMessage } = await import('../lib/telegramBot')
           await sendTelegramMessage(
             String(chatId),
-            `✅ <b>Perfetto!</b>\nTelegram collegato con successo al ristorante <b>${restaurant.name}</b>.\n\nRiceverai qui gli Alert della AI Predittiva.`
+            `✅ <b>Perfetto!</b>\nTelegram collegato con successo al ristorante <b>${restaurant.name}</b>.\n\nRiceverai qui gli Alert della AI Predittiva.`,
           )
         }
       } catch (err) {
@@ -321,6 +343,5 @@ publicRouter.post('/telegram-webhook', async (req: Request, res: Response): Prom
     }
   }
 
-  // Telegram richiede un 200 OK
   res.sendStatus(200)
 })

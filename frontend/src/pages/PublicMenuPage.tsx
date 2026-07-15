@@ -258,6 +258,12 @@ export default function PublicMenuPage() {
 
   const guestOrderingEnabled = data?.guestOrderingEnabled !== false
   const restaurantFiscal = data?.restaurant.fiscal
+  const hasValidFiscal = Boolean(
+    restaurantFiscal
+    && typeof restaurantFiscal.taxRate === 'number'
+    && restaurantFiscal.taxRegion
+    && restaurantFiscal.taxName,
+  )
 
   function handleAddMenuItem(item: MenuItem) {
     const groups = item.modifierGroups ?? []
@@ -472,7 +478,7 @@ export default function PublicMenuPage() {
         </div>
       </main>
 
-      {guestOrderingEnabled && restaurantFiscal && (
+      {guestOrderingEnabled && hasValidFiscal && restaurantFiscal?.taxRegion && (
         <>
           <GuestCartBar
             itemCount={cart.itemCount}
@@ -485,7 +491,11 @@ export default function PublicMenuPage() {
             slug={slug!}
             restaurantName={data.restaurant.name}
             stripeEnabled={data.stripeEnabled ?? false}
-            fiscal={restaurantFiscal ? { ...restaurantFiscal, taxRegion: restaurantFiscal.taxRegion ?? 'IT_MAIN' } : { taxRate: 10, taxName: 'IVA', taxRegion: 'IT_MAIN' }}
+            fiscal={{
+              taxRate: restaurantFiscal.taxRate,
+              taxName: restaurantFiscal.taxName,
+              taxRegion: restaurantFiscal.taxRegion,
+            }}
             tableNumber={tableNumber}
             tableToken={tableToken}
             items={cart.items}
@@ -495,6 +505,11 @@ export default function PublicMenuPage() {
             onClearCart={cart.clearCart}
           />
         </>
+      )}
+      {guestOrderingEnabled && !hasValidFiscal && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-red-500/30 bg-red-950/90 px-4 py-3 text-center text-sm text-red-100">
+          {t('publicMenu.fiscalUnavailable')}
+        </div>
       )}
       {customizingItem && (
         <GuestItemCustomizer

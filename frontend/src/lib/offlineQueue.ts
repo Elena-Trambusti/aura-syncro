@@ -17,17 +17,35 @@ export interface CreateOrderPayload {
   type: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY'
   items: OrderLinePayload[]
   customerId?: string
+  kitchenPrint?: {
+    tableLabel: string
+    items: Array<{ name: string; qty: number; price: number }>
+  }
 }
 
 export interface AddOrderItemsPayload {
   orderId: string
   items: OrderLinePayload[]
+  kitchenPrint?: {
+    tableLabel: string
+    items: Array<{ name: string; qty: number; price: number }>
+  }
 }
 
 export interface FinalizeOrderCashPayload {
   orderId: string
   paymentMethod: 'CASH'
   tipAmount?: number
+  tipWaiterId?: string
+  discountCode?: string
+  applyLoyaltyDiscount?: boolean
+  /** Chiave idempotency originale dal checkout (preferita al mutation UUID). */
+  idempotencyKey?: string
+  /** Snapshot stampa cucina (solo CREATE/ADD). */
+  kitchenPrint?: {
+    tableLabel: string
+    items: Array<{ name: string; qty: number; price: number }>
+  }
 }
 
 export interface OfflineMutation {

@@ -50,7 +50,9 @@
     "paid": "Pagado",
     "printReceipt": "Imprimir ticket",
     "language": "Idioma",
-    "languageDescription": "Elige el idioma de la interfaz"
+    "languageDescription": "Elige el idioma de la interfaz",
+    "ok": "OK",
+    "pending": "Pending"
   },
   "brand": {
     "tagline": "Sincroniza cada instante de tu restaurante",
@@ -84,7 +86,10 @@
     "lockedPro": "Pasa a Pro para desbloquear esta función",
     "lockedAria": "bloqueado",
     "previewUnsubscribed": "Vista previa gratuita — activa Premium para desbloquear todo",
-    "previewOnboarding": "Onboarding en curso — las funciones se desbloquean al completar el setup"
+    "previewOnboarding": "Onboarding en curso — las funciones se desbloquean al completar el setup",
+    "cashDrawer": "Cash drawer",
+    "invoicesB2b": "B2B Invoicing",
+    "profile": "My profile"
   },
   "demo": {
     "bannerTitle": "Demo interactiva de Aura Syncro",
@@ -197,7 +202,8 @@
     "backendUnreachable": "Backend no accesible. Verifica que DigitalOcean esté en línea.",
     "apiBlocked": "Solicitud API bloqueada. Vuelve a desplegar el frontend con la configuración actualizada.",
     "networkError": "No se puede contactar con el servidor. Comprueba la conexión y la configuración BACKEND_URL.",
-    "serverError": "Error del servidor. Inténtalo de nuevo en un momento."
+    "serverError": "Error del servidor. Inténtalo de nuevo en un momento.",
+    "timeout": "Request timed out. Try again."
   },
   "apiErrors": {
     "AUTH_REQUIRED": "Sesión caducada. Inicia sesión de nuevo.",
@@ -206,7 +212,25 @@
     "ORDER_NOT_REFUNDABLE": "Pedido no reembolsable.",
     "ORDER_ALREADY_REFUNDED": "Pedido ya reembolsado.",
     "STRIPE_REFUND_FAILED": "Reembolso con tarjeta fallido.",
-    "CASH_SESSION_REQUIRED": "Abre la caja antes de registrar un reembolso."
+    "CASH_SESSION_REQUIRED": "Abre la caja antes de registrar un reembolso.",
+    "AUTH_INVALID": "Invalid session. Please sign in again.",
+    "SESSION_INVALID": "Session expired or account deactivated.",
+    "SESSION_REVOKED": "Session no longer valid. Please sign in again.",
+    "DEMO_READ_ONLY": "Demo account is read-only.",
+    "STRIPE_REFUND_UNAVAILABLE": "Card refund not available for this order.",
+    "STRIPE_NOT_CONFIGURED": "Stripe payments not configured.",
+    "INSUFFICIENT_STOCK": "Dish sold out — insufficient ingredients.",
+    "MENU_ITEM_SOLD_OUT": "Dish sold out.",
+    "SLOT_CONFLICT": "Slot or table no longer available.",
+    "CAMPAIGN_ALREADY_SENT": "Campaign already sent.",
+    "INVOICES_IT_ONLY": "E-invoicing available only for Italian restaurants.",
+    "LOYALTY_ALREADY_EARNED": "Points already earned for this order.",
+    "INSUFFICIENT_POINTS": "Insufficient loyalty points.",
+    "EMAIL_ALREADY_EXISTS": "Email already registered.",
+    "OWNER_CANNOT_DEACTIVATE": "The owner account cannot be deactivated.",
+    "OWNER_ROLE_LOCKED": "The owner role cannot be changed.",
+    "INVALID_PASSWORD": "Current password is incorrect.",
+    "ACCOUNT_INACTIVE": "Account is not active."
   },
   "dashboard": {
     "title": "Panel — {{name}}",
@@ -244,7 +268,9 @@
       "kitchenLoad": "{{count}} pedidos activos en cocina — considera refuerzos.",
       "highReservations": "{{count}} reservas hoy — prepara turnos y mise en place.",
       "slowTurnover": "Rotación media de mesa {{minutes}} min — optimiza el servicio."
-    }
+    },
+    "todayOrdersSub": "collected orders today",
+    "liveCommandError": "Unable to refresh live data. Retrying automatically…"
   },
   "tables": {
     "title": "Mesas y TPV",
@@ -296,6 +322,36 @@
       "expandToolbar": "Herramientas",
       "collapseToolbar": "Ocultar herramientas",
       "autoListFallback": "Mesas demasiado pequeñas — vista lista activada"
+    },
+    "manageAreas": "Manage areas",
+    "saveLayout": "Save layout",
+    "layoutSaved": "Layout saved successfully!",
+    "zones": {
+      "kitchen": "KITCHEN",
+      "reception": "RECEPTION DESK",
+      "group": "GROUP",
+      "bar": "BAR",
+      "staffOnly": "STAFF ONLY"
+    },
+    "editor": {
+      "title": "2.5D Layout Editor",
+      "subtitle": "Walls, zones and tables — saved per restaurant",
+      "tabEdit": "Edit",
+      "tabPreview": "3D Preview",
+      "toolSelect": "Select",
+      "toolTable": "Table",
+      "toolWall": "Wall",
+      "toolLabel": "Label",
+      "toolDelete": "Delete",
+      "tableHint": "Click on the map to place a table",
+      "tableSeatsTitle": "New table",
+      "tableSeatsPrompt": "How many seats? (e.g. 2, 4, 6)",
+      "tableSeatsInvalid": "Enter a seat count between 1 and 20",
+      "tableAdded": "Table added",
+      "wallHint": "Click the second wall point",
+      "labelPrompt": "Zone label text",
+      "loadTemplate": "Demo template",
+      "loadTemplateConfirm": "Load Obsidian Room template? Overwrites walls and labels."
     }
   },
   "orders": {
@@ -316,7 +372,8 @@
       "status": "Estado",
       "total": "Total",
       "date": "Fecha"
-    }
+    },
+    "splitOpen": "Split {{collected}} / {{total}}"
   },
   "menu": {
     "title": "Gestión del Menú",
@@ -436,7 +493,85 @@
     "pec": "PEC",
     "sdiRecipientCode": "Código destinatario SDI",
     "invoicePrefix": "Prefijo numeración facturas",
-    "invoicePrefixHint": "Ej. FATT → FATT-2026-001"
+    "invoicePrefixHint": "Ej. FATT → FATT-2026-001",
+    "saveHint": "After editing, click «Save changes» at the bottom of the page.",
+    "nameRequired": "Restaurant name is required",
+    "posTitle": "Physical POS / fiscal register",
+    "posDesc": "Configured by the Aura Syncro team after your setup call, based on your terminal.",
+    "posStatusPending": "Awaiting configuration",
+    "posStatusSimulation": "Demo / training mode",
+    "posStatusStripe": "Stripe Terminal connected",
+    "posStatusExternal": "External register: {{provider}}",
+    "posLegalNote": "The legally valid fiscal receipt is issued by the restaurant's certified POS when configured as an external register.",
+    "laborRate": "Staff hourly cost",
+    "laborRateDesc": "Used in P&L reports to estimate labor cost.",
+    "laborRateUnit": "€ / hour",
+    "legalCity": "City",
+    "legalZip": "Postal code",
+    "legalProvince": "Province",
+    "posFiscalTitle": "Cash register / fiscal printer",
+    "posFiscalDesc": "Configure direct connection to the register for physical receipts.",
+    "posBrandLabel": "Register brand",
+    "posNone": "None (software only)",
+    "posIpLabel": "Local IP address",
+    "posNetworkHint": "Tablet and register must be on the same Wi-Fi network. Printing is local.",
+    "telegramTitle": "AI alerts on Telegram",
+    "telegramDesc": "Link your Telegram account to receive predictive alerts and reorder suggestions on your phone in real time.",
+    "telegramConnect": "Connect Telegram",
+    "telegramConnected": "✅ Telegram is already connected! You will receive AI alerts on this account.",
+    "reservationsTitle": "Reservations & no-show protection",
+    "reservationsDesc": "Require a credit card guarantee to confirm tables.",
+    "depositRequired": "Require deposit to confirm tables",
+    "depositHint": "Guests pre-authorize the amount via Stripe.",
+    "depositAmountLabel": "Deposit amount (€)",
+    "hardwareLoading": "Loading hardware settings…",
+    "hardwareBrowserMode": "Browser mode",
+    "hardwareBrowserHint": "Printers and physical POS are configured in the Aura Syncro Mobile Android app on the restaurant tablet.",
+    "hardwarePageTitle": "Restaurant hardware",
+    "hardwarePageSubtitle": "Configure printers and POS on site — each venue may use different brands.",
+    "hardwarePermissionsTitle": "Permissions",
+    "hardwarePermissionsHint": "Required for Bluetooth. Wi-Fi/LAN uses the tablet local network.",
+    "hardwareRequestPermissions": "Request permissions",
+    "hardwareBluetoothSettings": "Bluetooth settings",
+    "hardwarePermissionsStatus": "Permissions: {{status}}",
+    "hardwareBluetoothStatus": "Bluetooth: {{status}}",
+    "hardwareStatusOk": "OK",
+    "hardwareStatusMissing": "Missing",
+    "hardwareStatusOn": "On",
+    "hardwareStatusOff": "Off",
+    "hardwarePrintersTitle": "ESC/POS printers",
+    "hardwarePrintersHint": "Bluetooth: scan and select. Wi-Fi: enter IP and port (default 9100).",
+    "hardwareScanBluetooth": "Scan Bluetooth",
+    "hardwareDefaultPrinterName": "Kitchen",
+    "hardwarePrinterName": "Name",
+    "hardwarePrinterNamePlaceholder": "Kitchen, Bar…",
+    "hardwarePrinterType": "Type",
+    "hardwarePrinterBluetooth": "Bluetooth",
+    "hardwarePrinterWifi": "Wi-Fi / LAN",
+    "hardwarePrinterAddress": "Address",
+    "hardwarePrinterAddressWifi": "192.168.1.50:9100",
+    "hardwarePrinterAddressBt": "Bluetooth MAC",
+    "hardwareSavePrinter": "Save printer",
+    "hardwareTestConnection": "Test connection",
+    "hardwareNoPrinters": "No printers configured.",
+    "hardwareDefaultBadge": "default",
+    "hardwareTestPrint": "Test print",
+    "hardwareSetDefault": "Set default",
+    "hardwareDelete": "Delete",
+    "hardwarePosTitle": "POS app",
+    "hardwarePosHint": "Choose the installed payment app. Deep link is optional — without it, confirm manually on return.",
+    "hardwareSearchApps": "Search apps",
+    "hardwareSearchAppsPlaceholder": "sumup, nexi, pay…",
+    "hardwareSearch": "Search",
+    "hardwarePackageName": "Android package",
+    "hardwarePackageNamePlaceholder": "com.example.pos",
+    "hardwarePosLabel": "Label",
+    "hardwarePosLabelPlaceholder": "Name shown at checkout",
+    "hardwareDeepLink": "Deep link template (optional)",
+    "hardwareDeepLinkPlaceholder": "scheme://pay?amount={{amount}}&currency={{currency}}&callback={{callback}}",
+    "hardwareSavePos": "Save POS",
+    "hardwareRemovePos": "Remove POS",
+    "hardwareIntegrationNote": "Tenant POS integration (EXTERNAL mode) is enabled by Aura Syncro after the setup call."
   },
   "reservations": {
     "title": "Reservas",
@@ -494,7 +629,13 @@
     "showArchived": "Mostrar canceladas y completadas ({{count}})",
     "hideArchived": "Ocultar archivo",
     "activeEmptyTitle": "Sin reservas activas",
-    "activeEmptyHint": "Las reservas canceladas o completadas están en el archivo."
+    "activeEmptyHint": "Las reservas canceladas o completadas están en el archivo.",
+    "depositCardSaved": "Card on file",
+    "depositPenaltyCollected": "Penalty collected (€{{amount}})",
+    "chargeNoShowConfirm": "Charge the no-show penalty from the saved card?",
+    "chargeNoShow": "Charge penalty",
+    "noShowChargeSuccess": "No-show penalty charged successfully",
+    "noShowChargeError": "Error while charging the penalty"
   },
   "waitlist": {
     "subtitle": "{{count}} clientes en espera",
@@ -640,7 +781,12 @@
     "teamOnlyOwnerTitle": "Solo el titular en el equipo",
     "teamOnlyOwnerHint": "Para planificar turnos necesitas al menos un camarero, chef o manager. El titular no puede asignarse a turnos.",
     "noShiftsDayClick": "Sin turnos — clic para añadir uno",
-    "noShiftsDayLocked": "Sin turnos — añade primero un miembro del equipo"
+    "noShiftsDayLocked": "Sin turnos — añade primero un miembro del equipo",
+    "editMember": "Edit",
+    "editMemberTitle": "Edit team member",
+    "memberUpdated": "Team member updated",
+    "formPasswordOptional": "New password (optional)",
+    "saveChanges": "Save changes"
   },
   "inventory": {
     "title": "Almacén",
@@ -734,7 +880,8 @@
     "adjustNotePlaceholder": "Motivo del ajuste",
     "confirm": "Confirmar",
     "tierDeleted": "Nivel eliminado",
-    "pointsUpdated": "Puntos actualizados"
+    "pointsUpdated": "Puntos actualizados",
+    "pageOf": "Page {{page}} of {{total}}"
   },
   "marketing": {
     "title": "Marketing Automático",
@@ -784,7 +931,62 @@
     "loadError": "Error al cargar los informes",
     "tabPl": "📊 P&L Mensual",
     "tabFoodCost": "🍽 Food Cost",
-    "tabYearly": "📈 Tendencia Anual"
+    "tabYearly": "📈 Tendencia Anual",
+    "kpiRevenue": "Revenue",
+    "kpiFoodCost": "Food Cost",
+    "kpiGrossProfit": "Gross Profit",
+    "kpiNetProfit": "Net Profit",
+    "ordersCount": "{{count}} orders",
+    "foodCostPctSub": "{{pct}}% of revenue",
+    "grossProfitSub": "Revenue - Food Cost",
+    "laborCostSub": "Labor cost: {{amount}}",
+    "monthDetail": "{{month}} {{year}} detail",
+    "rowGrossRevenue": "Gross revenue",
+    "rowDiscounts": "Discounts applied",
+    "rowFoodCost": "Estimated food cost",
+    "rowLaborCost": "Labor cost",
+    "netProfitEstimated": "Estimated Net Profit",
+    "dailyTrend": "Daily trend",
+    "tooltipRevenue": "Revenue",
+    "categoryRevenue": "Revenue by Category",
+    "dishMargins": "Dish Margins",
+    "exportCsv": "Export CSV",
+    "colDish": "Dish",
+    "colPrice": "Price",
+    "colFoodCost": "Food Cost",
+    "colMargin": "Margin",
+    "colMarginPct": "Margin %",
+    "colSold": "Sold",
+    "foodCostEmpty": "Link ingredients to dishes in Inventory to see food cost",
+    "yearRevenue": "Revenue {{year}}",
+    "bestMonth": "Best Month",
+    "monthlyAvg": "Monthly Average",
+    "monthlyRevenue": "Monthly Revenue {{year}}",
+    "colMonth": "Month",
+    "colRevenue": "Revenue",
+    "colOrders": "Orders",
+    "colAvgOrder": "Avg/Order",
+    "csvDate": "Date",
+    "csvRevenue": "Revenue",
+    "csvOrders": "Orders",
+    "csvDiscounts": "Discounts",
+    "csvDish": "Dish",
+    "csvCategory": "Category",
+    "csvPrice": "Price",
+    "csvIngredientCost": "Ingredient Cost",
+    "csvMargin": "Margin",
+    "csvMarginPct": "Margin %",
+    "csvSold30d": "Sold (30d)",
+    "csvTurnover": "Turnover",
+    "pieces": "pcs",
+    "zetaButton": "Daily fiscal closure",
+    "zetaDate": "Fiscal closure date",
+    "zetaConfirmTitle": "Daily fiscal closure",
+    "zetaConfirm": "Generate the daily fiscal closure? This cannot be undone.",
+    "zetaSuccess": "Daily fiscal closure generated successfully",
+    "zetaError": "Error during fiscal closure",
+    "zetaItalyOnly": "Available for Italy-based restaurants only",
+    "taxRowLabel": "{{taxName}} ({{rate}}%)"
   },
   "reportFiscal": {
     "exportPdf": "Exportar PDF para Inspección",
@@ -867,7 +1069,10 @@
           "summaryElectronicTips": "Propinas Electrónicas Rastreadas — Registro impuesto sustitutivo 5%",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
           "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IVA (normativa italiana).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "tipsSectionTitle": "Mance Elettroniche Tracciate (Esenti IVA — Soggette a imposta sostitutiva)",
+          "legalDisclaimer": "Documento ad uso gestionale interno. Non sostituisce lo scontrino del Registratore Telematico né l'invio allo SDI/FatturaPA.",
+          "complianceNotice": "Catena di integrità crittografica attiva su ogni chiusura conto (predisposizione AgID)."
         }
       },
       "ES_CANARIAS": {
@@ -912,7 +1117,10 @@
           "summaryTips": "Total Propinas Personal (Exento de IGIC)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
           "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IGIC (normativa Canarias).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       },
       "ES_PENINSULA": {
@@ -957,10 +1165,35 @@
           "summaryTips": "Total Propinas Personal (Exento de IVA)",
           "summaryReconciliation": "Total Conciliación Bancaria POS",
           "footer": "Documento generado automáticamente · {{count}} transacciones · Propinas exentas de IVA (normativa española).",
-          "filenamePrefix": "libro-registro"
+          "filenamePrefix": "libro-registro",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       }
-    }
+    },
+    "complianceChainInvalid": "Warning: fiscal integrity chain broken at order {{orderId}}",
+    "complianceChainValid": "Fiscal integrity chain verified for the selected period.",
+    "complianceVerifactu": "VeriFactu predisposition active for this regime.",
+    "vatBreakdownTitle": "Breakdown by tax rate",
+    "vatBreakdownRate": "Rate {{rate}}%",
+    "vatBreakdownTaxable": "Taxable base",
+    "vatBreakdownTax": "Tax",
+    "vatBreakdownOrders": "Transactions",
+    "tablePaymentMethod": "Payment",
+    "tableIntegrityHash": "Integrity hash",
+    "rangeTooLarge": "Maximum range is {{max}} days. Narrow the selected period.",
+    "pageOf": "Page {{page}} of {{total}}",
+    "chartRevenueTitle": "Net revenue trend",
+    "chartRevenueSubtitle": "Daily performance for the selected period",
+    "chartCompositionTitle": "Collection composition",
+    "chartCompositionSubtitle": "Tax vs tracked tips",
+    "chartVatTitle": "Tax by rate",
+    "chartVatSubtitle": "Taxable base and tax distribution",
+    "chartRevenueLabel": "Net revenue",
+    "chartTaxLabel": "Tax",
+    "chartTipsLabel": "Tips",
+    "chartTaxableLabel": "Taxable base"
   },
   "payments": {
     "title": "Pagos Digitales",
@@ -988,7 +1221,9 @@
     "setupStep1": "Crea una cuenta en stripe.com",
     "setupStep2": "Ve a Desarrolladores → Claves API y copia las claves de prueba",
     "setupStep3": "Pégalas en backend/.env (STRIPE_SECRET_KEY y STRIPE_PUBLISHABLE_KEY)",
-    "setupStep4": "Reinicia el backend — los clientes podrán pagar desde el menú QR"
+    "setupStep4": "Reinicia el backend — los clientes podrán pagar desde el menú QR",
+    "stripeAccount": "Your Stripe account",
+    "connectBank": "Connect bank account"
   },
   "depositSuccess": {
     "verifying": "Verificando pago...",
@@ -1058,6 +1293,98 @@
       "reviewAlert": "Revisar alerta crítica en AI predictiva",
       "reorderStock": "Reordenar {{itemName}} (qty sugerida {{qty}})",
       "reviewDish": "Revisar plato {{dishName}} ({{changePct}}%)"
+    },
+    "confidenceLabel": "Confidence",
+    "chart": {
+      "reserved": "Reserved",
+      "walkIn": "Est. walk-in",
+      "weatherImpact": "Weather impact"
+    },
+    "kpi": {
+      "sectionLabel": "Predictive indicators",
+      "totalCovers": "Predicted covers (7d)",
+      "totalCoversSub": "Estimated weekly total",
+      "peakDay": "Peak day",
+      "peakDaySub": "{{covers}} estimated covers",
+      "confidence": "Avg. confidence",
+      "confidenceSub": "Based on historical samples",
+      "alerts": "Active alerts",
+      "alertsSub": "{{critical}} critical · {{opportunity}} opportunities",
+      "alertsClear": "No issues detected"
+    },
+    "emptyState": {
+      "monitor": {
+        "inventory": "Stock and minimum threshold monitoring to prevent weekend stockouts",
+        "weather": "Automatic adjustment based on forecast weather (rain, footfall, perishables)",
+        "trends": "Dish sales trend analysis to optimise production and food cost"
+      },
+      "snapshot": "Weekly snapshot",
+      "peakSummary": "Peak expected on {{day}} with {{covers}} covers",
+      "factorsActive": "{{count}} predictive factors active",
+      "ctaInventory": "Go to Inventory",
+      "ctaMenu": "Configure menu recipes"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "inventory": "Inventory",
+      "trends": "Dish trends",
+      "insights": "AI insights"
+    },
+    "inventory": {
+      "title": "Inventory Forecast",
+      "subtitle": "Estimated consumption and reorder suggestions for the next 7 days",
+      "goToInventory": "Inventory",
+      "colItem": "Item",
+      "colStock": "Stock",
+      "colDemand": "7d demand",
+      "colDaysLeft": "Days left",
+      "colReorder": "Reorder",
+      "colStatus": "Status",
+      "empty": "No items with linked recipes",
+      "noRecipesTitle": "Link recipes to enable forecasts",
+      "noRecipesHint": "Associate ingredients with menu dishes to calculate expected consumption",
+      "status": {
+        "ok": "OK",
+        "low": "Low",
+        "critical": "Critical",
+        "overstock": "Overstock"
+      }
+    },
+    "trends": {
+      "title": "Dish Trends",
+      "subtitle": "Sales comparison: last 2 weeks vs previous period",
+      "rising": "Rising",
+      "falling": "Falling",
+      "empty": "Insufficient sales data",
+      "stable": "No significant trends detected",
+      "hintUp": "Increase production of \"{{dish}}\"",
+      "hintDown": "Consider promotion or reduced orders for \"{{dish}}\"",
+      "hintStable": "Stable sales for \"{{dish}}\""
+    },
+    "insights": {
+      "title": "Operational Insights",
+      "subtitle": "Automatic summary from the predictive engine",
+      "empty": "No insights available at the moment",
+      "peakDay": {
+        "title": "Peak footfall expected",
+        "body": "Highest footfall day is {{day}} with {{covers}} estimated covers ({{confidence}}% confidence)."
+      },
+      "weather": {
+        "title": "Impactful weather ahead",
+        "body": "Rain forecast for {{count}} day(s) — consider adjustments for perishables and outdoor seating."
+      },
+      "inventory": {
+        "title": "Stock attention needed",
+        "body": "{{count}} item(s) at risk. Priority: {{item}} — suggested reorder +{{reorderQty}}{{unit}}."
+      },
+      "trend": {
+        "title": "Sales opportunity",
+        "body": "\"{{dish}}\" up {{pct}}%: increase availability and visibility on the floor."
+      },
+      "weekTotal": {
+        "title": "Weekly projection",
+        "body": "{{total}} total covers expected over the next 7 days."
+      }
     }
   },
   "kitchen": {
@@ -1077,7 +1404,24 @@
     "orderReady": "¡Pedido listo para servir!",
     "orderReadyError": "No se puede marcar el pedido como listo",
     "orderDismissError": "No se puede archivar el pedido",
-    "orderDismissed": "Pedido servido y eliminado de cocina"
+    "orderDismissed": "Pedido servido y eliminado de cocina",
+    "typeDineIn": "Dine-in",
+    "typeTakeaway": "Takeaway",
+    "typeDelivery": "Delivery",
+    "partialReadyHint": "Use +1 to mark one portion ready",
+    "markOneReady": "Mark 1 portion ready",
+    "advanceStatus": "Advance status",
+    "dismissServed": "Served — remove",
+    "markAllReady": "Mark all ready",
+    "ofTotal": "of",
+    "toPrepare": "to prepare",
+    "footerHint": "Tap ✓ to advance · +1 marks one portion ready · Served removes the order",
+    "legendPending": "Pending",
+    "legendPreparing": "Prep.",
+    "legendReady": "Ready",
+    "emptyPending": "No orders waiting",
+    "emptyPreparing": "No orders in preparation",
+    "emptyReady": "No orders ready"
   },
   "offline": {
     "bannerOffline": "Sin conexión — los pedidos se enviarán cuando vuelva la conexión",
@@ -1085,7 +1429,8 @@
     "bannerPending": "{{count}} pedido(s) pendiente(s) de envío",
     "retryNow": "Reintentar ahora",
     "queued": "Guardado — se sincronizará cuando vuelva la conexión",
-    "orderQueued": "Pedido guardado — se enviará cuando vuelva la conexión"
+    "orderQueued": "Pedido guardado — se enviará cuando vuelva la conexión",
+    "dropFailed": "Order/action could not be sent: {{message}}"
   },
   "orderModal": {
     "title": "Mesa {{number}}",
@@ -1140,7 +1485,12 @@
     "transferSuccess": "Comensales movidos correctamente",
     "transferTargetUnavailable": "La mesa de destino no está disponible",
     "transferNoActiveOrder": "No hay pedido activo para mover",
-    "transferError": "Error al mover la mesa"
+    "transferError": "Error al mover la mesa",
+    "a11yTitle": "Order for table {{number}}",
+    "a11yLoading": "Loading order",
+    "a11yDescription": "Order and menu management",
+    "sendError": "Unable to send order",
+    "kitchenPrintFailed": "Order sent but kitchen print failed. Check the printer under Settings → Hardware."
   },
   "checkout": {
     "title": "Cierre de cuenta",
@@ -1217,8 +1567,40 @@
       "ORDER_NOT_REFUNDABLE": "Pedido no reembolsable",
       "ORDER_ALREADY_REFUNDED": "Pedido ya reembolsado",
       "STRIPE_REFUND_FAILED": "Reembolso con tarjeta fallido",
-      "STRIPE_REFUND_UNAVAILABLE": "Reembolso con tarjeta no disponible para este pedido"
-    }
+      "STRIPE_REFUND_UNAVAILABLE": "Reembolso con tarjeta no disponible para este pedido",
+      "EXTERNAL_POS_TABLET_REQUIRED": "External POS card payment requires the configured Android tablet"
+    },
+    "splitPayGuest": "Collect share",
+    "splitGuestPaid": "Paid",
+    "splitPartialSuccess": "Share recorded. Remaining {{remaining}}",
+    "splitProgress": "Collected {{collected}} · Remaining {{remaining}}",
+    "splitIncrementalHint": "Collect each guest share with the button next to their name. Fiscal receipt closes on the last payment.",
+    "splitFinalizeAll": "Finalize full bill (card)",
+    "cashSessionRequired": "Open the cash drawer before accepting cash payments.",
+    "cashSessionLink": "Go to cash drawer",
+    "discount": "Discount",
+    "promoCode": "Promo code",
+    "promoCodePlaceholder": "e.g. SUMMER10",
+    "applyPromo": "Apply",
+    "discountApplied": "Discount applied",
+    "discountInvalid": "Invalid discount code",
+    "loyaltyDiscountHint": "Loyalty discount {{tier}}: −{{pct}}% applied at checkout",
+    "discountAppliedAmount": "Discount: −{{amount}}",
+    "posSimulationNotice": "POS simulation mode active — no real card charge.",
+    "posPendingSetup": "Physical POS setup in progress — Aura Syncro will complete integration after your onboarding call. Card payments are simulated until then.",
+    "posExternalDevice": "Card payment on {{provider}}. Aura Syncro records the sale; the legal fiscal receipt is issued by your POS.",
+    "posExternalGeneric": "your restaurant POS",
+    "externalPosWebBlocked": "External POS card payments are only available on the Aura Syncro Android tablet. Use cash or open the app on the tablet.",
+    "nativePosRecoveryWarning": "Payment recorded using recovery data. Verify amount and tips on the bill.",
+    "nativePosPendingLost": "POS payment confirmed but the bill could not be recorded. Reopen checkout or contact support.",
+    "customerTitle": "Customer / loyalty",
+    "customerSearchPlaceholder": "Search by name, phone or email…",
+    "customerNoResults": "No customers found",
+    "customerLinked": "Customer linked to order",
+    "customerLinkError": "Could not link customer",
+    "customerRemove": "Remove",
+    "loyaltyTierBadge": "{{tier}} — {{pct}}% discount at checkout",
+    "refundConfirm": "Confirm refund? CRM and loyalty points will be reversed."
   },
   "billing": {
     "pageTitle": "La plataforma pensada para tu restaurante",
@@ -1247,7 +1629,43 @@
     "checkoutCanceled": "Pago cancelado. Puedes intentarlo de nuevo cuando quieras.",
     "checkoutError": "No se pudo iniciar el checkout. Inténtalo de nuevo.",
     "checkoutUrlMissing": "URL de checkout no recibida de Stripe",
-    "secureNote": "Pago seguro gestionado por Stripe Checkout"
+    "secureNote": "Pago seguro gestionado por Stripe Checkout",
+    "plansPageTitle": "Plans & billing",
+    "plansPageSubtitle": "Manage your Aura Syncro subscription",
+    "activePlanLabel": "Active subscription: {{plan}}",
+    "setupOnce": "one-time setup",
+    "activatePlan": "Activate {{plan}}",
+    "activeServices": "Active services for {{plan}} plan",
+    "openPortal": "Manage subscription",
+    "portalUrlMissing": "Portal URL not received from Stripe",
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "tagline": "For small venues or food trucks.",
+        "features": [
+          "Up to 12 tables",
+          "Single dining area",
+          "Digital QR menu",
+          "Integrated Stripe payments"
+        ],
+        "missing": [
+          "Predictive AI & Analytics",
+          "Shifts & inventory"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "tagline": "For restaurants that demand the best.",
+        "features": [
+          "Unlimited areas and tables",
+          "Predictive AI & Analytics",
+          "Concierge onboarding",
+          "Shifts & inventory",
+          "Marketing automation"
+        ],
+        "missing": []
+      }
+    }
   },
   "onboarding": {
     "badge": "Concierge Aura Syncro",
@@ -1285,7 +1703,10 @@
     "goLiveCta": "Activar dashboard operativa",
     "goLiveSuccess": "Dashboard desbloqueada — ¡buen servicio!",
     "goLiveNotReady": "Completa todos los controles antes del go-live.",
-    "goLiveError": "Go-live falló. Reintenta o contacta soporte."
+    "goLiveError": "Go-live falló. Reintenta o contacta soporte.",
+    "staffReadinessHint": "The technical checklist is visible to owners and managers. Contact your manager to complete setup.",
+    "staffConciergeHint": "Concierge steps are managed by the owner or venue manager.",
+    "checklistTables": "Configure tables and dining room (after unlock)"
   },
   "paywall": {
     "title": "Función Premium",
@@ -1385,7 +1806,8 @@
       "TABLE_UNAVAILABLE": "Mesa no disponible",
       "RESTAURANT_NOT_FOUND": "Restaurante no encontrado",
       "SLOT_CONFLICT": "Franja o mesa ya no disponible"
-    }
+    },
+    "addedToCart": "{{name}} added to cart"
   },
   "qrBuilder": {
     "title": "Generador Menú QR",
@@ -1399,7 +1821,13 @@
     "tableNumberPlaceholder": "ej. 5 — dejar vacío para menú genérico",
     "tableNumberHint": "Con el número de mesa en el QR, el cliente ve la experiencia «ya sentado» (sin enlace de reserva). Déjalo vacío para menú genérico + reserva.",
     "slugMissing": "Falta el slug del restaurante. Configúralo en Ajustes para generar códigos QR.",
-    "goToSettings": "Ir a Ajustes"
+    "goToSettings": "Ir a Ajustes",
+    "modeMenu": "Table menu",
+    "modeBooking": "Reservations",
+    "menuModeDesc": "Guests browse the digital menu. Waiters take orders at the table.",
+    "bookingModeDesc": "Guests book a table online. Print at the entrance or on your website.",
+    "previewBooking": "Preview booking",
+    "previewOpenFailed": "Could not open preview here. Link copied — paste it in your browser."
   },
   "payment": {
     "success": "¡Pago completado!",
@@ -1433,7 +1861,12 @@
     "installSuccess": "¡App instalada! Ábrela desde la pantalla de inicio.",
     "updateAvailable": "Hay una nueva versión de la app disponible.",
     "updateRefresh": "Actualizar ahora",
-    "reload": "Recargar"
+    "reload": "Recargar",
+    "backToApp": "Back to app",
+    "backToLogin": "Back to login",
+    "resetApp": "Reset app",
+    "loadingTimeout": "Loading is taking longer than usual.",
+    "loadingRetry": "Try again"
   },
   "export": {
     "receipt": "Ticket",
@@ -1472,7 +1905,11 @@
     "trust": {
       "eyebrow": "Diseñado para la restauración en",
       "aria": "Mercados geográficos soportados",
-      "items": ["Italia", "España", "Canarias"]
+      "items": [
+        "Italia",
+        "España",
+        "Canarias"
+      ]
     },
     "features": {
       "eyebrow": "Plataforma",
@@ -1583,7 +2020,223 @@
       "privacy": "Política de privacidad",
       "terms": "Términos de servicio",
       "contact": "Contacto",
-      "rights": "© {{year}} {{brand}}. Todos los derechos reservados."
+      "rights": "© {{year}} {{brand}}. Todos los derechos reservados.",
+      "cookie": "Cookie",
+      "dpa": "DPA",
+      "guests": "Guests"
+    }
+  },
+  "profile": {
+    "title": "My profile",
+    "subtitle": "Update your personal details and sign-in password",
+    "name": "Name",
+    "email": "Email",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordHint": "At least {{min}} characters. Leave blank to keep your password.",
+    "save": "Save profile",
+    "saved": "Profile updated",
+    "nameRequired": "Name is required (minimum 2 characters)",
+    "emailRequired": "Email is required",
+    "passwordTooShort": "Password must be at least {{min}} characters",
+    "currentPasswordRequired": "Enter your current password to set a new one"
+  },
+  "cashDrawer": {
+    "openSuccess": "Cash session opened!",
+    "openError": "Could not open cash drawer",
+    "closeBalanced": "Drawer closed — perfect balance!",
+    "closeSurplus": "Drawer closed with surplus of €{{amount}}",
+    "closeShortage": "Shortage detected: €{{amount}}",
+    "closeError": "Could not close cash drawer",
+    "txSuccess": "Transaction recorded",
+    "txError": "Could not record transaction"
+  },
+  "invoices": {
+    "title": "Electronic Invoicing",
+    "subtitle": "B2B invoices and SDI submission (Aruba)",
+    "italyOnly": "B2B electronic invoicing is only available for Italy-based restaurants.",
+    "emit": "Issue invoice",
+    "loading": "Loading...",
+    "empty": "No invoices issued",
+    "colNumber": "Number",
+    "colDate": "Date",
+    "colClient": "Client",
+    "colVat": "VAT / Tax ID",
+    "colAmount": "Amount",
+    "colSdi": "SDI status",
+    "statusDelivered": "Delivered",
+    "statusSent": "Sent to SDI",
+    "statusRejected": "Rejected",
+    "statusPending": "Pending",
+    "modalTitle": "Issue electronic invoice",
+    "companyName": "Company name",
+    "vatId": "VAT number",
+    "sdiCode": "SDI code (7 chars)",
+    "address": "Full address",
+    "lines": "Lines",
+    "addLine": "Add line",
+    "description": "Description",
+    "qty": "Qty",
+    "priceGross": "Gross price",
+    "cancel": "Cancel",
+    "submit": "Send to Aruba SDI",
+    "submitting": "Sending...",
+    "success": "Invoice sent to SDI",
+    "error": "Invoice submission error"
+  },
+  "onboardingForm": {
+    "badge": "White-glove setup",
+    "stepProgress": "Step {{current}} of {{total}}",
+    "submittedTitle": "Form submitted successfully",
+    "submittedHint": "The Aura Syncro team received your data. We will contact you at your booked time to finish configuration.",
+    "submitSuccess": "Onboarding submitted. Appointment confirmed.",
+    "steps": {
+      "fiscal": "Fiscal & contact",
+      "fiscalHint": "Legal name, VAT/NIF and venue contact details",
+      "room": "Dining room",
+      "roomHint": "Areas, seats and table layout",
+      "menu": "Menu & cuisine",
+      "menuHint": "Upload your menu or describe it — select cuisine type",
+      "hardware": "Hardware & POS",
+      "hardwareHint": "Cash points, printers and terminal preferences",
+      "calendar": "Setup appointment",
+      "calendarHint": "Pick a day and time for your configuration call"
+    },
+    "fields": {
+      "restaurantName": "Restaurant name",
+      "legalName": "Legal business name",
+      "taxId": "VAT / NIF",
+      "address": "Full address",
+      "email": "Email",
+      "phone": "Phone",
+      "totalSeats": "Total seats",
+      "areaName": "Area name (e.g. Main room, Terrace)",
+      "newArea": "New area",
+      "tableLabel": "Table",
+      "cuisineType": "Cuisine type",
+      "selectCuisine": "Select…",
+      "menuDetails": "Menu details (free text)",
+      "menuDetailsPlaceholder": "Categories, dishes, prices, allergens…",
+      "cashPoints": "Cash register points",
+      "printersKitchen": "Kitchen printers",
+      "printersBar": "Bar printers",
+      "printersCash": "Cash desk printers",
+      "posPreference": "POS preference",
+      "posNotes": "Hardware notes / terminal brand",
+      "appointmentNotes": "Notes for the call (optional)"
+    },
+    "menu": {
+      "dropTitle": "Drop your menu here (PDF or image)",
+      "dropHint": "Max 10 MB — or fill in the text field below",
+      "browse": "Browse files"
+    },
+    "cuisine": {
+      "pizzeria": "Pizzeria",
+      "gourmet": "Gourmet / Fine dining",
+      "meat": "Meat / Steakhouse",
+      "fish": "Seafood",
+      "regional": "Regional cuisine",
+      "fusion": "Fusion / Contemporary",
+      "other": "Other"
+    },
+    "pos": {
+      "pending": "To be defined on the call",
+      "stripe": "Stripe Terminal",
+      "external": "External fiscal register",
+      "simulation": "Training only (simulation)"
+    },
+    "calendar": {
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "loading": "Loading availability…",
+      "noSlots": "No slots on this day",
+      "selected": "Appointment: {{datetime}}"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit & book setup",
+      "addTable": "Add table",
+      "addArea": "Add area"
+    },
+    "errors": {
+      "required": "Required field",
+      "areaRequired": "Add at least one area",
+      "tableRequired": "Add at least one table per area",
+      "seatsMismatch": "Total seats do not match the sum of table seats",
+      "menuRequired": "Upload a menu file or enter text details",
+      "slotRequired": "Select an appointment time",
+      "invalidFileType": "Unsupported format (PDF, JPG, PNG, WebP)",
+      "fileTooLarge": "File too large (max 10 MB)"
+    }
+  },
+  "publicBooking": {
+    "badge": "Table reservation",
+    "subtitle": "Fill in the form to request a table. We will confirm as soon as possible.",
+    "welcome": "Welcome to {{name}}. We are happy to host you: tell us your booking details in a few seconds.",
+    "hours": "Hours: {{open}} – {{close}}",
+    "name": "Full name",
+    "phone": "Phone",
+    "emailOptional": "Email (optional)",
+    "date": "Date",
+    "time": "Time",
+    "covers": "Party size",
+    "maxCovers": "Maximum {{max}} guests per booking",
+    "notes": "Notes",
+    "notesPlaceholder": "Allergies, high chair, special occasion…",
+    "depositNotice": "A deposit of {{amount}} is required to confirm your booking.",
+    "submit": "Request reservation",
+    "success": "Reservation sent!",
+    "successTitle": "Request received",
+    "successDesc": "The restaurant has received your booking. You will get confirmation by phone or email.",
+    "viewMenu": "View digital menu",
+    "notFound": "Restaurant not found",
+    "coversInvalid": "Enter a party size between 1 and {{max}}.",
+    "error": "Could not send the reservation. Please try again or call the restaurant."
+  },
+  "legal": {
+    "registerAccept": "I declare that I have read and accept the <1>Terms of Service</1>, <2>Privacy Policy</2>, <3>Cookie Policy</3> and <4>DPA</4> for processing my customers' data. Document version: {{version}}.",
+    "cookieBanner": {
+      "title": "Cookie settings",
+      "description": "We use strictly necessary cookies. With your consent we also enable aggregated analytics (Vercel) and error monitoring (Sentry). No advertising trackers.",
+      "policyLink": "Cookie Policy",
+      "acceptAll": "Accept all",
+      "necessaryOnly": "Necessary only"
+    }
+  },
+  "publicMeta": {
+    "pricing": {
+      "title": "Aura Syncro Pricing | Restaurant cloud software",
+      "description": "Premium all-inclusive plan for structured restaurants: turnkey setup and subscription from €199/month. Italy, Spain and Canary Islands."
+    },
+    "contact": {
+      "title": "Contact Aura Syncro | Support and demo",
+      "description": "Contact the Aura Syncro team for demos, Premium onboarding and technical support."
+    },
+    "login": {
+      "title": "Sign in | Aura Syncro",
+      "description": "Sign in to the Aura Syncro dashboard to manage tables, orders, payments and fiscal reporting."
+    },
+    "privacy": {
+      "title": "Privacy Policy | Aura Syncro",
+      "description": "Privacy policy for the Aura Syncro restaurant SaaS platform."
+    },
+    "terms": {
+      "title": "Terms of Service | Aura Syncro",
+      "description": "Terms and conditions for using the Aura Syncro platform."
+    },
+    "cookie": {
+      "title": "Cookie Policy | Aura Syncro",
+      "description": "Cookie policy for the Aura Syncro website and application."
+    },
+    "dpa": {
+      "title": "DPA | Aura Syncro",
+      "description": "Data Processing Agreement for Aura Syncro."
+    },
+    "guestPrivacy": {
+      "title": "Guest privacy | Aura Syncro",
+      "description": "Privacy information for guests of restaurants using Aura Syncro."
     }
   }
 }

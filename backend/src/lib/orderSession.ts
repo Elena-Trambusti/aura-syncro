@@ -194,12 +194,13 @@ export async function occupyTableIfAvailable(
     return updated.count > 0
   }
 
+  // OCCUPIED senza ordini attivi = stato zombi: ripara a CLEANING e rifiuta nuovo occupy
   if (table.status === 'OCCUPIED') {
-    const updated = await tx.table.updateMany({
+    await tx.table.updateMany({
       where: { id: tableId, restaurantId, status: 'OCCUPIED' },
-      data: { status: 'OCCUPIED' },
+      data: { status: 'CLEANING' },
     })
-    return updated.count > 0
+    return false
   }
 
   return false

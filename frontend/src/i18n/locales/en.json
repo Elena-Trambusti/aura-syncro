@@ -304,9 +304,6 @@
     "confirmCleaningTitle": "Table Reset",
     "confirmCleaningDescription": "Do you really want to confirm cleaning for table {{number}}?",
     "confirmCleaningConfirm": "Confirm cleaning",
-    "confirmCleaningTitle": "Table Reset",
-    "confirmCleaningDescription": "Do you really want to confirm cleaning for table {{number}}?",
-    "confirmCleaningConfirm": "Confirm cleaning",
     "tableReady": "Table {{number}} ready",
     "needsCleaning": "Needs cleaning",
     "startCleaningHint": "After payment the table moves to cleaning. Tap it on the map to mark it free.",
@@ -485,6 +482,10 @@
     "posNone": "None (software only)",
     "posIpLabel": "Local IP address",
     "posNetworkHint": "Tablet and register must be on the same Wi-Fi network. Printing is local.",
+    "telegramTitle": "AI alerts on Telegram",
+    "telegramDesc": "Link your Telegram account to receive predictive alerts and reorder suggestions on your phone in real time.",
+    "telegramConnect": "Connect Telegram",
+    "telegramConnected": "✅ Telegram is already connected! You will receive AI alerts on this account.",
     "reservationsTitle": "Reservations & no-show protection",
     "reservationsDesc": "Require a credit card guarantee to confirm tables.",
     "depositRequired": "Require deposit to confirm tables",
@@ -1106,7 +1107,10 @@
           "summaryElectronicTips": "Tracked Electronic Tips — 5% substitute tax register",
           "summaryReconciliation": "POS Bank Reconciliation Total",
           "footer": "Automatically generated document · {{count}} transactions · Tips exempt from VAT (Italian regulations).",
-          "filenamePrefix": "fiscal-register"
+          "filenamePrefix": "fiscal-register",
+          "tipsSectionTitle": "Mance Elettroniche Tracciate (Esenti IVA — Soggette a imposta sostitutiva)",
+          "legalDisclaimer": "Documento ad uso gestionale interno. Non sostituisce lo scontrino del Registratore Telematico né l'invio allo SDI/FatturaPA.",
+          "complianceNotice": "Catena di integrità crittografica attiva su ogni chiusura conto (predisposizione AgID)."
         }
       },
       "ES_CANARIAS": {
@@ -1151,7 +1155,10 @@
           "summaryTips": "Total Staff Tips (IGIC exempt)",
           "summaryReconciliation": "POS Bank Reconciliation Total",
           "footer": "Automatically generated document · {{count}} transactions · Tips exempt from IGIC (Canarias regulations).",
-          "filenamePrefix": "fiscal-register"
+          "filenamePrefix": "fiscal-register",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       },
       "ES_PENINSULA": {
@@ -1196,7 +1203,10 @@
           "summaryTips": "Total Staff Tips (VAT exempt)",
           "summaryReconciliation": "POS Bank Reconciliation Total",
           "footer": "Automatically generated document · {{count}} transactions · Tips exempt from VAT (Spanish regulations).",
-          "filenamePrefix": "fiscal-register"
+          "filenamePrefix": "fiscal-register",
+          "integrityHash": "Hash VeriFactu",
+          "legalDisclaimer": "Libro registro interno conforme alla predisposizione Ley Antifraude 11/2021. No sustituye facturación oficial AEAT.",
+          "complianceNotice": "Cada transacción incluye hash SHA-256 encadenado (inalterabilidad VeriFactu)."
         }
       }
     }
@@ -1450,6 +1460,9 @@
   },
   "orderModal": {
     "title": "Table {{number}}",
+    "a11yTitle": "Order for table {{number}}",
+    "a11yLoading": "Loading order",
+    "a11yDescription": "Order and menu management",
     "seats": "{{count}} seats",
     "tabMenu": "Menu",
     "tabOrder": "Order",
@@ -1484,6 +1497,7 @@
     "tax": "VAT",
     "orderSent": "Order sent to kitchen!",
     "sendError": "Unable to send order",
+    "optimisticOrderPending": "Wait for the order to sync before adding more dishes.",
     "minModifiers": "Select at least {{min}} options for {{group}}",
     "dishAdded": "Dish added!",
     "kitchenPrintFailed": "Order sent but kitchen print failed. Check the printer under Settings → Hardware.",
@@ -1567,7 +1581,7 @@
     "splitIncrementalHint": "Collect each guest share with the button next to their name. Fiscal receipt closes on the last payment.",
     "splitFinalizeAll": "Finalize full bill (card)",
     "splitBreakdown": "Split breakdown",
-    "receiptEmail": "Receipt email (simulated)",
+    "receiptEmail": "Receipt email",
     "receiptEmailPlaceholder": "guest@email.com",
     "grandTotal": "Total due",
     "finalize": "Finalize payment",
@@ -1575,15 +1589,20 @@
     "paymentError": "Error finalizing payment",
     "notAvailable": "Order unavailable or already paid",
     "cashSessionRequired": "Open the cash drawer before accepting cash payments.",
+    "cashSessionLoading": "Checking cash drawer session…",
     "cashSessionLink": "Go to cash drawer",
     "back": "Back",
     "receiptTitle": "Fiscal receipt",
     "transactionId": "Transaction {{id}}",
     "fiscalNote": "Document generated by Aura Syncro fiscal engine",
-    "simulatePrint": "Simulate print",
-    "simulateEmail": "Simulate email",
+    "simulatePrint": "Print receipt",
+    "simulateEmail": "Send receipt",
     "printSimulated": "Print simulated",
     "emailSimulated": "Email simulated",
+    "printStarted": "Print started",
+    "printFailed": "Could not print the receipt",
+    "receiptEmailUnavailable": "Receipt email is not configured. Use print or contact Aura support.",
+    "stripeTerminalBlocked": "Stripe Terminal card payment is not available on this device yet. Use cash or a configured POS.",
     "discount": "Discount",
     "promoCode": "Promo code",
     "promoCodePlaceholder": "e.g. SUMMER10",
@@ -1893,6 +1912,7 @@
     "browseBeforeVisitHint": "Browse our restaurant menu. Want to visit? Book a table below.",
     "bookingFooterHint": "Not seated yet? Book before you arrive.",
     "browseOnlyHint": "Digital menu for browsing only — no phone orders.",
+    "fiscalUnavailable": "Fiscal configuration unavailable. Tax cannot be calculated and online ordering is disabled.",
     "bookTable": "Book a table",
     "addToCart": "Add",
     "addedToCart": "{{name}} added to cart",
@@ -2057,7 +2077,11 @@
     "trust": {
       "eyebrow": "Built for restaurants in",
       "aria": "Supported geographic markets",
-      "items": ["Italy", "Spain", "Canary Islands"]
+      "items": [
+        "Italy",
+        "Spain",
+        "Canary Islands"
+      ]
     },
     "features": {
       "eyebrow": "Platform",

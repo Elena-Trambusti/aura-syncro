@@ -244,7 +244,7 @@ export default function InventoryPage() {
             {filtered.map(item => {
               const isLow = item.quantity <= item.minQuantity
               return (
-                <tr key={item.id} className={`hover:glass-table-head transition-colors ${isLow ? 'bg-red-950/40/50' : ''}`}>
+                <tr key={item.id} className={`hover:glass-table-head transition-colors ${isLow ? 'bg-red-950/40' : ''}`}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       {isLow && <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}

@@ -18,9 +18,11 @@ const SENSITIVE_SETTINGS_FIELDS = new Set([
   'stripeCustomerId',
   'stripeSubscriptionId',
   'stripeProSubscriptionId',
+  'stripeConnectAccountId',
   'posMerchantId',
   'posSetupNotes',
   'printAgentToken',
+  'telegramChatId',
 ])
 
 function serializeRestaurantResponse(
@@ -38,6 +40,8 @@ function serializeRestaurantResponse(
   }
   safeSettings.hasStripeBilling = Boolean(settings.stripeCustomerId)
   safeSettings.hasStripeProAddon = Boolean(settings.stripeProSubscriptionId)
+  safeSettings.hasStripeConnect = Boolean(settings.stripeConnectAccountId)
+  safeSettings.hasTelegramAlerts = Boolean(settings.telegramChatId)
 
   return { ...base, settings: safeSettings }
 }
@@ -119,6 +123,22 @@ restaurantRouter.get('/', requireRole('OWNER', 'MANAGER'), async (req: AuthReque
 restaurantRouter.get('/pos-status', requireRole('OWNER', 'MANAGER'), async (req: AuthRequest, res: Response): Promise<void> => {
   const config = await loadRestaurantPosConfig(req.restaurantId!)
   res.json(serializePosStatusForCheckout(config))
+})
+
+/** Deep link Telegram con HMAC pairing token (solo OWNER). */
+restaurantRouter.get('/telegram-link', requireRole('OWNER'), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { buildTelegramDeepLink, buildTelegramPairToken } = await import('../lib/telegramBot')
+    const restaurantId = req.restaurantId!
+    const deepLink = buildTelegramDeepLink(restaurantId)
+    res.json({
+      deepLink,
+      startPayload: `${restaurantId}_${buildTelegramPairToken(restaurantId)}`,
+    })
+  } catch (err) {
+    console.error('[restaurant/telegram-link]', err)
+    res.status(503).json({ error: 'Telegram pairing non disponibile' })
+  }
 })
 
 /** Checklist go-live verificata dal sistema (menu, fiscale, POS, tavoli). */
@@ -304,5 +324,5 @@ restaurantRouter.put('/', requirePermission('settings.manage'), requireFullDashb
     include: { settings: true },
   })
 
-  res.json(restaurant)
+  res.json(serializeRestaurantResponse(restaurant))
 })

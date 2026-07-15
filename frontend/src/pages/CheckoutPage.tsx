@@ -38,7 +38,6 @@ import { resolveToastApiError } from '../lib/formatApiError'
 import {
   markTableCleaningAfterPayment,
   patchTableInQueryCache,
-  type CachedTableRow,
   type TableStatus,
 } from '../lib/tableQueryCache'
 import {
@@ -140,12 +139,7 @@ export default function CheckoutPage() {
 
   const isPaymentBusy = payingTarget !== null
 
-  const finalizeIdempotencyKey = useMemo(
-    () => (orderId ? `checkout-finalize:${orderId}` : ''),
-    [orderId],
-  )
-
-  const { data: cashSession } = useQuery<{ id: string; status: string } | null>({
+  const { data: cashSession, isPending: isCashSessionPending } = useQuery<{ id: string; status: string } | null>({
     queryKey: tq(tk, 'cash', 'current'),
     queryFn: () => api.get('/cash/session/current').then(r => r.data),
     enabled: Boolean(orderId) && canPay,
@@ -177,8 +171,13 @@ export default function CheckoutPage() {
   })
 
   const order = data?.order
-  const needsCashSession = (paymentMethod === 'CASH' || (paymentMethod === 'SPLIT' && splitSettlement === 'CASH'))
-    && cashSession === null
+  const cashPaymentSelected =
+    paymentMethod === 'CASH' || (paymentMethod === 'SPLIT' && splitSettlement === 'CASH')
+  const cashSessionLoading = cashPaymentSelected && isCashSessionPending
+  const needsCashSession =
+    cashPaymentSelected
+    && !isCashSessionPending
+    && (!cashSession?.id || cashSession.status !== 'OPEN')
   const parsedTip = wantsTip ? Math.max(0, moneyNumber(tipAmount.replace(',', '.'))) : 0
   const orderTotal = moneyNumber(order?.total)
   const grandTotal = addMoney(orderTotal, parsedTip)
@@ -214,6 +213,36 @@ export default function CheckoutPage() {
     () => order?.items.filter(i => i.status !== 'CANCELLED') ?? [],
     [order?.items],
   )
+
+  const splitAssignmentsFingerprint = useMemo(() => {
+    if (paymentMethod !== 'SPLIT' || splitMode !== 'by_items') return ''
+    return activeItems
+      .map(it => `${it.id}:${itemAssignments[it.id] ?? 0}`)
+      .sort()
+      .join(',')
+  }, [paymentMethod, splitMode, activeItems, itemAssignments])
+
+  const finalizeIdempotencyKey = useMemo(() => {
+    if (!orderId) return ''
+    const methodFp =
+      paymentMethod === 'SPLIT'
+        ? `SPLIT-${splitSettlement}-${splitMode}-g${guestCount}`
+        : paymentMethod
+    const tipFp = wantsTip ? String(parsedTip) : '0'
+    const waiterFp = tipWaiterId || '-'
+    const assignFp = splitAssignmentsFingerprint ? `:a:${splitAssignmentsFingerprint}` : ''
+    return `checkout-finalize:${orderId}:${methodFp}:tip:${tipFp}:w:${waiterFp}${assignFp}`
+  }, [
+    orderId,
+    paymentMethod,
+    splitSettlement,
+    splitMode,
+    guestCount,
+    wantsTip,
+    parsedTip,
+    tipWaiterId,
+    splitAssignmentsFingerprint,
+  ])
 
   const splitPreview = useMemo(() => {
     if (paymentMethod !== 'SPLIT' || !order) return null
@@ -264,6 +293,21 @@ export default function CheckoutPage() {
     posStatus?.mode === 'EXTERNAL'
     && usesCardSettlement(paymentMethod, splitSettlement)
     && !isAndroidTablet()
+  const stripeTerminalBlocked =
+    posStatus?.mode === 'STRIPE_TERMINAL'
+    && usesCardSettlement(paymentMethod, splitSettlement)
+  const cashOrSessionBlocked = cashSessionLoading || needsCashSession
+  const payBlockedReason = cashSessionLoading
+    ? t('checkout.cashSessionLoading')
+    : needsCashSession
+      ? t('checkout.cashSessionRequired')
+      : stripeTerminalBlocked
+        ? t('checkout.stripeTerminalBlocked')
+        : externalPosWebBlocked
+          ? t('checkout.externalPosWebBlocked')
+          : null
+  const payDisabled =
+    isPaymentBusy || cashOrSessionBlocked || externalPosWebBlocked || stripeTerminalBlocked
   const unpaidSplitGuest = paymentMethod === 'SPLIT'
     ? nextUnpaidSplitGuest(guestCount, order?.splitPaidGuestIndexes)
     : null
@@ -358,10 +402,13 @@ export default function CheckoutPage() {
   const canOptimisticallyComplete = useCallback(
     (splitGuestIndex?: number) => {
       if (splitUsesIncrementalCash && splitGuestIndex != null) return false
+      // Contanti possono finire in coda offline — niente ricevuta/tavolo ottimistici.
+      if (cashPaymentSelected) return false
       if (requiresBlockingExternalValidation(paymentMethod, splitSettlement, posStatus)) return false
+      if (stripeTerminalBlocked) return false
       return true
     },
-    [paymentMethod, splitSettlement, posStatus, splitUsesIncrementalCash],
+    [paymentMethod, splitSettlement, posStatus, splitUsesIncrementalCash, cashPaymentSelected, stripeTerminalBlocked],
   )
 
   const finalize = useMutation({
@@ -395,6 +442,10 @@ export default function CheckoutPage() {
               orderId,
               paymentMethod: 'CASH',
               tipAmount: parsedTip,
+              tipWaiterId: tipWaiterId || undefined,
+              discountCode: discountCode.trim() || undefined,
+              applyLoyaltyDiscount: true,
+              idempotencyKey: finalizeIdempotencyKey,
             })
             return { offlineQueued: true, queuedResult }
           }
@@ -405,18 +456,13 @@ export default function CheckoutPage() {
       throw lastErr
     },
     onMutate: (splitGuestIndex) => {
-      let previousTables: CachedTableRow[] | undefined
-      if (orderId && shouldReleaseTableOnFinalize(splitUsesIncrementalCash, splitGuestIndex)) {
-        previousTables = markTableCleaningAfterPayment(queryClient, tk, orderId)
-      }
-
+      // Non aggiornare tavoli/ricevuta qui: solo su successo server confermato.
       if (!canOptimisticallyComplete(splitGuestIndex)) {
-        return { optimistic: false as const, previousTables }
+        return { optimistic: false as const }
       }
       return {
         optimistic: true as const,
         previousReceipt: optimisticReceiptRef.current ?? finalizeResult,
-        previousTables,
       }
     },
     onSuccess: (result: (CheckoutFinalizeResult & { partial?: boolean; remaining?: number; table?: { id: string; number: number; status: string } | null }) | { offlineQueued: true; queuedResult: 'synced' | 'queued' }, _splitGuestIndex, context) => {
@@ -425,6 +471,8 @@ export default function CheckoutPage() {
           setFinalizeResult(context.previousReceipt ?? null)
           optimisticReceiptRef.current = null
         }
+        // Coda offline: non lasciare lo stato tavolo "CLEANING" senza conferma server.
+        void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables'), refetchType: 'active' })
         toast.success(t('offline.queued', { defaultValue: 'Operazione salvata: verrà sincronizzata appena torna la connessione.' }))
         return
       }
@@ -474,9 +522,6 @@ export default function CheckoutPage() {
       )
     },
     onError: async (err: { response?: { data?: { error?: string; code?: string } }; message?: string }, _splitGuestIndex, context) => {
-      if (context?.previousTables) {
-        queryClient.setQueryData(tq(tk, 'tables'), context.previousTables)
-      }
       if (context?.optimistic) {
         setFinalizeResult(context.previousReceipt ?? null)
         optimisticReceiptRef.current = null
@@ -520,9 +565,13 @@ export default function CheckoutPage() {
 
   const handleFinalizePayment = useCallback(
     async (splitGuestIndex?: number) => {
-      if (isPaymentBusy || needsCashSession || !orderId) return
+      if (isPaymentBusy || cashOrSessionBlocked || !orderId) return
       if (externalPosWebBlocked) {
         toast.error(t('checkout.externalPosWebBlocked'))
+        return
+      }
+      if (stripeTerminalBlocked) {
+        toast.error(t('checkout.stripeTerminalBlocked'))
         return
       }
       if (!navigator.onLine && paymentMethod !== 'CASH') {
@@ -577,19 +626,19 @@ export default function CheckoutPage() {
       buildOptimisticFinalizeResult,
       canOptimisticallyComplete,
       buildFinalizePayload,
+      cashOrSessionBlocked,
       externalPosWebBlocked,
       finalize,
       finalizeIdempotencyKey,
       grandTotal,
       isPaymentBusy,
-      needsCashSession,
       orderId,
       paymentMethod,
       posStatus?.mode,
       usesNativePosFlow,
       queryClient,
       splitPreview,
-      splitSettlement,
+      stripeTerminalBlocked,
       t,
       tk,
     ],
@@ -657,13 +706,21 @@ export default function CheckoutPage() {
       }}
       onPrint={() => {
         if (!finalizeResult.order) return
-        printReceipt(finalizeResult.order, restaurant?.name ?? '', {
-          taxLabel,
-          tipLabel: tRegime(t, fiscal.taxRegion, 'cards.tips.label'),
-        })
-        toast.success(t('checkout.printSimulated'))
+        void (async () => {
+          try {
+            await printReceipt(finalizeResult.order!, restaurant?.name ?? '', {
+              taxLabel,
+              tipLabel: tRegime(t, fiscal.taxRegion, 'cards.tips.label'),
+            })
+            toast.success(t('checkout.printStarted'))
+          } catch {
+            toast.error(t('checkout.printFailed'))
+          }
+        })()
       }}
-      onEmail={() => toast.success(t('checkout.emailSimulated'))}
+      onEmail={() => {
+        toast.error(t('checkout.receiptEmailUnavailable'))
+      }}
     />
   ) : null
 
@@ -760,6 +817,12 @@ export default function CheckoutPage() {
         {externalPosWebBlocked && (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {t('checkout.externalPosWebBlocked')}
+          </div>
+        )}
+
+        {stripeTerminalBlocked && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {t('checkout.stripeTerminalBlocked')}
           </div>
         )}
 
@@ -928,15 +991,17 @@ export default function CheckoutPage() {
               { key: 'SPLIT' as const, icon: Users, label: t('checkout.split') },
             ]).map(opt => {
               const Icon = opt.icon
+              const selected = paymentMethod === opt.key
               return (
                 <button
                   key={opt.key}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => setPaymentMethod(opt.key)}
                   className={cn(
                     'flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-colors',
-                    paymentMethod === opt.key
-                      ? 'border-amber-500 bg-aura-gold/10 text-amber-800'
+                    selected
+                      ? 'border-amber-500 bg-aura-gold/10 text-amber-200'
                       : 'border-white/[0.08] bg-navy-surface text-fumo hover:bg-white/[0.05]',
                   )}
                 >
@@ -947,10 +1012,19 @@ export default function CheckoutPage() {
             })}
           </div>
 
+          {cashSessionLoading && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <p className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                {t('checkout.cashSessionLoading')}
+              </p>
+            </div>
+          )}
+
           {needsCashSession && (
-            <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
               <p>{t('checkout.cashSessionRequired')}</p>
-              <Link to="/cassa" className="mt-2 inline-block font-semibold text-amber-800 underline">
+              <Link to="/cassa" className="mt-2 inline-block font-semibold text-amber-200 underline">
                 {t('checkout.cashSessionLink')}
               </Link>
             </div>
@@ -1037,11 +1111,11 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="tabular-nums text-pietra">{formatCurrency(g.total)}</span>
-                          {splitUsesIncrementalCash && canPay && !paid && !needsCashSession && (
+                          {splitUsesIncrementalCash && canPay && !paid && !cashOrSessionBlocked && (
                             <button
                               type="button"
                               onClick={() => handleFinalizePayment(g.index)}
-                              disabled={isPaymentBusy || needsCashSession || externalPosWebBlocked}
+                              disabled={payDisabled}
                               className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:pointer-events-none"
                             >
                               {payingTarget === g.index ? (
@@ -1077,7 +1151,7 @@ export default function CheckoutPage() {
           )}
         </section>
 
-        {/* Email ricevuta (simulata) */}
+        {/* Email ricevuta */}
         <section className="rounded-xl premium-card p-5 shadow-sm">
           <label className="block text-sm font-medium text-pietra">
             {t('checkout.receiptEmail')}
@@ -1101,15 +1175,22 @@ export default function CheckoutPage() {
             <p className="mb-3 text-sm text-fumo">{t('checkout.splitIncrementalHint')}</p>
           )}
           {showMainFinalize && (
-            <button
-              type="button"
-              onClick={() => handleFinalizePayment()}
-              disabled={isPaymentBusy || needsCashSession || externalPosWebBlocked}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60 disabled:pointer-events-none"
-            >
-              {payingTarget === 'main' ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-              {paymentMethod === 'SPLIT' ? t('checkout.splitFinalizeAll') : t('checkout.finalize')}
-            </button>
+            <>
+              {payBlockedReason && (
+                <p className="mb-3 text-sm text-amber-200" role="status">
+                  {payBlockedReason}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => handleFinalizePayment()}
+                disabled={payDisabled}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white hover:bg-aura-gold-light disabled:opacity-60 disabled:pointer-events-none"
+              >
+                {payingTarget === 'main' ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
+                {paymentMethod === 'SPLIT' ? t('checkout.splitFinalizeAll') : t('checkout.finalize')}
+              </button>
+            </>
           )}
         </div>
       </div>

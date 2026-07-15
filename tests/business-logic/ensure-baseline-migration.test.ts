@@ -29,4 +29,9 @@ describe('migrate-production.mjs', () => {
     expect(pkg.scripts['db:migrate']).toContain('migrate-production.mjs')
     expect(pkg.scripts['db:migrate']).not.toContain('tsx')
   })
+
+  it('esegue sempre prisma generate (niente skip su directory esistente)', () => {
+    expect(source).toContain("run('npx prisma generate')")
+    expect(source).not.toContain('già generato — skip generate')
+  })
 })

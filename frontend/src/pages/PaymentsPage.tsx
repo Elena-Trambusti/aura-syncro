@@ -34,7 +34,7 @@ interface OverviewData {
   mensile: { month: string; amount: number; count: number }[]
   recentPayments: PaymentOrder[]
   stripeEnabled: boolean
-  stripeConnectAccountId: string | null
+  hasStripeConnect: boolean
 }
 
 export default function PaymentsPage() {
@@ -88,7 +88,7 @@ export default function PaymentsPage() {
           </>
         )}
         actions={data ? (
-          data.stripeConnectAccountId ? (
+          data.hasStripeConnect ? (
             <a
               href="https://dashboard.stripe.com"
               target="_blank"

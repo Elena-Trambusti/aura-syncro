@@ -372,14 +372,37 @@ tablesRouter.post('/:id/claim', requirePermission('tables.status'), async (req: 
     select: { name: true },
   })
 
-  const updated = await prisma.table.update({
-    where: { id: table.id },
+  const claimed = await prisma.table.updateMany({
+    where: {
+      id: table.id,
+      restaurantId: tenantId(req),
+      OR: [
+        { servingUserId: null },
+        { servingUserId: req.userId! },
+      ],
+    },
     data: {
       servingUserId: req.userId!,
       servingUserName: user?.name ?? 'Staff',
       servingClaimedAt: new Date(),
     },
   })
+
+  if (claimed.count === 0) {
+    const current = await prisma.table.findFirst({ where: scopedWhere(req, req.params.id) })
+    res.status(409).json({
+      error: 'Tavolo già in carico a un altro cameriere',
+      code: 'TABLE_CLAIMED',
+      servingUserName: current?.servingUserName ?? null,
+    })
+    return
+  }
+
+  const updated = await prisma.table.findFirst({ where: scopedWhere(req, table.id) })
+  if (!updated) {
+    tenantNotFound(res, 'Tavolo non trovato')
+    return
+  }
 
   writeAuditLog({
     restaurantId: tenantId(req),

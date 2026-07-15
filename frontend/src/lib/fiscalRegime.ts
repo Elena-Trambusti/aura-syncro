@@ -51,7 +51,7 @@ export function defaultTaxRateForRegion(taxRegion: TaxRegion): number {
 }
 
 export const ALLOWED_TAX_RATES: Record<TaxRegion, readonly number[]> = {
-  IT_MAIN: [4, 10, 22, 0],
+  IT_MAIN: [4, 10, 22],
   ES_CANARIAS: [7, 13.5, 20],
   ES_PENINSULA: [10, 21],
 }

@@ -433,7 +433,7 @@ reportsRouter.get('/fiscal', requireRole('OWNER'), requireProPlan, async (req: A
   const strategy = getFiscalStrategyFromConfig(fiscal)
 
   const rows = orders.map(o => {
-    const row = buildFiscalTransactionRow(o, effectivePaidAt(o.paidAt, o.createdAt))
+    const row = buildFiscalTransactionRow(o, effectivePaidAt(o.paidAt, o.createdAt), fiscal.taxRate)
     return {
       fecha: row.fecha,
       orderId: row.orderId,

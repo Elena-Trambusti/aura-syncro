@@ -123,8 +123,8 @@ export function bootstrapI18nSync(): void {
     resources,
     lng: eager ? initial : 'it',
     fallbackLng: {
-      [CANARIAS_LOCALE]: ['it'],
-      es: ['it'],
+      [CANARIAS_LOCALE]: ['es', 'en', 'it'],
+      es: ['en', 'it'],
       default: ['it'],
     },
     supportedLngs: [...SUPPORTED],

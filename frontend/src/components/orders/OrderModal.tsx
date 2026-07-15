@@ -150,6 +150,12 @@ export default function OrderModal({
 
   const handleSendOrder = async () => {
     if (cart.length === 0 || !table || isSubmitting) return
+    if (isOptimisticOrder) {
+      toast.error(t('orderModal.optimisticOrderPending', {
+        defaultValue: 'Attendi la sincronizzazione dell\'ordine prima di aggiungere altri piatti.',
+      }))
+      return
+    }
     if (!activeOrder && !canCreateOrder) {
       toast.error(t('orderModal.noCreatePermission', { defaultValue: 'Non hai permesso di aprire nuove comande' }))
       return
@@ -192,23 +198,32 @@ export default function OrderModal({
     }
 
     setIsSubmitting(true)
+    const kitchenPrint = {
+      tableLabel,
+      items: printSnapshot,
+    }
     const sendPromise = (async () => {
       if (activeOrder) {
         const result = await submitAddOrderItems(
-          { orderId: activeOrder.id, items: lineItems },
+          { orderId: activeOrder.id, items: lineItems, kitchenPrint },
           { label: tableLabel },
         )
         return { ...result, orderId: result.orderId ?? activeOrder.id }
       }
       return submitCreateOrder(
-        { tableId: table.id, type: 'DINE_IN', items: lineItems, customerId: prefillCustomerId ?? undefined },
+        {
+          tableId: table.id,
+          type: 'DINE_IN',
+          items: lineItems,
+          customerId: prefillCustomerId ?? undefined,
+          kitchenPrint,
+        },
         { label: tableLabel },
       )
     })()
 
     flushSync(() => {
       setCart([])
-      setIsSubmitting(false)
       if (!isDesktop) {
         setTab('order')
       } else {
@@ -250,6 +265,9 @@ export default function OrderModal({
         invalidateOrderQueries()
         handleOrderSubmitError(err)
       })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   const getModifiersPrice = (item: MenuItem, modifiers: string[]) => {
@@ -263,7 +281,14 @@ export default function OrderModal({
   }
 
   const handleItemClick = (item: MenuItem) => {
-    if (!canModifyOrder) return
+    if (!canModifyOrder || isOptimisticOrder) {
+      if (isOptimisticOrder) {
+        toast.error(t('orderModal.optimisticOrderPending', {
+          defaultValue: 'Attendi la sincronizzazione dell\'ordine prima di aggiungere altri piatti.',
+        }))
+      }
+      return
+    }
     if (item.soldOut || item.orderable === false) {
       toast.error(t('orderModal.soldOutToast'))
       return
@@ -277,6 +302,12 @@ export default function OrderModal({
   }
 
   const addToCart = (item: MenuItem, modifiers: string[], modifierNames: string[]) => {
+    if (isOptimisticOrder) {
+      toast.error(t('orderModal.optimisticOrderPending', {
+        defaultValue: 'Attendi la sincronizzazione dell\'ordine prima di aggiungere altri piatti.',
+      }))
+      return
+    }
     setCart(prev => {
       const modifierKey = modifiers.slice().sort().join(',')
       const existing = prev.find(c => c.menuItemId === item.id && c.course === selectedCourse && (c.modifiers || []).slice().sort().join(',') === modifierKey)
@@ -324,7 +355,7 @@ export default function OrderModal({
 
   if (!table) {
     return (
-      <AuraDialog onClose={onClose} variant="fullscreen" hideClose overlayClassName="flex items-center justify-center p-4" a11yTitle="Caricamento ordine">
+      <AuraDialog onClose={onClose} variant="fullscreen" hideClose overlayClassName="flex items-center justify-center p-4" a11yTitle={t('orderModal.a11yLoading')}>
         <div className="w-10 h-10 border-4 border-aura-gold/40 border-t-aura-gold rounded-full animate-spin" />
       </AuraDialog>
     )
@@ -636,7 +667,7 @@ export default function OrderModal({
         <button
           type="button"
           onClick={handleSendOrder}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isOptimisticOrder}
           className="w-full rounded-xl bg-aura-gold py-3.5 text-sm font-semibold text-white transition-colors hover:bg-aura-gold-light disabled:opacity-60"
         >
           {t('orderModal.sendToKitchen')}
@@ -744,8 +775,8 @@ export default function OrderModal({
       variant="fullscreen"
       hideClose
       className="saas-modal flex min-h-0 flex-col"
-      a11yTitle={`Ordine tavolo ${table.number}`}
-      a11yDescription="Gestione comanda e menu"
+      a11yTitle={t('orderModal.a11yTitle', { number: table.number })}
+      a11yDescription={t('orderModal.a11yDescription')}
     >
       {/* Header compatto: titolo + azioni + tab mobile in un solo blocco fisso */}
       <div className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-navy-mid">

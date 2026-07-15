@@ -13,7 +13,13 @@ import {
   resolveTipWaiterId,
 } from '../lib/orderPayment'
 import { completeOrderPayment } from '../lib/completePayment'
-import { readIdempotencyKey, getIdempotentResponse, saveIdempotentResponse } from '../lib/apiIdempotency'
+import {
+  readIdempotencyKey,
+  getIdempotentResponse,
+  saveIdempotentResponse,
+  acquireIdempotencyLock,
+  releaseIdempotencyLock,
+} from '../lib/apiIdempotency'
 import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
 import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { depositLimiter, publicCheckoutLimiter } from '../middleware/rateLimit'
@@ -148,11 +154,36 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     nativePosConfirmed,
   } = parsed.data
   const idempotencyKey = readIdempotencyKey(req)
+  const finalizeRoute = 'POST /payments/finalize'
+  let clientIdempotencyLocked = false
+
   if (idempotencyKey && req.restaurantId) {
-    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize')
-    if (cached && cached.statusCode !== 202) {
+    const cached = await getIdempotentResponse(req.restaurantId, idempotencyKey, finalizeRoute)
+    if (cached) {
+      if (cached.statusCode === 202) {
+        res.status(409).json({ error: 'Pagamento già in elaborazione', code: 'PAYMENT_IN_PROGRESS' })
+        return
+      }
       res.status(cached.statusCode).json(cached.responseBody)
       return
+    }
+    const locked = await acquireIdempotencyLock(req.restaurantId, idempotencyKey, finalizeRoute)
+    if (!locked) {
+      const raced = await getIdempotentResponse(req.restaurantId, idempotencyKey, finalizeRoute)
+      if (raced && raced.statusCode !== 202) {
+        res.status(raced.statusCode).json(raced.responseBody)
+        return
+      }
+      res.status(409).json({ error: 'Pagamento già in elaborazione', code: 'PAYMENT_IN_PROGRESS' })
+      return
+    }
+    clientIdempotencyLocked = true
+  }
+
+  const releaseClientIdempotency = async () => {
+    if (clientIdempotencyLocked && idempotencyKey && req.restaurantId) {
+      await releaseIdempotencyLock(req.restaurantId, idempotencyKey)
+      clientIdempotencyLocked = false
     }
   }
 
@@ -160,6 +191,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
 
   const order = await loadOrderForCheckout(orderId, req.restaurantId!)
   if (!order) {
+    await releaseClientIdempotency()
     res.status(404).json({ error: 'Ordine non trovato', code: 'ORDER_NOT_FOUND' })
     return
   }
@@ -181,17 +213,21 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'INVALID_DISCOUNT_CODE') {
+      await releaseClientIdempotency()
       res.status(400).json({ error: 'Codice sconto non valido', code })
       return
     }
     if (code === 'NO_LOYALTY_DISCOUNT') {
+      await releaseClientIdempotency()
       res.status(400).json({ error: 'Nessuno sconto fedeltà disponibile per questo cliente', code })
       return
     }
     if (code === 'ORDER_CLOSED') {
-      res.status(400).json({ error: 'Ordine chiuso' })
+      await releaseClientIdempotency()
+      res.status(400).json({ error: 'Ordine chiuso', code })
       return
     }
+    await releaseClientIdempotency()
     throw err
   }
 
@@ -199,6 +235,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     ? await loadOrderForCheckout(orderId, req.restaurantId!)
     : order
   if (!refreshedOrder) {
+    await releaseClientIdempotency()
     res.status(404).json({ error: 'Ordine non trovato', code: 'ORDER_NOT_FOUND' })
     return
   }
@@ -213,7 +250,8 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       alreadyPaid: true,
     }
     if (idempotencyKey && req.restaurantId) {
-      await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, alreadyPaidBody)
+      await saveIdempotentResponse(req.restaurantId, idempotencyKey, finalizeRoute, 200, alreadyPaidBody)
+      clientIdempotencyLocked = false
     }
     res.json(alreadyPaidBody)
     return
@@ -223,6 +261,15 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     ? (splitSettlement ?? 'CARD')
     : paymentMethod
 
+  if (paymentMethod === 'SPLIT' && splitGuestIndex != null && (splitSettlement ?? 'CASH') !== 'CASH') {
+    await releaseClientIdempotency()
+    res.status(400).json({
+      error: 'Incasso split incrementale disponibile solo in contanti',
+      code: 'SPLIT_INCREMENTAL_CASH_ONLY',
+    })
+    return
+  }
+
   const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
   const externalPosGuard = assertExternalPosNativeConfirmed(
     posConfig.mode,
@@ -230,6 +277,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     nativePosConfirmed,
   )
   if (!externalPosGuard.ok) {
+    await releaseClientIdempotency()
     res.status(409).json({ error: externalPosGuard.error, code: externalPosGuard.code })
     return
   }
@@ -240,13 +288,16 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
   } catch (err) {
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'UNAUTHORIZED_TIP_ASSIGNMENT') {
+      await releaseClientIdempotency()
       res.status(403).json({ error: 'Non sei autorizzato ad assegnare mance ad altri colleghi', code })
       return
     }
     if (code === 'INVALID_TIP_WAITER') {
+      await releaseClientIdempotency()
       res.status(400).json({ error: 'Cameriere non valido', code })
       return
     }
+    await releaseClientIdempotency()
     throw err
   }
 
@@ -283,6 +334,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       const { recordSplitGuestPayment } = await import('../lib/splitGuestPayment')
       const guestShare = splitBreakdown.guests[splitGuestIndex]?.share
       if (guestShare == null) {
+        await releaseClientIdempotency()
         res.status(400).json({ error: 'Indice ospite split non valido', code: 'SPLIT_GUEST_INDEX_INVALID' })
         return
       }
@@ -311,7 +363,8 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
           receipt: { emailSent: false, emailTo: null },
         }
         if (idempotencyKey && req.restaurantId) {
-          await saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, partialBody)
+          await saveIdempotentResponse(req.restaurantId, idempotencyKey, finalizeRoute, 200, partialBody)
+          clientIdempotencyLocked = false
         }
         res.json(partialBody)
         return
@@ -335,7 +388,6 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       discountOptions,
     })
 
-    // Return only the fields required by the frontend CheckoutFinalizeResult
     const responseBody = {
       transactionId: result.transactionId,
       order: updatedOrder,
@@ -350,8 +402,8 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       },
     }
     if (idempotencyKey && req.restaurantId) {
-      void saveIdempotentResponse(req.restaurantId, idempotencyKey, 'POST /payments/finalize', 200, responseBody)
-        .catch(err => console.error('[payments] idempotency save failed', err))
+      await saveIdempotentResponse(req.restaurantId, idempotencyKey, finalizeRoute, 200, responseBody)
+      clientIdempotencyLocked = false
     }
     writeAuditLog({
       restaurantId: req.restaurantId!,
@@ -364,6 +416,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     })
     res.json(responseBody)
   } catch (err) {
+    await releaseClientIdempotency()
     const code = err instanceof Error ? err.message : 'UNKNOWN'
     if (code === 'ORDER_NOT_FOUND') {
       res.status(404).json({ error: 'Ordine non trovato', code })
@@ -375,6 +428,10 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     }
     if (code === 'ORDER_CANCELLED') {
       res.status(400).json({ error: 'Ordine annullato', code })
+      return
+    }
+    if (code === 'GUEST_ALREADY_PAID' || code === 'SPLIT_AMOUNT_MISMATCH') {
+      res.status(409).json({ error: 'Incasso split non valido o già registrato', code })
       return
     }
     if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
@@ -522,10 +579,21 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
   }
 
   const { orderId, tipAmount, tipWaiterId, paymentMethod } = result.data
+  const nativePosConfirmed = req.body?.nativePosConfirmed === true
+
+  const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
+  const externalPosGuard = assertExternalPosNativeConfirmed(
+    posConfig.mode,
+    paymentMethod,
+    nativePosConfirmed,
+  )
+  if (!externalPosGuard.ok) {
+    res.status(409).json({ error: externalPosGuard.error, code: externalPosGuard.code })
+    return
+  }
 
   let validatedTipWaiterId: string | undefined
   try {
-    // Per pos-checkout, proviamo a ricaricare l'ordine per ottenere l'order.waiterId originale
     const posOrder = await prisma.order.findFirst({ where: { id: orderId, restaurantId: req.restaurantId! }, select: { waiterId: true } })
     validatedTipWaiterId = await resolveTipWaiterId(req.restaurantId!, tipWaiterId, req.userId, req.userRole, posOrder?.waiterId)
   } catch (err) {
@@ -917,7 +985,7 @@ paymentsRouter.get('/overview', authenticate, requirePermission('payments.overvi
       })),
     })),
     stripeEnabled: STRIPE_ENABLED,
-    stripeConnectAccountId: restaurant?.settings?.stripeConnectAccountId ?? null,
+    hasStripeConnect: Boolean(restaurant?.settings?.stripeConnectAccountId),
   })
 })
 

@@ -1,7 +1,7 @@
 import { prisma } from './prisma'
 import { loadRestaurantPosConfig } from './posIntegration'
 import { buildFiscalConfig } from './taxEngine'
-import { isPosSimulationAllowed } from './env'
+import { isPosSimulationAllowed, isProduction } from './env'
 
 export type OnboardingReadiness = {
   menuConfigured: boolean
@@ -17,6 +17,13 @@ export type OnboardingReadiness = {
   cashSessionOpen: boolean
   readyForService: boolean
   checks: Array<{ id: string; ok: boolean; detail?: string }>
+}
+
+/** POS reale obbligatorio in produzione: SIMULATION non soddisfa go-live. */
+function isPosReadyForService(mode: string): boolean {
+  if (mode === 'EXTERNAL' || mode === 'STRIPE_TERMINAL') return true
+  if (mode === 'SIMULATION') return !isProduction() && isPosSimulationAllowed()
+  return false
 }
 
 /** Verifica automatica prerequisiti go-live (checklist sistema, non checkbox utente). */
@@ -44,10 +51,9 @@ export async function computeOnboardingReadiness(restaurantId: string): Promise<
   const menuConfigured = menuItemCount >= 3
   const tablesConfigured = tableCount >= 1
   const posConfig = await loadRestaurantPosConfig(restaurantId)
-  const posReady =
-    posConfig.mode !== 'PENDING_SETUP'
-    || isPosSimulationAllowed()
+  const posReady = isPosReadyForService(posConfig.mode)
   const subscriptionActive = restaurant?.settings?.hasActiveSubscription === true
+  const cashSessionOpen = Boolean(openCash)
 
   const checks = [
     { id: 'subscription', ok: subscriptionActive },
@@ -55,6 +61,7 @@ export async function computeOnboardingReadiness(restaurantId: string): Promise<
     { id: 'tables', ok: tablesConfigured, detail: `${tableCount} tavoli` },
     { id: 'fiscal', ok: fiscalConfigured },
     { id: 'pos', ok: posReady, detail: posConfig.mode },
+    { id: 'cash', ok: cashSessionOpen, detail: cashSessionOpen ? 'open' : 'closed' },
     { id: 'staff', ok: staffCount >= 1, detail: `${staffCount} utenti` },
   ]
 
@@ -76,7 +83,7 @@ export async function computeOnboardingReadiness(restaurantId: string): Promise<
     posMode: posConfig.mode,
     subscriptionActive,
     staffCount,
-    cashSessionOpen: Boolean(openCash),
+    cashSessionOpen,
     readyForService,
     checks,
   }

@@ -1,4 +1,12 @@
+import { timingSafeEqual } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
+
+function safeEqualString(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'utf8')
+  const bufB = Buffer.from(b, 'utf8')
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
+}
 
 export function requireAdminKey(req: Request, res: Response, next: NextFunction): void {
   // Il browser invia OPTIONS senza X-Admin-Key: non bloccare il preflight CORS.
@@ -22,7 +30,7 @@ export function requireAdminKey(req: Request, res: Response, next: NextFunction)
 
   const provided = bearer ?? headerKey
 
-  if (!provided || provided !== adminKey) {
+  if (!provided || !safeEqualString(provided, adminKey)) {
     res.status(401).json({ error: 'Chiave admin non valida' })
     return
   }
