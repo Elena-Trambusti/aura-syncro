@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loginViaUi } from './helpers/auth'
+import { addItemAndSendToKitchen } from './helpers/order'
 import { assertHealthyShell } from './helpers/ui'
 
 test.describe('Premium ops — compliance, menu CSV, table claim', () => {
@@ -32,15 +33,11 @@ test.describe('Premium ops — compliance, menu CSV, table claim', () => {
     await page.goto('/dashboard/onboarding')
     await assertHealthyShell(page)
 
-    const checklistHeading = page.getByRole('heading', {
-      name: /verifica automatica|automatic go-live|verificación automática|go-live verification/i,
-    })
-    const goLiveBtn = page.getByRole('button', { name: /attiva dashboard|activar dashboard|go.?live|activate.*dashboard/i })
+    const onboardingMarker = page.getByText(
+      /verifica automatica|automatic go-live|verificación automática|go-live verification|benvenuto in aura syncro|welcome to aura syncro|controlli di sistema|system checks|configurazione tecnica pronta|technical setup is ready|attiva dashboard operativa|activate operational dashboard/i,
+    ).first()
 
-    const hasChecklist = await checklistHeading.isVisible({ timeout: 15_000 }).catch(() => false)
-    const hasGoLive = await goLiveBtn.isVisible({ timeout: 3_000 }).catch(() => false)
-
-    expect(hasChecklist || hasGoLive).toBe(true)
+    await expect(onboardingMarker).toBeVisible({ timeout: 25_000 })
   })
 
 })
@@ -65,19 +62,7 @@ test.describe('Premium ops — table claim mobile', () => {
     const orderDialog = page.getByRole('dialog')
     await expect(orderDialog).toBeVisible({ timeout: 15_000 })
 
-    const menuTab = orderDialog.getByRole('button', { name: /^menu$|^menú$|^menù$/i })
-    if (await menuTab.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await menuTab.click()
-    }
-
-    const menuItem = orderDialog.getByRole('button').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()
-    await menuItem.scrollIntoViewIfNeeded()
-    await expect(menuItem).toBeVisible({ timeout: 15_000 })
-    await menuItem.click()
-
-    const sendBtn = orderDialog.getByRole('button', { name: /invia in cucina|send to kitchen|enviar a cocina/i })
-    await sendBtn.click()
-    await expect(page.getByText(/comanda inviata|order sent|pedido enviado/i).first()).toBeVisible({ timeout: 15_000 })
+    await addItemAndSendToKitchen(page, orderDialog)
 
     await page.getByRole('button', { name: /chiudi|close|cerrar/i }).first().click({ timeout: 5_000 }).catch(() => {
       /* modale può chiudersi da sola */

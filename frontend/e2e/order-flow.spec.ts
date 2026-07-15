@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { loginViaUi } from './helpers/auth'
+import { addItemAndSendToKitchen } from './helpers/order'
 import { assertHealthyShell } from './helpers/ui'
 
 test.describe('Flusso principale — login → tavoli → comanda', () => {
@@ -28,13 +29,8 @@ test.describe('Flusso principale — login → tavoli → comanda', () => {
     await menuItem.scrollIntoViewIfNeeded()
     await expect(menuItem).toBeVisible({ timeout: 15_000 })
     const dishName = (await menuItem.locator('p').first().textContent())?.trim() ?? ''
-    await menuItem.click()
 
-    const sendBtn = orderDialog.getByRole('button', { name: /invia in cucina|send to kitchen/i })
-    await expect(sendBtn).toBeVisible()
-    await sendBtn.click()
-
-    await expect(page.getByText(/comanda inviata|piatto aggiunto|order sent/i).first()).toBeVisible({ timeout: 15_000 })
+    await addItemAndSendToKitchen(page, orderDialog)
     await assertHealthyShell(page)
 
     if (tableLabel) {
