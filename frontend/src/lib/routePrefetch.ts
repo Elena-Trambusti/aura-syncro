@@ -24,6 +24,7 @@ const routeLoaders: Record<string, () => Promise<unknown>> = {
   '/dashboard/billing': () => import('../pages/BillingPage'),
   '/dashboard/onboarding': () => import('../pages/OnboardingPage'),
   '/impostazioni': () => import('../pages/SettingsPage'),
+  '/dashboard/settings/hardware': () => import('../pages/HardwareSettingsPage'),
   '/profilo': () => import('../pages/ProfilePage'),
   '/cucina': () => import('../pages/KitchenDisplayPage'),
 }

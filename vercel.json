@@ -16,7 +16,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|pwa/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
+      "source": "/((?!api/|assets/|pwa/|manifest\\.json|sw\\.js|aura-android-bridge\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
       "destination": "/index.html"
     }
   ],

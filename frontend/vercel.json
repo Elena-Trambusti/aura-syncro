@@ -32,7 +32,7 @@
       "destination": "https://aura-syncro-s98ae.ondigitalocean.app/socket.io/:path*"
     },
     {
-      "source": "/((?!api/|socket\\.io/|assets/|pwa/|\\.well-known/|manifest\\.json|sw\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
+      "source": "/((?!api/|socket\\.io/|assets/|pwa/|\\.well-known/|manifest\\.json|sw\\.js|aura-android-bridge\\.js|favicon\\.svg|favicon\\.ico|favicon\\.png|og-image\\.jpg|robots\\.txt|llms\\.txt|sitemap\\.xml|workbox-).*)",
       "destination": "/index.html"
     }
   ],

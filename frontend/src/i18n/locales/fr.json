@@ -410,6 +410,11 @@
       "integrityChain": "Chaîne d'intégrité fiscale",
       "menu": "Menu opérationnel"
     },
+    "hardwareTitle": "Hardware tablette",
+    "hardwareSubtitle": "Imprimantes Bluetooth/Wi-Fi et apps POS sur la tablette Android.",
+    "hardwareDesc": "Configurez les imprimantes ESC/POS et l'app de paiement installée sur la tablette Aura Syncro Mobile.",
+    "hardwareOpen": "Ouvrir les paramètres hardware",
+    "hardwareBack": "Retour aux paramètres",
     "printAgentTitle": "Print Agent (impression cuisine)",
     "printAgentDesc": "Token de pairing pour le daemon ESC/POS local sur votre LAN.",
     "printAgentConfigured": "Configuré : {{preview}}",

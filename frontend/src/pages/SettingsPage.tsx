@@ -8,7 +8,7 @@ import { tq } from '../lib/queryKeys'
 import type { CountryCode, TaxRegion } from '../lib/fiscalRegime'
 import { defaultTaxRateForRegion, normalizeTaxRateForRegion } from '../lib/fiscalRegime'
 import { Link } from 'react-router-dom'
-import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send, ShieldCheck, Printer } from 'lucide-react'
+import { Save, QrCode, ExternalLink, MonitorCheck, CalendarDays, Copy, Send, ShieldCheck, Printer, TabletSmartphone } from 'lucide-react'
 import LanguageSwitcher from '../components/layout/LanguageSwitcher'
 import { formatApiError } from '../lib/formatApiError'
 import { toast } from '@/lib/toast'
@@ -681,6 +681,23 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {canAccessAdminNav() && (
+        <div className="premium-card p-6">
+          <h2 className="text-base font-semibold text-pietra mb-1 flex items-center gap-2">
+            <TabletSmartphone className="h-5 w-5 text-aura-gold" />
+            {t('settings.hardwareTitle')}
+          </h2>
+          <p className="text-sm text-fumo mb-4">{t('settings.hardwareDesc')}</p>
+          <Link
+            to="/dashboard/settings/hardware"
+            className="inline-flex items-center gap-2 rounded-xl bg-aura-gold px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-aura-gold-light"
+          >
+            <TabletSmartphone className="h-4 w-4" aria-hidden />
+            {t('settings.hardwareOpen')}
+          </Link>
+        </div>
+      )}
 
       {canAccessAdminNav() && (
         <div className="premium-card p-6">

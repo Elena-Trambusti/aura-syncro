@@ -45,6 +45,7 @@ const StaffPage = lazyRoute(() => import('./pages/StaffPage'))
 const InventoryPage = lazyRoute(() => import('./pages/InventoryPage'))
 const AnalyticsPage = lazyRoute(() => import('./pages/AnalyticsPage'))
 const SettingsPage = lazyRoute(() => import('./pages/SettingsPage'))
+const HardwareSettingsPage = lazyRoute(() => import('./pages/HardwareSettingsPage'))
 const ProfilePage = lazyRoute(() => import('./pages/ProfilePage'))
 const LoyaltyPage = lazyRoute(() => import('./pages/LoyaltyPage'))
 const MarketingPage = lazyRoute(() => import('./pages/MarketingPage'))
@@ -168,6 +169,7 @@ function AppRoutes() {
         <Route path="dashboard/qr-builder" element={<RequirePermission permissions={['menu.manage']}><QRBuilderPage /></RequirePermission>} />
         <Route path="ai" element={<Navigate to="/dashboard/ai-predictive" replace />} />
         <Route path="impostazioni" element={<RequirePermission permissions={['settings.manage']}><SettingsPage /></RequirePermission>} />
+        <Route path="dashboard/settings/hardware" element={<RequirePermission permissions={['settings.manage']}><HardwareSettingsPage /></RequirePermission>} />
         <Route path="profilo" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
