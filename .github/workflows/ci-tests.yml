@@ -101,7 +101,7 @@ jobs:
       NODE_ENV: development
       PREMIUM_DEV_UNLOCK: 'true'
       POS_ALLOW_SIMULATION: 'true'
-      E2E_EMAIL: admin@demo-it.com
+      E2E_EMAIL: owner@e2e.aurasyncro.test
       E2E_PASSWORD: admin123
       E2E_RESTAURANT_SLUG: demo-it
 

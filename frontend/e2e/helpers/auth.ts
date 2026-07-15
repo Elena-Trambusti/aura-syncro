@@ -1,5 +1,8 @@
 import { expect, type Page } from '@playwright/test'
 
+/** Credenziali seed CI — vedi backend/src/seed.ts (E2E_OWNER_EMAIL). */
+export const E2E_OWNER_EMAIL = 'owner@e2e.aurasyncro.test'
+
 export type E2ECredentials = {
   email: string
   password: string
@@ -8,7 +11,7 @@ export type E2ECredentials = {
 
 export function getE2ECredentials(): E2ECredentials {
   return {
-    email: process.env.E2E_EMAIL ?? 'admin@demo-it.com',
+    email: process.env.E2E_EMAIL ?? E2E_OWNER_EMAIL,
     password: process.env.E2E_PASSWORD ?? 'admin123',
     restaurantSlug: process.env.E2E_RESTAURANT_SLUG ?? 'demo-it',
   }

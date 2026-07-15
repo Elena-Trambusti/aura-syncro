@@ -4,6 +4,10 @@ import { moneyNumber, toMoney } from './lib/money'
 
 const prisma = new PrismaClient()
 
+/** Account dedicato ai test E2E/CI — non è un'email demo (PublicRoute fa logout automatico sulle demo). */
+export const E2E_OWNER_EMAIL = 'owner@e2e.aurasyncro.test'
+const E2E_OWNER_PASSWORD = 'admin123'
+
 const markets = [
   {
     lang: 'it',
@@ -144,6 +148,20 @@ async function main() {
         restaurantId: restaurant.id,
       },
     })
+
+    if (m.slug === 'demo-it') {
+      await prisma.user.upsert({
+        where: { restaurantId_email: { restaurantId: restaurant.id, email: E2E_OWNER_EMAIL } },
+        update: { password: hashedPassword, role: 'OWNER', active: true },
+        create: {
+          name: 'E2E Owner',
+          email: E2E_OWNER_EMAIL,
+          password: hashedPassword,
+          role: 'OWNER',
+          restaurantId: restaurant.id,
+        },
+      })
+    }
 
     await prisma.restaurantSettings.upsert({
       where: { restaurantId: restaurant.id },
