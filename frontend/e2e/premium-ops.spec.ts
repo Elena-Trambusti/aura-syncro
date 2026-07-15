@@ -32,13 +32,15 @@ test.describe('Premium ops — compliance, menu CSV, table claim', () => {
     await page.goto('/dashboard/onboarding')
     await assertHealthyShell(page)
 
-    const goLiveBtn = page.getByRole('button', { name: /attiva dashboard|activar dashboard|go.?live/i })
-    const systemCheck = page.getByText(/verifica automatica|verificación automática|system check/i)
+    const checklistHeading = page.getByRole('heading', {
+      name: /verifica automatica|automatic go-live|verificación automática|go-live verification/i,
+    })
+    const goLiveBtn = page.getByRole('button', { name: /attiva dashboard|activar dashboard|go.?live|activate.*dashboard/i })
 
-    const hasGoLive = await goLiveBtn.isVisible({ timeout: 5_000 }).catch(() => false)
-    const hasChecklist = await systemCheck.isVisible({ timeout: 5_000 }).catch(() => false)
+    const hasChecklist = await checklistHeading.isVisible({ timeout: 15_000 }).catch(() => false)
+    const hasGoLive = await goLiveBtn.isVisible({ timeout: 3_000 }).catch(() => false)
 
-    expect(hasGoLive || hasChecklist).toBe(true)
+    expect(hasChecklist || hasGoLive).toBe(true)
   })
 
 })
@@ -63,7 +65,13 @@ test.describe('Premium ops — table claim mobile', () => {
     const orderDialog = page.getByRole('dialog')
     await expect(orderDialog).toBeVisible({ timeout: 15_000 })
 
-    const menuItem = orderDialog.locator('[role="button"]').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()
+    const menuTab = orderDialog.getByRole('button', { name: /^menu$|^menú$|^menù$/i })
+    if (await menuTab.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await menuTab.click()
+    }
+
+    const menuItem = orderDialog.getByRole('button').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()
+    await menuItem.scrollIntoViewIfNeeded()
     await expect(menuItem).toBeVisible({ timeout: 15_000 })
     await menuItem.click()
 

@@ -24,7 +24,8 @@ test.describe('Flusso principale — login → tavoli → comanda', () => {
     const orderDialog = page.getByRole('dialog')
     await expect(orderDialog).toBeVisible({ timeout: 15_000 })
 
-    const menuItem = orderDialog.locator('[role="button"]').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()
+    const menuItem = orderDialog.getByRole('button').filter({ hasText: /€|\d+[,.]\d{2}/ }).first()
+    await menuItem.scrollIntoViewIfNeeded()
     await expect(menuItem).toBeVisible({ timeout: 15_000 })
     const dishName = (await menuItem.locator('p').first().textContent())?.trim() ?? ''
     await menuItem.click()
