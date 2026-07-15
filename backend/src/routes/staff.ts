@@ -68,6 +68,11 @@ staffRouter.post('/', requirePermission('staff.manage'), asyncHandler(async (req
     return
   }
 
+  if (result.data.role === 'MANAGER' && req.userRole !== 'OWNER') {
+    res.status(403).json({ error: 'Solo il titolare può creare manager', code: 'OWNER_REQUIRED' })
+    return
+  }
+
   const hashedPassword = await bcrypt.hash(result.data.password, 12)
   const db = tenantPrisma(req)
   try {
@@ -126,6 +131,11 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
 
   if (target.role === 'OWNER' && result.data.role !== undefined) {
     res.status(403).json({ error: 'Il ruolo del titolare non può essere modificato', code: 'OWNER_ROLE_LOCKED' })
+    return
+  }
+
+  if (result.data.role === 'MANAGER' && req.userRole !== 'OWNER') {
+    res.status(403).json({ error: 'Solo il titolare può promuovere a manager', code: 'OWNER_REQUIRED' })
     return
   }
 

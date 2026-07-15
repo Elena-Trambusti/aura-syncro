@@ -271,4 +271,13 @@ httpServer.listen(PORT, () => {
   setInterval(() => {
     runTelegramDailyAlerts().catch(console.error)
   }, 60 * 60 * 1000) // Controlla ogni ora
+
+  setInterval(() => {
+    import('./lib/stalePublicOrders')
+      .then(({ cancelStalePublicPendingOrders }) => cancelStalePublicPendingOrders())
+      .then(n => {
+        if (n > 0) console.info('[scheduler] Ordini guest PENDING scaduti annullati:', n)
+      })
+      .catch(err => console.error('[scheduler] stale public orders:', err))
+  }, 15 * 60 * 1000)
 })

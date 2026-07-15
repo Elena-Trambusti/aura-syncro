@@ -72,56 +72,68 @@ cashRouter.post('/session/close', requirePermission('orders.pay'), async (req: A
     return
   }
 
-  const session = await prisma.cashRegisterSession.findFirst({
-    where: { restaurantId: tenantId(req), status: 'OPEN' },
-  })
-  
-  if (!session) {
-    res.status(400).json({ error: 'Nessun turno cassa aperto da chiudere.' })
-    return
-  }
+  try {
+    const closed = await prisma.$transaction(async tx => {
+      const session = await tx.cashRegisterSession.findFirst({
+        where: { restaurantId: tenantId(req), status: 'OPEN' },
+      })
+      if (!session) {
+        throw Object.assign(new Error('NO_OPEN_SESSION'), { code: 'NO_OPEN_SESSION' })
+      }
 
-  // Calcola il saldo atteso (fondo iniziale + vendite contanti - prelievi ecc.)
-  // Vendite: troviamo tutte le CashTransaction in questa sessione
-  const txs = await prisma.cashTransaction.findMany({
-    where: { sessionId: session.id },
-  })
+      const txs = await tx.cashTransaction.findMany({
+        where: { sessionId: session.id },
+      })
 
-  let expectedBalance = moneyNumber(session.openingBalance)
-  for (const tx of txs) {
-    const amt = moneyNumber(tx.amount)
-    if (tx.type === 'SALE' || tx.type === 'PAYIN') {
-      expectedBalance += amt
-    } else if (tx.type === 'PAYOUT' || tx.type === 'REFUND') {
-      expectedBalance -= amt
+      let expectedBalance = moneyNumber(session.openingBalance)
+      for (const cashTx of txs) {
+        const amt = moneyNumber(cashTx.amount)
+        if (cashTx.type === 'SALE' || cashTx.type === 'PAYIN') {
+          expectedBalance += amt
+        } else if (cashTx.type === 'PAYOUT' || cashTx.type === 'REFUND') {
+          expectedBalance -= amt
+        }
+      }
+
+      const difference = result.data.closingBalance - expectedBalance
+
+      const closedCount = await tx.cashRegisterSession.updateMany({
+        where: { id: session.id, restaurantId: tenantId(req), status: 'OPEN' },
+        data: {
+          status: 'CLOSED',
+          closedAt: new Date(),
+          closedById: req.userId!,
+          closingBalance: toMoney(result.data.closingBalance),
+          expectedBalance: toMoney(expectedBalance),
+          difference: toMoney(difference),
+          notes: result.data.notes
+            ? `${session.notes ? session.notes + '\n' : ''}Chiusura: ${result.data.notes}`
+            : session.notes,
+        },
+      })
+
+      if (closedCount.count === 0) {
+        throw Object.assign(new Error('ALREADY_CLOSED'), { code: 'ALREADY_CLOSED' })
+      }
+
+      return tx.cashRegisterSession.findFirst({
+        where: { id: session.id, restaurantId: tenantId(req) },
+      })
+    }, { isolationLevel: 'Serializable', maxWait: 10_000, timeout: 20_000 })
+
+    res.json(closed)
+  } catch (err) {
+    const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+    if (code === 'NO_OPEN_SESSION') {
+      res.status(400).json({ error: 'Nessun turno cassa aperto da chiudere.', code })
+      return
     }
+    if (code === 'ALREADY_CLOSED') {
+      res.status(409).json({ error: 'Turno cassa già chiuso da un altro operatore.', code })
+      return
+    }
+    throw err
   }
-
-  const difference = result.data.closingBalance - expectedBalance
-
-  const closedCount = await prisma.cashRegisterSession.updateMany({
-    where: { id: session.id, restaurantId: tenantId(req), status: 'OPEN' },
-    data: {
-      status: 'CLOSED',
-      closedAt: new Date(),
-      closedById: req.userId!,
-      closingBalance: toMoney(result.data.closingBalance),
-      expectedBalance: toMoney(expectedBalance),
-      difference: toMoney(difference),
-      notes: result.data.notes ? `${session.notes ? session.notes + '\n' : ''}Chiusura: ${result.data.notes}` : session.notes,
-    },
-  })
-
-  if (closedCount.count === 0) {
-    res.status(409).json({ error: 'Turno cassa già chiuso da un altro operatore.', code: 'ALREADY_CLOSED' })
-    return
-  }
-
-  const closed = await prisma.cashRegisterSession.findFirst({
-    where: { id: session.id, restaurantId: tenantId(req) },
-  })
-  
-  res.json(closed)
 })
 
 // POST /cash/transactions - Add a transaction (payout/payin)

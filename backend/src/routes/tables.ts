@@ -10,7 +10,8 @@ import { countActiveTableOrders } from '../lib/orderSession'
 import { assertTableCanBeSetFree, TABLE_HAS_ACTIVE_ORDER } from '../lib/tableReleaseGuard'
 import { isManualTableTransitionAllowed, TABLE_TRANSITION_ERROR } from '../lib/tableStatus'
 import { signTableToken } from '../lib/tableToken'
-import { dayBoundsInTimezone, formatRomeDate } from '../lib/romeDate'
+import { dayBoundsInTimezone } from '../lib/romeDate'
+import { calendarDateInTimezone } from '../lib/dates'
 import { writeAuditLog } from '../lib/auditLog'
 
 import { floorPlanLayoutSchema, parseFloorPlanLayout, EMPTY_FLOOR_PLAN_LAYOUT } from '../lib/floorPlanLayout'
@@ -28,7 +29,7 @@ tablesRouter.get('/', requirePermission('tables.read'), async (req: AuthRequest,
     select: { timezone: true },
   })
   const timeZone = restaurant?.timezone ?? 'Europe/Rome'
-  const today = formatRomeDate(new Date())
+  const today = calendarDateInTimezone(timeZone)
   const { gte, lt } = dayBoundsInTimezone(today, timeZone)
 
   const tables = await prisma.table.findMany({

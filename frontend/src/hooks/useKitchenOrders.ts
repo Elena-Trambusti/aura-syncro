@@ -26,7 +26,6 @@ export function useKitchenOrders() {
   const queryKey = tq(tk, 'kitchen', 'orders')
 
   const inFlightRef = useRef(new Set<string>())
-  const pendingOrderIdsRef = useRef(new Set<string>())
   const [pendingKeys, setPendingKeys] = useState<ReadonlySet<string>>(() => new Set())
 
   const { data: orders = [], isError, isLoading } = useQuery<KitchenOrder[]>({
@@ -55,13 +54,12 @@ export function useKitchenOrders() {
     let cancelled = false
     let socket: Awaited<ReturnType<typeof getSocket>> | null = null
 
+    // Always apply remote socket updates; optimistic local patches merge separately.
     const onNewOrder = (order: KitchenOrder) => {
-      if (pendingOrderIdsRef.current.has(order.id)) return
       patchCache(prev => mergeKitchenOrder(prev, order))
     }
 
     const onOrderUpdated = (order: KitchenOrder) => {
-      if (pendingOrderIdsRef.current.has(order.id)) return
       patchCache(prev => mergeKitchenOrder(prev, order))
     }
 
@@ -88,15 +86,13 @@ export function useKitchenOrders() {
     }
   }, [patchCache, queryClient, queryKey])
 
-  const trackAction = useCallback((key: string, orderId: string) => {
+  const trackAction = useCallback((key: string) => {
     inFlightRef.current.add(key)
-    pendingOrderIdsRef.current.add(orderId)
     setPendingKeys(prev => new Set(prev).add(key))
   }, [])
 
-  const releaseAction = useCallback((key: string, orderId?: string) => {
+  const releaseAction = useCallback((key: string) => {
     inFlightRef.current.delete(key)
-    if (orderId) pendingOrderIdsRef.current.delete(orderId)
     setPendingKeys(prev => {
       if (!prev.has(key)) return prev
       const next = new Set(prev)
@@ -124,7 +120,7 @@ export function useKitchenOrders() {
       const key = itemActionKey(vars.orderId, vars.itemId, vars.status, vars.units)
       if (inFlightRef.current.has(key)) return { skipped: true as const }
 
-      trackAction(key, vars.orderId)
+      trackAction(key)
 
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData<KitchenOrder[]>(queryKey)
@@ -133,7 +129,7 @@ export function useKitchenOrders() {
         applyOptimisticItemStatus(prev, vars.orderId, vars.itemId, vars.status, vars.units),
       )
 
-      return { previous, key, orderId: vars.orderId }
+      return { previous, key }
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.skipped) return
@@ -146,7 +142,7 @@ export function useKitchenOrders() {
     },
     onSettled: (_data, _err, _vars, ctx) => {
       if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key, ctx.orderId)
+      releaseAction(ctx.key)
     },
   })
 
@@ -157,12 +153,12 @@ export function useKitchenOrders() {
       const key = orderActionKey(orderId, 'ready')
       if (inFlightRef.current.has(key)) return { skipped: true as const }
 
-      trackAction(key, orderId)
+      trackAction(key)
 
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData<KitchenOrder[]>(queryKey)
       patchCache(prev => applyOptimisticOrderReady(prev, orderId))
-      return { previous, key, orderId }
+      return { previous, key }
     },
     onError: (_err, _orderId, ctx) => {
       if (ctx?.skipped) return
@@ -174,9 +170,9 @@ export function useKitchenOrders() {
       mergeServerOrder(updated)
       toast.success(t('kitchen.orderReady'))
     },
-    onSettled: (_data, _err, orderId, ctx) => {
+    onSettled: (_data, _err, _orderId, ctx) => {
       if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key, orderId)
+      releaseAction(ctx.key)
     },
   })
 
@@ -187,12 +183,12 @@ export function useKitchenOrders() {
       const key = orderActionKey(orderId, 'dismiss')
       if (inFlightRef.current.has(key)) return { skipped: true as const }
 
-      trackAction(key, orderId)
+      trackAction(key)
 
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData<KitchenOrder[]>(queryKey)
       patchCache(prev => applyOptimisticDismiss(prev, orderId))
-      return { previous, key, orderId }
+      return { previous, key }
     },
     onError: (_err, _orderId, ctx) => {
       if (ctx?.skipped) return
@@ -204,9 +200,9 @@ export function useKitchenOrders() {
       mergeServerOrder(updated)
       toast.success(t('kitchen.orderDismissed'))
     },
-    onSettled: (_data, _err, orderId, ctx) => {
+    onSettled: (_data, _err, _orderId, ctx) => {
       if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key, orderId)
+      releaseAction(ctx.key)
     },
   })
 

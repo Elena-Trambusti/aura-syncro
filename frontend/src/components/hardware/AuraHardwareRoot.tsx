@@ -20,6 +20,14 @@ async function handlePaymentConfirmed(result: PaymentResult) {
       );
       return;
     }
+    if (outcome === 'missing_terminal_ref') {
+      toast.error(
+        i18n.t('checkout.nativePosMissingTerminalRef', {
+          defaultValue: 'Pagamento POS senza riferimento terminale. Non è stato registrato — riprova o conferma manualmente.',
+        }),
+      );
+      return;
+    }
     toast.error(
       i18n.t('checkout.nativePosPendingLost', {
         defaultValue: 'Pagamento POS confermato ma impossibile registrare il conto. Riapri il checkout e contatta il supporto se persiste.',

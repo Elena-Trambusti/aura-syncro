@@ -14,7 +14,7 @@ import { resolveDiscountForOrder } from './orderDiscount'
 import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { moneyNumber } from './money'
-import { schedulePaymentSideEffects } from './paymentSideEffects'
+import { runPaymentSideEffects } from './paymentSideEffects'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 
 function paymentLockKey(orderId: string): string {
@@ -132,7 +132,7 @@ export async function completeOrderPayment(input: {
 
         schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
-        schedulePaymentSideEffects({
+        await runPaymentSideEffects({
           orderId: input.finalize.orderId,
           restaurantId: input.finalize.restaurantId,
           paidAt: result.paidAt,
@@ -183,7 +183,7 @@ export async function completeOrderPayment(input: {
 
     schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
-    schedulePaymentSideEffects({
+    await runPaymentSideEffects({
       orderId: input.finalize.orderId,
       restaurantId: input.finalize.restaurantId,
       paidAt: result.paidAt,
@@ -260,16 +260,55 @@ export async function completeGuestStripePayment(
   stripeAmountTotalCents?: number | null,
 ) {
   const order = await prisma.order.findUnique({ where: { id: orderId } })
-  if (!order || order.status === 'PAID' || order.status === 'CANCELLED') return null
+  if (!order) return null
 
-  if (stripeAmountTotalCents != null) {
-    const expectedCents = Math.round(Math.round(moneyNumber(order.total) * 100) / 100 * 100)
-    if (stripeAmountTotalCents < expectedCents) {
+  if (order.status === 'CANCELLED') {
+    // Pagamento arrivato dopo abandoned cancel → rimborsa subito, non riaprire l'ordine.
+    if (paymentIntentId && STRIPE_ENABLED) {
+      await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        reason: 'requested_by_customer',
+        metadata: {
+          orderId,
+          restaurantId: order.restaurantId,
+          reason: 'guest_paid_after_order_cancelled',
+        },
+      }).catch(refundErr => {
+        console.error('[guest-stripe] Auto-refund su ordine CANCELLED fallito', {
+          orderId,
+          paymentIntentId,
+          error: refundErr instanceof Error ? refundErr.message : refundErr,
+        })
+      })
+    }
+    return null
+  }
+
+  if (order.status === 'PAID') return null
+
+  // Sempre validare importo: se manca dal caller, recupera dal PaymentIntent Stripe.
+  let amountCents = stripeAmountTotalCents ?? null
+  if (amountCents == null && paymentIntentId && STRIPE_ENABLED) {
+    try {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+      amountCents = typeof pi.amount_received === 'number' && pi.amount_received > 0
+        ? pi.amount_received
+        : pi.amount
+    } catch (err) {
+      console.error('[guest-stripe] Impossibile leggere importo PaymentIntent', paymentIntentId, err)
       throw new Error('STRIPE_AMOUNT_MISMATCH')
     }
-    if (stripeAmountTotalCents > expectedCents + 1) {
-      throw new Error('STRIPE_AMOUNT_OVERPAY')
-    }
+  }
+  if (amountCents == null) {
+    throw new Error('STRIPE_AMOUNT_MISMATCH')
+  }
+
+  const expectedCents = Math.round(moneyNumber(order.total) * 100)
+  if (amountCents < expectedCents) {
+    throw new Error('STRIPE_AMOUNT_MISMATCH')
+  }
+  if (amountCents > expectedCents + 1) {
+    throw new Error('STRIPE_AMOUNT_OVERPAY')
   }
 
   try {

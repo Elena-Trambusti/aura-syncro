@@ -78,13 +78,16 @@ export async function appendFiscalChainLink(
     prevHash: state.lastHash,
   })
 
-  await tx.fiscalChainState.update({
-    where: { restaurantId },
+  const advanced = await tx.fiscalChainState.updateMany({
+    where: { restaurantId, lastHash: state.lastHash },
     data: {
       lastHash: link.integrityHash,
       lastOrderId: input.orderId,
     },
   })
+  if (advanced.count === 0) {
+    throw new Error('FISCAL_CHAIN_CONFLICT')
+  }
 
   return link
 }

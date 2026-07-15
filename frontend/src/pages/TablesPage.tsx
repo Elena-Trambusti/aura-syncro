@@ -203,6 +203,13 @@ export default function TablesPage() {
   const hoverPrefetchTimeoutRef = useRef<number | null>(null)
   const prefetchedOrderIdsRef = useRef<Set<string>>(new Set())
 
+  // Keep detail sheet in sync with live tables cache while open
+  useEffect(() => {
+    if (!detailTable) return
+    const live = tables.find(tbl => tbl.id === detailTable.id)
+    if (live) setDetailTable(live)
+  }, [tables, detailTable?.id])
+
   useEffect(() => {
     return () => {
       if (hoverPrefetchTimeoutRef.current) {
@@ -270,6 +277,9 @@ export default function TablesPage() {
     },
     onError: (err: unknown, _vars, context) => {
       restoreTablesCache(queryClient, tk, context?.previousTables)
+      setShowOrderModal(false)
+      setSelectedTableId(null)
+      setSeatedCustomerId(null)
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
   })
@@ -331,8 +341,10 @@ export default function TablesPage() {
     onMutate: ({ sourceId, targetId }) => {
       const previousTables = applyTableTransferOptimistic(queryClient, tk, sourceId, targetId)
       setTransferSourceId(null)
-      toast.success(t('orderModal.transferSuccess'))
       return { previousTables }
+    },
+    onSuccess: () => {
+      toast.success(t('orderModal.transferSuccess'))
     },
     onError: (err: unknown, _vars, context) => {
       restoreTablesCache(queryClient, tk, context?.previousTables)

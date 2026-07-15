@@ -86,7 +86,8 @@ export function markTableCleaningAfterPayment(
     }
   })
 
-  if (changed) writeTables(queryClient, tenantKey, next)
+  if (!changed) return undefined
+  writeTables(queryClient, tenantKey, next)
   return previous
 }
 
@@ -253,9 +254,8 @@ export function patchTableFromOrderEvent(
   if (!tableId) return false
 
   if (order.status === 'PAID' || order.status === 'CANCELLED') {
-    if (!snapshotTablesCache(queryClient, tenantKey)) return false
-    markTableCleaningAfterPayment(queryClient, tenantKey, order.id)
-    return true
+    // false → caller must invalidate; don't claim patched when cache had no matching order
+    return markTableCleaningAfterPayment(queryClient, tenantKey, order.id) != null
   }
 
   return markTableOccupiedWithOrder(queryClient, tenantKey, tableId, {

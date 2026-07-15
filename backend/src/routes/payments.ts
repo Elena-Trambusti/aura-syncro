@@ -69,6 +69,8 @@ const finalizeSchema = z.object({
   splitGuestIndex: z.number().int().min(0).optional(),
   /** true solo dal flusso POS nativo Android dopo conferma sul terminale */
   nativePosConfirmed: z.boolean().optional().default(false),
+  /** Riferimento transazione dal terminale POS esterno (txId / receipt / reference) */
+  nativePosTerminalRef: z.string().min(1).optional(),
 })
 
 async function loadOrderForCheckout(orderId: string, restaurantId: string) {
@@ -152,6 +154,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     applyLoyaltyDiscount,
     splitGuestIndex,
     nativePosConfirmed,
+    nativePosTerminalRef,
   } = parsed.data
   const idempotencyKey = readIdempotencyKey(req)
   const finalizeRoute = 'POST /payments/finalize'
@@ -275,6 +278,7 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
     posConfig.mode,
     settlementMethod as 'CARD' | 'CASH',
     nativePosConfirmed,
+    nativePosTerminalRef,
   )
   if (!externalPosGuard.ok) {
     await releaseClientIdempotency()
@@ -542,6 +546,13 @@ paymentsRouter.post(
         res.status(409).json({ error: 'Ordine già rimborsato', code })
         return
       }
+      if (code === 'PARTIAL_REFUND_NOT_SUPPORTED') {
+        res.status(400).json({
+          error: 'Rimborso parziale non supportato: rimborsare l\'intero importo ordine',
+          code,
+        })
+        return
+      }
       if (code === 'ORDER_NOT_REFUNDABLE') {
         res.status(404).json({ error: 'Ordine non rimborsabile', code })
         return
@@ -580,12 +591,15 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
 
   const { orderId, tipAmount, tipWaiterId, paymentMethod } = result.data
   const nativePosConfirmed = req.body?.nativePosConfirmed === true
+  const nativePosTerminalRef =
+    typeof req.body?.nativePosTerminalRef === 'string' ? req.body.nativePosTerminalRef : undefined
 
   const posConfig = await loadRestaurantPosConfig(req.restaurantId!)
   const externalPosGuard = assertExternalPosNativeConfirmed(
     posConfig.mode,
     paymentMethod,
     nativePosConfirmed,
+    nativePosTerminalRef,
   )
   if (!externalPosGuard.ok) {
     res.status(409).json({ error: externalPosGuard.error, code: externalPosGuard.code })

@@ -5,15 +5,20 @@ import { prisma } from './prisma'
 export const ORDER_TX_OPTIONS = {
   maxWait: 10_000,
   timeout: 25_000,
+  isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 } as const
 
-const TX_RETRYABLE = new Set(['P2028', 'P2034'])
+  const TX_RETRYABLE = new Set(['P2028', 'P2034'])
 
 export function isRetriableTransactionError(err: unknown): boolean {
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     return TX_RETRYABLE.has(err.code)
   }
-  if (err instanceof Error && err.message.includes('Transaction not found')) {
+  if (err instanceof Error && (
+    err.message.includes('Transaction not found')
+    || err.message.includes('FISCAL_CHAIN_CONFLICT')
+    || err.message.includes('could not serialize')
+  )) {
     return true
   }
   return false

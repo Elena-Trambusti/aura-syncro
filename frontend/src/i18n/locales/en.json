@@ -1620,6 +1620,7 @@
     "externalPosWebBlocked": "External POS card payments are only available on the Aura Syncro Android tablet. Use cash or open the app on the tablet.",
     "nativePosRecoveryWarning": "Payment recorded using recovery data. Verify amount and tips on the bill.",
     "nativePosPendingLost": "POS payment confirmed but the bill could not be recorded. Reopen checkout or contact support.",
+    "nativePosMissingTerminalRef": "POS payment had no terminal reference. It was not recorded — retry or confirm manually.",
     "paymentConfirmTitle": "Confirm POS payment",
     "paymentConfirmBody": "Order {{orderId}}{{amount}}. Was the external terminal payment successful?",
     "paymentConfirmAmount": " ({{amount}} EUR)",

@@ -3,7 +3,8 @@ import { buildFiscalConfig } from './taxEngine'
 import { computeOnboardingReadiness } from './onboardingReadiness'
 import { verifyFiscalChainSequence } from './fiscal/fiscalIntegrityChain'
 import { moneyNumber } from './money'
-import { dayBoundsInTimezone, formatRomeDate } from './romeDate'
+import { dayBoundsInTimezone } from './romeDate'
+import { calendarDateInTimezone } from './dates'
 
 export type ComplianceCheck = {
   id: string
@@ -29,7 +30,7 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
   const settings = restaurant?.settings
   const fiscal = buildFiscalConfig(settings)
   const timeZone = restaurant?.timezone ?? 'Europe/Rome'
-  const today = formatRomeDate(new Date())
+  const today = calendarDateInTimezone(timeZone)
   const { gte, lt } = dayBoundsInTimezone(today, timeZone)
 
   const [readiness, openCash, todayPaidCount, chainSample] = await Promise.all([

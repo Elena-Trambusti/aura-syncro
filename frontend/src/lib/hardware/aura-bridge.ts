@@ -37,6 +37,10 @@ export interface PaymentResult {
   status: string;
   orderId: string;
   txId?: string | null;
+  /** Alternate ref fields from native POS bridges */
+  transactionId?: string | null;
+  receiptId?: string | null;
+  reference?: string | null;
   source?: string;
   amountCents?: number;
   currency?: string;

@@ -57,7 +57,7 @@ export async function resolveGuestItemsWithStock(
     },
   })
 
-  if (menuItems.length !== items.length) {
+  if (menuItems.length !== new Set(items.map(i => i.menuItemId)).size) {
     const found = new Set(menuItems.map(m => m.id))
     const missing = items.filter(i => !found.has(i.menuItemId)).map(i => i.menuItemId)
     throw new PublicOrderError(`Piatti non disponibili o non trovati: ${missing.join(', ')}`, 404, 'MENU_ITEM_NOT_FOUND')

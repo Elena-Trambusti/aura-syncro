@@ -64,12 +64,6 @@ function lineGross(item: OrderItem): number {
 
 type PayingTarget = 'main' | number
 
-type CheckoutPagePosStatus = {
-  mode: string
-  usesExternalFiscalDevice?: boolean
-  isCardChargeSimulated?: boolean
-}
-
 function shouldReleaseTableOnFinalize(
   splitUsesIncrementalCash: boolean,
   splitGuestIndex?: number,
@@ -79,16 +73,6 @@ function shouldReleaseTableOnFinalize(
 
 function usesCardSettlement(method: PaymentMethod, splitSettlement: 'CARD' | 'CASH'): boolean {
   return method === 'CARD' || (method === 'SPLIT' && splitSettlement === 'CARD')
-}
-
-function requiresBlockingExternalValidation(
-  method: PaymentMethod,
-  splitSettlement: 'CARD' | 'CASH',
-  posStatus: CheckoutPagePosStatus | undefined,
-): boolean {
-  if (!usesCardSettlement(method, splitSettlement) || !posStatus) return false
-  // Solo flussi che richiedono un terminale reale — simulazione/PENDING_SETUP sono istantanei lato UI
-  return posStatus.mode === 'EXTERNAL' || posStatus.mode === 'STRIPE_TERMINAL'
 }
 
 interface CheckoutOrder {
@@ -162,8 +146,25 @@ export default function CheckoutPage() {
     queryKey: tq(tk, 'checkout', orderId),
     queryFn: () => api.get(`/payments/checkout/${orderId}`).then(r => r.data),
     enabled: !!orderId,
-    staleTime: 60_000,
+    staleTime: 5_000,
   })
+
+  // Checkout amounts/status can change from other tabs or after POS return — refresh on focus.
+  useEffect(() => {
+    if (!orderId) return
+    const invalidateCheckout = () => {
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'checkout', orderId) })
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') invalidateCheckout()
+    }
+    window.addEventListener('focus', invalidateCheckout)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', invalidateCheckout)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [orderId, queryClient, tk])
 
   const { data: staff } = useQuery<{ id: string; name: string; role: string }[]>({
     queryKey: tq(tk, 'staff', 'tip-recipients'),
@@ -400,15 +401,11 @@ export default function CheckoutPage() {
   ])
 
   const canOptimisticallyComplete = useCallback(
-    (splitGuestIndex?: number) => {
-      if (splitUsesIncrementalCash && splitGuestIndex != null) return false
-      // Contanti possono finire in coda offline — niente ricevuta/tavolo ottimistici.
-      if (cashPaymentSelected) return false
-      if (requiresBlockingExternalValidation(paymentMethod, splitSettlement, posStatus)) return false
-      if (stripeTerminalBlocked) return false
-      return true
+    (_splitGuestIndex?: number) => {
+      // Safest: never show optimistic receipt UI; table patch happens only in onSuccess.
+      return false
     },
-    [paymentMethod, splitSettlement, posStatus, splitUsesIncrementalCash, cashPaymentSelected, stripeTerminalBlocked],
+    [],
   )
 
   const finalize = useMutation({

@@ -66,6 +66,7 @@ export type StripePaymentIntentPayload = {
   id: string
   status: string
   amount: number
+  amount_received?: number | null
   metadata?: Record<string, string> | null
   client_reference_id?: string | null
 }

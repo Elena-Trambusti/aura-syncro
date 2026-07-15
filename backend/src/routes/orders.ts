@@ -13,6 +13,7 @@ import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenan
 import { deductInventoryForOrder, restoreInventoryForOrderItem } from '../lib/inventoryDeduction'
 import { resolveOrCreateCustomer, assertCustomerInTenant } from '../lib/customerResolver'
 import { assertMenuItemOrderable, assertOrderStockInTransaction } from '../lib/menuStock'
+import { resolveMenuItemLine, ModifierValidationError } from '../lib/orderModifiers'
 import { applyDiscountToOrder } from '../lib/orderDiscount'
 import {
   acquireIdempotencyLock,
@@ -231,19 +232,20 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
       const menuItem = menuItems.find(m => m.id === item.menuItemId)
       if (!menuItem) throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
       assertMenuItemOrderable(menuItem, item.quantity)
-      let unitPrice = moneyNumber(menuItem.price)
-      const selectedOptions: Array<{ optionId: string, name: string, price: number }> = []
-      
-      if (item.modifiers?.length) {
-         const allOptions = menuItem.modifierGroups.flatMap(g => g.options)
-         for (const optId of item.modifiers) {
-           const opt = allOptions.find(o => o.id === optId)
-           if (!opt) throw Object.assign(new Error('invalid modifier'), { code: 'INVALID_MODIFIER' })
-           unitPrice += moneyNumber(opt.price)
-           selectedOptions.push({ optionId: opt.id, name: opt.name, price: moneyNumber(opt.price) })
-         }
+      try {
+        const resolved = resolveMenuItemLine(menuItem, item.modifiers)
+        return {
+          ...item,
+          unitPrice: resolved.unitPrice,
+          selectedOptions: resolved.selectedOptions,
+          menuTaxRate: resolved.menuTaxRate ?? menuItem.taxRate,
+        }
+      } catch (modErr) {
+        if (modErr instanceof ModifierValidationError) {
+          throw Object.assign(new Error(modErr.message), { code: modErr.code })
+        }
+        throw modErr
       }
-      return { ...item, unitPrice, selectedOptions, menuTaxRate: menuItem.taxRate }
     })
   } catch (e) {
     const code = (e as { code?: string }).code
@@ -260,6 +262,11 @@ ordersRouter.post('/', requirePermission('orders.create'), async (req: AuthReque
     if (code === 'MENU_ITEM_SOLD_OUT') {
       await releaseOrderLock()
       res.status(400).json({ error: 'Piatto esaurito — ingredienti insufficienti', code })
+      return
+    }
+    if (code === 'MODIFIER_MIN_NOT_MET' || code === 'MODIFIER_MAX_EXCEEDED' || code === 'INVALID_MODIFIER') {
+      await releaseOrderLock()
+      res.status(400).json({ error: (e as Error).message, code })
       return
     }
     throw e
@@ -769,6 +776,14 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
     res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
     return
   }
+  if (order.stripeSessionId) {
+    await releaseBatchLock()
+    res.status(409).json({
+      error: 'Ordine con checkout Stripe in corso: non modificabile',
+      code: 'STRIPE_CHECKOUT_LOCKED',
+    })
+    return
+  }
   if (moneyNumber(order.collectedAmount) > 0) {
     await releaseBatchLock()
     res.status(409).json({
@@ -791,19 +806,20 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
       const menuItem = menuItems.find(m => m.id === item.menuItemId)
       if (!menuItem) throw Object.assign(new Error('not found'), { code: 'MENU_ITEM_NOT_FOUND' })
       assertMenuItemOrderable(menuItem, item.quantity)
-      let unitPrice = moneyNumber(menuItem.price)
-      const selectedOptions: Array<{ optionId: string, name: string, price: number }> = []
-
-      if (item.modifiers?.length) {
-        const allOptions = menuItem.modifierGroups.flatMap(g => g.options)
-        for (const optId of item.modifiers) {
-          const opt = allOptions.find(o => o.id === optId)
-          if (!opt) throw Object.assign(new Error('invalid modifier'), { code: 'INVALID_MODIFIER' })
-          unitPrice += moneyNumber(opt.price)
-          selectedOptions.push({ optionId: opt.id, name: opt.name, price: moneyNumber(opt.price) })
+      try {
+        const resolved = resolveMenuItemLine(menuItem, item.modifiers)
+        return {
+          ...item,
+          unitPrice: resolved.unitPrice,
+          selectedOptions: resolved.selectedOptions,
+          menuTaxRate: resolved.menuTaxRate ?? menuItem.taxRate,
         }
+      } catch (modErr) {
+        if (modErr instanceof ModifierValidationError) {
+          throw Object.assign(new Error(modErr.message), { code: modErr.code })
+        }
+        throw modErr
       }
-      return { ...item, unitPrice, selectedOptions, menuTaxRate: menuItem.taxRate }
     })
   } catch (e) {
     const code = (e as { code?: string }).code
@@ -822,9 +838,9 @@ ordersRouter.post('/:id/items/batch', requirePermission('orders.items'), async (
       res.status(400).json({ error: 'Piatto esaurito — ingredienti insufficienti', code })
       return
     }
-    if (code === 'INVALID_MODIFIER') {
+    if (code === 'INVALID_MODIFIER' || code === 'MODIFIER_MIN_NOT_MET' || code === 'MODIFIER_MAX_EXCEEDED') {
       await releaseBatchLock()
-      res.status(400).json({ error: 'Modificatore non valido' })
+      res.status(400).json({ error: (e as Error).message || 'Modificatore non valido', code })
       return
     }
     throw e
@@ -1003,6 +1019,14 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     res.status(400).json({ error: 'Ordine chiuso, non modificabile', code: 'ORDER_CLOSED' })
     return
   }
+  if (order.stripeSessionId) {
+    await releaseItemsLock()
+    res.status(409).json({
+      error: 'Ordine con checkout Stripe in corso: non modificabile',
+      code: 'STRIPE_CHECKOUT_LOCKED',
+    })
+    return
+  }
   if (moneyNumber(order.collectedAmount) > 0) {
     await releaseItemsLock()
     res.status(409).json({
@@ -1041,21 +1065,22 @@ ordersRouter.post('/:id/items', requirePermission('orders.items'), async (req: A
     throw e
   }
 
-  let unitPrice = moneyNumber(menuItem.price)
-  const selectedOptions: Array<{ optionId: string, name: string, price: number }> = []
-
-  if (result.data.modifiers?.length) {
-     const allOptions = menuItem.modifierGroups.flatMap(g => g.options)
-     for (const optId of result.data.modifiers) {
-       const opt = allOptions.find(o => o.id === optId)
-       if (!opt) {
-         await releaseItemsLock()
-         res.status(400).json({ error: 'Modificatore non valido' })
-         return
-       }
-       unitPrice += moneyNumber(opt.price)
-       selectedOptions.push({ optionId: opt.id, name: opt.name, price: moneyNumber(opt.price) })
-     }
+  let unitPrice: number
+  let selectedOptions: Array<{ optionId: string, name: string, price: number }>
+  let menuTaxRate: number | null
+  try {
+    const resolved = resolveMenuItemLine(menuItem, result.data.modifiers)
+    unitPrice = resolved.unitPrice
+    selectedOptions = resolved.selectedOptions
+    menuTaxRate = resolved.menuTaxRate ?? menuItem.taxRate
+  } catch (modErr) {
+    await releaseItemsLock()
+    if (modErr instanceof ModifierValidationError) {
+      res.status(400).json({ error: modErr.message, code: modErr.code })
+      return
+    }
+    res.status(400).json({ error: 'Modificatore non valido', code: 'INVALID_MODIFIER' })
+    return
   }
 
   let createdItem

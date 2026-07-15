@@ -148,6 +148,12 @@ export async function completePendingNativeCheckout(
     return null
   }
 
+  const terminalRef = resolveNativePosTerminalRef(result)
+  if (!terminalRef) {
+    // EXTERNAL finalize requires a terminal reference — do not invent one.
+    return null
+  }
+
   let pending = readPendingNativeCheckout(result.orderId)
   let recovered = options?.recovered ?? false
 
@@ -166,8 +172,14 @@ export async function completePendingNativeCheckout(
     ? { 'X-Idempotency-Key': `${pending.idempotencyKey}${suffix}` }
     : undefined
 
+  const finalizePayload = {
+    ...pending.payload,
+    nativePosConfirmed: true,
+    nativePosTerminalRef: terminalRef,
+  }
+
   try {
-    const response = await api.post('/payments/finalize', pending.payload, {
+    const response = await api.post('/payments/finalize', finalizePayload, {
       timeout: 20000,
       headers,
     })
@@ -186,13 +198,25 @@ export async function completePendingNativeCheckout(
   }
 }
 
-export type NativePaymentOutcome = 'finalized' | 'cancelled' | 'ignored'
+/** Prefer txId / transactionId / receiptId / reference from the native bridge. */
+export function resolveNativePosTerminalRef(result: PaymentResult): string | null {
+  const candidates = [result.txId, result.transactionId, result.receiptId, result.reference]
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return null
+}
+
+export type NativePaymentOutcome = 'finalized' | 'cancelled' | 'ignored' | 'missing_terminal_ref'
 
 /** Esito pagamento POS nativo → finalize backend o reset UI checkout. */
 export async function handleNativePaymentResult(
   result: PaymentResult,
 ): Promise<NativePaymentOutcome> {
   if (result.status === 'ok') {
+    if (!resolveNativePosTerminalRef(result)) {
+      return 'missing_terminal_ref'
+    }
     const data = await completePendingNativeCheckout(result)
     return data ? 'finalized' : 'ignored'
   }

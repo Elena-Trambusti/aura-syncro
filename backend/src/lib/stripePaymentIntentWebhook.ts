@@ -8,7 +8,13 @@ export async function handlePaymentIntentSucceeded(
   const orderId = intent.metadata?.orderId
 
   if (orderId) {
-    const completed = await completeGuestStripePayment(orderId, intent.id)
+    const amountCents =
+      typeof intent.amount_received === 'number' && intent.amount_received > 0
+        ? intent.amount_received
+        : typeof intent.amount === 'number'
+          ? intent.amount
+          : null
+    const completed = await completeGuestStripePayment(orderId, intent.id, amountCents)
     if (completed?.updatedOrder) {
       console.info('[stripe-webhook] Ordine guest pagato tramite PaymentIntent', orderId)
       io.to(completed.updatedOrder.restaurantId).emit('order:updated', completed.updatedOrder)

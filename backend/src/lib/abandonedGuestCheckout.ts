@@ -8,7 +8,7 @@ export type CancelledGuestOrderInfo = {
   tableId: string | null
 }
 
-/** Annulla ordine guest Stripe non pagato e ripristina stock/tavolo. */
+/** Annulla ordine guest Stripe non pagato e ripristina stock/tavolo (atomico vs PAID). */
 export async function cancelAbandonedGuestOrder(orderId: string): Promise<CancelledGuestOrderInfo | null> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -16,7 +16,16 @@ export async function cancelAbandonedGuestOrder(orderId: string): Promise<Cancel
   })
   if (!order || order.status === 'PAID' || order.status === 'CANCELLED') return null
 
-  await prisma.$transaction(async tx => {
+  const cancelled = await prisma.$transaction(async tx => {
+    const updated = await tx.order.updateMany({
+      where: {
+        id: orderId,
+        status: { notIn: ['PAID', 'CANCELLED'] },
+      },
+      data: { status: 'CANCELLED' },
+    })
+    if (updated.count === 0) return null
+
     await tx.orderItem.updateMany({
       where: { orderId, status: { not: 'CANCELLED' } },
       data: { status: 'CANCELLED' },
@@ -24,11 +33,10 @@ export async function cancelAbandonedGuestOrder(orderId: string): Promise<Cancel
     for (const item of order.items) {
       await restoreInventoryForOrderItem(tx, item.id, order.restaurantId)
     }
-    await tx.order.update({
-      where: { id: orderId },
-      data: { status: 'CANCELLED' },
-    })
+    return true
   })
+
+  if (!cancelled) return null
 
   await releaseTableIfSessionComplete(order.tableId)
 

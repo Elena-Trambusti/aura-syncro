@@ -9,20 +9,30 @@ type DbClient = Prisma.TransactionClient | typeof prisma
 
 const DIGITAL_METHODS: PaymentMethod[] = ['STRIPE', 'CARD', 'DIGITAL']
 
-/** Rimborso Stripe se presente PaymentIntent (idempotente se già rimborsato). */
+/** Rimborso Stripe (importo in euro → cents). Idempotente se già rimborsato. */
 export async function refundStripePaymentIntent(
   stripePaymentIntent: string,
   metadata: Record<string, string>,
+  amountEuro?: number,
 ): Promise<void> {
   if (!STRIPE_ENABLED) {
     throw Object.assign(new Error('STRIPE_NOT_CONFIGURED'), { code: 'STRIPE_NOT_CONFIGURED' })
   }
   try {
-    await stripe.refunds.create({
+    const payload: {
+      payment_intent: string
+      reason: 'requested_by_customer'
+      metadata: Record<string, string>
+      amount?: number
+    } = {
       payment_intent: stripePaymentIntent,
       reason: 'requested_by_customer',
       metadata,
-    })
+    }
+    if (amountEuro != null && Number.isFinite(amountEuro)) {
+      payload.amount = Math.round(amountEuro * 100)
+    }
+    await stripe.refunds.create(payload)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     if (/already been refunded|has already been refunded/i.test(message)) return
@@ -33,7 +43,7 @@ export async function refundStripePaymentIntent(
   }
 }
 
-/** Registra rimborso ordine — esclude dai KPI revenue. */
+/** Marca ordine rimborsato in modo atomico (dove refundedAt è ancora null). */
 export async function markOrderRefunded(
   orderId: string,
   restaurantId: string,
@@ -52,13 +62,25 @@ export async function markOrderRefunded(
   }
 
   const refundAmount = Math.min(amount, moneyNumber(order.total))
-  await db.order.updateMany({
-    where: { id: orderId, restaurantId },
+  const updated = await db.order.updateMany({
+    where: { id: orderId, restaurantId, status: 'PAID', refundedAt: null },
     data: {
       refundedAt: new Date(),
       refundAmount: toMoney(refundAmount),
     },
   })
+  if (updated.count === 0) {
+    throw Object.assign(new Error('ORDER_ALREADY_REFUNDED'), { code: 'ORDER_ALREADY_REFUNDED' })
+  }
+
+  // Audit fiscale: marca fattura collegata come rimborsata (stato SDI informativo).
+  await db.invoice.updateMany({
+    where: { orderId, restaurantId },
+    data: { statoSdi: 'refunded' },
+  }).catch(() => {
+    /* invoice opzionale */
+  })
+
   return reversePostPaymentEffects(orderId, restaurantId, db)
 }
 
@@ -80,8 +102,8 @@ export type ExecuteOrderRefundInput = {
 }
 
 /**
- * Rimborso unificato: Stripe (CARD/STRIPE/DIGITAL) o contanti (registra movimento cassa).
- * Stripe viene rimborsato prima della transazione DB; contanti tutto in transazione.
+ * Rimborso unificato. Supporta solo rimborso intero (o amount ≈ total):
+ * evita mismatch Stripe/CRM/fiscalità su partial incompleti.
  */
 export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promise<{ refundAmount: number }> {
   const order = await prisma.order.findFirst({
@@ -101,7 +123,14 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
     throw Object.assign(new Error('ORDER_ALREADY_REFUNDED'), { code: 'ORDER_ALREADY_REFUNDED' })
   }
 
-  const refundAmount = Math.min(input.amount ?? moneyNumber(order.total), moneyNumber(order.total))
+  const orderTotal = moneyNumber(order.total)
+  const refundAmount = Math.min(input.amount ?? orderTotal, orderTotal)
+  if (Math.abs(refundAmount - orderTotal) > 0.009) {
+    throw Object.assign(new Error('PARTIAL_REFUND_NOT_SUPPORTED'), {
+      code: 'PARTIAL_REFUND_NOT_SUPPORTED',
+    })
+  }
+
   const isDigital =
     order.paymentMethod != null && DIGITAL_METHODS.includes(order.paymentMethod)
 
@@ -109,11 +138,15 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
     if (!order.stripePaymentIntent) {
       throw Object.assign(new Error('STRIPE_REFUND_UNAVAILABLE'), { code: 'STRIPE_REFUND_UNAVAILABLE' })
     }
-    await refundStripePaymentIntent(order.stripePaymentIntent, {
-      orderId: order.id,
-      restaurantId: input.restaurantId,
-      reason: input.reason ?? 'staff_refund',
-    })
+    await refundStripePaymentIntent(
+      order.stripePaymentIntent,
+      {
+        orderId: order.id,
+        restaurantId: input.restaurantId,
+        reason: input.reason ?? 'staff_refund',
+      },
+      refundAmount,
+    )
     const reversal = await prisma.$transaction(async tx =>
       markOrderRefunded(order.id, input.restaurantId, refundAmount, tx),
     )

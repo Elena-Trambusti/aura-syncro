@@ -14,8 +14,13 @@ describe('assertExternalPosNativeConfirmed', () => {
     }
   })
 
-  it('allows EXTERNAL card with native confirmation', () => {
-    expect(assertExternalPosNativeConfirmed('EXTERNAL', 'CARD', true)).toEqual({ ok: true })
+  it('allows EXTERNAL card with native confirmation and terminal ref', () => {
+    expect(assertExternalPosNativeConfirmed('EXTERNAL', 'CARD', true, 'TX-1234')).toEqual({ ok: true })
+  })
+
+  it('blocks EXTERNAL card with confirmation but missing terminal ref', () => {
+    const result = assertExternalPosNativeConfirmed('EXTERNAL', 'CARD', true, 'ab')
+    expect(result.ok).toBe(false)
   })
 
   it('allows SIMULATION card without native confirmation', () => {

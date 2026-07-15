@@ -25,8 +25,9 @@ export async function markReservationDepositPaid(
 
   const isSetup = session.mode === 'setup'
   const fundsCaptured = session.payment_status === 'paid'
+  const setupAuthorized = isSetup && session.payment_status === 'no_payment_required'
 
-  if (!fundsCaptured && !(isSetup && session.payment_status === 'no_payment_required')) {
+  if (!fundsCaptured && !setupAuthorized) {
     console.warn('[deposit-webhook] Sessione caparra non autorizzata:', session.id, session.payment_status)
     return null
   }
@@ -50,7 +51,15 @@ export async function markReservationDepositPaid(
     }
   }
 
-  if (isSetup && reservation.depositStripeSessionId && !fundsCaptured) {
+  // Setup: carta salvata a garanzia — depositPaid=true indica garanzia pronta (non fondi incassati).
+  if (setupAuthorized) {
+    await prisma.reservation.update({
+      where: { id: reservationId },
+      data: {
+        depositPaid: true,
+        ...(session.id ? { depositStripeSessionId: session.id } : {}),
+      },
+    })
     return {
       reservationId: reservation.id,
       restaurantId: reservation.restaurantId,

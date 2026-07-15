@@ -1717,6 +1717,7 @@
     "externalPosWebBlocked": "Pagamento carta con POS esterno disponibile solo dal tablet Android Aura Syncro. Usa contanti o apri il gestionale sul tablet.",
     "nativePosRecoveryWarning": "Pagamento registrato con dati di recupero. Verifica importo e mance sul conto.",
     "nativePosPendingLost": "Pagamento POS confermato ma impossibile registrare il conto. Riapri il checkout o contatta il supporto.",
+    "nativePosMissingTerminalRef": "Pagamento POS senza riferimento terminale. Non è stato registrato — riprova o conferma manualmente.",
     "paymentConfirmTitle": "Conferma pagamento POS",
     "paymentConfirmBody": "Ordine {{orderId}}{{amount}}. Il pagamento sul terminale esterno è andato a buon fine?",
     "paymentConfirmAmount": " ({{amount}} €)",

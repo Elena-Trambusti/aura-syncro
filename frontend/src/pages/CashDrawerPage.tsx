@@ -63,21 +63,17 @@ export default function CashDrawerPage() {
     enabled: !!session,
   })
 
-  const openSession = useInstantMutation<unknown, unknown, void>({
+  const openSession = useInstantMutation<{ data: CashSession }, unknown, void>({
     mutationFn: () => api.post('/cash/session/open', { openingBalance: amount }),
     onInstant: () => {
       setShowOpenModal(false)
-      queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), {
-        id: `temp-${Date.now()}`,
-        openedBy: { name: '…' },
-        openedAt: new Date().toISOString(),
-        status: 'OPEN',
-        openingBalance: amount,
-      } as CashSession)
-      toast.success(t('cashDrawer.openSuccess'))
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res?.data?.id) {
+        queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), res.data)
+      }
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
+      toast.success(t('cashDrawer.openSuccess'))
     },
     onError: (err: unknown) => {
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })

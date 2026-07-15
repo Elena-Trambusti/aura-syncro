@@ -10,9 +10,9 @@ export const inventoryRouter = Router()
 const itemSchema = z.object({
   name: z.string().min(1),
   unit: z.string(),
-  quantity: z.number().default(0),
-  minQuantity: z.number().default(0),
-  cost: z.number().default(0),
+  quantity: z.number().min(0).default(0),
+  minQuantity: z.number().min(0).default(0),
+  cost: z.number().min(0).default(0),
   supplier: z.string().optional(),
   category: z.string().optional(),
 })

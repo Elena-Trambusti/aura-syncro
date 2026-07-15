@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { ReservationStatus } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { stripe } from '../lib/stripe'
+import { stripe, STRIPE_APPLICATION_FEE_PCT } from '../lib/stripe'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
 import { io } from '../index'
@@ -398,8 +398,10 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
 
     const penaltyAmount = moneyNumber(settings?.depositAmount || 10) * reservation.covers
 
+    const penaltyCents = Math.round(penaltyAmount * 100)
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: penaltyAmount * 100,
+      amount: penaltyCents,
       currency: 'eur',
       customer: setupIntent.customer as string,
       payment_method: setupIntent.payment_method as string,
@@ -407,7 +409,7 @@ reservationsRouter.post('/:id/charge-no-show', requirePermission('reservations.m
       confirm: true,
       description: `Penale No-Show - Prenotazione #${reservation.id.slice(-4).toUpperCase()} (${reservation.restaurant.name})`,
       ...(settings?.stripeConnectAccountId ? {
-        application_fee_amount: Math.round(penaltyAmount * 100 * 0.05),
+        application_fee_amount: Math.round(penaltyCents * STRIPE_APPLICATION_FEE_PCT),
         transfer_data: { destination: settings.stripeConnectAccountId },
       } : {}),
     }, {

@@ -42,7 +42,12 @@ export async function allocateInvoiceNumber(
   const strategy = getFiscalStrategyFromConfig(fiscal)
   const prefix = prefixOverride?.trim().toUpperCase()
     || strategy.resolveInvoicePrefix(settings?.invoicePrefix)
-  const fiscalYear = issuedAt.getFullYear()
+  const fiscalYear = Number(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: fiscal.timezone || 'Europe/Rome',
+      year: 'numeric',
+    }).format(issuedAt),
+  ) || issuedAt.getFullYear()
 
   const row = await tx.fiscalSequence.upsert({
     where: { restaurantId_fiscalYear: { restaurantId, fiscalYear } },

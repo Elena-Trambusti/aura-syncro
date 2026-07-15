@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto'
 import { Server, Socket } from 'socket.io'
 import { prisma } from '../lib/prisma'
 import { logger } from '../lib/logger'
@@ -59,7 +60,16 @@ async function verifyPrintAgentToken(
     where: { restaurantId },
     select: { printAgentToken: true },
   })
-  return settings?.printAgentToken != null && settings.printAgentToken === token
+  const expected = settings?.printAgentToken
+  if (!expected) return false
+  try {
+    const a = Buffer.from(expected, 'utf8')
+    const b = Buffer.from(token, 'utf8')
+    if (a.length !== b.length) return false
+    return timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
 }
 
 export function setupSocketHandlers(io: Server): void {

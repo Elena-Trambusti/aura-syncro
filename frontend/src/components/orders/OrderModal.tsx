@@ -198,6 +198,7 @@ export default function OrderModal({
     }
 
     setIsSubmitting(true)
+    const cartSnapshot = cart.map(line => ({ ...line }))
     const kitchenPrint = {
       tableLabel,
       items: printSnapshot,
@@ -222,12 +223,12 @@ export default function OrderModal({
       )
     })()
 
+    // Clear cart immediately for UX; close modal only after success on desktop
+    // so a failed send can restore the cart with the modal still open.
     flushSync(() => {
       setCart([])
       if (!isDesktop) {
         setTab('order')
-      } else {
-        onClose()
       }
     })
 
@@ -236,6 +237,7 @@ export default function OrderModal({
         invalidateOrderQueries()
         if (submitResult.result === 'queued') {
           toast.success(t('offline.orderQueued', { defaultValue: 'Comanda salvata — invio appena torna la connessione' }))
+          if (isDesktop) onClose()
           return
         }
 
@@ -259,9 +261,12 @@ export default function OrderModal({
             )
           }
         }
+
+        if (isDesktop) onClose()
       })
       .catch(err => {
         restoreTablesCache(queryClient, tk, tablesSnapshot)
+        setCart(cartSnapshot)
         invalidateOrderQueries()
         handleOrderSubmitError(err)
       })

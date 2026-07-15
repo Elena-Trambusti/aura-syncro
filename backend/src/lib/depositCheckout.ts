@@ -53,8 +53,10 @@ export async function createDepositCheckoutSession(
 
   const session = await stripe.checkout.sessions.create({
     mode: 'setup',
+    customer_creation: 'always',
     customer_email: reservation.guestEmail || undefined,
     currency: 'eur',
+    payment_method_types: ['card'],
     metadata: {
       reservationId: reservation.id,
       restaurantId: reservation.restaurantId,

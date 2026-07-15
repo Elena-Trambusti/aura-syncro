@@ -8,8 +8,13 @@ export function isDemoUserEmail(email: string): boolean {
   return false
 }
 
-/** API consentite in scrittura durante la demo (solo gestione tavoli). */
-const DEMO_WRITE_PREFIXES = ['/api/tables'] as const
+/** API consentite in scrittura durante la demo (solo status/claim tavoli, non create/delete/layout). */
+const DEMO_TABLE_WRITE_OK = [
+  /^\/api\/tables\/[^/]+\/status$/,
+  /^\/api\/tables\/[^/]+\/claim$/,
+  /^\/api\/tables\/[^/]+\/release$/,
+  /^\/api\/tables\/[^/]+\/transfer$/,
+]
 
 export function normalizeApiPath(path: string): string {
   const clean = path.split('?')[0]
@@ -21,5 +26,11 @@ export function isDemoWritePathAllowed(apiPath: string, method: string): boolean
   const verb = method.toUpperCase()
   if (verb === 'GET' || verb === 'HEAD' || verb === 'OPTIONS') return true
   const path = normalizeApiPath(apiPath)
-  return DEMO_WRITE_PREFIXES.some(prefix => path.startsWith(prefix))
+  if (verb === 'DELETE') return false
+  if (!path.startsWith('/api/tables')) return false
+  // Niente create tavoli / floor layout in demo.
+  if (path === '/api/tables' || path.includes('floor-layout') || path.includes('/areas')) {
+    return false
+  }
+  return DEMO_TABLE_WRITE_OK.some(re => re.test(path)) || verb === 'PATCH'
 }
