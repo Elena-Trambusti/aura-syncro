@@ -1,13 +1,20 @@
 /**
- * Migrazioni produzione / PRE_DEPLOY DigitalOcean.
- * - Usa DIRECT_URL (no pooler) per admin lock e DDL
- * - Baseline schema legacy senza rieseguire SQL
- * - Retry migrate deploy se il DB esiste già
+ * Migrazioni produzione (DigitalOcean start + CI).
+ * - Connessione DIRECT_URL (no pooler)
+ * - Baseline DB legacy senza rieseguire SQL
+ * - Fallback manuale se `migrate resolve` fallisce
  */
 import { execSync } from 'node:child_process'
+import { createHash, randomUUID } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { PrismaClient } from '@prisma/client'
 
 const INIT_MIGRATION = '20250620000000_init'
+
+function logStep(msg) {
+  console.log(`[prisma] ${msg}`)
+}
 
 function migrationDatabaseUrl() {
   const direct = process.env.DIRECT_URL?.trim()
@@ -16,9 +23,7 @@ function migrationDatabaseUrl() {
     throw new Error('DATABASE_URL mancante — impossibile eseguire migrazioni')
   }
   if (!direct) {
-    console.warn(
-      '[prisma] WARN: DIRECT_URL non impostato — uso DATABASE_URL (migrate può fallire con PgBouncer).',
-    )
+    logStep('WARN: DIRECT_URL non impostato — uso DATABASE_URL (migrate può fallire con PgBouncer).')
   }
   return direct || pooled
 }
@@ -29,8 +34,27 @@ function migrationEnv() {
 }
 
 function run(cmd) {
-  console.log(`[prisma] $ ${cmd}`)
+  logStep(`$ ${cmd}`)
   execSync(cmd, { stdio: 'inherit', env: migrationEnv() })
+}
+
+function runCapture(cmd) {
+  logStep(`$ ${cmd}`)
+  return execSync(cmd, { encoding: 'utf8', env: migrationEnv() })
+}
+
+function migrationChecksum() {
+  const path = join(process.cwd(), 'prisma/migrations', INIT_MIGRATION, 'migration.sql')
+  if (!existsSync(path)) {
+    throw new Error(`File migrazione baseline non trovato: ${path}`)
+  }
+  return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+function createPrisma() {
+  return new PrismaClient({
+    datasources: { db: { url: migrationDatabaseUrl() } },
+  })
 }
 
 async function tableExists(prisma, tableName) {
@@ -72,6 +96,28 @@ async function clearFailedMigrationRows(prisma) {
   `
 }
 
+async function markInitAppliedManual(prisma) {
+  const checksum = migrationChecksum()
+  const id = randomUUID()
+  logStep(`Inserimento manuale baseline (checksum ${checksum.slice(0, 12)}…)`)
+  await prisma.$executeRaw`
+    INSERT INTO "_prisma_migrations" (
+      id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count
+    ) VALUES (
+      ${id}, ${checksum}, NOW(), ${INIT_MIGRATION}, NULL, NULL, NOW(), 1
+    )
+  `
+}
+
+async function markInitApplied(prisma) {
+  try {
+    run(`npx prisma migrate resolve --applied ${INIT_MIGRATION}`)
+  } catch (err) {
+    logStep(`migrate resolve fallito: ${err?.message ?? err}`)
+    await markInitAppliedManual(prisma)
+  }
+}
+
 async function baselineExistingSchema(prisma) {
   const rows = await readMigrationRows(prisma)
   const names = rows.map(r => r.migration_name)
@@ -80,19 +126,19 @@ async function baselineExistingSchema(prisma) {
     r => r.migration_name === INIT_MIGRATION && r.finished_at != null && r.rolled_back_at == null,
   )
   if (initApplied) {
-    console.log(`[prisma] Baseline "${INIT_MIGRATION}" già registrata (${names.length} migrazioni).`)
+    logStep(`Baseline "${INIT_MIGRATION}" già registrata (${names.length} migrazioni).`)
     return false
   }
 
   const schemaExists = await schemaLikelyExists(prisma)
   if (!schemaExists) {
-    console.log('[prisma] DB vuoto — migrate deploy applicherà la baseline.')
+    logStep('DB vuoto — migrate deploy applicherà la baseline.')
     return false
   }
 
   const legacyCount = names.filter(n => n !== INIT_MIGRATION).length
-  console.log(
-    `[prisma] Schema già presente (${legacyCount} legacy, ${names.length} totali) → baseline "${INIT_MIGRATION}".`,
+  logStep(
+    `Schema già presente (${legacyCount} legacy, ${names.length} totali) → baseline "${INIT_MIGRATION}".`,
   )
 
   await clearFailedMigrationRows(prisma)
@@ -100,7 +146,7 @@ async function baselineExistingSchema(prisma) {
     await prisma.$executeRaw`DELETE FROM "_prisma_migrations"`
   }
 
-  run(`npx prisma migrate resolve --applied ${INIT_MIGRATION}`)
+  await markInitApplied(prisma)
   return true
 }
 
@@ -109,12 +155,24 @@ function deployMigrations() {
 }
 
 async function main() {
-  run('npx prisma generate')
+  logStep(`cwd=${process.cwd()}`)
+  logStep(`node=${process.version}`)
+  logStep(`DIRECT_URL=${Boolean(process.env.DIRECT_URL?.trim())} DATABASE_URL=${Boolean(process.env.DATABASE_URL?.trim())}`)
 
-  const prisma = new PrismaClient({
-    datasources: { db: { url: migrationDatabaseUrl() } },
-  })
+  if (!existsSync(join(process.cwd(), 'prisma/migrations', INIT_MIGRATION, 'migration.sql'))) {
+    throw new Error('Baseline migration assente nel container — rebuild necessario')
+  }
 
+  if (!existsSync(join(process.cwd(), 'node_modules/.prisma/client'))) {
+    run('npx prisma generate')
+  } else {
+    logStep('Prisma Client già generato — skip generate')
+  }
+
+  const statusBefore = runCapture('npx prisma migrate status || true')
+  logStep(`migrate status (before):\n${statusBefore}`)
+
+  const prisma = createPrisma()
   try {
     await baselineExistingSchema(prisma)
   } finally {
@@ -124,12 +182,10 @@ async function main() {
   try {
     deployMigrations()
   } catch (firstError) {
-    console.warn('[prisma] migrate deploy fallito — tentativo recovery baseline…')
-    console.warn(firstError?.message ?? firstError)
+    logStep('migrate deploy fallito — recovery baseline…')
+    logStep(String(firstError?.message ?? firstError))
 
-    const prismaRetry = new PrismaClient({
-      datasources: { db: { url: migrationDatabaseUrl() } },
-    })
+    const prismaRetry = createPrisma()
     try {
       const baselined = await baselineExistingSchema(prismaRetry)
       if (!baselined && !(await schemaLikelyExists(prismaRetry))) {
@@ -142,7 +198,9 @@ async function main() {
     deployMigrations()
   }
 
-  console.log('[prisma] Migrazioni completate.')
+  const statusAfter = runCapture('npx prisma migrate status || true')
+  logStep(`migrate status (after):\n${statusAfter}`)
+  logStep('Migrazioni completate.')
 }
 
 main().catch(err => {

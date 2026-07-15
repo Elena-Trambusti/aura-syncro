@@ -17,9 +17,9 @@ describe('migrate-production.mjs', () => {
     expect(source).toContain('Restaurant')
   })
 
-  it('baseline + retry migrate deploy su schema legacy', () => {
-    expect(source).toContain('migrate resolve --applied')
-    expect(source).toContain('migrate deploy fallito')
+  it('fallback inserimento manuale baseline', () => {
+    expect(source).toContain('markInitAppliedManual')
+    expect(source).toContain('createHash')
   })
 
   it('entrypoint npm run db:migrate senza tsx', () => {

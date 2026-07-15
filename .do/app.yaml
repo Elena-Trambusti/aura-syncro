@@ -88,29 +88,7 @@ services:
       - key: MARKETING_SCHEDULER_MS
         value: "3600000"
 
-# Migrazioni Prisma PRIMA di ogni deploy — blocca il rollout se il DB non è allineato
-jobs:
-  - name: prisma-migrate
-    kind: PRE_DEPLOY
-    github:
-      repo: Elena-Trambusti/aura-syncro
-      branch: main
-      deploy_on_push: true
-    source_dir: backend
-    environment_slug: node-js
-    instance_size_slug: basic-xxs
-    build_command: npm ci && npx prisma generate
-    run_command: npm run db:migrate
-    envs:
-      - key: NPM_CONFIG_PRODUCTION
-        value: "false"
-        scope: BUILD_TIME
-      - key: NODE_ENV
-        value: production
-        scope: RUN_TIME
-      - key: DATABASE_URL
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-      - key: DIRECT_URL
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
+# Migrazioni: eseguite in `npm start` via scripts/migrate-production.mjs (non job PRE_DEPLOY).
+# Il job PRE_DEPLOY bloccava i deploy con build cache obsoleta su DigitalOcean.
+# Se in dashboard esiste ancora il componente "prisma-migrate", eliminalo manualmente:
+# App → Components → prisma-migrate → Destroy

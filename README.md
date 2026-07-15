@@ -51,17 +51,18 @@ aura-syncro/
 | Componente | Piattaforma | Note |
 |---|---|---|
 | Frontend | **Vercel** | Proxy `/api` e Socket.IO verso backend DO (`frontend/vercel.json`) |
-| Backend | **DigitalOcean App Platform** | `.do/app.yaml`, readiness `/api/health/ready`, job `prisma-migrate` PRE_DEPLOY |
+| Backend | **DigitalOcean App Platform** | `.do/app.yaml`, migrazioni in `npm start`, readiness `/api/health/ready` |
 | Database | **PostgreSQL** | `DATABASE_URL` + `DIRECT_URL` (pooler + direct per migrations) |
 
 **Checklist deploy backend (ordine obbligatorio):**
 
-1. Push su `main` → DigitalOcean esegue job `prisma-migrate` (PRE_DEPLOY) poi avvia l'API
-2. `npm start` esegue anche `prisma migrate deploy` all'avvio container (doppia sicurezza)
-3. Verifica: `npm run verify:production` (critici: health + login)
-4. Dopo deploy completo: `VERIFY_PRODUCTION_STRICT=1 npm run verify:production --prefix backend` (tutti gli endpoint)
-5. Se login fallisce con `printAgentToken` → migrazioni non applicate; controllare log job `prisma-migrate` su DO
-6. Il job esegue `npm run db:migrate` (`scripts/migrate-production.mjs`) — richiede **`DIRECT_URL`** (porta 5432, non pooler 6543). Se il deploy fallisce, verificare env vars e log **Deploy** (non Build) del job `prisma-migrate`.
+1. Push su `main` → DigitalOcean builda e avvia il service `api`
+2. `npm start` esegue `node scripts/migrate-production.mjs` poi il server
+3. **`DIRECT_URL` obbligatorio** sul service API (porta 5432, non pooler 6543)
+4. **Elimina il job `prisma-migrate`** dalla dashboard DO se ancora presente (Components → Destroy) — bloccava i deploy
+5. Verifica: `npm run verify:production` (critici: health + login)
+6. Dopo deploy completo: `VERIFY_PRODUCTION_STRICT=1 npm run verify:production --prefix backend`
+7. Se login fallisce con `printAgentToken` → controllare **Runtime logs** del service `api` (migrate all'avvio)
 
 ---
 
