@@ -73,7 +73,6 @@ export async function markOrderRefunded(
     throw Object.assign(new Error('ORDER_ALREADY_REFUNDED'), { code: 'ORDER_ALREADY_REFUNDED' })
   }
 
-  // Audit fiscale: marca fattura collegata come rimborsata (stato SDI informativo).
   await db.invoice.updateMany({
     where: { orderId, restaurantId },
     data: { statoSdi: 'refunded' },
@@ -102,8 +101,8 @@ export type ExecuteOrderRefundInput = {
 }
 
 /**
- * Rimborso unificato. Supporta solo rimborso intero (o amount ≈ total):
- * evita mismatch Stripe/CRM/fiscalità su partial incompleti.
+ * Rimborso unificato. Supporta solo rimborso intero (o amount ≈ total).
+ * Gestisce anche settlement misto (split cash + saldo CARD).
  */
 export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promise<{ refundAmount: number }> {
   const order = await prisma.order.findFirst({
@@ -114,6 +113,7 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
       refundedAt: true,
       paymentMethod: true,
       stripePaymentIntent: true,
+      collectedAmount: true,
     },
   })
   if (!order) {
@@ -131,29 +131,63 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
     })
   }
 
+  const cashSales = await prisma.cashTransaction.aggregate({
+    where: { orderId: order.id, type: 'SALE' },
+    _sum: { amount: true },
+  })
+  const cashPart = Math.min(orderTotal, moneyNumber(cashSales._sum.amount))
+  const hasStripe = Boolean(order.stripePaymentIntent)
+  const stripePart = hasStripe
+    ? Math.max(0, Math.round((orderTotal - cashPart) * 100) / 100)
+    : 0
+
   const isDigital =
     order.paymentMethod != null && DIGITAL_METHODS.includes(order.paymentMethod)
 
-  if (isDigital) {
-    if (!order.stripePaymentIntent) {
-      throw Object.assign(new Error('STRIPE_REFUND_UNAVAILABLE'), { code: 'STRIPE_REFUND_UNAVAILABLE' })
+  // Mixed: cash SALE rows + Stripe residual (or pure digital with no cash).
+  if (isDigital && hasStripe) {
+    if (cashPart > 0.009 && (!input.cashSessionId || !input.userId)) {
+      throw Object.assign(new Error('CASH_SESSION_REQUIRED'), {
+        code: 'CASH_SESSION_REQUIRED',
+        message: 'Rimborso misto: serve cassa aperta per la quota contanti',
+      })
     }
+
+    const stripeRefundAmount = stripePart > 0.009 ? stripePart : refundAmount
     await refundStripePaymentIntent(
-      order.stripePaymentIntent,
+      order.stripePaymentIntent!,
       {
         orderId: order.id,
         restaurantId: input.restaurantId,
         reason: input.reason ?? 'staff_refund',
       },
-      refundAmount,
+      stripePart > 0.009 ? stripePart : refundAmount,
     )
-    // Stripe already refunded (idempotent): retry DB mark until committed.
+
     let lastErr: unknown
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const reversal = await prisma.$transaction(async tx =>
-          markOrderRefunded(order.id, input.restaurantId, refundAmount, tx),
-        )
+        const reversal = await prisma.$transaction(async tx => {
+          if (cashPart > 0.009 && input.cashSessionId && input.userId) {
+            const open = await tx.cashRegisterSession.findFirst({
+              where: { id: input.cashSessionId, restaurantId: input.restaurantId, status: 'OPEN' },
+            })
+            if (!open) {
+              throw Object.assign(new Error('CASH_SESSION_CLOSED'), { code: 'CASH_SESSION_CLOSED' })
+            }
+            await tx.cashTransaction.create({
+              data: {
+                sessionId: open.id,
+                userId: input.userId,
+                type: 'REFUND',
+                amount: toMoney(cashPart),
+                reason: input.reason ?? `Rimborso contanti ordine #${order.id.slice(-6).toUpperCase()}`,
+                orderId: order.id,
+              },
+            })
+          }
+          return markOrderRefunded(order.id, input.restaurantId, refundAmount, tx)
+        })
         await syncTierAfterRefund(input.restaurantId, reversal)
         return { refundAmount }
       } catch (err) {
@@ -161,16 +195,17 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
         if (code === 'ORDER_ALREADY_REFUNDED') {
           return { refundAmount }
         }
+        if (code === 'CASH_SESSION_CLOSED') throw err
         lastErr = err
       }
     }
     throw Object.assign(
       new Error('REFUND_MARK_FAILED_AFTER_STRIPE'),
-      { code: 'REFUND_MARK_FAILED_AFTER_STRIPE', cause: lastErr },
+      { code: 'REFUND_MARK_FAILED_AFTER_STRIPE', cause: lastErr, stripeRefundAmount },
     )
   }
 
-  if (order.paymentMethod === 'CASH') {
+  if (order.paymentMethod === 'CASH' || (!hasStripe && cashPart > 0)) {
     if (!input.cashSessionId || !input.userId) {
       throw Object.assign(new Error('CASH_SESSION_REQUIRED'), { code: 'CASH_SESSION_REQUIRED' })
     }

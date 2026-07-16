@@ -7,10 +7,15 @@ export async function loadHardwareConfig(): Promise<HardwareConfig> {
   }
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const result = native.getHardwareConfig();
-      resolve(result.data ?? { printers: [], pos: null, defaultPrinterId: null });
-    });
+    onNativeReady(
+      (native) => {
+        const result = native.getHardwareConfig();
+        resolve(result.data ?? { printers: [], pos: null, defaultPrinterId: null });
+      },
+      {
+        onTimeout: () => resolve({ printers: [], pos: null, defaultPrinterId: null }),
+      },
+    );
   });
 }
 
@@ -18,10 +23,15 @@ export async function saveHardwareConfig(config: HardwareConfig): Promise<boolea
   if (!isAndroidTablet()) return false;
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const result = native.saveHardwareConfig(config);
-      resolve(result.ok);
-    });
+    onNativeReady(
+      (native) => {
+        const result = native.saveHardwareConfig(config);
+        resolve(result.ok);
+      },
+      {
+        onTimeout: () => resolve(false),
+      },
+    );
   });
 }
 

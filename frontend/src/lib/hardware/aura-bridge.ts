@@ -85,6 +85,42 @@ export function isAndroidTablet(): boolean {
   return typeof window !== 'undefined' && window.AuraSyncro?.isAndroidApp() === true;
 }
 
-export function onNativeReady(callback: (native: AuraNative) => void): void {
-  window.AuraSyncro?.onReady(callback);
+const DEFAULT_NATIVE_READY_TIMEOUT_MS = 8_000
+
+/**
+ * Invokes callback when the Android bridge is ready.
+ * Always settles (success or timeout) so print/POS promises cannot hang forever.
+ */
+export function onNativeReady(
+  callback: (native: AuraNative) => void,
+  options?: { timeoutMs?: number; onTimeout?: () => void },
+): void {
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_NATIVE_READY_TIMEOUT_MS
+  let settled = false
+  const settle = (fn: () => void) => {
+    if (settled) return
+    settled = true
+    clearTimeout(timer)
+    fn()
+  }
+
+  const timer = setTimeout(() => {
+    settle(() => {
+      const native = typeof window !== 'undefined' ? window.AuraSyncro?.getNative?.() : undefined
+      if (native) {
+        callback(native)
+        return
+      }
+      options?.onTimeout?.()
+    })
+  }, timeoutMs)
+
+  if (typeof window === 'undefined' || !window.AuraSyncro?.onReady) {
+    settle(() => options?.onTimeout?.())
+    return
+  }
+
+  window.AuraSyncro.onReady((native) => {
+    settle(() => callback(native))
+  })
 }

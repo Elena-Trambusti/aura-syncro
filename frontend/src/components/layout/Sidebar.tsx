@@ -56,7 +56,7 @@ const navItems: Array<{
   { to: '/profilo', icon: User, labelKey: 'nav.profile' },
 ]
 
-const kitchenLink = { to: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay', permission: 'orders.read' as const }
+const kitchenLink = { to: '/cucina', icon: ChefHat, labelKey: 'nav.kitchenDisplay', permission: 'orders.kitchen_status' as const }
 
 export default function Sidebar() {
   const { t } = useTranslation()
@@ -270,7 +270,7 @@ export default function Sidebar() {
               )
             }
 
-            if (!kitchenLink.permission || can(kitchenLink.permission)) {
+            if (can('orders.kitchen_status') || can('orders.items')) {
               const isActive = location.pathname === kitchenLink.to
               return (
                 <NavLink

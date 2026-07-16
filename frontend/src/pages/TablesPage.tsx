@@ -282,6 +282,10 @@ export default function TablesPage() {
       setSeatedCustomerId(null)
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'common.saveError'))
     },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'reservations') })
+    },
   })
 
   const markTableFree = useMutation({
@@ -310,6 +314,7 @@ export default function TablesPage() {
         next.delete(id)
         return next
       })
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
     },
   })
 
@@ -355,6 +360,9 @@ export default function TablesPage() {
         return
       }
       toast.error((err as { translatedMessage?: string }).translatedMessage ?? formatApiError(t, err, 'orderModal.transferError'))
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
     },
   })
 

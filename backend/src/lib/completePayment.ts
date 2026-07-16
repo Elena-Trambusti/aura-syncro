@@ -11,18 +11,19 @@ import { loadRestaurantFiscalConfig } from './taxEngine'
 import { loadRestaurantPosConfig } from './posIntegration'
 import { computePosPaymentAmounts, type OrderAmounts } from './tipFiscal'
 import { resolveDiscountForOrder } from './orderDiscount'
-import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
+import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse, getIdempotentResponse } from './apiIdempotency'
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { moneyNumber } from './money'
 import { runPaymentSideEffects, schedulePaymentSideEffects } from './paymentSideEffects'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
+import { orderPaymentFinalizeLockKey, orderPaymentFailureKey } from './paymentLockKeys'
 
 function paymentLockKey(orderId: string): string {
-  return `payment:finalize:${orderId}`
+  return orderPaymentFinalizeLockKey(orderId)
 }
 
 function paymentFailureKey(orderId: string): string {
-  return `payment:failure:${orderId}`
+  return orderPaymentFailureKey(orderId)
 }
 
 /** Side-effects dopo PAID: non far fallire l'HTTP se magazzino/fattura falliscono — ritenta in background. */
@@ -73,6 +74,20 @@ export async function completeOrderPayment(input: {
   if (orderPreview.status === 'CANCELLED') throw new Error('ORDER_CANCELLED')
 
   const lockKey = paymentLockKey(input.finalize.orderId)
+  const failureKey = paymentFailureKey(input.finalize.orderId)
+
+  const existingOrphan = await getIdempotentResponse(
+    input.finalize.restaurantId,
+    failureKey,
+    'PAYMENT_CHARGE_ORPHAN',
+  )
+  if (existingOrphan) {
+    const body = existingOrphan.responseBody as { stripePaymentIntentId?: string; refunded?: boolean }
+    if (body?.stripePaymentIntentId && !body.refunded) {
+      throw new Error('ORPHAN_CHARGE_PENDING')
+    }
+  }
+
   const lockAcquired = await acquireIdempotencyLock(
     input.finalize.restaurantId,
     lockKey,
@@ -84,18 +99,39 @@ export async function completeOrderPayment(input: {
       select: { status: true },
     })
     if (current?.status === 'PAID') throw new Error('ORDER_ALREADY_PAID')
+    const locked = await getIdempotentResponse(input.finalize.restaurantId, lockKey, 'PAYMENT_FINALIZE')
+    if (locked?.statusCode === 402) throw new Error('ORPHAN_CHARGE_PENDING')
     throw new Error('PAYMENT_IN_PROGRESS')
   }
 
   const fiscal = await loadRestaurantFiscalConfig(input.finalize.restaurantId)
 
-  let orderAmounts: OrderAmounts = orderPreview
+  // Fresh read after lock — split cash cannot change collectedAmount while we hold the lock
+  // (split also checks this lock). Re-read for accurate CARD residual.
+  const lockedOrder = await prisma.order.findFirst({
+    where: { id: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+    include: { items: true },
+  })
+  if (!lockedOrder) {
+    await releaseIdempotencyLock(input.finalize.restaurantId, lockKey)
+    throw new Error('ORDER_NOT_FOUND')
+  }
+  if (lockedOrder.status === 'PAID') {
+    await releaseIdempotencyLock(input.finalize.restaurantId, lockKey)
+    throw new Error('ORDER_ALREADY_PAID')
+  }
+  if (lockedOrder.status === 'CANCELLED') {
+    await releaseIdempotencyLock(input.finalize.restaurantId, lockKey)
+    throw new Error('ORDER_CANCELLED')
+  }
+
+  let orderAmounts: OrderAmounts = lockedOrder
   let precomputedTotals: PrecomputedOrderTotals | undefined
 
   if (input.discountOptions) {
     const { totals } = await resolveDiscountForOrder(
       input.finalize.restaurantId,
-      orderPreview,
+      lockedOrder,
       input.discountOptions,
     )
     orderAmounts = {
@@ -103,7 +139,7 @@ export async function completeOrderPayment(input: {
       subtotal: totals.subtotal,
       tax: totals.tax,
       total: totals.total,
-      tipAmount: orderPreview.tipAmount,
+      tipAmount: lockedOrder.tipAmount,
     }
     precomputedTotals = {
       subtotal: totals.subtotal,
@@ -119,7 +155,7 @@ export async function completeOrderPayment(input: {
   let chargedAmount = 0
 
   /** After split cash, CARD/EXTERNAL must charge only the remaining balance. */
-  const priorCollected = moneyNumber(orderPreview.collectedAmount)
+  const priorCollected = moneyNumber(lockedOrder.collectedAmount)
   const fullPosAmounts = computePosPaymentAmounts(fiscal, orderAmounts, input.finalize.tipAmount)
   const remainingDue = Math.max(
     0,
@@ -234,28 +270,32 @@ export async function completeOrderPayment(input: {
     const stripeIntentToRefund =
       posResult?.stripePaymentIntentId
       ?? (input.finalize.paymentMethod === 'STRIPE' ? input.stripePaymentIntentId : undefined)
+    let refundOk = true
     if (stripeIntentToRefund) {
       const message = err instanceof Error ? err.message : 'UNKNOWN'
       if (posResult?.provider === 'stripe' || input.finalize.paymentMethod === 'STRIPE') {
-        await stripe.refunds.create({
-          payment_intent: stripeIntentToRefund,
-          reason: 'requested_by_customer',
-          metadata: {
-            orderId: input.finalize.orderId,
-            restaurantId: input.finalize.restaurantId,
-            reason: 'finalize_failed_auto_refund',
-          },
-        }).catch(refundErr => {
+        try {
+          await stripe.refunds.create({
+            payment_intent: stripeIntentToRefund,
+            reason: 'requested_by_customer',
+            metadata: {
+              orderId: input.finalize.orderId,
+              restaurantId: input.finalize.restaurantId,
+              reason: 'finalize_failed_auto_refund',
+            },
+          })
+        } catch (refundErr) {
+          refundOk = false
           console.error('[payment] Failed to auto-refund orphan charge', {
             orderId: input.finalize.orderId,
             stripePaymentIntentId: stripeIntentToRefund,
             error: refundErr instanceof Error ? refundErr.message : refundErr,
           })
-        })
+        }
       }
       await saveIdempotentResponse(
         input.finalize.restaurantId,
-        paymentFailureKey(input.finalize.orderId),
+        failureKey,
         'PAYMENT_CHARGE_ORPHAN',
         402,
         {
@@ -263,6 +303,7 @@ export async function completeOrderPayment(input: {
           stripePaymentIntentId: stripeIntentToRefund,
           amount: chargedAmount,
           error: message,
+          refunded: refundOk,
         },
       ).catch(logErr => console.error('[payment] Failed to persist charge orphan log', logErr))
       console.error('[payment] Charge succeeded but finalize failed', {
@@ -270,9 +311,9 @@ export async function completeOrderPayment(input: {
         stripePaymentIntentId: stripeIntentToRefund,
         amount: chargedAmount,
         error: message,
+        refundOk,
       })
 
-      // Se l'ordine è già PAID (side-effects falliti dopo finalize), allinea lo storno fiscale/CRM.
       const paidOrphan = await prisma.order.findFirst({
         where: {
           id: input.finalize.orderId,
@@ -299,6 +340,18 @@ export async function completeOrderPayment(input: {
             error: markErr instanceof Error ? markErr.message : markErr,
           })
         }
+      }
+
+      if (!refundOk) {
+        // Keep finalize lock as 402 so retry cannot open a second charge.
+        await saveIdempotentResponse(
+          input.finalize.restaurantId,
+          lockKey,
+          'PAYMENT_FINALIZE',
+          402,
+          { orphan: true, stripePaymentIntentId: stripeIntentToRefund },
+        ).catch(() => {})
+        throw err
       }
     }
     await releaseIdempotencyLock(input.finalize.restaurantId, lockKey)

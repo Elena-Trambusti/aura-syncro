@@ -18,6 +18,8 @@ export interface CreateReservationInput {
   tableId?: string
   notes?: string
   internalNotes?: string
+  /** Staff waitlist/seat: conferma immediata anche se deposit richiesto (ospite già presente). */
+  forceConfirmed?: boolean
 }
 
 type DbClient = Prisma.TransactionClient | typeof prisma
@@ -52,6 +54,8 @@ export async function createReservation(input: CreateReservationInput) {
       where: { restaurantId: input.restaurantId },
     })
 
+    const status = input.forceConfirmed ? 'CONFIRMED' : slot.status
+
     const reservation = await tx.reservation.create({
       data: {
         restaurantId: input.restaurantId,
@@ -64,13 +68,15 @@ export async function createReservation(input: CreateReservationInput) {
         tableId: input.tableId,
         notes: input.notes,
         internalNotes: input.internalNotes,
-        status: slot.status,
+        status,
         customerId,
       },
       include: { table: true, customer: true, restaurant: { select: { slug: true, name: true } } },
     })
 
-    if (reservation.tableId) {
+    if (reservation.tableId && status === 'CONFIRMED') {
+      await syncTableReservedForReservation(reservation.tableId, input.restaurantId, tx)
+    } else if (reservation.tableId && status === 'PENDING' && !requiresDeposit(settings)) {
       await syncTableReservedForReservation(reservation.tableId, input.restaurantId, tx)
     }
 

@@ -11,6 +11,8 @@ import {
 import { moneyNumber, toMoney } from './money'
 import { prisma } from './prisma'
 import { runOrderTransaction } from './prismaTransactions'
+import { getIdempotentResponse } from './apiIdempotency'
+import { orderPaymentFinalizeLockKey } from './paymentLockKeys'
 
 export type SplitGuestPaymentInput = {
   orderId: string
@@ -53,6 +55,15 @@ export async function recordSplitGuestPayment(
 ): Promise<SplitGuestPaymentResult> {
   if (input.settlementMethod !== 'CASH') {
     throw new Error('SPLIT_INCREMENTAL_CASH_ONLY')
+  }
+
+  const finalizeLock = await getIdempotentResponse(
+    input.restaurantId,
+    orderPaymentFinalizeLockKey(input.orderId),
+    'PAYMENT_FINALIZE',
+  )
+  if (finalizeLock?.statusCode === 202 || finalizeLock?.statusCode === 402) {
+    throw new Error('PAYMENT_IN_PROGRESS')
   }
 
   return runOrderTransaction(async (tx: Prisma.TransactionClient) => {

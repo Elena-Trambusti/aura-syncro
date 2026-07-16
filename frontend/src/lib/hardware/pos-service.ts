@@ -11,15 +11,20 @@ export async function payWithConfiguredPos(
   }
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const amountCents = Math.round(amountEuro * 100);
-      const result = native.openConfiguredPosPayment(amountCents, orderId, currency);
-      if (!result.ok) {
-        resolve({ ok: false, error: result.error });
-        return;
-      }
-      resolve({ ok: true, pending: true });
-    });
+    onNativeReady(
+      (native) => {
+        const amountCents = Math.round(amountEuro * 100);
+        const result = native.openConfiguredPosPayment(amountCents, orderId, currency);
+        if (!result.ok) {
+          resolve({ ok: false, error: result.error });
+          return;
+        }
+        resolve({ ok: true, pending: true });
+      },
+      {
+        onTimeout: () => resolve({ ok: false, error: 'Bridge Android non disponibile (timeout)' }),
+      },
+    );
   });
 }
 
@@ -31,10 +36,15 @@ export async function confirmPaymentManually(
   if (!isAndroidTablet()) return null;
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const result = native.confirmPayment(orderId, status, txId);
-      resolve(result.ok ? (result.data ?? null) : null);
-    });
+    onNativeReady(
+      (native) => {
+        const result = native.confirmPayment(orderId, status, txId);
+        resolve(result.ok ? (result.data ?? null) : null);
+      },
+      {
+        onTimeout: () => resolve(null),
+      },
+    );
   });
 }
 

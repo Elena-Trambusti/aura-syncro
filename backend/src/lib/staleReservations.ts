@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { syncTableReservedForReservation } from './createReservation'
+import { releaseTableFromReservation } from './reservationTableSync'
 
 const DEPOSIT_PENDING_TTL_MS = Number(process.env.DEPOSIT_PENDING_TTL_MS || 24 * 60 * 60 * 1000)
 
@@ -41,7 +41,7 @@ export async function cancelStaleDepositReservations(): Promise<number> {
     if (updated.count === 0) continue
 
     if (row.tableId) {
-      await syncTableReservedForReservation(row.tableId, row.restaurantId)
+      await releaseTableFromReservation(row.restaurantId, row.tableId, row.id)
     }
     cancelled += 1
   }

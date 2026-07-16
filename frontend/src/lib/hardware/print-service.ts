@@ -14,19 +14,24 @@ export async function printKitchenOrder(
   }
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const config = native.getHardwareConfig().data;
-      const targetPrinterId = printerId ?? config?.defaultPrinterId;
+    onNativeReady(
+      (native) => {
+        const config = native.getHardwareConfig().data;
+        const targetPrinterId = printerId ?? config?.defaultPrinterId;
 
-      if (!targetPrinterId) {
-        resolve({ ok: false, error: 'Nessuna stampante configurata' });
-        return;
-      }
+        if (!targetPrinterId) {
+          resolve({ ok: false, error: 'Nessuna stampante configurata' });
+          return;
+        }
 
-      const payload = toBase64(buildKitchenTicket(orderId, table, items));
-      const result = native.printToSavedPrinter(targetPrinterId, payload);
-      resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
-    });
+        const payload = toBase64(buildKitchenTicket(orderId, table, items));
+        const result = native.printToSavedPrinter(targetPrinterId, payload);
+        resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
+      },
+      {
+        onTimeout: () => resolve({ ok: false, error: 'Bridge Android non disponibile (timeout)' }),
+      },
+    );
   });
 }
 
@@ -52,7 +57,7 @@ export async function printCustomerReceiptNative(
   }
 
   const locale = options?.locale ?? 'it-IT';
-  const taxLabel = options?.taxLabel ?? 'Tax';
+  const taxLabel = options?.taxLabel ?? 'IVA';
   const tipLabel = options?.tipLabel ?? 'Mancia';
   const foodTotal = moneyNumber(order.revenueAmount) || addMoney(order.subtotal, order.tax);
   const tip = moneyNumber(order.tipAmount) || Math.max(0, moneyNumber(order.total) - foodTotal);
@@ -85,16 +90,21 @@ export async function printCustomerReceiptNative(
   );
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const config = native.getHardwareConfig().data;
-      const targetPrinterId = config?.defaultPrinterId;
-      if (!targetPrinterId) {
-        resolve({ ok: false, error: 'Nessuna stampante configurata' });
-        return;
-      }
-      const result = native.printToSavedPrinter(targetPrinterId, payload);
-      resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
-    });
+    onNativeReady(
+      (native) => {
+        const config = native.getHardwareConfig().data;
+        const targetPrinterId = config?.defaultPrinterId;
+        if (!targetPrinterId) {
+          resolve({ ok: false, error: 'Nessuna stampante configurata' });
+          return;
+        }
+        const result = native.printToSavedPrinter(targetPrinterId, payload);
+        resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
+      },
+      {
+        onTimeout: () => resolve({ ok: false, error: 'Bridge Android non disponibile (timeout)' }),
+      },
+    );
   });
 }
 
@@ -108,9 +118,14 @@ export async function testSavedPrinter(printerId: string): Promise<{ ok: boolean
   if (!printer) return { ok: false, error: 'Stampante non trovata' };
 
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      const result = native.testPrinterConnection(printer.type, printer.address, printer.label);
-      resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
-    });
+    onNativeReady(
+      (native) => {
+        const result = native.testPrinterConnection(printer.type, printer.address, printer.label);
+        resolve(result.ok ? { ok: true } : { ok: false, error: result.error });
+      },
+      {
+        onTimeout: () => resolve({ ok: false, error: 'Bridge Android non disponibile (timeout)' }),
+      },
+    );
   });
 }

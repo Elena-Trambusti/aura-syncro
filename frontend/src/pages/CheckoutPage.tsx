@@ -314,6 +314,10 @@ export default function CheckoutPage() {
     return splitProgressLabel(moneyNumber(order.collectedAmount), grandTotal)
   }, [order, paymentMethod, grandTotal])
 
+  const splitConfigLocked =
+    paymentMethod === 'SPLIT'
+    && (moneyNumber(order?.collectedAmount) > 0 || (order?.splitPaidGuestIndexes?.length ?? 0) > 0)
+
   const splitUsesIncrementalCash = paymentMethod === 'SPLIT' && splitSettlement === 'CASH'
   const usesNativePosFlow =
     shouldUseNativePos(posStatus?.mode)
@@ -1059,18 +1063,33 @@ export default function CheckoutPage() {
 
           {paymentMethod === 'SPLIT' && (
             <div className="mt-5 space-y-4 border-t border-white/[0.06] pt-4">
+              {splitConfigLocked && (
+                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                  {t('checkout.splitConfigLocked', {
+                    defaultValue: 'Configurazione split bloccata: alcune quote sono già state incassate.',
+                  })}
+                </p>
+              )}
               <div className="flex gap-2">
                 <button
                   type="button"
+                  disabled={splitConfigLocked}
                   onClick={() => setSplitMode('equal')}
-                  className={cn('flex-1 rounded-lg py-2 text-xs font-semibold', splitMode === 'equal' ? 'bg-slate-900 text-white' : 'bg-navy-surface')}
+                  className={cn(
+                    'flex-1 rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50',
+                    splitMode === 'equal' ? 'bg-slate-900 text-white' : 'bg-navy-surface',
+                  )}
                 >
                   {t('checkout.splitEqual')}
                 </button>
                 <button
                   type="button"
+                  disabled={splitConfigLocked}
                   onClick={() => setSplitMode('by_items')}
-                  className={cn('flex-1 rounded-lg py-2 text-xs font-semibold', splitMode === 'by_items' ? 'bg-slate-900 text-white' : 'bg-navy-surface')}
+                  className={cn(
+                    'flex-1 rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50',
+                    splitMode === 'by_items' ? 'bg-slate-900 text-white' : 'bg-navy-surface',
+                  )}
                 >
                   {t('checkout.splitByItems')}
                 </button>
@@ -1083,8 +1102,9 @@ export default function CheckoutPage() {
                   min={2}
                   max={20}
                   value={guestCount}
+                  disabled={splitConfigLocked}
                   onChange={e => setGuestCount(Math.max(2, parseInt(e.target.value, 10) || 2))}
-                  className="saas-input mt-1 w-full py-2 text-sm"
+                  className="saas-input mt-1 w-full py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </label>
 
@@ -1095,8 +1115,9 @@ export default function CheckoutPage() {
                       <span className="truncate text-sm text-pietra">{item.menuItem.name}</span>
                       <select
                         value={itemAssignments[item.id] ?? 0}
+                        disabled={splitConfigLocked}
                         onChange={e => assignItem(item.id, parseInt(e.target.value, 10))}
-                        className="rounded-lg premium-card px-2 py-1 text-xs"
+                        className="rounded-lg premium-card px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {Array.from({ length: guestCount }, (_, i) => (
                           <option key={i} value={i}>{t('checkout.guest', { n: i + 1 })}</option>

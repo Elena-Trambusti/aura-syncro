@@ -367,6 +367,11 @@ adminRouter.post('/plan-downgrade', async (req: Request, res: Response): Promise
     },
   })
 
+  await prisma.restaurant.update({
+    where: { id: restaurantId },
+    data: { subscriptionPlan: 'STARTER' },
+  })
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     select: restaurantSummarySelect,

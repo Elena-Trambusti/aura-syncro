@@ -58,15 +58,24 @@ export function useAuraHardware() {
       return;
     }
 
-    onNativeReady(async (native) => {
-      setReady(true);
-      const perms = native.hasPermissions();
-      setPermissionsGranted(Boolean(perms.data?.granted));
-      const bt = native.isBluetoothEnabled();
-      setBluetoothEnabled(Boolean(bt.data?.enabled));
-      await refreshConfig();
-      setLoading(false);
-    });
+    onNativeReady(
+      async (native) => {
+        setReady(true);
+        const perms = native.hasPermissions();
+        setPermissionsGranted(Boolean(perms.data?.granted));
+        const bt = native.isBluetoothEnabled();
+        setBluetoothEnabled(Boolean(bt.data?.enabled));
+        await refreshConfig();
+        setLoading(false);
+      },
+      {
+        onTimeout: () => {
+          setError('Bridge Android non disponibile (timeout)');
+          setLoading(false);
+          setReady(false);
+        },
+      },
+    );
   }, [refreshConfig]);
 
   useEffect(() => {

@@ -30,5 +30,5 @@ export const COMMAND_ROUTES: CommandRoute[] = [
   { to: '/analytics', labelKey: 'nav.analytics', keywords: ['analytics', 'statistiche'], proOnly: true, permission: 'analytics.read' },
   { to: '/impostazioni', labelKey: 'nav.settings', keywords: ['impostazioni', 'settings', 'config'], permission: 'settings.manage' },
   { to: '/profilo', labelKey: 'nav.profile', keywords: ['profilo', 'profile', 'account', 'password'] },
-  { to: '/cucina', labelKey: 'nav.kitchenDisplay', keywords: ['cucina', 'kitchen', 'kds'], permission: 'orders.read' },
+  { to: '/cucina', labelKey: 'nav.kitchenDisplay', keywords: ['cucina', 'kitchen', 'kds'], permission: 'orders.kitchen_status' },
 ]

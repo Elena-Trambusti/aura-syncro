@@ -356,6 +356,12 @@ export default function OrderModal({
 
   const goToCheckout = () => {
     if (!activeOrder) return
+    if (isOptimisticOrder) {
+      toast.error(t('orderModal.optimisticOrderPending', {
+        defaultValue: 'Attendi la sincronizzazione dell\'ordine prima di procedere al pagamento.',
+      }))
+      return
+    }
     if (!navigator.onLine) {
       toast.error(t('offline.bannerOffline') || 'Impossibile procedere con il pagamento offline. Controlla la connessione internet.')
       return
@@ -731,23 +737,28 @@ export default function OrderModal({
             {t('orderModal.orderTotal')}: {formatCurrency(activeOrder!.total)}
           </p>
 
-          <CustomerPicker
-            orderId={activeOrder!.id}
-            currentCustomer={activeOrder!.customer}
-            compact
-            onLinked={() => {
-              queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
-            }}
-          />
+          {!isOptimisticOrder && (
+            <CustomerPicker
+              orderId={activeOrder!.id}
+              currentCustomer={activeOrder!.customer}
+              compact
+              onLinked={() => {
+                queryClient.invalidateQueries({ queryKey: tq(tk, 'tables') })
+              }}
+            />
+          )}
 
           {canPayOrder && (
             <button
               type="button"
               onClick={goToCheckout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white transition-colors hover:bg-aura-gold-light"
+              disabled={isOptimisticOrder || isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-aura-gold py-4 text-sm font-semibold text-white transition-colors hover:bg-aura-gold-light disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Receipt className="h-5 w-5" />
-              {t('orderModal.goToPayment')}
+              {isOptimisticOrder
+                ? t('orderModal.optimisticOrderPending', { defaultValue: 'Sincronizzazione ordine…' })
+                : t('orderModal.goToPayment')}
             </button>
           )}
 

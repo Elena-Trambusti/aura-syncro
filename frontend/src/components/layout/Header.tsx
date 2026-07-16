@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { LogOut, MonitorCheck, Menu, Radio, UtensilsCrossed, ClipboardList, CalendarDays, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
+import { useRole } from '../../hooks/useRole'
 import { getInitials, cn } from '../../lib/utils'
 import { triggerHaptic } from '../../lib/haptics'
 import AuraIcon from '../ui/AuraIcon'
@@ -18,7 +19,9 @@ const QUICK_LINKS = [
 export default function Header() {
   const { t } = useTranslation()
   const { user, logout, restaurant } = useAuth()
+  const { can } = useRole()
   const { toggleSidebar, sidebarOpen, openCommandPalette } = useDashboardLayout()
+  const canOpenKitchen = can('orders.kitchen_status') || can('orders.items')
 
   const roleLabel = user
     ? t(`status.role.${user.role}`, { defaultValue: user.role })
@@ -94,14 +97,16 @@ export default function Header() {
 
 
         <div className="aura-topbar-cluster">
-          <Link
-            to="/cucina"
-            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-aura-gold sm:flex aura-focus-ring"
-            title={t('nav.openKitchenDisplay')}
-          >
-            <MonitorCheck className="h-3.5 w-3.5" />
-            <span className="hidden 2xl:inline">{t('nav.kitchenDisplay')}</span>
-          </Link>
+          {canOpenKitchen && (
+            <Link
+              to="/cucina"
+              className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-fumo transition-colors hover:bg-white/[0.05] hover:text-aura-gold sm:flex aura-focus-ring"
+              title={t('nav.openKitchenDisplay')}
+            >
+              <MonitorCheck className="h-3.5 w-3.5" />
+              <span className="hidden 2xl:inline">{t('nav.kitchenDisplay')}</span>
+            </Link>
+          )}
 
           <LanguageSwitcher compact />
           <NotificationBell />

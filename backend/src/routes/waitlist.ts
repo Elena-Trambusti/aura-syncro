@@ -115,6 +115,7 @@ waitlistRouter.patch('/:id/confirm', requirePermission('reservations.manage'), a
       date: entry.requestedDate,
       notes: entry.notes ?? undefined,
       internalNotes: 'Promossa da lista d\'attesa',
+      forceConfirmed: true,
     })
 
     const waitlistEntry = { ...entry, status: 'CONFIRMED' as const }

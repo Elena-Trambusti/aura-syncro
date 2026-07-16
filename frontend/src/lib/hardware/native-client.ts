@@ -10,13 +10,20 @@ export function withNative<T>(
   fn: (native: AuraNative) => BridgeResponse<T>,
 ): Promise<BridgeResponse<T>> {
   return new Promise((resolve) => {
-    onNativeReady((native) => {
-      if (!native.isAvailable) {
-        resolve({ ok: false, error: 'Disponibile solo su app Android Aura Syncro' });
-        return;
-      }
-      resolve(fn(native));
-    });
+    onNativeReady(
+      (native) => {
+        if (!native.isAvailable) {
+          resolve({ ok: false, error: 'Disponibile solo su app Android Aura Syncro' });
+          return;
+        }
+        resolve(fn(native));
+      },
+      {
+        onTimeout: () => {
+          resolve({ ok: false, error: 'Bridge Android non disponibile (timeout)' });
+        },
+      },
+    );
   });
 }
 

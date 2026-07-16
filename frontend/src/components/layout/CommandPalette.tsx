@@ -27,7 +27,11 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
     return COMMAND_ROUTES.filter(route => {
       if (route.adminOnly && !canAccessAdminNav()) return false
       if (route.staffManagersOnly && !canManageStaff()) return false
-      if (route.permission && !can(route.permission)) return false
+      if (route.to === '/cucina') {
+        if (!can('orders.kitchen_status') && !can('orders.items')) return false
+      } else if (route.permission && !can(route.permission)) {
+        return false
+      }
       if (route.proOnly && !hasProPlan && tier === 'operational') return false
       return true
     })

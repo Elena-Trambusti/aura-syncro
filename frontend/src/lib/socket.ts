@@ -45,13 +45,16 @@ export async function ensureSocketConnected(): Promise<Socket> {
 /** Connette il socket; senza token usa il cookie di sessione httpOnly. */
 export async function connectSocket(token?: string | null): Promise<void> {
   const resolved = token ?? getSessionToken()
-  const existingToken = socket ? (socket.auth as { token?: string }).token : undefined
-  if (socket?.connected && existingToken && resolved && existingToken !== resolved) {
-    socket.disconnect()
-    socket = null
-  }
   const s = await getSocket()
-  s.auth = resolved ? { token: resolved } : {}
+  const existingToken = (s.auth as { token?: string } | undefined)?.token
+  const nextAuth = resolved ? { token: resolved } : {}
+  s.auth = nextAuth
+  // Reuse the same Socket instance so listeners (tables/orders/KDS) stay bound after token rotate.
+  if (s.connected && existingToken !== resolved) {
+    s.disconnect()
+    s.connect()
+    return
+  }
   if (!s.connected) {
     s.connect()
   }

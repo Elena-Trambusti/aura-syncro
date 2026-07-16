@@ -56,6 +56,7 @@ export default function LiveCommandCenter() {
   const canTables = can('tables.read')
   const canReservations = can('reservations.read')
   const canOrders = can('orders.read')
+  const canKitchen = can('orders.kitchen_status') || can('orders.items')
 
   useRealtimeTables()
   useRealtimeOrders()
@@ -164,7 +165,7 @@ export default function LiveCommandCenter() {
         </ul>
       ),
     },
-    canOrders && {
+    canKitchen && {
       key: 'kitchen',
       title: t('dashboard.kitchenQueue'),
       icon: ChefHat,
@@ -203,6 +204,7 @@ export default function LiveCommandCenter() {
     canTables,
     canReservations,
     canOrders,
+    canKitchen,
     t,
     tableStats,
     upcoming,

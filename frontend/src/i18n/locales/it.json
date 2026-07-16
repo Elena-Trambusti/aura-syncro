@@ -1667,6 +1667,7 @@
     "split": "Split (Dividi conto)",
     "splitEqual": "Divisione uguale",
     "splitByItems": "Per piatto",
+    "splitConfigLocked": "Configurazione split bloccata: alcune quote sono già state incassate.",
     "guestCount": "Numero di persone",
     "guest": "Ospite {{n}}",
     "splitPreview": "Anteprima ripartizione",

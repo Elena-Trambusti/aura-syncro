@@ -437,7 +437,7 @@ function ReportFiscalContent() {
                 locale={fiscalLocale}
                 height={260}
                 series={[
-                  { dataKey: 'tax', label: t('reportFiscal.chartTaxLabel'), accent: 'champagne', dashed: true, dot: false },
+                  { dataKey: 'tax', label: activeRegime.taxName, accent: 'champagne', dashed: true, dot: false },
                   { dataKey: 'tips', label: t('reportFiscal.chartTipsLabel'), accent: 'gold' },
                 ]}
                 labelFormatter={v => fmtDate(v)}
@@ -485,7 +485,7 @@ function ReportFiscalContent() {
                   {t('reportFiscal.vatBreakdownTaxable')}: {formatCurrency(row.taxableBase)}
                 </p>
                 <p className="text-fumo">
-                  {t('reportFiscal.vatBreakdownTax')}: {formatCurrency(row.tax)}
+                  {activeRegime.taxName}: {formatCurrency(row.tax)}
                 </p>
                 <p className="text-fumo/70">
                   {t('reportFiscal.vatBreakdownOrders')}: {row.count}

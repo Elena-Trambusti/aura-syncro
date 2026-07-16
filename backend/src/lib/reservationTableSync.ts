@@ -1,36 +1,53 @@
 import { prisma } from './prisma'
-import { ReservationValidationError, validateReservationSlot } from './reservationRules'
+import { ReservationValidationError, validateReservationSlot, requiresDeposit } from './reservationRules'
 import { countActiveTableOrders } from './orderSession'
+import type { Prisma } from '@prisma/client'
 
 const ACTIVE_RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'SEATED'] as const
+
+type DbClient = Prisma.TransactionClient | typeof prisma
 
 export async function releaseTableFromReservation(
   restaurantId: string,
   tableId: string | null | undefined,
   excludeReservationId?: string,
+  db: DbClient = prisma,
 ): Promise<void> {
   if (!tableId) return
 
-  const table = await prisma.table.findFirst({
+  const table = await db.table.findFirst({
     where: { id: tableId, restaurantId },
   })
   if (!table) return
 
-  const otherActive = await prisma.reservation.count({
+  const settings = await db.restaurantSettings.findUnique({
+    where: { restaurantId },
+    select: { noShowDepositRequired: true, depositAmount: true },
+  })
+  const depositRequired = requiresDeposit(settings)
+
+  const candidates = await db.reservation.findMany({
     where: {
       restaurantId,
       tableId,
       status: { in: [...ACTIVE_RESERVATION_STATUSES] },
       ...(excludeReservationId ? { id: { not: excludeReservationId } } : {}),
     },
+    select: { id: true, status: true, depositPaid: true },
   })
+  const otherActive = candidates.filter(r => {
+    if (!depositRequired) return true
+    if (r.depositPaid) return true
+    if (r.status === 'PENDING') return false
+    return true
+  }).length
 
   if (otherActive > 0) return
-  const activeOrders = await countActiveTableOrders(tableId, restaurantId)
+  const activeOrders = await countActiveTableOrders(tableId, restaurantId, db)
   if (activeOrders > 0) return
 
   if (table.status === 'RESERVED' || table.status === 'FREE') {
-    await prisma.table.update({
+    await db.table.update({
       where: { id: tableId },
       data: { status: 'FREE' },
     })
@@ -72,8 +89,14 @@ export async function getAvailableTablesForReservation(
       status: { notIn: ['CANCELLED', 'NO_SHOW', 'COMPLETED'] },
       id: { not: reservationId },
     },
-    select: { id: true, tableId: true, date: true, duration: true },
+    select: { id: true, tableId: true, date: true, duration: true, status: true, depositPaid: true },
   })
+
+  const settings = await prisma.restaurantSettings.findUnique({
+    where: { restaurantId },
+    select: { noShowDepositRequired: true, depositAmount: true },
+  })
+  const depositRequired = requiresDeposit(settings)
 
   const requestStart = reservation.date.getTime()
   const requestEnd = requestStart + reservation.duration * 60_000
@@ -81,6 +104,7 @@ export async function getAvailableTablesForReservation(
   const overlappingTableIds = new Set<string>()
   for (const r of allReservations) {
     if (!r.tableId) continue
+    if (depositRequired && !r.depositPaid && r.status === 'PENDING') continue
     const rStart = r.date.getTime()
     const rEnd = rStart + (r.duration ?? 90) * 60_000
     if (rStart < requestEnd && rEnd > requestStart) {
@@ -179,7 +203,7 @@ export async function confirmReservationWithTable(
     })
 
     if (previousTableId && previousTableId !== tableId) {
-      await releaseTableFromReservation(restaurantId, previousTableId, reservationId)
+      await releaseTableFromReservation(restaurantId, previousTableId, reservationId, tx)
     }
 
     return updated

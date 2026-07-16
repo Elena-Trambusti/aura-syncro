@@ -481,6 +481,13 @@ paymentsRouter.post('/finalize', authenticate, requireDashboardAccess, requirePe
       res.status(409).json({ error: 'Pagamento già in elaborazione. Attendi qualche secondo e riprova.', code })
       return
     }
+    if (code === 'ORPHAN_CHARGE_PENDING') {
+      res.status(409).json({
+        error: 'Addebito precedente non finalizzato: rimborso in corso o intervento richiesto. Non ritentare con una nuova carta.',
+        code,
+      })
+      return
+    }
     throw err
   }
 })
@@ -641,6 +648,7 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
         tipAmount,
         tipWaiterId: validatedTipWaiterId,
         paymentMethod,
+        executorUserId: req.userId,
       },
     })
 
@@ -676,6 +684,13 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
       res.status(409).json({ error: 'Pagamento già in elaborazione. Attendi qualche secondo e riprova.', code })
       return
     }
+    if (code === 'ORPHAN_CHARGE_PENDING') {
+      res.status(409).json({
+        error: 'Addebito precedente non finalizzato: rimborso in corso o intervento richiesto. Non ritentare con una nuova carta.',
+        code,
+      })
+      return
+    }
     if (code === 'STRIPE_PAYMENT_FAILED' || code === 'STRIPE_PAYMENT_INTENT_REQUIRED') {
       res.status(402).json({ error: 'Pagamento carta non riuscito', code })
       return
@@ -699,6 +714,10 @@ paymentsRouter.post('/pos-checkout', authenticate, requireDashboardAccess, requi
     }
     if (code === 'CASH_SESSION_REQUIRED') {
       res.status(409).json({ error: 'Apri la cassa prima di incassare contanti.', code })
+      return
+    }
+    if (code === 'CASH_USER_REQUIRED') {
+      res.status(400).json({ error: 'Utente cassa non identificato.', code })
       return
     }
     throw err

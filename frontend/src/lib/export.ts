@@ -47,7 +47,7 @@ export async function printReceipt(order: {
   paymentMethod?: string
 }, restaurantName: string, options?: { taxLabel?: string; locale?: string; tipLabel?: string }): Promise<void> {
   const locale = options?.locale ?? 'it-IT'
-  const taxLabel = options?.taxLabel ?? 'Tax'
+  const taxLabel = options?.taxLabel ?? 'IVA'
   const tipLabel = options?.tipLabel ?? 'Mancia'
 
   if (isAndroidTablet()) {
