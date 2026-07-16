@@ -4,14 +4,15 @@ import { syncTableReservedForReservation } from './createReservation'
 const DEPOSIT_PENDING_TTL_MS = Number(process.env.DEPOSIT_PENDING_TTL_MS || 24 * 60 * 60 * 1000)
 
 /**
- * Annulla prenotazioni con caparra obbligatoria mai completata (checkout abbandonato).
+ * Annulla solo prenotazioni PENDING con caparra obbligatoria mai completata.
+ * Non tocca CONFIRMED dello staff (conferma manuale = intenzionale).
  */
 export async function cancelStaleDepositReservations(): Promise<number> {
   const cutoff = new Date(Date.now() - DEPOSIT_PENDING_TTL_MS)
 
   const stale = await prisma.reservation.findMany({
     where: {
-      status: { in: ['PENDING', 'CONFIRMED'] },
+      status: 'PENDING',
       depositPaid: false,
       createdAt: { lt: cutoff },
       restaurant: {
@@ -33,7 +34,7 @@ export async function cancelStaleDepositReservations(): Promise<number> {
         id: row.id,
         restaurantId: row.restaurantId,
         depositPaid: false,
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        status: 'PENDING',
       },
       data: { status: 'CANCELLED' },
     })

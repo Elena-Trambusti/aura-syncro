@@ -309,7 +309,6 @@ reportsRouter.get('/categories', requirePermission('reports.read'), asyncHandler
     select: {
       quantity: true,
       unitPrice: true,
-      modifiers: { select: { price: true } },
       menuItem: { select: { category: { select: { name: true } } } },
     },
   })
@@ -317,8 +316,8 @@ reportsRouter.get('/categories', requirePermission('reports.read'), asyncHandler
   const categoryMap: Record<string, { name: string; revenue: number; qty: number }> = {}
   for (const item of orderItems) {
     const catName = item.menuItem.category.name
-    const modifierTotal = item.modifiers.reduce((s, m) => s + moneyNumber(m.price), 0)
-    const lineRevenue = (moneyNumber(item.unitPrice) + modifierTotal) * item.quantity
+    // unitPrice già include modificatori
+    const lineRevenue = moneyNumber(item.unitPrice) * item.quantity
     if (!categoryMap[catName]) categoryMap[catName] = { name: catName, revenue: 0, qty: 0 }
     categoryMap[catName].qty += item.quantity
     categoryMap[catName].revenue += lineRevenue
@@ -533,12 +532,15 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER'), requireProPlan,
     where: paidOrdersInPeriodWhere(restaurantId, range.start, range.end, false, false),
     select: {
       taxRateApplied: true,
+      discount: true,
+      revenueAmount: true,
+      subtotal: true,
+      tax: true,
       items: {
         where: { status: { not: 'CANCELLED' } },
         select: {
           quantity: true,
           unitPrice: true,
-          modifiers: { select: { price: true } },
           menuItem: { select: { taxRate: true } },
         },
       },
@@ -549,9 +551,18 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER'), requireProPlan,
 
   for (const o of orders) {
     const orderDefault = o.taxRateApplied ?? defaultRate
+    const linesGross = o.items.reduce(
+      (s, item) => s + moneyNumber(item.unitPrice) * item.quantity,
+      0,
+    )
+    const revenue = moneyNumber(o.revenueAmount) > 0
+      ? moneyNumber(o.revenueAmount)
+      : moneyNumber(o.subtotal) + moneyNumber(o.tax)
+    const scale = linesGross > 0.009 ? revenue / linesGross : 1
+
     for (const item of o.items) {
-      const mod = item.modifiers.reduce((s, m) => s + moneyNumber(m.price), 0)
-      const gross = (moneyNumber(item.unitPrice) + mod) * item.quantity
+      // unitPrice già include i modificatori (non risommare OrderItemModifier).
+      const gross = moneyNumber(item.unitPrice) * item.quantity * scale
       const rate = item.menuItem.taxRate ?? orderDefault
       const part = scorporoTaxFromGross(gross, rate)
       const bucket = byRate.get(rate) ?? { taxRate: rate, taxableBase: 0, tax: 0, count: 0 }

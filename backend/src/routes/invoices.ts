@@ -167,56 +167,58 @@ router.post('/', requireRole('OWNER'), async (req: AuthRequest, res: Response): 
       }
     })
 
-    const allocated = await prisma.$transaction(async tx => {
-      return allocateInvoiceNumber(tx, restaurantId, issuedAt, b2bPrefix)
-    })
-
-    const xml = generateB2BXml({
-      documentNumber: allocated.documentNumber,
-      issuedAt,
-      issuerVat: settings.taxId!,
-      issuerLegalName: settings.legalName!,
-      issuerFiscalCode: settings.fiscalCode || undefined,
-      issuerAddress: settings.legalAddress!,
-      issuerCity: settings.legalCity || restaurant?.address?.split(',')[0]?.trim() || 'N/D',
-      issuerZip: settings.legalZip || '00000',
-      issuerProvince: settings.legalProvince || 'ND',
-      issuerCountry: settings.countryCode,
-      clientVat: data.clientePiva,
-      clientFiscalCode: data.clienteCodiceFiscale,
-      clientLegalName: data.clienteRagioneSociale,
-      clientAddress: data.clienteIndirizzo,
-      clientCity: data.clienteCity,
-      clientZip: data.clienteZip,
-      clientProvince: data.clienteProvince,
-      clientCountry: data.clienteCountry,
-      clientSdiCode: data.clienteSdiCode,
-      clientPec: data.clientePec,
-      items: mappedItems,
-    })
-
-    // Claim atomico prima di Aruba: evita doppia submission SDI su retry concurrente.
+    // Allocazione numero + create atomici (evita gap di sequenza).
     let claimed
+    let xml: string
     try {
-      claimed = await prisma.invoice.create({
-        data: {
-          restaurantId,
-          orderId: data.orderId,
+      const created = await prisma.$transaction(async tx => {
+        const allocated = await allocateInvoiceNumber(tx, restaurantId, issuedAt, b2bPrefix)
+        const xmlContent = generateB2BXml({
           documentNumber: allocated.documentNumber,
-          prefix: allocated.prefix,
-          fiscalYear: allocated.fiscalYear,
-          sequence: allocated.sequence,
-          clientePiva: data.clientePiva,
-          clienteCodiceFiscale: data.clienteCodiceFiscale,
-          clienteSdiCode: data.clienteSdiCode,
-          clientePec: data.clientePec,
-          clienteRagioneSociale: data.clienteRagioneSociale,
-          clienteIndirizzo: data.clienteIndirizzo,
-          importoTotale: totalGross,
-          statoSdi: 'pending',
-          xmlBlob: xml,
-        },
+          issuedAt,
+          issuerVat: settings.taxId!,
+          issuerLegalName: settings.legalName!,
+          issuerFiscalCode: settings.fiscalCode || undefined,
+          issuerAddress: settings.legalAddress!,
+          issuerCity: settings.legalCity || restaurant?.address?.split(',')[0]?.trim() || 'N/D',
+          issuerZip: settings.legalZip || '00000',
+          issuerProvince: settings.legalProvince || 'ND',
+          issuerCountry: settings.countryCode,
+          clientVat: data.clientePiva,
+          clientFiscalCode: data.clienteCodiceFiscale,
+          clientLegalName: data.clienteRagioneSociale,
+          clientAddress: data.clienteIndirizzo,
+          clientCity: data.clienteCity,
+          clientZip: data.clienteZip,
+          clientProvince: data.clienteProvince,
+          clientCountry: data.clienteCountry,
+          clientSdiCode: data.clienteSdiCode,
+          clientPec: data.clientePec,
+          items: mappedItems,
+        })
+        const inv = await tx.invoice.create({
+          data: {
+            restaurantId,
+            orderId: data.orderId,
+            documentNumber: allocated.documentNumber,
+            prefix: allocated.prefix,
+            fiscalYear: allocated.fiscalYear,
+            sequence: allocated.sequence,
+            clientePiva: data.clientePiva,
+            clienteCodiceFiscale: data.clienteCodiceFiscale,
+            clienteSdiCode: data.clienteSdiCode,
+            clientePec: data.clientePec,
+            clienteRagioneSociale: data.clienteRagioneSociale,
+            clienteIndirizzo: data.clienteIndirizzo,
+            importoTotale: totalGross,
+            statoSdi: 'pending',
+            xmlBlob: xmlContent,
+          },
+        })
+        return { inv, xmlContent }
       })
+      claimed = created.inv
+      xml = created.xmlContent
     } catch (createErr: unknown) {
       if (
         createErr != null

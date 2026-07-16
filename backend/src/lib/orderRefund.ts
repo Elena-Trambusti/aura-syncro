@@ -147,11 +147,27 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
       },
       refundAmount,
     )
-    const reversal = await prisma.$transaction(async tx =>
-      markOrderRefunded(order.id, input.restaurantId, refundAmount, tx),
+    // Stripe already refunded (idempotent): retry DB mark until committed.
+    let lastErr: unknown
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const reversal = await prisma.$transaction(async tx =>
+          markOrderRefunded(order.id, input.restaurantId, refundAmount, tx),
+        )
+        await syncTierAfterRefund(input.restaurantId, reversal)
+        return { refundAmount }
+      } catch (err) {
+        const code = err instanceof Error ? (err as { code?: string }).code : undefined
+        if (code === 'ORDER_ALREADY_REFUNDED') {
+          return { refundAmount }
+        }
+        lastErr = err
+      }
+    }
+    throw Object.assign(
+      new Error('REFUND_MARK_FAILED_AFTER_STRIPE'),
+      { code: 'REFUND_MARK_FAILED_AFTER_STRIPE', cause: lastErr },
     )
-    await syncTierAfterRefund(input.restaurantId, reversal)
-    return { refundAmount }
   }
 
   if (order.paymentMethod === 'CASH') {

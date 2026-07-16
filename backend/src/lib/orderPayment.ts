@@ -144,6 +144,15 @@ export async function finalizeOrderPayment(
   const paidAt = split.paidAt
 
   const { paidOrder, updatedTable } = await runOrderTransaction(async tx => {
+    // Re-read inside TX so Serializable retries see concurrent split collections.
+    const live = await tx.order.findFirst({
+      where: { id: order.id, restaurantId: input.restaurantId },
+      select: { status: true, collectedAmount: true, waiterId: true, tableId: true, taxRateApplied: true },
+    })
+    if (!live) throw new Error('ORDER_NOT_FOUND')
+    if (live.status === 'PAID') throw new Error('ORDER_ALREADY_PAID')
+    if (live.status === 'CANCELLED') throw new Error('ORDER_CANCELLED')
+
     if (precomputed) {
       await tx.order.update({
         where: { id: order.id },
@@ -197,7 +206,7 @@ export async function finalizeOrderPayment(
         tipAmount: toMoney(split.tipAmount),
         tipWaiterId: input.tipWaiterId,
         total: toMoney(split.total),
-        taxRateApplied: order.taxRateApplied ?? fiscal.taxRate,
+        taxRateApplied: live.taxRateApplied ?? order.taxRateApplied ?? fiscal.taxRate,
         fiscalRegionSnapshot: fiscal.fiscalRegion,
         fiscalIntegrityHash: chainLink.integrityHash,
         fiscalPrevHash: chainLink.prevHash,
@@ -207,13 +216,14 @@ export async function finalizeOrderPayment(
     })
 
     if (input.paymentMethod === 'CASH') {
-      const due = cashRegisterDueAtFinalize(moneyNumber(split.total), moneyNumber(order.collectedAmount))
+      const priorCollected = moneyNumber(live.collectedAmount)
+      const due = cashRegisterDueAtFinalize(moneyNumber(split.total), priorCollected)
       if (due > 0) {
         const openSession = await tx.cashRegisterSession.findFirst({
           where: { restaurantId: input.restaurantId, status: 'OPEN' },
         })
         if (!openSession) throw new Error('CASH_SESSION_REQUIRED')
-        const resolvedUserId = input.executorUserId || order.waiterId
+        const resolvedUserId = input.executorUserId || live.waiterId || order.waiterId
         if (!resolvedUserId) throw new Error('CASH_USER_REQUIRED')
 
         await tx.cashTransaction.create({
@@ -222,7 +232,7 @@ export async function finalizeOrderPayment(
             userId: resolvedUserId,
             type: 'SALE',
             amount: toMoney(due),
-            reason: moneyNumber(order.collectedAmount) > 0
+            reason: priorCollected > 0
               ? `Saldo contanti Ordine #${order.id.slice(-6).toUpperCase()}`
               : `Incasso contanti Ordine #${order.id.slice(-6).toUpperCase()}`,
             orderId: order.id,
@@ -232,10 +242,10 @@ export async function finalizeOrderPayment(
     }
 
     let tableUpdate: Awaited<ReturnType<typeof releaseTableAfterPaymentTx>> = null
-    if (serveItems && order.tableId) {
+    if (serveItems && live.tableId) {
       tableUpdate = await releaseTableAfterPaymentTx(
         tx,
-        order.tableId,
+        live.tableId,
         input.restaurantId,
         order.id,
       )
@@ -244,7 +254,11 @@ export async function finalizeOrderPayment(
     return { paidOrder: paid, updatedTable: tableUpdate }
   })
 
-  const fiscalRow = buildFiscalTransactionRow(paidOrder, paidAt, paidOrder.taxRateApplied)
+  const fiscalRow = buildFiscalTransactionRow(
+    paidOrder,
+    paidAt,
+    paidOrder.taxRateApplied ?? fiscal.taxRate,
+  )
 
   return {
     revenueAmount: split.revenueAmount,

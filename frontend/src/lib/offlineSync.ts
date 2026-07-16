@@ -264,7 +264,7 @@ export async function flushOfflineQueue(): Promise<{ synced: number; failed: num
       }
     }
 
-    if (synced > 0) {
+    if (synced > 0 || failed > 0) {
       onSyncedCallback?.()
     }
   } finally {

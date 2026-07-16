@@ -14,7 +14,7 @@ import { resolveDiscountForOrder } from './orderDiscount'
 import { acquireIdempotencyLock, releaseIdempotencyLock, saveIdempotentResponse } from './apiIdempotency'
 import { stripe, STRIPE_ENABLED } from './stripe'
 import { moneyNumber } from './money'
-import { runPaymentSideEffects } from './paymentSideEffects'
+import { runPaymentSideEffects, schedulePaymentSideEffects } from './paymentSideEffects'
 import { cancelAbandonedGuestOrder } from './abandonedGuestCheckout'
 
 function paymentLockKey(orderId: string): string {
@@ -23,6 +23,21 @@ function paymentLockKey(orderId: string): string {
 
 function paymentFailureKey(orderId: string): string {
   return `payment:failure:${orderId}`
+}
+
+/** Side-effects dopo PAID: non far fallire l'HTTP se magazzino/fattura falliscono — ritenta in background. */
+async function runSideEffectsSafe(
+  input: Parameters<typeof runPaymentSideEffects>[0],
+): Promise<void> {
+  try {
+    await runPaymentSideEffects(input)
+  } catch (err) {
+    console.error('[payment] Side-effects falliti dopo PAID — retry in background', {
+      orderId: input.orderId,
+      error: err instanceof Error ? err.message : err,
+    })
+    schedulePaymentSideEffects(input)
+  }
 }
 
 /** Socket post-incasso — non blocca la risposta HTTP. */
@@ -103,10 +118,25 @@ export async function completeOrderPayment(input: {
   let posResult: Awaited<ReturnType<typeof chargePosCard>> | null = null
   let chargedAmount = 0
 
+  /** After split cash, CARD/EXTERNAL must charge only the remaining balance. */
+  const priorCollected = moneyNumber(orderPreview.collectedAmount)
+  const fullPosAmounts = computePosPaymentAmounts(fiscal, orderAmounts, input.finalize.tipAmount)
+  const remainingDue = Math.max(
+    0,
+    Math.round((fullPosAmounts.totalCustomerAmount - priorCollected) * 100) / 100,
+  )
+  const tipPortion = Math.min(fullPosAmounts.tipChargeAmount, remainingDue)
+  const taxablePortion = Math.max(0, Math.round((remainingDue - tipPortion) * 100) / 100)
+  const chargeAmounts = {
+    taxableAmount: taxablePortion,
+    tipAmount: tipPortion,
+    totalCustomerAmount: remainingDue,
+    taxRegion: fiscal.taxRegion,
+  }
+
   try {
     if (input.finalize.paymentMethod === 'CARD') {
-      const posAmounts = computePosPaymentAmounts(fiscal, orderAmounts, input.finalize.tipAmount)
-      chargedAmount = posAmounts.totalCustomerAmount
+      chargedAmount = remainingDue
       const posConfig = await loadRestaurantPosConfig(input.finalize.restaurantId)
 
       // POS esterno: finalizza prima (incasso già avvenuto sul terminale fisico).
@@ -119,20 +149,17 @@ export async function completeOrderPayment(input: {
         })
         const { updatedOrder } = result
 
-        posResult = await chargePosCard(
-          {
-            taxableAmount: posAmounts.taxableChargeAmount,
-            tipAmount: posAmounts.tipChargeAmount,
-            totalCustomerAmount: posAmounts.totalCustomerAmount,
-            taxRegion: fiscal.taxRegion,
-          },
-          { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
-          input.stripePaymentIntentId,
-        )
+        if (remainingDue > 0.009) {
+          posResult = await chargePosCard(
+            chargeAmounts,
+            { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+            input.stripePaymentIntentId,
+          )
+        }
 
         schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
-        await runPaymentSideEffects({
+        await runSideEffectsSafe({
           orderId: input.finalize.orderId,
           restaurantId: input.finalize.restaurantId,
           paidAt: result.paidAt,
@@ -160,16 +187,13 @@ export async function completeOrderPayment(input: {
         }
       }
 
-      posResult = await chargePosCard(
-        {
-          taxableAmount: posAmounts.taxableChargeAmount,
-          tipAmount: posAmounts.tipChargeAmount,
-          totalCustomerAmount: posAmounts.totalCustomerAmount,
-          taxRegion: fiscal.taxRegion,
-        },
-        { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
-        input.stripePaymentIntentId,
-      )
+      if (remainingDue > 0.009) {
+        posResult = await chargePosCard(
+          chargeAmounts,
+          { orderId: input.finalize.orderId, restaurantId: input.finalize.restaurantId },
+          input.stripePaymentIntentId,
+        )
+      }
     }
 
     const result = await finalizeOrderPayment(input.finalize, {
@@ -183,7 +207,7 @@ export async function completeOrderPayment(input: {
 
     schedulePaymentRealtimeEmit(input.finalize.restaurantId, result.updatedTable, updatedOrder)
 
-    await runPaymentSideEffects({
+    await runSideEffectsSafe({
       orderId: input.finalize.orderId,
       restaurantId: input.finalize.restaurantId,
       paidAt: result.paidAt,
@@ -261,10 +285,13 @@ export async function completeOrderPayment(input: {
       if (paidOrphan) {
         try {
           const { markOrderRefunded } = await import('./orderRefund')
-          await markOrderRefunded(
-            paidOrphan.id,
-            input.finalize.restaurantId,
-            chargedAmount > 0 ? chargedAmount : moneyNumber(paidOrphan.total),
+          await prisma.$transaction(async tx =>
+            markOrderRefunded(
+              paidOrphan.id,
+              input.finalize.restaurantId,
+              chargedAmount > 0 ? chargedAmount : moneyNumber(paidOrphan.total),
+              tx,
+            ),
           )
         } catch (markErr) {
           console.error('[payment] Failed to mark orphan PAID order as refunded', {
@@ -292,14 +319,28 @@ export async function completeGuestStripePayment(
   if (order.status === 'PAID') return null
 
   if (checkoutSessionId) {
-    if (!order.stripeSessionId || order.stripeSessionId !== checkoutSessionId) {
+    const expected = order.stripeSessionId
+    const isPendingClaim = typeof expected === 'string' && expected.startsWith('pending_')
+    if (expected && expected !== checkoutSessionId && !isPendingClaim) {
       console.warn('[guest-stripe] Session ID mismatch — ignore', {
         orderId,
-        expected: order.stripeSessionId,
+        expected,
         got: checkoutSessionId,
       })
       return null
     }
+    // Claim session id (covers race: webhook before publicCheckout persisted session.id).
+    await prisma.order.updateMany({
+      where: {
+        id: orderId,
+        OR: [
+          { stripeSessionId: null },
+          { stripeSessionId: { startsWith: 'pending_' } },
+          { stripeSessionId: checkoutSessionId },
+        ],
+      },
+      data: { stripeSessionId: checkoutSessionId },
+    })
   }
 
   if (order.status === 'CANCELLED') {

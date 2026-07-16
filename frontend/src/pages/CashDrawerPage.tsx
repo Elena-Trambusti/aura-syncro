@@ -96,9 +96,10 @@ export default function CashDrawerPage() {
     mutationFn: () => api.post('/cash/session/close', { closingBalance: amount }),
     onInstant: () => {
       setShowCloseModal(false)
-      queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), null)
+      // Non azzerare la sessione in cache prima dell'ack: evita UI "chiusa" con cassa ancora OPEN.
     },
     onSuccess: (res) => {
+      queryClient.setQueryData<CashSession | null>(tq(tk, 'cash', 'current'), null)
       queryClient.invalidateQueries({ queryKey: tq(tk, 'cash') })
       const diff = res.data.difference
       if (diff === 0) toast.success(t('cashDrawer.closeBalanced'))

@@ -102,22 +102,25 @@ export function buildFiscalTransactionRow(order: {
   const tipAmount = roundMoney(resolveTipAmount(order.tipAmount))
   const taxRate = order.taxRateApplied != null && order.taxRateApplied > 0
     ? order.taxRateApplied
-    : (fallbackTaxRate != null && fallbackTaxRate > 0 ? fallbackTaxRate : 10)
+    : (fallbackTaxRate != null && fallbackTaxRate > 0 ? fallbackTaxRate : null)
   const foodGross = roundMoney(moneyNumber(order.subtotal) + moneyNumber(order.tax))
   const discount = moneyNumber(order.discount)
   const useRevenueSplit = discount > 0 || Math.abs(foodGross - revenueAmount) > 0.02
+  if (useRevenueSplit && taxRate == null) {
+    throw new Error('MISSING_TAX_RATE_FOR_FISCAL_ROW')
+  }
   const baseImponible = useRevenueSplit
-    ? scorporoTaxFromGross(revenueAmount, taxRate).subtotal
+    ? scorporoTaxFromGross(revenueAmount, taxRate!).subtotal
     : roundMoney(moneyNumber(order.subtotal))
   const tax = useRevenueSplit
-    ? scorporoTaxFromGross(revenueAmount, taxRate).tax
+    ? scorporoTaxFromGross(revenueAmount, taxRate!).tax
     : roundMoney(moneyNumber(order.tax))
   return {
     fecha: paidAt,
     orderId: order.id,
     baseImponible,
     tax,
-    taxRateApplied: order.taxRateApplied ?? (fallbackTaxRate ?? null),
+    taxRateApplied: taxRate,
     revenueAmount,
     tipAmount,
     total: roundMoney(resolveOrderTotal(order)),

@@ -618,7 +618,9 @@ export default function CheckoutPage() {
           idempotencyKey: finalizeIdempotencyKey,
         })
 
-        setPayingTarget(splitGuestIndex ?? 'main')
+        flushSync(() => {
+          setPayingTarget(splitGuestIndex ?? 'main')
+        })
         const posResult = await payWithConfiguredPos(
           splitGuestIndex != null && splitPreview
             ? splitPreview[splitGuestIndex]?.total ?? grandTotal

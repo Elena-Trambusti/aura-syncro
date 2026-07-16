@@ -51,23 +51,26 @@ function readStored(slug: string): GuestCartItem[] {
 
 export function useGuestCart(slug: string | undefined) {
   const [items, setItems] = useState<GuestCartItem[]>(() => (slug ? readStored(slug) : []))
+  const [hydratedSlug, setHydratedSlug] = useState<string | undefined>(slug)
 
   useEffect(() => {
     if (!slug) {
       setItems([])
+      setHydratedSlug(undefined)
       return
     }
     setItems(readStored(slug))
+    setHydratedSlug(slug)
   }, [slug])
 
   useEffect(() => {
-    if (!slug) return
+    if (!slug || slug !== hydratedSlug) return
     if (items.length === 0) {
       localStorage.removeItem(storageKey(slug))
     } else {
       localStorage.setItem(storageKey(slug), JSON.stringify(items))
     }
-  }, [slug, items])
+  }, [slug, hydratedSlug, items])
 
   const addItem = useCallback((item: Omit<GuestCartItem, 'quantity' | 'cartLineId'> & { quantity?: number }) => {
     const cartLineId = buildGuestCartLineId(item.menuItemId, item.modifierIds)

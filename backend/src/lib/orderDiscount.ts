@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { computeTaxForExistingOrder, computeTaxForRestaurant } from './orderTax'
+import { computeTaxForExistingOrder, computeTaxForRestaurant, computeTaxForOrderItems } from './orderTax'
 import type { MoneyInput } from './money'
 import { moneyNumber, toMoney } from './money'
 
@@ -87,15 +87,37 @@ export function pickBestDiscount(
   return { source: 'NONE', discountPct: 0, discountAmount: 0 }
 }
 
-/** Recalculate order totals with optional discount % on gross menu total */
+/** Recalculate order totals with optional discount % — multi-aliquota per riga */
 export async function computeOrderTotalsWithDiscount(
   restaurantId: string,
   grossTotal: number,
   discountPct: number,
   existingTaxRate?: number | null,
+  items?: Array<{ status?: string; unitPrice: MoneyInput; quantity: number; menuItemId?: string }>,
 ) {
   const discountAmount = Math.round(grossTotal * (discountPct / 100) * 100) / 100
   const discountedGross = Math.max(0, Math.round((grossTotal - discountAmount) * 100) / 100)
+
+  const active = (items ?? []).filter(i => i.status !== 'CANCELLED' && i.menuItemId)
+  if (active.length > 0 && discountPct >= 0) {
+    const factor = grossTotal > 0 ? discountedGross / grossTotal : 1
+    const taxResult = await computeTaxForOrderItems(
+      restaurantId,
+      active.map(i => ({
+        quantity: i.quantity,
+        unitPrice: moneyNumber(i.unitPrice) * factor,
+        menuItemId: i.menuItemId!,
+        status: i.status,
+      })),
+    )
+    return {
+      grossTotal,
+      discountAmount,
+      discountPct,
+      ...taxResult,
+      revenueAmount: taxResult.total,
+    }
+  }
 
   const taxResult = existingTaxRate != null && existingTaxRate > 0
     ? await computeTaxForExistingOrder({ restaurantId, taxRateApplied: existingTaxRate }, discountedGross)
@@ -136,7 +158,11 @@ export async function validateOrderDiscountOptions(
 
 export async function resolveDiscountForOrder(
   restaurantId: string,
-  order: { customerId: string | null; taxRateApplied: number | null; items: { status: string; unitPrice: MoneyInput; quantity: number }[] },
+  order: {
+    customerId: string | null
+    taxRateApplied: number | null
+    items: { status: string; unitPrice: MoneyInput; quantity: number; menuItemId?: string }[]
+  },
   options: { applyLoyalty?: boolean; discountCode?: string },
 ) {
   const activeItems = order.items.filter(i => i.status !== 'CANCELLED')
@@ -157,6 +183,7 @@ export async function resolveDiscountForOrder(
     grossTotal,
     discount.discountPct,
     order.taxRateApplied,
+    activeItems,
   )
 
   return { discount, totals }

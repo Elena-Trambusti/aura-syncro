@@ -101,6 +101,7 @@ export default function GuestCartDrawer({
 
   async function handlePayWithCard() {
     if (items.length === 0) return
+    if (loading) return
     if (dineInRequiresToken) {
       toast.error(t('publicMenu.dineInRequiresQr', { defaultValue: 'Per ordinare al tavolo scansiona il QR del tavolo.' }))
       return

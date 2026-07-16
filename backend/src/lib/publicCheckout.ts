@@ -248,6 +248,13 @@ export async function createGuestStripeCheckout(
 
   const receiptToken = signOrderReceiptToken(order.id)
 
+  // Claim slot before Stripe create so webhook can match even if update races.
+  const pendingSessionClaim = `pending_${order.id}_${Date.now().toString(36)}`
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { stripeSessionId: pendingSessionClaim },
+  })
+
   let session
   try {
     session = await stripe.checkout.sessions.create({
@@ -287,8 +294,14 @@ export async function createGuestStripeCheckout(
     throw new PublicOrderError('Impossibile creare la sessione di pagamento', 500)
   }
 
-  await prisma.order.update({
-    where: { id: order.id },
+  await prisma.order.updateMany({
+    where: {
+      id: order.id,
+      OR: [
+        { stripeSessionId: pendingSessionClaim },
+        { stripeSessionId: null },
+      ],
+    },
     data: { stripeSessionId: session.id },
   })
 

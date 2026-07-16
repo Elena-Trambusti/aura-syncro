@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@/lib/toast'
 import { api } from '../lib/api'
-import { formatCurrency } from '../lib/utils'
+import { formatCurrency, toLocalDateInput } from '../lib/utils'
 import PublicLanguageSwitcher from '../components/public/PublicLanguageSwitcher'
 import PublicStandaloneEscape from '../components/public/PublicStandaloneEscape'
 import AuraIcon from '../components/ui/AuraIcon'
@@ -120,7 +120,7 @@ export default function PublicReservationPage() {
       }
     },
     onError: (err: unknown) => {
-      clientRequestIdRef.current = null
+      // Keep the same idempotency key so retries after timeout don't double-book.
       setSubmitted(false)
       const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       const localMsg = err instanceof Error ? err.message : undefined
@@ -167,7 +167,7 @@ export default function PublicReservationPage() {
     )
   }
 
-  const minDate = new Date().toISOString().split('T')[0]!
+  const minDate = toLocalDateInput()
   const brandColor = data.restaurant.colorTheme || '#c9a227'
   const heroImage = data.restaurant.coverImage
     || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=80"

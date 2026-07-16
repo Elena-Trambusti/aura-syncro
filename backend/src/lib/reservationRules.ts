@@ -2,6 +2,8 @@ import type { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { countActiveTableOrders } from './orderSession'
 import { resolveMaxCoversPerSlot } from './reservationCapacity'
+import type { MoneyInput } from './money'
+import { moneyNumber } from './money'
 
 export class ReservationValidationError extends Error {
   constructor(
@@ -54,8 +56,26 @@ export async function validateReservationSlot(
       date: { gte: windowStart, lte: windowEnd },
       ...(input.excludeReservationId ? { id: { not: input.excludeReservationId } } : {}),
     },
-    select: { id: true, covers: true, tableId: true, date: true, duration: true },
+    select: {
+      id: true,
+      covers: true,
+      tableId: true,
+      date: true,
+      duration: true,
+      status: true,
+      depositPaid: true,
+    },
   })
+
+  const depositRequired = requiresDeposit(settings)
+
+  /** Soft-hold: PENDING senza caparra pagata non occupa capacità (fino a pagamento o TTL). */
+  const countsTowardCapacity = (r: { status: string; depositPaid: boolean }) => {
+    if (!depositRequired) return true
+    if (r.depositPaid) return true
+    if (r.status === 'PENDING') return false
+    return true
+  }
 
   const overlapping = allReservations.filter(r => {
     const rStart = r.date.getTime()
@@ -63,7 +83,9 @@ export async function validateReservationSlot(
     return rStart < requestEnd && rEnd > requestStart
   })
 
-  const coversInSlot = overlapping.reduce((sum, r) => sum + r.covers, 0)
+  const coversInSlot = overlapping
+    .filter(countsTowardCapacity)
+    .reduce((sum, r) => sum + r.covers, 0)
   if (coversInSlot + input.covers > maxCovers) {
     throw new ReservationValidationError(
       `Slot pieno: ${coversInSlot}/${maxCovers} coperti già prenotati`,
@@ -72,7 +94,9 @@ export async function validateReservationSlot(
   }
 
   if (input.tableId) {
-    const tableTaken = overlapping.some(r => r.tableId === input.tableId)
+    const tableTaken = overlapping
+      .filter(countsTowardCapacity)
+      .some(r => r.tableId === input.tableId)
     if (tableTaken) {
       throw new ReservationValidationError(
         'Tavolo già prenotato in questo orario',
@@ -104,9 +128,6 @@ export async function validateReservationSlot(
 
   return { status: (autoConfirm && !requiresDeposit(settings)) ? 'CONFIRMED' : 'PENDING' }
 }
-
-import type { MoneyInput } from './money'
-import { moneyNumber } from './money'
 
 export function requiresDeposit(settings: {
   noShowDepositRequired?: boolean | null

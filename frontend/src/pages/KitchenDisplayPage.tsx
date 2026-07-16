@@ -67,7 +67,13 @@ const KitchenOrderItemRow = memo(function KitchenOrderItemRow({
 
   const advance = () => {
     const next = nextItemStatus(item.status)
-    if (next) onItemStatusChange(orderId, item.id, next)
+    if (!next) return
+    // Checkmark on multi-qty PREPARING → READY marks the full line, not one unit.
+    if (next === 'READY' && item.quantity > 1) {
+      onItemStatusChange(orderId, item.id, next, item.quantity)
+      return
+    }
+    onItemStatusChange(orderId, item.id, next)
   }
 
   return (
