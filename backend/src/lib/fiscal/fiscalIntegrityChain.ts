@@ -103,8 +103,20 @@ export function verifyFiscalChainSequence(
     paidAt: Date | null
   }>,
   options?: { initialExpectedPrev?: string | null },
-): { valid: boolean; brokenAtOrderId?: string } {
-  const sorted = [...orders]
+): { valid: boolean; brokenAtOrderId?: string; reason?: string } {
+  const fiscalOrders = orders.filter(o => o.fiscalClosedAt ?? o.paidAt)
+
+  for (const order of fiscalOrders) {
+    if (!order.fiscalIntegrityHash) {
+      return {
+        valid: false,
+        brokenAtOrderId: order.id,
+        reason: 'MISSING_INTEGRITY_HASH',
+      }
+    }
+  }
+
+  const sorted = [...fiscalOrders]
     .filter(o => o.fiscalIntegrityHash && (o.fiscalClosedAt ?? o.paidAt))
     .sort((a, b) => {
       const ta = (a.fiscalClosedAt ?? a.paidAt)!.getTime()

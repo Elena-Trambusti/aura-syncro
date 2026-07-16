@@ -171,29 +171,43 @@ export async function applyDiscountToOrder(
     discountCode?: string
   },
 ) {
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, restaurantId },
-    include: { items: true },
-  })
-  if (!order) throw new Error('ORDER_NOT_FOUND')
-  if (['PAID', 'CANCELLED'].includes(order.status)) throw new Error('ORDER_CLOSED')
+  return prisma.$transaction(async tx => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, restaurantId },
+      include: { items: true },
+    })
+    if (!order) throw new Error('ORDER_NOT_FOUND')
+    if (['PAID', 'CANCELLED'].includes(order.status)) throw new Error('ORDER_CLOSED')
+    if (order.fiscalIntegrityHash) throw new Error('ORDER_CLOSED')
 
-  const { totals } = await resolveDiscountForOrder(restaurantId, order, options)
+    const locked = await tx.order.updateMany({
+      where: {
+        id: orderId,
+        restaurantId,
+        status: { notIn: ['PAID', 'CANCELLED'] },
+        fiscalIntegrityHash: null,
+      },
+      data: { updatedAt: new Date() },
+    })
+    if (locked.count === 0) throw new Error('ORDER_CLOSED')
 
-  return prisma.order.update({
-    where: { id: orderId },
-    data: {
-      subtotal: toMoney(totals.subtotal),
-      tax: toMoney(totals.tax),
-      total: toMoney(totals.total),
-      discount: toMoney(totals.discountAmount),
-      taxRateApplied: totals.taxRateApplied,
-      revenueAmount: toMoney(totals.revenueAmount),
-    },
-    include: {
-      table: true,
-      customer: { select: { id: true, name: true, loyaltyTier: true } },
-      items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
-    },
+    const { totals } = await resolveDiscountForOrder(restaurantId, order, options)
+
+    return tx.order.update({
+      where: { id: orderId },
+      data: {
+        subtotal: toMoney(totals.subtotal),
+        tax: toMoney(totals.tax),
+        total: toMoney(totals.total),
+        discount: toMoney(totals.discountAmount),
+        taxRateApplied: totals.taxRateApplied,
+        revenueAmount: toMoney(totals.revenueAmount),
+      },
+      include: {
+        table: true,
+        customer: { select: { id: true, name: true, loyaltyTier: true } },
+        items: { include: { menuItem: true }, orderBy: { createdAt: 'asc' } },
+      },
+    })
   })
 }

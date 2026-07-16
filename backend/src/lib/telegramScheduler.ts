@@ -4,7 +4,7 @@ import { sendTelegramMessage } from './telegramBot'
 import { logger } from './logger'
 
 // Variabile per tenere traccia se abbiamo già inviato il report oggi
-let lastSentDay = new Date().getDate()
+let lastSentDay = -1
 
 export async function runTelegramDailyAlerts() {
   const now = new Date()

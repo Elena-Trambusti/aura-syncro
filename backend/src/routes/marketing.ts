@@ -162,9 +162,7 @@ marketingRouter.post('/:id/send', campaignSendLimiter, requirePermission('market
       status: { in: ['DRAFT', 'SCHEDULED'] },
     },
     data: {
-      status: 'SENT',
-      sentAt: new Date(),
-      recipientCount: recipients.length,
+      status: 'SENDING',
     },
   })
   if (claimed.count === 0) {
@@ -181,11 +179,25 @@ marketingRouter.post('/:id/send', campaignSendLimiter, requirePermission('market
     failed = result.failed
     await prisma.campaign.updateMany({
       where: scopedWhere(req, req.params.id),
-      data: { recipientCount: sent },
+      data: {
+        status: 'SENT',
+        sentAt: new Date(),
+        recipientCount: sent,
+      },
     })
   } catch (err) {
-    // Non ripristinare DRAFT se alcune email potrebbero già essere partite.
-    console.error('[marketing] Errore invio campagna dopo claim SENT', req.params.id, err)
+    if (sent > 0) {
+      await prisma.campaign.updateMany({
+        where: scopedWhere(req, req.params.id),
+        data: { status: 'SENT', sentAt: new Date(), recipientCount: sent },
+      })
+    } else {
+      await prisma.campaign.updateMany({
+        where: { ...scopedWhere(req, req.params.id), status: 'SENDING' },
+        data: { status: 'DRAFT' },
+      })
+    }
+    console.error('[marketing] Errore invio campagna dopo claim SENDING', req.params.id, err)
     throw err
   }
 

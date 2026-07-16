@@ -33,7 +33,7 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
   const today = calendarDateInTimezone(timeZone)
   const { gte, lt } = dayBoundsInTimezone(today, timeZone)
 
-  const [readiness, openCash, todayPaidCount, chainSample] = await Promise.all([
+  const [readiness, openCash, todayPaidCount, missingHashCount, chainOrders] = await Promise.all([
     computeOnboardingReadiness(restaurantId),
     prisma.cashRegisterSession.findFirst({
       where: { restaurantId, status: 'OPEN' },
@@ -47,10 +47,22 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
         paidAt: { gte, lt },
       },
     }),
+    prisma.order.count({
+      where: {
+        restaurantId,
+        status: 'PAID',
+        refundedAt: null,
+        fiscalIntegrityHash: null,
+      },
+    }),
     prisma.order.findMany({
-      where: { restaurantId, status: 'PAID', fiscalIntegrityHash: { not: null } },
-      orderBy: { paidAt: 'desc' },
-      take: 25,
+      where: {
+        restaurantId,
+        status: 'PAID',
+        refundedAt: null,
+        fiscalIntegrityHash: { not: null },
+      },
+      orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }],
       select: {
         id: true,
         total: true,
@@ -63,7 +75,7 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
   ])
 
   const chainAudit = verifyFiscalChainSequence(
-    chainSample.map(o => ({
+    chainOrders.map(o => ({
       id: o.id,
       fiscalClosedAt: o.fiscalClosedAt,
       total: moneyNumber(o.total),
@@ -75,7 +87,7 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
 
   const legalNameOk = Boolean(settings?.legalName?.trim())
   const taxIdOk = Boolean(settings?.taxId?.trim())
-  const integrityOk = chainSample.length === 0 || chainAudit.valid
+  const integrityOk = missingHashCount === 0 && (chainOrders.length === 0 || chainAudit.valid)
 
   const checks: ComplianceCheck[] = [
     { id: 'taxId', ok: taxIdOk, severity: 'required' },
@@ -85,7 +97,7 @@ export async function computeComplianceStatus(restaurantId: string): Promise<Com
     { id: 'pos', ok: readiness.posReady, severity: 'required', detail: readiness.posMode },
     { id: 'cashSession', ok: Boolean(openCash), severity: 'recommended', detail: openCash ? 'OPEN' : 'CLOSED' },
     { id: 'todaySales', ok: todayPaidCount > 0, severity: 'recommended', detail: `${todayPaidCount} conti` },
-    { id: 'integrityChain', ok: integrityOk, severity: 'required' },
+    { id: 'integrityChain', ok: integrityOk, severity: 'required', detail: missingHashCount > 0 ? `${missingHashCount} senza hash` : undefined },
     { id: 'menu', ok: readiness.menuConfigured, severity: 'recommended' },
   ]
 

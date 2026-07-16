@@ -42,6 +42,19 @@ const audit = verifyFiscalChainSequence([
 
 assert.equal(audit.valid, true)
 
+const missingHashAudit = verifyFiscalChainSequence([
+  {
+    id: 'ord_missing',
+    fiscalClosedAt: null,
+    total: 10,
+    fiscalPrevHash: null,
+    fiscalIntegrityHash: null,
+    paidAt: t0,
+  },
+])
+assert.equal(missingHashAudit.valid, false)
+assert.equal(missingHashAudit.reason, 'MISSING_INTEGRITY_HASH')
+
 const tampered = computeFiscalIntegrityHash({
   orderId: 'ord_1',
   closedAt: t0,

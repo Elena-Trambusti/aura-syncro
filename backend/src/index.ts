@@ -280,4 +280,22 @@ httpServer.listen(PORT, () => {
       })
       .catch(err => console.error('[scheduler] stale public orders:', err))
   }, 15 * 60 * 1000)
+
+  setInterval(() => {
+    import('./lib/staleReservations')
+      .then(({ cancelStaleDepositReservations }) => cancelStaleDepositReservations())
+      .then(n => {
+        if (n > 0) console.info('[scheduler] Prenotazioni caparra scadute annullate:', n)
+      })
+      .catch(err => console.error('[scheduler] stale reservations:', err))
+  }, 60 * 60 * 1000)
+
+  setInterval(() => {
+    import('./lib/reconcileZombieTables')
+      .then(({ reconcileZombieOccupiedTables }) => reconcileZombieOccupiedTables())
+      .then(n => {
+        if (n > 0) console.info('[scheduler] Tavoli OCCUPIED zombi riparati:', n)
+      })
+      .catch(err => console.error('[scheduler] zombie tables:', err))
+  }, 30 * 60 * 1000)
 })

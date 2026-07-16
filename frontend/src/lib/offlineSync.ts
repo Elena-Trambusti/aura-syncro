@@ -213,10 +213,10 @@ export async function flushOfflineQueue(): Promise<{ synced: number; failed: num
       ? localStorage.getItem(TENANT_STORAGE_KEY)
       : null
 
-    for (let mutation of pending) {
-      if (!mutation.tenantId && activeTenantId) {
-        mutation = { ...mutation, tenantId: activeTenantId }
-        await enqueueMutation(mutation)
+    for (const mutation of pending) {
+      if (!mutation.tenantId) {
+        // Quarantena: mutazioni legacy senza tenant non vengono mai eseguite.
+        continue
       }
       if (mutation.tenantId && activeTenantId && mutation.tenantId !== activeTenantId) {
         // Keep in queue until user returns to the owning tenant.

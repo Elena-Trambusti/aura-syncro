@@ -34,7 +34,13 @@ export async function markReservationDepositPaid(
 
   const reservation = await prisma.reservation.findUnique({
     where: { id: reservationId },
-    select: { id: true, restaurantId: true, depositPaid: true, depositStripeSessionId: true },
+    select: {
+      id: true,
+      restaurantId: true,
+      depositPaid: true,
+      depositStripeSessionId: true,
+      status: true,
+    },
   })
 
   if (!reservation) {
@@ -70,6 +76,7 @@ export async function markReservationDepositPaid(
       where: { id: reservationId },
       data: {
         depositPaid: true,
+        ...(reservation.status === 'PENDING' ? { status: 'CONFIRMED' } : {}),
         ...(session.id ? { depositStripeSessionId: session.id } : {}),
       },
     })
@@ -91,6 +98,7 @@ export async function markReservationDepositPaid(
     data: {
       depositPaid: fundsCaptured,
       depositAmountPaid: fundsCaptured ? amountPaid : null,
+      ...(reservation.status === 'PENDING' ? { status: 'CONFIRMED' } : {}),
       ...(session.id ? { depositStripeSessionId: session.id } : {}),
     },
   })

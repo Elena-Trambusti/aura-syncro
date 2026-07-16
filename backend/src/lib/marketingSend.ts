@@ -199,6 +199,15 @@ export async function runMarketingAutomations(restaurantId: string): Promise<num
 }
 
 export async function processScheduledCampaigns(): Promise<number> {
+  const staleSendingCutoff = new Date(Date.now() - 30 * 60 * 1000)
+  await prisma.campaign.updateMany({
+    where: {
+      status: 'SENDING',
+      updatedAt: { lt: staleSendingCutoff },
+    },
+    data: { status: 'SCHEDULED' },
+  })
+
   const due = await prisma.campaign.findMany({
     where: {
       status: 'SCHEDULED',
@@ -211,17 +220,29 @@ export async function processScheduledCampaigns(): Promise<number> {
   for (const campaign of due) {
     const claimed = await prisma.campaign.updateMany({
       where: { id: campaign.id, status: 'SCHEDULED' },
-      data: { status: 'SENT', sentAt: new Date() },
+      data: { status: 'SENDING' },
     })
     if (claimed.count === 0) continue
 
-    const recipients = await getTargetCustomers(campaign.restaurantId, campaign.targetFilter ?? null)
-    const { sent } = await sendCampaignEmails(campaign.restaurantId, campaign, recipients)
-    await prisma.campaign.update({
-      where: { id: campaign.id },
-      data: { recipientCount: sent },
-    })
-    processed += 1
+    try {
+      const recipients = await getTargetCustomers(campaign.restaurantId, campaign.targetFilter ?? null)
+      const { sent } = await sendCampaignEmails(campaign.restaurantId, campaign, recipients)
+      await prisma.campaign.update({
+        where: { id: campaign.id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          recipientCount: sent,
+        },
+      })
+      processed += 1
+    } catch (err) {
+      await prisma.campaign.updateMany({
+        where: { id: campaign.id, status: 'SENDING' },
+        data: { status: 'SCHEDULED' },
+      })
+      console.error('[scheduler] Campagna fallita dopo claim SENDING:', campaign.id, err)
+    }
   }
   return processed
 }

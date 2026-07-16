@@ -91,6 +91,73 @@ async function resolveRestaurantId(invoice: StripeInvoicePayload): Promise<strin
   return null
 }
 
+async function claimSaasInvoiceForProcessing(params: {
+  restaurantId: string | null
+  stripeInvoiceId: string
+  stripeCustomerId: string
+  stripeEventId: string
+  profile: SaasCustomerFiscalProfile
+  mapped: SaasMappedInvoice
+}): Promise<boolean> {
+  const existing = await prisma.saasElectronicInvoice.findUnique({
+    where: { stripeInvoiceId: params.stripeInvoiceId },
+    select: { status: true },
+  })
+
+  if (existing?.status === 'sent' || existing?.status === 'pending') {
+    return false
+  }
+
+  if (!existing) {
+    try {
+      await prisma.saasElectronicInvoice.create({
+        data: {
+          restaurantId: params.restaurantId,
+          stripeInvoiceId: params.stripeInvoiceId,
+          stripeCustomerId: params.stripeCustomerId,
+          stripeEventId: params.stripeEventId,
+          status: 'pending',
+          fiscalRegime: params.mapped.regime,
+          legalName: params.profile.legalName,
+          vatNumber: params.profile.vatNumber,
+          sdiRecipientCode: params.mapped.sdiRecipientCode,
+          pec: params.mapped.pec,
+          billingAddress: params.profile.address,
+          netAmount: params.mapped.netAmount,
+          taxAmount: params.mapped.taxAmount,
+          grossAmount: params.mapped.grossAmount,
+          taxRate: params.mapped.taxRate,
+          vatNature: params.mapped.vatNature,
+          currency: 'EUR',
+        },
+      })
+      return true
+    } catch (err: unknown) {
+      if (
+        err != null
+        && typeof err === 'object'
+        && 'code' in err
+        && (err as { code: string }).code === 'P2002'
+      ) {
+        return false
+      }
+      throw err
+    }
+  }
+
+  const reclaimed = await prisma.saasElectronicInvoice.updateMany({
+    where: { stripeInvoiceId: params.stripeInvoiceId, status: 'failed' },
+    data: {
+      status: 'pending',
+      stripeEventId: params.stripeEventId,
+      arubaErrorCode: null,
+      arubaErrorMessage: null,
+      updatedAt: new Date(),
+    },
+  })
+  return reclaimed.count > 0
+}
+
 async function persistInvoiceRecord(params: {
   restaurantId: string | null
   stripeInvoiceId: string
@@ -306,6 +373,19 @@ export async function handleStripeInvoicePaid(
     gross: mapped.grossAmount,
     sdi: mapped.sdiRecipientCode,
   })
+
+  const claimed = await claimSaasInvoiceForProcessing({
+    restaurantId,
+    stripeInvoiceId: invoice.id,
+    stripeCustomerId: customerId,
+    stripeEventId,
+    profile,
+    mapped,
+  })
+  if (!claimed) {
+    console.info('[stripe-invoice] Fattura già in elaborazione o emessa:', invoice.id)
+    return { processed: true, stripeInvoiceId: invoice.id, status: 'skipped_duplicate' }
+  }
 
   const arubaResult = await ArubaInvoiceService.submit(xmlContent)
 

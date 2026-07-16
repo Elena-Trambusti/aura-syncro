@@ -34,7 +34,7 @@ interface Campaign {
   id: string
   name: string
   type: string
-  status: 'DRAFT' | 'SCHEDULED' | 'SENT' | 'CANCELLED'
+  status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED'
   subject?: string | null
   message: string
   sentAt?: string | null
@@ -55,6 +55,7 @@ const AUTOMATION_META: Record<
 const CAMPAIGN_STATUS_CLASS: Record<Campaign['status'], string> = {
   DRAFT: 'bg-navy-surface text-fumo',
   SCHEDULED: 'bg-blue-100 text-blue-800',
+  SENDING: 'bg-amber-100 text-amber-800',
   SENT: 'bg-emerald-100 text-emerald-800',
   CANCELLED: 'bg-red-100 text-red-400',
 }
@@ -379,7 +380,7 @@ export default function MarketingPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {campaign.status !== 'SENT' && (
+                    {campaign.status !== 'SENT' && campaign.status !== 'SENDING' && (
                       <button
                         type="button"
                         onClick={() => sendCampaign.mutate(campaign.id)}
@@ -390,7 +391,7 @@ export default function MarketingPage() {
                         {t('marketing.sendCampaign')}
                       </button>
                     )}
-                    {campaign.status !== 'SENT' && (
+                    {campaign.status !== 'SENT' && campaign.status !== 'SENDING' && (
                       <button
                         type="button"
                         onClick={() => {

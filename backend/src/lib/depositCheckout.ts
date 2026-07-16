@@ -44,7 +44,10 @@ export async function createDepositCheckoutSession(
     where: { restaurantId: reservation.restaurantId },
   })
 
-  const depositAmount = moneyNumber(settings?.depositAmount) || 10
+  const depositAmount = moneyNumber(settings?.depositAmount)
+  if (depositAmount <= 0) {
+    throw new Error('DEPOSIT_NOT_CONFIGURED')
+  }
   const connectAccountId = settings?.stripeConnectAccountId
   const frontendUrl = resolvePrimaryFrontendUrl()
 

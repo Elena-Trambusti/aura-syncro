@@ -24,6 +24,15 @@ export type ArubaUploadResult = {
   errorMessage?: string
 }
 
+export type ArubaInvoiceDeliveryStatus = 'sent' | 'delivered' | 'rejected' | 'unknown'
+
+export type ArubaStatusCheckResult = {
+  status: ArubaInvoiceDeliveryStatus
+  mode: 'live' | 'mock' | 'disabled'
+  errorCode?: string
+  errorMessage?: string
+}
+
 type ArubaTokenResponse = {
   access_token: string
   refresh_token?: string
@@ -189,9 +198,89 @@ export async function submitElectronicInvoice(xmlContent: string): Promise<Aruba
   }
 }
 
+function mapArubaNotificationStatus(payload: Record<string, unknown>): ArubaInvoiceDeliveryStatus {
+  const raw = String(
+    payload.invoiceStatus
+    ?? payload.status
+    ?? payload.stato
+    ?? payload.notificationStatus
+    ?? '',
+  ).toLowerCase()
+
+  if (raw.includes('deliver') || raw.includes('consegn') || raw === 'ok') return 'delivered'
+  if (raw.includes('reject') || raw.includes('scart') || raw.includes('error') || raw.includes('ko')) {
+    return 'rejected'
+  }
+  return 'unknown'
+}
+
+/**
+ * Interroga Aruba per lo stato SDI reale di una fattura già inviata.
+ * Non inventa esiti: se l'API non risponde, restituisce `unknown`.
+ */
+export async function checkInvoiceDeliveryStatus(
+  uploadFileName: string,
+): Promise<ArubaStatusCheckResult> {
+  const config = loadArubaFeConfig()
+
+  if (!config.enabled) {
+    return { status: 'unknown', mode: 'disabled', errorMessage: 'ARUBA_FE_DISABLED' }
+  }
+
+  if (!config.username || !config.password) {
+    return { status: 'unknown', mode: 'disabled', errorMessage: 'ARUBA_FE_CREDENTIALS_MISSING' }
+  }
+
+  if (process.env.ARUBA_FE_MOCK_UPLOAD === 'true') {
+    return { status: 'unknown', mode: 'mock', errorMessage: 'ARUBA_FE_MOCK_NO_STATUS' }
+  }
+
+  try {
+    const token = await fetchArubaToken(config)
+    const response = await fetch(
+      `${config.apiUrl}/services/invoice/out/findByFilename?filename=${encodeURIComponent(uploadFileName)}`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+
+    const result = await response.json().catch(() => ({})) as Record<string, unknown> & {
+      errorCode?: string
+      errorDescription?: string
+      invoices?: Record<string, unknown>[]
+    }
+
+    if (!response.ok || result.errorCode) {
+      return {
+        status: 'unknown',
+        mode: 'live',
+        errorCode: result.errorCode || String(response.status),
+        errorMessage: result.errorDescription || response.statusText,
+      }
+    }
+
+    const invoiceRow = Array.isArray(result.invoices) && result.invoices.length > 0
+      ? result.invoices[0]
+      : result
+
+    return {
+      status: mapArubaNotificationStatus(invoiceRow),
+      mode: 'live',
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'ARUBA_STATUS_CHECK_FAILED'
+    return { status: 'unknown', mode: 'live', errorMessage: message }
+  }
+}
+
 /** Alias esplicito richiesto dalla specifica */
 export const ArubaInvoiceService = {
   loadConfig: loadArubaFeConfig,
   isConfigured: isArubaFeConfigured,
   submit: submitElectronicInvoice,
+  checkStatus: checkInvoiceDeliveryStatus,
 }

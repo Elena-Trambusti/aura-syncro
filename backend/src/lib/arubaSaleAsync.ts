@@ -65,5 +65,9 @@ export async function submitInvoiceToArubaBackground(invoiceId: string): Promise
 export function scheduleArubaInvoiceSubmission(invoiceId: string): void {
   void submitInvoiceToArubaBackground(invoiceId).catch(err => {
     console.error('[aruba-sale-async] Errore background', invoiceId, err)
+    void prisma.invoice.updateMany({
+      where: { id: invoiceId, statoSdi: 'submitting' },
+      data: { statoSdi: 'failed' },
+    }).catch(() => {})
   })
 }

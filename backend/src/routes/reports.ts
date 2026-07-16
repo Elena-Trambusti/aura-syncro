@@ -55,7 +55,7 @@ const fiscalOrderSelect = {
 
 async function fetchPaidOrdersInPeriod(restaurantId: string, start: Date, end: Date) {
   return prisma.order.findMany({
-    where: paidOrdersInPeriodWhere(restaurantId, start, end, false, true),
+    where: paidOrdersInPeriodWhere(restaurantId, start, end, false, false),
     select: fiscalOrderSelect,
     orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }],
   })
@@ -530,7 +530,7 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER'), requireProPlan,
   }
 
   const orders = await prisma.order.findMany({
-    where: paidOrdersInPeriodWhere(restaurantId, range.start, range.end, false, true),
+    where: paidOrdersInPeriodWhere(restaurantId, range.start, range.end, false, false),
     select: {
       taxRateApplied: true,
       items: {

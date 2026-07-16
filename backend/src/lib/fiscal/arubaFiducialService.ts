@@ -107,6 +107,15 @@ export async function sealFiscalPdf(request: ArubaSealRequest): Promise<ArubaSea
     }
   }
 
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[aruba-fiducial] Sigillo PDF live non implementato — rifiuto mock in produzione')
+    return {
+      sealed: false,
+      mode: 'mock',
+      error: 'ARUBA_FIDUCIAL_LIVE_NOT_IMPLEMENTED',
+    }
+  }
+
   try {
     const token = await getArubaAccessToken(config)
     const sealId = `ARUBA-MOCK-${Date.now()}-${request.restaurantId.slice(0, 8)}`

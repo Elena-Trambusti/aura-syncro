@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma'
 import { dayBoundsInTimezone, calendarDateInTimezone } from '../lib/dates'
 import { AuthRequest } from '../middleware/auth'
 import { requirePermission } from '../middleware/permissions'
-import { updateCustomerTier, bootstrapLoyaltyProgram } from '../lib/loyaltyHelpers'
+import { updateCustomerTier, bootstrapLoyaltyProgram, syncAllCustomerTiers } from '../lib/loyaltyHelpers'
 import { scopedWhere, tenantId, tenantNotFound, tenantWhere } from '../lib/tenant'
 
 export const loyaltyRouter = Router()
@@ -37,6 +37,9 @@ loyaltyRouter.post('/tiers', requirePermission('loyalty.manage'), async (req: Au
   const tier = await prisma.loyaltyTier.create({
     data: { ...result.data, restaurantId: req.restaurantId! },
   })
+  void syncAllCustomerTiers(req.restaurantId!).catch(err => {
+    console.error('[loyalty] sync tiers dopo create fallito:', err)
+  })
   res.status(201).json(tier)
 })
 
@@ -60,12 +63,18 @@ loyaltyRouter.put('/tiers/:id', requirePermission('loyalty.manage'), async (req:
   })
   if (updated.count === 0) { tenantNotFound(res, 'Livello non trovato'); return }
   const tier = await prisma.loyaltyTier.findFirst({ where: scopedWhere(req, req.params.id) })
+  void syncAllCustomerTiers(req.restaurantId!).catch(err => {
+    console.error('[loyalty] sync tiers dopo update fallito:', err)
+  })
   res.json(tier)
 })
 
 loyaltyRouter.delete('/tiers/:id', requirePermission('loyalty.manage'), async (req: AuthRequest, res: Response): Promise<void> => {
   const deleted = await prisma.loyaltyTier.deleteMany({ where: scopedWhere(req, req.params.id) })
   if (deleted.count === 0) { tenantNotFound(res, 'Livello non trovato'); return }
+  void syncAllCustomerTiers(req.restaurantId!).catch(err => {
+    console.error('[loyalty] sync tiers dopo delete fallito:', err)
+  })
   res.status(204).send()
 })
 

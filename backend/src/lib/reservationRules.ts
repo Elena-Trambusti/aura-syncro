@@ -102,7 +102,7 @@ export async function validateReservationSlot(
     }
   }
 
-  return { status: autoConfirm ? 'CONFIRMED' : 'PENDING' }
+  return { status: (autoConfirm && !requiresDeposit(settings)) ? 'CONFIRMED' : 'PENDING' }
 }
 
 import type { MoneyInput } from './money'
