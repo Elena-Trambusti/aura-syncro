@@ -101,6 +101,15 @@ export function useKitchenOrders() {
     })
   }, [])
 
+  const assertNotInFlight = (key: string) => {
+    if (inFlightRef.current.has(key)) {
+      throw Object.assign(new Error('DUPLICATE_ACTION'), { code: 'DUPLICATE_ACTION' })
+    }
+  }
+
+  const isDuplicateAction = (err: unknown) =>
+    (err as { code?: string })?.code === 'DUPLICATE_ACTION'
+
   const updateItemStatus = useMutation({
     mutationFn: ({
       orderId,
@@ -118,7 +127,7 @@ export function useKitchenOrders() {
         .then(r => r.data as KitchenOrder),
     onMutate: async vars => {
       const key = itemActionKey(vars.orderId, vars.itemId, vars.status, vars.units)
-      if (inFlightRef.current.has(key)) return { skipped: true as const }
+      assertNotInFlight(key)
 
       trackAction(key)
 
@@ -131,18 +140,16 @@ export function useKitchenOrders() {
 
       return { previous, key }
     },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.skipped) return
+    onError: (err, _vars, ctx) => {
+      if (isDuplicateAction(err)) return
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous)
       toast.error(t('kitchen.dishUpdateError'))
     },
-    onSuccess: (updated, _vars, ctx) => {
-      if (ctx?.skipped) return
+    onSuccess: (updated) => {
       mergeServerOrder(updated)
     },
     onSettled: (_data, _err, _vars, ctx) => {
-      if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key)
+      if (ctx?.key) releaseAction(ctx.key)
     },
   })
 
@@ -151,7 +158,7 @@ export function useKitchenOrders() {
       api.patch(`/orders/${orderId}/status`, { status: 'READY' }).then(r => r.data as KitchenOrder),
     onMutate: async orderId => {
       const key = orderActionKey(orderId, 'ready')
-      if (inFlightRef.current.has(key)) return { skipped: true as const }
+      assertNotInFlight(key)
 
       trackAction(key)
 
@@ -160,19 +167,17 @@ export function useKitchenOrders() {
       patchCache(prev => applyOptimisticOrderReady(prev, orderId))
       return { previous, key }
     },
-    onError: (_err, _orderId, ctx) => {
-      if (ctx?.skipped) return
+    onError: (err, _orderId, ctx) => {
+      if (isDuplicateAction(err)) return
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous)
       toast.error(t('kitchen.orderReadyError'))
     },
-    onSuccess: (updated, _orderId, ctx) => {
-      if (ctx?.skipped) return
+    onSuccess: (updated) => {
       mergeServerOrder(updated)
       toast.success(t('kitchen.orderReady'))
     },
     onSettled: (_data, _err, _orderId, ctx) => {
-      if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key)
+      if (ctx?.key) releaseAction(ctx.key)
     },
   })
 
@@ -181,7 +186,7 @@ export function useKitchenOrders() {
       api.patch(`/orders/${orderId}/status`, { status: 'SERVED' }).then(r => r.data as KitchenOrder),
     onMutate: async orderId => {
       const key = orderActionKey(orderId, 'dismiss')
-      if (inFlightRef.current.has(key)) return { skipped: true as const }
+      assertNotInFlight(key)
 
       trackAction(key)
 
@@ -190,19 +195,17 @@ export function useKitchenOrders() {
       patchCache(prev => applyOptimisticDismiss(prev, orderId))
       return { previous, key }
     },
-    onError: (_err, _orderId, ctx) => {
-      if (ctx?.skipped) return
+    onError: (err, _orderId, ctx) => {
+      if (isDuplicateAction(err)) return
       if (ctx?.previous) queryClient.setQueryData(queryKey, ctx.previous)
       toast.error(t('kitchen.orderDismissError'))
     },
-    onSuccess: (updated, _orderId, ctx) => {
-      if (ctx?.skipped) return
+    onSuccess: (updated) => {
       mergeServerOrder(updated)
       toast.success(t('kitchen.orderDismissed'))
     },
     onSettled: (_data, _err, _orderId, ctx) => {
-      if (!ctx || ctx.skipped) return
-      releaseAction(ctx.key)
+      if (ctx?.key) releaseAction(ctx.key)
     },
   })
 

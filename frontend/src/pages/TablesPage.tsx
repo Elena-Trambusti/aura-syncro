@@ -263,16 +263,16 @@ export default function TablesPage() {
       ).then(r => r.data),
     onMutate: ({ tableId }) => {
       const previousTables = markTableSeatedFromReservation(queryClient, tk, tableId)
-      const table = reservedTable ?? tables.find(tbl => tbl.id === tableId)
       setReservedTable(null)
+      return { previousTables, tableId }
+    },
+    onSuccess: (reservation, { tableId }) => {
+      setSeatedCustomerId(reservation?.customer?.id ?? reservation?.customerId ?? null)
+      const table = tables.find(tbl => tbl.id === tableId)
       if (table && canCreateOrder) {
         setSelectedTableId(table.id)
         setShowOrderModal(true)
       }
-      return { previousTables }
-    },
-    onSuccess: (reservation) => {
-      setSeatedCustomerId(reservation?.customer?.id ?? reservation?.customerId ?? null)
       toast.success(t('tables.reservationSeated'))
     },
     onError: (err: unknown, _vars, context) => {

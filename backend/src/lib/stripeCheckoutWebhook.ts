@@ -77,5 +77,15 @@ export async function handleCheckoutSessionCompleted(
       result.restaurantId,
       result.stripeSubscriptionId ?? '(no subscription id)',
     )
+  } else if (
+    session.mode === 'subscription'
+    || session.metadata?.plan === 'premium'
+    || session.metadata?.plan === 'PREMIUM'
+    || session.metadata?.plan === 'STARTER'
+  ) {
+    console.info(
+      '[stripe-webhook] Checkout subscription non attivato (payment_status/filtro):',
+      session.payment_status,
+    )
   }
 }

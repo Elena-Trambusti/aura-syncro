@@ -19,7 +19,7 @@ import {
   paidOrdersInPeriodWhere,
 } from '../lib/dates'
 import { FISCAL_REGION_GENESIS } from '../lib/fiscal/fiscalRegion'
-import { buildFiscalConfig, fiscalConfigPayload } from '../lib/taxEngine'
+import { buildFiscalConfig, fiscalConfigPayload, scorporoTaxFromGross } from '../lib/taxEngine'
 import { getFiscalStrategyFromConfig } from '../lib/fiscal/strategies'
 import { buildFiscalSummary, buildFiscalTransactionRow } from '../lib/tipFiscal'
 import { verifyFiscalChainSequence } from '../lib/fiscal/fiscalIntegrityChain'
@@ -529,18 +529,37 @@ reportsRouter.get('/fiscal/vat-breakdown', requireRole('OWNER'), requireProPlan,
     return
   }
 
-  const orders = await fetchPaidOrdersInPeriod(restaurantId, range.start, range.end)
+  const orders = await prisma.order.findMany({
+    where: paidOrdersInPeriodWhere(restaurantId, range.start, range.end, false, true),
+    select: {
+      taxRateApplied: true,
+      items: {
+        where: { status: { not: 'CANCELLED' } },
+        select: {
+          quantity: true,
+          unitPrice: true,
+          modifiers: { select: { price: true } },
+          menuItem: { select: { taxRate: true } },
+        },
+      },
+    },
+  })
   const byRate = new Map<number, { taxRate: number; taxableBase: number; tax: number; count: number }>()
+  const defaultRate = fiscal.taxRate
 
   for (const o of orders) {
-    const rate = o.taxRateApplied ?? 0
-    const base = moneyNumber(o.subtotal)
-    const tax = moneyNumber(o.tax)
-    const bucket = byRate.get(rate) ?? { taxRate: rate, taxableBase: 0, tax: 0, count: 0 }
-    bucket.taxableBase = Math.round((bucket.taxableBase + base) * 100) / 100
-    bucket.tax = Math.round((bucket.tax + tax) * 100) / 100
-    bucket.count += 1
-    byRate.set(rate, bucket)
+    const orderDefault = o.taxRateApplied ?? defaultRate
+    for (const item of o.items) {
+      const mod = item.modifiers.reduce((s, m) => s + moneyNumber(m.price), 0)
+      const gross = (moneyNumber(item.unitPrice) + mod) * item.quantity
+      const rate = item.menuItem.taxRate ?? orderDefault
+      const part = scorporoTaxFromGross(gross, rate)
+      const bucket = byRate.get(rate) ?? { taxRate: rate, taxableBase: 0, tax: 0, count: 0 }
+      bucket.taxableBase = Math.round((bucket.taxableBase + part.subtotal) * 100) / 100
+      bucket.tax = Math.round((bucket.tax + part.tax) * 100) / 100
+      bucket.count += 1
+      byRate.set(rate, bucket)
+    }
   }
 
   const breakdown = [...byRate.values()].sort((a, b) => a.taxRate - b.taxRate)

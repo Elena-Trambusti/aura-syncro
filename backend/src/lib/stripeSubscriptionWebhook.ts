@@ -6,6 +6,7 @@ export type CheckoutSessionPayload = {
   subscription?: string | { id: string } | null
   customer?: string | { id: string } | null
   mode?: string | null
+  payment_status?: string | null
 }
 
 /** Esclude pagamenti guest (ordini, caparre) e upgrade Pro dall'attivazione abbonamento Premium */
@@ -19,6 +20,13 @@ export function isSaasSubscriptionSession(session: CheckoutSessionPayload): bool
   if (session.mode === 'subscription') return true
   if (session.subscription) return true
   return false
+}
+
+function isCheckoutPaidEnough(session: CheckoutSessionPayload): boolean {
+  const status = session.payment_status
+  // Assente = legacy/test; paid / no_payment_required = ok; unpaid/etc = no
+  if (status == null) return true
+  return status === 'paid' || status === 'no_payment_required'
 }
 
 export interface SubscriptionActivationResult {
@@ -35,6 +43,11 @@ export async function activateRestaurantSubscription(
   session: CheckoutSessionPayload,
 ): Promise<SubscriptionActivationResult | null> {
   if (!isSaasSubscriptionSession(session)) {
+    return null
+  }
+
+  if (!isCheckoutPaidEnough(session)) {
+    console.info('[stripe-webhook] Skip attivazione Premium: payment_status=', session.payment_status)
     return null
   }
 
@@ -219,6 +232,14 @@ export async function syncRestaurantSubscriptionStatus(
         restaurantId,
         ...data,
       },
+    })
+  }
+
+  // Allinea anche Restaurant.subscriptionPlan (gate marketing / limiti tavoli).
+  if (!hasActiveSubscription) {
+    await prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: { subscriptionPlan: 'STARTER' },
     })
   }
 

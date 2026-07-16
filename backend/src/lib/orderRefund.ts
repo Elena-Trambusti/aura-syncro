@@ -161,10 +161,16 @@ export async function executeOrderRefund(input: ExecuteOrderRefundInput): Promis
     const cashSessionId = input.cashSessionId
     const userId = input.userId
     const reversal = await prisma.$transaction(async tx => {
+      const open = await tx.cashRegisterSession.findFirst({
+        where: { id: cashSessionId, restaurantId: input.restaurantId, status: 'OPEN' },
+      })
+      if (!open) {
+        throw Object.assign(new Error('CASH_SESSION_CLOSED'), { code: 'CASH_SESSION_CLOSED' })
+      }
       const rev = await markOrderRefunded(order.id, input.restaurantId, refundAmount, tx)
       await tx.cashTransaction.create({
         data: {
-          sessionId: cashSessionId,
+          sessionId: open.id,
           userId,
           type: 'REFUND',
           amount: toMoney(refundAmount),
