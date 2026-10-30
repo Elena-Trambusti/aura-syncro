@@ -1,4 +1,5 @@
 import { lazy, type ComponentType } from 'react'
+import { isChunkLoadError, reloadForStaleChunk } from './chunkReload'
 
 /** Lazy route con retry — evita ErrorBoundary su chunk stale dopo deploy o glitch di rete. */
 export function lazyRoute<T extends ComponentType<unknown>>(
@@ -15,6 +16,10 @@ export function lazyRoute<T extends ComponentType<unknown>>(
           await new Promise(resolve => setTimeout(resolve, 350 * (attempt + 1)))
         }
       }
+    }
+    if (isChunkLoadError(lastErr) && reloadForStaleChunk()) {
+      // Resta in Suspense finché il browser ricarica la versione nuova
+      return new Promise<never>(() => {})
     }
     throw lastErr
   })

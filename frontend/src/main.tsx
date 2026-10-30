@@ -10,8 +10,14 @@ import AppProviders from './components/AppProviders'
 import DeferredMetrics from './components/DeferredMetrics'
 import AuraSonner from './components/AuraSonner'
 import ErrorBoundary from './components/ErrorBoundary'
+import { reloadForStaleChunk } from './lib/chunkReload'
 
 installPwaResetGlobal()
+
+// Chunk di un deploy precedente non più disponibile → ricarica una volta
+window.addEventListener('vite:preloadError', (event) => {
+  if (reloadForStaleChunk()) event.preventDefault()
+})
 
 const rootEl = document.getElementById('root')
 if (!rootEl) {
