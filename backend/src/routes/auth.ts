@@ -30,7 +30,7 @@ export const authRouter = Router()
 const PASSWORD_MIN = 8
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().email(),
   password: z.string().min(1),
   restaurantSlug: z.string().min(1).optional(),
 })
@@ -195,8 +195,9 @@ authRouter.post('/login', authLoginLimiter, asyncHandler(async (req: Request, re
   }
   const { email, password, restaurantSlug } = result.data
 
+  // Email senza distinzione maiuscole/minuscole (es. "Mario@..." dalla tastiera del telefono)
   const candidates = await prisma.user.findMany({
-    where: { email, active: true },
+    where: { email: { equals: email, mode: 'insensitive' }, active: true },
     include: { restaurant: { include: { settings: true } } },
   })
 
@@ -291,7 +292,7 @@ authRouter.post('/forgot-password', authForgotPasswordLimiter, asyncHandler(asyn
   }
 
   const users = await prisma.user.findMany({
-    where: { email: parsed.data.email, active: true },
+    where: { email: { equals: parsed.data.email.trim(), mode: 'insensitive' }, active: true },
     select: { id: true, email: true, tokenVersion: true },
   })
   for (const user of users) {
