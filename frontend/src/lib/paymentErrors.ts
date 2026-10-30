@@ -16,7 +16,7 @@ export function resolvePaymentErrorMessage(
     const translated = t(key, { defaultValue: '' })
     if (translated) return translated
   }
-  if (payload?.error) return payload.error
+  if (typeof payload?.error === 'string' && payload.error) return payload.error
   return t('checkout.paymentError')
 }
 
