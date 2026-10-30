@@ -8,7 +8,6 @@ import { execSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PrismaClient } from '@prisma/client'
 
 const INIT_MIGRATION = '20250620000000_init'
 
@@ -51,7 +50,9 @@ function migrationChecksum() {
   return createHash('sha256').update(readFileSync(path)).digest('hex')
 }
 
-function createPrisma() {
+async function createPrisma() {
+  // Import dinamico: il client va caricato DOPO `prisma generate` (in CI non esiste ancora all'avvio dello script)
+  const { PrismaClient } = await import('@prisma/client')
   return new PrismaClient({
     datasources: { db: { url: migrationDatabaseUrl() } },
   })
@@ -169,7 +170,7 @@ async function main() {
   const statusBefore = runCapture('npx prisma migrate status || true')
   logStep(`migrate status (before):\n${statusBefore}`)
 
-  const prisma = createPrisma()
+  const prisma = await createPrisma()
   try {
     await baselineExistingSchema(prisma)
   } finally {
@@ -182,7 +183,7 @@ async function main() {
     logStep('migrate deploy fallito — recovery baseline…')
     logStep(String(firstError?.message ?? firstError))
 
-    const prismaRetry = createPrisma()
+    const prismaRetry = await createPrisma()
     try {
       const baselined = await baselineExistingSchema(prismaRetry)
       if (!baselined && !(await schemaLikelyExists(prismaRetry))) {

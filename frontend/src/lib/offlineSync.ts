@@ -62,12 +62,17 @@ export function isRetryableNetworkError(err: unknown): boolean {
   return status >= 502 && status <= 504
 }
 
+/** Il campo `error` può non essere una stringa (es. errori piattaforma Vercel `{code,message}`). */
+function errorText(value: unknown): string {
+  return typeof value === 'string' ? value.toLowerCase() : ''
+}
+
 export function isPermanentClientError(err: unknown): boolean {
   const ax = err as AxiosError<{ code?: string; error?: string }>
   if (!ax.response) return false
   const status = ax.response.status
   const code = ax.response.data?.code
-  const message = (ax.response.data?.error ?? '').toLowerCase()
+  const message = errorText(ax.response.data?.error)
   if (status === 409) {
     if (message.includes('elaborazione') || message.includes('idempotency') || message.includes('processing')) {
       return false
@@ -83,7 +88,7 @@ function isLikelyIdempotencyDuplicate(err: unknown): boolean {
   const ax = err as AxiosError<{ code?: string; error?: string }>
   if (!ax.response || ax.response.status !== 409) return false
   const code = ax.response.data?.code
-  const message = (ax.response.data?.error ?? '').toLowerCase()
+  const message = errorText(ax.response.data?.error)
   if (code === 'ORDER_DUPLICATE') return true
   return (
     message.includes('idempotency')

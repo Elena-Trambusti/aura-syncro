@@ -257,11 +257,13 @@ async function main() {
             total: toMoney(p0 + p1),
             revenueAmount: toMoney(p0 + p1),
             items: { create: [
-              { menuItemId: items[0].id, quantity: 1, unitPrice: toMoney(p0) },
-              { menuItemId: items[1].id, quantity: 1, unitPrice: toMoney(p1) }
+              { menuItemId: items[0].id, quantity: 1, unitPrice: toMoney(p0), status: 'PREPARING' },
+              { menuItemId: items[1].id, quantity: 1, unitPrice: toMoney(p1), status: 'PREPARING' }
             ]}
           }
         })
+        // Ordine in cucina → tavolo occupato (coerente con POST /orders)
+        await prisma.table.update({ where: { id: tables[0].id }, data: { status: 'OCCUPIED' } })
         await prisma.order.create({
           data: {
             restaurantId: restaurant.id,
@@ -272,7 +274,8 @@ async function main() {
             revenueAmount: toMoney(p2 * 2),
             createdAt: new Date(Date.now() - 3600000), // 1 ora fa
             items: { create: [
-              { menuItemId: items[2].id, quantity: 2, unitPrice: toMoney(p2) }
+              // Conto chiuso e servito: non tiene aperta la sessione al tavolo
+              { menuItemId: items[2].id, quantity: 2, unitPrice: toMoney(p2), status: 'SERVED' }
             ]}
           }
         })
