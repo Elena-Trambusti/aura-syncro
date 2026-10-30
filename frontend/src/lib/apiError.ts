@@ -22,7 +22,8 @@ export function resolveApiErrorMessage(
       if (translated) return translated
     }
   }
-  if (payload?.error) return payload.error
+  // Solo stringhe: errori di piattaforma (es. Vercel {error:{code,message}}) passati a un toast mandano in crash React
+  if (typeof payload?.error === 'string' && payload.error) return payload.error
   return t(fallbackKey)
 }
 

@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react'
 import { Sentry } from '../instrument'
 import { resetStandaloneAppSession } from '../lib/bootstrapStandalone'
 import { isStandaloneApp } from '../lib/standaloneApp'
+import { isChunkLoadError, reloadForStaleChunk } from '../lib/chunkReload'
 
 interface Props {
   children: ReactNode
@@ -21,6 +22,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('[ErrorBoundary]', error, info.componentStack)
+    if (isChunkLoadError(error) && reloadForStaleChunk()) return
     Sentry.captureException(error, {
       contexts: { react: { componentStack: info.componentStack } },
     })
