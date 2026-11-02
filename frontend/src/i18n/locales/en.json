@@ -1941,6 +1941,7 @@
     "orderSuccessHint": "Staff has received your order. It will reach the kitchen shortly.",
     "paymentCancelled": "Payment cancelled. You can try again anytime.",
     "stripeUnavailable": "Online payment unavailable — you can order and pay at the table.",
+    "takeawayRequiresPayment": "For takeaway please pay online by card. Ordering without paying is only available at your table, after scanning its QR code.",
     "subtotal": "Subtotal",
     "taxableBase": "Taxable base",
     "total": "Total",
@@ -1960,7 +1961,8 @@
       "TABLE_NOT_FOUND": "Table not found",
       "TABLE_UNAVAILABLE": "Table unavailable",
       "RESTAURANT_NOT_FOUND": "Restaurant not found",
-      "SLOT_CONFLICT": "Slot or table no longer available"
+      "SLOT_CONFLICT": "Slot or table no longer available",
+      "TAKEAWAY_REQUIRES_PAYMENT": "Takeaway orders require online card payment."
     }
   },
   "qrBuilder": {

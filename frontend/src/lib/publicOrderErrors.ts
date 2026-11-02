@@ -15,5 +15,7 @@ export function resolvePublicOrderErrorMessage(
     const translated = t(key, { defaultValue: '' })
     if (translated) return translated
   }
-  return payload?.error ?? t('publicMenu.checkoutError')
+  // Solo stringhe: un errore di piattaforma {code,message} in un toast manda in crash React
+  if (typeof payload?.error === 'string' && payload.error) return payload.error
+  return t('publicMenu.checkoutError')
 }

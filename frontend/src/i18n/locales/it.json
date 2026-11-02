@@ -2041,6 +2041,7 @@
     "orderSuccessHint": "Il personale ha ricevuto il tuo ordine. A breve arriverà in cucina.",
     "paymentCancelled": "Pagamento annullato. Puoi riprovare quando vuoi.",
     "stripeUnavailable": "Pagamento online non disponibile — puoi ordinare e pagare al tavolo.",
+    "takeawayRequiresPayment": "Per l'asporto paga online con carta. L'ordine senza pagamento è disponibile solo al tavolo, dopo aver scansionato il QR.",
     "subtotal": "Subtotale",
     "taxableBase": "Imponibile",
     "total": "Totale",
@@ -2062,7 +2063,8 @@
       "TABLE_NOT_FOUND": "Tavolo non trovato",
       "TABLE_UNAVAILABLE": "Tavolo non disponibile",
       "RESTAURANT_NOT_FOUND": "Ristorante non trovato",
-      "SLOT_CONFLICT": "Slot o tavolo non più disponibile"
+      "SLOT_CONFLICT": "Slot o tavolo non più disponibile",
+      "TAKEAWAY_REQUIRES_PAYMENT": "Per l'asporto è richiesto il pagamento online con carta."
     }
   },
   "qrBuilder": {

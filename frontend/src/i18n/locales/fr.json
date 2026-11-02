@@ -1787,6 +1787,7 @@
     "orderSuccessHint": "Le personnel a bien reçu votre commande.",
     "paymentCancelled": "Paiement annulé. Vous pouvez réessayer.",
     "stripeUnavailable": "Paiement en ligne indisponible — commandez et payez à table.",
+    "takeawayRequiresPayment": "Pour emporter, payez en ligne par carte. Commander sans payer n'est possible qu'à table, après avoir scanné son QR code.",
     "subtotal": "Sous-total",
     "taxableBase": "Base imposable",
     "total": "Total",
@@ -1806,7 +1807,8 @@
       "TABLE_NOT_FOUND": "Table introuvable",
       "TABLE_UNAVAILABLE": "Table indisponible",
       "RESTAURANT_NOT_FOUND": "Restaurant introuvable",
-      "SLOT_CONFLICT": "Créneau ou table plus disponible"
+      "SLOT_CONFLICT": "Créneau ou table plus disponible",
+      "TAKEAWAY_REQUIRES_PAYMENT": "Les commandes à emporter nécessitent un paiement en ligne par carte."
     },
     "addedToCart": "{{name}} added to cart"
   },

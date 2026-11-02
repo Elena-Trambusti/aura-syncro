@@ -378,9 +378,9 @@ export default function GuestCartDrawer({
                         : <CreditCard className="h-4 w-4" />}
                       {t('publicMenu.payWithCard')}
                     </button>
-                  ) : (
+                  ) : orderType === 'DINE_IN' ? (
                     <p className="text-center text-xs text-fumo">{t('publicMenu.stripeUnavailable')}</p>
-                  )}
+                  ) : null}
 
                   {dineInRequiresToken && (
                     <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -388,17 +388,23 @@ export default function GuestCartDrawer({
                     </p>
                   )}
 
-                  <button
-                    type="button"
-                    disabled={loading !== null || dineInRequiresToken}
-                    onClick={() => void handleOrderAtTable()}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/[0.12] py-3.5 text-sm font-semibold text-pietra hover:bg-white/5 disabled:opacity-60"
-                  >
-                    {loading === 'table'
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <UtensilsCrossed className="h-4 w-4" />}
-                    {t('publicMenu.orderAtTable')}
-                  </button>
+                  {orderType === 'DINE_IN' ? (
+                    <button
+                      type="button"
+                      disabled={loading !== null || dineInRequiresToken}
+                      onClick={() => void handleOrderAtTable()}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/[0.12] py-3.5 text-sm font-semibold text-pietra hover:bg-white/5 disabled:opacity-60"
+                    >
+                      {loading === 'table'
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <UtensilsCrossed className="h-4 w-4" />}
+                      {t('publicMenu.orderAtTable')}
+                    </button>
+                  ) : (
+                    <p className="text-center text-xs text-fumo">
+                      {t('publicMenu.takeawayRequiresPayment')}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

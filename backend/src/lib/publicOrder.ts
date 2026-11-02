@@ -116,10 +116,10 @@ export async function createPublicOrder(restaurantId: string, input: PublicOrder
     if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
       throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
     }
-  } else if (tableNumber != null) {
-    if (!verifyTableToken(restaurantId, tableNumber, tableToken)) {
-      throw new PublicOrderError('Token tavolo non valido', 403, 'TABLE_TOKEN_INVALID')
-    }
+  } else {
+    // Asporto senza pagamento e senza QR del tavolo: chiunque conosca lo slug potrebbe
+    // mandare in cucina ordini finti. L'asporto dal QR passa dal checkout online.
+    throw new PublicOrderError('Per l\'asporto è richiesto il pagamento online', 400, 'TAKEAWAY_REQUIRES_PAYMENT')
   }
 
   const idemKey = clientRequestId ? `guest-order:${clientRequestId}` : null

@@ -1787,6 +1787,7 @@
     "orderSuccessHint": "Das Personal hat Ihre Bestellung erhalten.",
     "paymentCancelled": "Zahlung abgebrochen. Sie können es erneut versuchen.",
     "stripeUnavailable": "Online-Zahlung nicht verfügbar — Sie können bestellen und am Tisch zahlen.",
+    "takeawayRequiresPayment": "Für Abholung bitte online mit Karte bezahlen. Bestellen ohne Bezahlung ist nur am Tisch nach Scannen des QR-Codes möglich.",
     "subtotal": "Zwischensumme",
     "taxableBase": "Bemessungsgrundlage",
     "total": "Gesamt",
@@ -1806,7 +1807,8 @@
       "TABLE_NOT_FOUND": "Tisch nicht gefunden",
       "TABLE_UNAVAILABLE": "Tisch nicht verfügbar",
       "RESTAURANT_NOT_FOUND": "Restaurant nicht gefunden",
-      "SLOT_CONFLICT": "Zeitfenster oder Tisch nicht mehr verfügbar"
+      "SLOT_CONFLICT": "Zeitfenster oder Tisch nicht mehr verfügbar",
+      "TAKEAWAY_REQUIRES_PAYMENT": "Für Abholung ist eine Online-Kartenzahlung erforderlich."
     },
     "addedToCart": "{{name}} added to cart"
   },
