@@ -75,3 +75,82 @@ describeApi('Login — API HTTP', () => {
     expect(other.status).toBe(200)
   })
 })
+
+describeApi('Staff — email con maiuscole diverse e permessi manager', () => {
+  const owner = {
+    email: process.env.E2E_EMAIL ?? 'owner@e2e.aurasyncro.test',
+    password: process.env.E2E_PASSWORD ?? 'admin123',
+    slug: process.env.E2E_RESTAURANT_SLUG ?? 'demo-it',
+  }
+
+  beforeAll(async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl()}/api/health`, { signal: AbortSignal.timeout(3000) })
+      apiReachable = res.ok
+    } catch {
+      apiReachable = false
+    }
+  })
+
+  async function ownerToken(): Promise<string | null> {
+    const res = await fetch(`${apiBaseUrl()}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(owner),
+    })
+    if (!res.ok) return null
+    return ((await res.json()) as { token: string }).token
+  }
+
+  async function createStaff(token: string, email: string, password: string, role: string) {
+    const res = await fetch(`${apiBaseUrl()}/api/staff`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name: 'Test Staff', email, password, role }),
+    })
+    return { status: res.status, body: await res.json() as { id?: string } }
+  }
+
+  it('due account nello stesso ristorante che differiscono solo per maiuscole: entra quello con la password giusta', async () => {
+    if (!apiReachable) return
+    const token = await ownerToken()
+    if (!token) return
+    const stamp = Date.now()
+    const a = await createStaff(token, `Dup.${stamp}@example.com`, 'Password-A1', 'WAITER')
+    const b = await createStaff(token, `dup.${stamp}@example.com`, 'Password-B2', 'WAITER')
+    expect(a.status).toBe(201)
+    expect(b.status).toBe(201)
+
+    const loginA = await postLogin(`dup.${stamp}@example.com`, 'Password-A1')
+    const loginB = await postLogin(`DUP.${stamp}@example.com`, 'Password-B2')
+    expect(loginA.status).toBe(200)
+    expect(loginB.status).toBe(200)
+    expect(loginA.body.user?.email).toBe(`Dup.${stamp}@example.com`)
+    expect(loginB.body.user?.email).toBe(`dup.${stamp}@example.com`)
+  })
+
+  it('un manager non può cambiare la password di un altro manager', async () => {
+    if (!apiReachable) return
+    const token = await ownerToken()
+    if (!token) return
+    const stamp = Date.now()
+    const m1 = await createStaff(token, `manager1.${stamp}@example.com`, 'Password-M1', 'MANAGER')
+    const m2 = await createStaff(token, `manager2.${stamp}@example.com`, 'Password-M2', 'MANAGER')
+    expect(m1.status).toBe(201)
+    expect(m2.status).toBe(201)
+
+    const login = await fetch(`${apiBaseUrl()}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: `manager1.${stamp}@example.com`, password: 'Password-M1' }),
+    })
+    const { token: m1Token } = await login.json() as { token: string }
+
+    const res = await fetch(`${apiBaseUrl()}/api/staff/${m2.body.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${m1Token}` },
+      body: JSON.stringify({ password: 'Presa-in-carico-1' }),
+    })
+    expect(res.status).toBe(403)
+  })
+})

@@ -206,7 +206,8 @@ authRouter.post('/login', authLoginLimiter, asyncHandler(async (req: Request, re
     return
   }
 
-  if (candidates.length > 1 && !restaurantSlug) {
+  const restaurantCount = new Set(candidates.map(u => u.restaurantId)).size
+  if (restaurantCount > 1 && !restaurantSlug) {
     res.status(409).json({
       error: 'Email associata a più ristoranti. Inserisci il codice ristorante.',
       code: 'MULTIPLE_TENANTS',
@@ -214,17 +215,21 @@ authRouter.post('/login', authLoginLimiter, asyncHandler(async (req: Request, re
     return
   }
 
-  const user = candidates.length === 1
-    ? candidates[0]
-    : candidates.find(u => u.restaurant.slug === restaurantSlug)
+  const pool = restaurantCount === 1
+    ? candidates
+    : candidates.filter(u => u.restaurant.slug === restaurantSlug)
 
-  if (!user) {
-    res.status(401).json({ error: 'Credenziali non valide' })
-    return
+  // Con il confronto senza maiuscole/minuscole lo stesso ristorante può avere
+  // "Mario@x.it" e "mario@x.it": vale l'account la cui password corrisponde.
+  let user: (typeof candidates)[number] | undefined
+  for (const candidate of pool) {
+    if (await bcrypt.compare(password, candidate.password)) {
+      user = candidate
+      break
+    }
   }
 
-  const valid = await bcrypt.compare(password, user.password)
-  if (!valid) {
+  if (!user) {
     res.status(401).json({ error: 'Credenziali non valide' })
     return
   }

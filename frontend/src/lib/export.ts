@@ -5,10 +5,22 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { addMoney, lineGrossMoney, moneyNumber } from './money'
 
+/** Testo inserito in HTML generato a mano (scontrino nel popup di stampa). */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]): void {
   const sep = ';'
   const escape = (v: string | number) => {
-    const s = String(v)
+    let s = String(v)
+    // Evita formula injection in Excel/LibreOffice (es. nome cliente "=HYPERLINK(...)")
+    if (typeof v === 'string' && /^([=+@\t\r]|-(?![\d.,]))/.test(s)) s = `'${s}`
     return s.includes(sep) || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
   }
   const csv = [
@@ -87,7 +99,7 @@ export async function printReceipt(order: {
 </head>
 <body>
   <div class="center">
-    <h1>${restaurantName}</h1>
+    <h1>${escapeHtml(restaurantName)}</h1>
     <p>${formatDt(order.createdAt)}</p>
     <p>${order.table ? `Tavolo ${order.table.number}` : order.type === 'TAKEAWAY' ? 'Asporto' : 'Delivery'}</p>
     <p>Ordine #${order.id.slice(-6).toUpperCase()}</p>
@@ -95,15 +107,15 @@ export async function printReceipt(order: {
   <div class="separator"></div>
   ${order.items.map(item => `
     <div class="row">
-      <span>${item.quantity}x ${item.menuItem.name}</span>
+      <span>${item.quantity}x ${escapeHtml(item.menuItem.name)}</span>
       <span>${formatEur(lineGrossMoney(item.quantity, item.unitPrice))}</span>
     </div>
   `).join('')}
   <div class="separator"></div>
   <div class="row"><span>Subtotale</span><span>${formatEur(order.subtotal)}</span></div>
-  <div class="row"><span>${taxLabel}</span><span>${formatEur(order.tax)}</span></div>
+  <div class="row"><span>${escapeHtml(taxLabel)}</span><span>${formatEur(order.tax)}</span></div>
   <div class="row"><span>Totale ristorante</span><span>${formatEur(foodTotal)}</span></div>
-  ${tip > 0 ? `<div class="row"><span>${tipLabel}</span><span>${formatEur(tip)}</span></div>` : ''}
+  ${tip > 0 ? `<div class="row"><span>${escapeHtml(tipLabel)}</span><span>${formatEur(tip)}</span></div>` : ''}
   <div class="separator"></div>
   <div class="row total-row"><span>TOTALE INCASSATO</span><span>${formatEur(order.total)}</span></div>
   ${order.paymentMethod ? `<div class="row"><span>Pagamento</span><span>${PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod}</span></div>` : ''}

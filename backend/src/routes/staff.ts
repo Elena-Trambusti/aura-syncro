@@ -124,6 +124,12 @@ staffRouter.put('/:id', requirePermission('staff.manage'), asyncHandler(async (r
     return
   }
 
+  // Un manager non può cambiare password, email o stato di un altro manager (presa del suo account)
+  if (target.role === 'MANAGER' && req.userRole !== 'OWNER' && target.id !== req.userId) {
+    res.status(403).json({ error: 'Solo il titolare può modificare un manager', code: 'OWNER_REQUIRED' })
+    return
+  }
+
   if (target.role === 'OWNER' && result.data.active === false) {
     res.status(403).json({ error: 'Il titolare non può essere disattivato', code: 'OWNER_CANNOT_DEACTIVATE' })
     return

@@ -27,7 +27,10 @@ export function isOriginAllowed(origin: string | undefined): boolean {
     if (/^http:\/\/127\.0\.0\.1:\d+$/i.test(origin)) return true
   }
 
-  // Preview deploy Vercel: https://aura-syncro-xxx.vercel.app
-  if (/^https:\/\/aura-syncro[a-z0-9-]*\.vercel\.app$/i.test(origin)) return true
+  // Preview deploy Vercel del team: https://aura-syncro-<...>-elena-trambusti1.vercel.app
+  // (senza suffisso di team chiunque potrebbe creare un progetto "aura-syncro-xyz" e passare il CORS)
+  const previewTeam = process.env.VERCEL_PREVIEW_TEAM_SLUG?.trim() || 'elena-trambusti1'
+  const previewRe = new RegExp(`^https://aura-syncro(-[a-z0-9-]+)?-${previewTeam}\\.vercel\\.app$`, 'i')
+  if (previewRe.test(origin)) return true
   return false
 }
