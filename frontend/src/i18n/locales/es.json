@@ -1787,6 +1787,7 @@
     "orderSuccessHint": "El personal ha recibido tu pedido.",
     "paymentCancelled": "Pago cancelado. Puedes intentarlo de nuevo.",
     "stripeUnavailable": "Pago online no disponible — puedes pedir y pagar en mesa.",
+    "takeawayRequiresPayment": "Para llevar paga online con tarjeta. Pedir sin pagar solo está disponible en la mesa, tras escanear su código QR.",
     "subtotal": "Subtotal",
     "taxableBase": "Base imponible",
     "total": "Total",
@@ -1806,7 +1807,8 @@
       "TABLE_NOT_FOUND": "Mesa no encontrada",
       "TABLE_UNAVAILABLE": "Mesa no disponible",
       "RESTAURANT_NOT_FOUND": "Restaurante no encontrado",
-      "SLOT_CONFLICT": "Franja o mesa ya no disponible"
+      "SLOT_CONFLICT": "Franja o mesa ya no disponible",
+      "TAKEAWAY_REQUIRES_PAYMENT": "Para llevar es necesario el pago online con tarjeta."
     },
     "addedToCart": "{{name}} added to cart"
   },

@@ -154,3 +154,33 @@ describeApi('Staff — email con maiuscole diverse e permessi manager', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describeApi('Ordini QR pubblici — asporto', () => {
+  beforeAll(async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl()}/api/health`, { signal: AbortSignal.timeout(3000) })
+      apiReachable = res.ok
+    } catch {
+      apiReachable = false
+    }
+  })
+
+  it('asporto senza pagamento dal menu pubblico → 400 TAKEAWAY_REQUIRES_PAYMENT', async () => {
+    if (!apiReachable) return
+    const slug = process.env.E2E_RESTAURANT_SLUG ?? 'demo-it'
+    const menu = await fetch(`${apiBaseUrl()}/api/public/menu/${slug}`)
+    if (!menu.ok) return
+    const data = await menu.json() as { categories: Array<{ items: Array<{ id: string }> }> }
+    const item = data.categories.flatMap(c => c.items)[0]
+    if (!item) return
+
+    const res = await fetch(`${apiBaseUrl()}/api/public/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, type: 'TAKEAWAY', items: [{ menuItemId: item.id, quantity: 1 }] }),
+    })
+    const body = await res.json() as { code?: string }
+    expect(res.status).toBe(400)
+    expect(body.code).toBe('TAKEAWAY_REQUIRES_PAYMENT')
+  })
+})
