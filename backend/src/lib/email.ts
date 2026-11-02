@@ -25,6 +25,16 @@ function getTransporter(): nodemailer.Transporter | null {
   return transporter
 }
 
+/** Il testo contiene dati inseriti da utenti/ospiti (nomi, note): va neutralizzato prima di diventare HTML. */
+function textToHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '<br>')
+}
+
 export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean; provider: string }> {
   const from = process.env.EMAIL_FROM || 'Aura Syncro <noreply@aura-syncro.app>'
   const transport = getTransporter()
@@ -44,7 +54,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean;
       to: input.to,
       subject: input.subject,
       text: input.text,
-      html: input.html ?? input.text.replace(/\n/g, '<br>'),
+      html: input.html ?? textToHtml(input.text),
     })
     return { sent: true, provider: 'smtp' }
   } catch (err) {

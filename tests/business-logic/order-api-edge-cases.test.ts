@@ -74,21 +74,13 @@ describeApi('Order create — API edge cases', () => {
     if (!apiReachable) return
     const session = await loginApi(creds.email, creds.password, creds.slug)
 
-    const tablesRes = await apiFetch('/api/tables', session)
-    const tables = (await tablesRes.json()) as Array<{ id: string; status: string }>
-    const table = tables.find(t => t.status === 'FREE') ?? tables[0]
-    if (!table) return
-
     const menuRes = await apiFetch('/api/menu/categories', session)
     const categories = (await menuRes.json()) as Array<{ items: Array<{ id: string; available: boolean }> }>
     const menuItem = categories.flatMap(c => c.items).find(i => i.available)
     if (!menuItem) return
 
-    const payload = {
-      tableId: table.id,
-      type: 'DINE_IN',
-      items: [{ menuItemId: menuItem.id, quantity: 1 }],
-    }
+    // Asporto: l'idempotenza non dipende dal tavolo, e i test in parallelo possono occupare quelli liberi
+    const payload = { type: 'TAKEAWAY', items: [{ menuItemId: menuItem.id, quantity: 1 }] }
 
     const key = `e2e-idem-${Date.now()}`
     const headers = { 'X-Idempotency-Key': key }
